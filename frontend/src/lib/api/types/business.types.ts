@@ -1,0 +1,425 @@
+// ============================================================================
+// BUSINESS MODULE TYPES
+// ============================================================================
+
+// Vendor Profile
+export interface VendorProfile {
+  id: string
+  userId: string
+  businessName: string
+  slug: string
+  categoryId: string
+  tagline?: string | null
+  description?: string | null
+  profilePhotoUrl?: string | null
+  contactPhone?: string | null
+  contactEmail?: string | null
+  website?: string | null
+  addressId?: string | null
+  serviceRadius?: number | null
+  status: VendorStatus
+  leadCount: number
+  viewCount: number
+  followersCount?: number | null
+  reviewsCount?: number | null
+  verifiedAt?: string | null
+  featuredUntil?: string | null
+  isFollowing?: boolean
+  createdAt: string
+  updatedAt: string
+  category?: {
+    id: string
+    name: string
+    slug: string
+  }
+  address?: {
+    id: string
+    street?: string
+    city?: string
+    state?: string
+    country?: string
+    postalCode?: string
+  }
+  services?: VendorService[]
+  portfolios?: PortfolioItem[]
+  badges?: VendorBadge[]
+}
+
+export type VendorBadgeMetric = 'FOLLOWERS' | 'REVIEWS' | 'LEADS' | 'VIEWS'
+
+export interface VendorBadgeDefinition {
+  id: string
+  key: string
+  name: string
+  description?: string | null
+  metric: VendorBadgeMetric
+  threshold: number
+  icon?: string | null
+  color?: string | null
+}
+
+export interface VendorBadge {
+  id: string
+  vendorProfileId: string
+  badgeDefinitionId: string
+  achievedAt: string
+  definition?: VendorBadgeDefinition
+}
+
+export type VendorStatus = 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'SUSPENDED' | 'INACTIVE'
+
+export interface CreateVendorProfileRequest {
+  businessName: string
+  slug: string
+  categoryId: string
+  tagline?: string
+  description?: string
+  contactEmail?: string
+  contactPhone?: string
+  website?: string
+  addressId?: string
+  serviceRadius?: number
+  serviceAreaCityIds?: string[]
+}
+
+export interface UpdateVendorProfileRequest extends Partial<CreateVendorProfileRequest> {
+  status?: VendorStatus
+}
+
+// Media Types
+export type CatalogMediaType = 'IMAGE' | 'VIDEO'
+
+// Media Item - Individual media file within a portfolio
+export interface MediaItem {
+  id: string
+  portfolioId: string
+  type: CatalogMediaType
+  url: string
+  thumbnailUrl?: string | null
+  cdnUrl?: string | null
+  altText?: string | null
+  caption?: string | null
+  width?: number | null
+  height?: number | null
+  duration?: number | null
+  size: number
+  mimeType: string
+  sortOrder: number
+  isApproved: boolean
+  createdAt: string
+}
+
+// Portfolio - Collection/Album of media items
+export interface Portfolio {
+  id: string
+  vendorProfileId: string
+  title: string
+  description?: string | null
+  sortOrder: number
+  isFeatured: boolean
+  createdAt: string
+  updatedAt: string
+  mediaItems?: MediaItem[]
+}
+
+// Alias for backwards compatibility
+export type PortfolioItem = Portfolio
+
+// Create Portfolio Request
+export interface CreatePortfolioRequest {
+  vendorProfileId: string
+  title: string
+  description?: string
+  sortOrder?: number
+  isFeatured?: boolean
+  mediaItems?: CreateMediaItemRequest[]
+}
+
+// Update Portfolio Request
+export interface UpdatePortfolioRequest {
+  title?: string
+  description?: string
+  sortOrder?: number
+  isFeatured?: boolean
+}
+
+// Create Media Item Request
+export interface CreateMediaItemRequest {
+  type: CatalogMediaType
+  url: string
+  thumbnailUrl?: string
+  cdnUrl?: string
+  altText?: string
+  caption?: string
+  width?: number
+  height?: number
+  duration?: number
+  size: number
+  mimeType: string
+  sortOrder?: number
+  isApproved?: boolean
+}
+
+// Vendor Service
+export interface VendorService {
+  id: string
+  vendorProfileId: string
+  name: string
+  description?: string | null
+  basePrice: number
+  priceUnit: string
+  duration?: number | null
+  isActive: boolean
+  features?: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateServiceRequest {
+  vendorProfileId: string
+  name: string
+  description?: string
+  basePrice: number
+  priceUnit: string
+  duration?: number
+  isActive?: boolean
+  features?: string[]
+}
+
+export interface UpdateServiceRequest extends Partial<Omit<CreateServiceRequest, 'vendorProfileId'>> {}
+
+// Business Leads
+export interface BusinessLead {
+  id: string
+  vendorProfileId: string
+  plannerId: string
+  eventId?: string | null
+  status: string
+  source: string
+  eventDate?: string | null
+  eventType?: string | null
+  guestCount?: number | null
+  budget?: number | null
+  initialMessage?: string | null
+  createdAt: string
+  updatedAt: string
+  respondedAt?: string | null
+  convertedAt?: string | null
+  planner?: {
+    id: string
+    firstName?: string | null
+    lastName?: string | null
+    email?: string | null
+  }
+  vendorProfile?: {
+    id: string
+    businessName?: string | null
+    slug?: string | null
+  }
+}
+
+// Business Review
+export interface BusinessReview {
+  id: string
+  vendorProfileId: string
+  reviewerId?: string
+  rating: number
+  title?: string | null
+  body?: string | null
+  reviewNotes?: string | null
+  reviewedAt?: string | null
+  createdAt: string
+  updatedAt: string
+  reviewer?: {
+    id?: string
+    firstName?: string | null
+    lastName?: string | null
+    avatarUrl?: string | null
+  }
+}
+
+// Business Analytics
+export interface BusinessAnalyticsSummary {
+  totalLeads: number
+  totalViews: number
+  totalBookings: number
+  totalRevenue: number
+  averageRating: number
+  reviewCount: number
+  leadConversionRate: number
+  periodComparison?: {
+    leadsChange: number
+    viewsChange: number
+    bookingsChange: number
+    revenueChange: number
+  }
+}
+
+export interface BusinessMetrics {
+  leads: MetricPoint[]
+  views: MetricPoint[]
+  bookings: MetricPoint[]
+  revenue: MetricPoint[]
+}
+
+export interface MetricPoint {
+  date: string
+  value: number
+}
+
+// Business Agreement (from Ops)
+export interface BusinessAgreement {
+  id: string
+  activeEventId: string
+  vendorProfileId: string
+  vendorName: string
+  status: string
+  agreedAmount: number
+  advancePaid: number
+  balanceDue: number
+  contractTerms?: string | null
+  specialRequirements?: string | null
+  contractUrl?: string | null
+  sentAt?: string | null
+  acceptedAt?: string | null
+  declinedAt?: string | null
+  declineReason?: string | null
+  createdAt: string
+  updatedAt: string
+  activeEvent?: {
+    id: string
+    clientName: string
+    eventType: string
+    eventDate?: string | null
+    venueName?: string | null
+  }
+}
+
+// Business Task (from Ops)
+export interface BusinessTask {
+  id: string
+  title: string
+  description?: string | null
+  category?: string | null
+  status: string
+  priority: string
+  dueDate?: string | null
+  startedAt?: string | null
+  completedAt?: string | null
+  proofSubmittedAt?: string | null
+  proofUrl?: string | null
+  proofNotes?: string | null
+  reviewNotes?: string | null
+  activeEventId: string
+  assignedToVendorId?: string | null
+  createdAt: string
+  updatedAt: string
+  activeEvent?: {
+    id: string
+    clientName: string
+    eventType: string
+    eventDate?: string | null
+  }
+}
+
+// API Response Types
+export interface BusinessProfileResponse {
+  success: boolean
+  data: VendorProfile
+}
+
+export interface BusinessPortfolioListResponse {
+  success: boolean
+  data: PortfolioItem[]
+}
+
+export interface BusinessServicesListResponse {
+  success: boolean
+  data: VendorService[]
+}
+
+export interface BusinessLeadsListResponse {
+  success: boolean
+  data: BusinessLead[]
+}
+
+export interface BusinessReviewsListResponse {
+  success: boolean
+  data: BusinessReview[]
+}
+
+export interface BusinessAnalyticsSummaryResponse {
+  success: boolean
+  data: BusinessAnalyticsSummary
+}
+
+export interface BusinessAgreementsListResponse {
+  success: boolean
+  data: BusinessAgreement[]
+}
+
+export interface BusinessTasksListResponse {
+  success: boolean
+  data: BusinessTask[]
+}
+
+// Blocked Dates (Calendar)
+export interface BlockedDate {
+  id: string
+  vendorProfileId: string
+  date: string
+  reason?: string | null
+  isRecurring: boolean
+  createdAt: string
+}
+
+export interface CreateBlockedDateRequest {
+  vendorProfileId: string
+  date: string
+  reason?: string
+  isRecurring?: boolean
+}
+
+// Extended Portfolio with upload
+export interface PortfolioUploadRequest {
+  vendorProfileId: string
+  title: string
+  description?: string
+  tags?: string[]
+  featured?: boolean
+}
+
+// Lead Status Options
+export type LeadStatus =
+  | 'NEW'
+  | 'CONTACTED'
+  | 'QUALIFIED'
+  | 'PROPOSAL_SENT'
+  | 'NEGOTIATING'
+  | 'WON'
+  | 'LOST'
+
+// Task Status Options
+export type TaskStatus =
+  | 'PENDING'
+  | 'ASSIGNED'
+  | 'IN_PROGRESS'
+  | 'SUBMITTED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'COMPLETED'
+  | 'CANCELLED'
+
+// Task Priority Options
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
+
+// Agreement Status Options
+export type AgreementStatus =
+  | 'DRAFT'
+  | 'SENT'
+  | 'VIEWED'
+  | 'ACCEPTED'
+  | 'DECLINED'
+  | 'LOCKED'
+  | 'COMPLETED'
+  | 'CANCELLED'

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules
+
+# Build output
+.next
+out
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Tests
+coverage
+*.spec.ts
+*.test.ts
+*.spec.tsx
+*.test.tsx
+__tests__
+
+# Logs
+*.log
+npm-debug.log*
+
+# Documentation
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Playwright
+playwright-report
+test-results

@@ -1,0 +1,9 @@
+import { PublicLayout } from '@/components/layouts/public'
+
+export default function PublicLayoutWrapper({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <PublicLayout>{children}</PublicLayout>
+}

@@ -1,0 +1,179 @@
+'use client'
+
+import Link from 'next/link'
+import { useMemo, useState } from 'react'
+import { Search } from 'lucide-react'
+import { useBlogPosts } from '@/hooks/queries/use-marketing'
+import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import type { BlogStatus } from '@/lib/api/types/marketing.types'
+
+export default function MarketingContentPage() {
+  const [keyword, setKeyword] = useState('')
+  const [status, setStatus] = useState<BlogStatus | 'all'>('all')
+  const [categoryId, setCategoryId] = useState('all')
+  const [tagId, setTagId] = useState('all')
+
+  const params = useMemo(
+    () => ({
+      keyword: keyword.trim() || undefined,
+      status: status === 'all' ? undefined : status,
+      categoryId: categoryId === 'all' ? undefined : categoryId,
+      tagId: tagId === 'all' ? undefined : tagId,
+      page: 1,
+      limit: 20,
+    }),
+    [keyword, status, categoryId, tagId]
+  )
+
+  const { data, isLoading } = useBlogPosts(params)
+  const { data: categories } = usePublicBlogCategories()
+  const { data: tags } = usePublicBlogTags()
+
+  const categoryOptions = Array.isArray(categories)
+    ? categories
+    : categories && typeof categories === 'object' && 'data' in categories && Array.isArray((categories as { data: unknown[] }).data)
+      ? ((categories as { data: unknown[] }).data as typeof categories)
+      : []
+
+  const tagOptions = Array.isArray(tags)
+    ? tags
+    : tags && typeof tags === 'object' && 'data' in tags && Array.isArray((tags as { data: unknown[] }).data)
+      ? ((tags as { data: unknown[] }).data as typeof tags)
+      : []
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Content manager</h1>
+          <p className="text-muted-foreground">Manage blog posts and editorial updates.</p>
+        </div>
+        <Button asChild>
+          <Link href="/marketing/content/new">Create post</Link>
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <CardTitle>All content</CardTitle>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search content"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categoryOptions.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={tagId} onValueChange={setTagId}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Tag" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tags</SelectItem>
+                {tagOptions.map((tag) => (
+                  <SelectItem key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={status} onValueChange={(value) => setStatus(value as BlogStatus | 'all')}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="PUBLISHED">Published</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="ARCHIVED">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <Skeleton className="h-40" />
+          ) : data?.data?.length ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Read time</TableHead>
+                  <TableHead>Views</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.data.map((post) => (
+                  <TableRow key={post.id}>
+                    <TableCell>
+                      <div className="font-medium">{post.title}</div>
+                      <div className="text-xs text-muted-foreground">{post.slug}</div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {post.category?.name ?? 'Uncategorized'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={post.status === 'PUBLISHED' ? 'default' : post.status === 'DRAFT' ? 'secondary' : 'outline'}>
+                        {post.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{post.readingTime} min</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{post.viewCount}</TableCell>
+                    <TableCell>{formatDate(post.updatedAt)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/marketing/content/${post.id}`}>Open</Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-sm text-muted-foreground">No content found.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return '—'
+  }
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(date)
+}
