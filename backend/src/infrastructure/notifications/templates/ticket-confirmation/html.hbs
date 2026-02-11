@@ -1,0 +1,27 @@
+<html>
+  <body style="font-family: Arial, sans-serif; color: #111;">
+    <h2>Your Tickets</h2>
+    <p>Hello {{name}},</p>
+    <p>Here are your ticket details for {{eventName}} on {{eventDate}}.</p>
+    {{#if ticketDetails}}
+    <ul>
+      {{#each ticketDetails}}
+      <li>{{ticketType}} — Qty: {{quantity}} — Price: {{price}}</li>
+      {{/each}}
+    </ul>
+    {{/if}}
+    {{#if tickets}}
+    <ul>
+      {{#each tickets}}
+      <li>{{type}} — Qty: {{quantity}}</li>
+      {{/each}}
+    </ul>
+    {{/if}}
+    {{#if qrCodeUrl}}
+    <p>QR Code: {{qrCodeUrl}}</p>
+    {{/if}}
+    {{#if ticketDownloadUrl}}
+    <p>Download: {{ticketDownloadUrl}}</p>
+    {{/if}}
+  </body>
+</html>

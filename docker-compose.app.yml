@@ -1,0 +1,134 @@
+# ===========================================
+# Omnicassion Application Only - Docker Compose
+# ===========================================
+# Use this when running with shared infrastructure (docker-compose.infra.yml)
+#
+# Prerequisites:
+#   1. Start infrastructure: docker compose -f docker-compose.infra.yml --env-file .env.infra up -d
+#   2. Ensure infra-network exists: docker network ls | grep infra-network
+#
+# Usage:
+#   docker compose -f docker-compose.app.yml up -d
+#
+# This file contains only the application services (frontend + backend)
+# and connects to the shared infrastructure network.
+
+services:
+  # ===========================================
+  # Frontend - Next.js (Standalone)
+  # ===========================================
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-nikhil2247/omni-new}/frontend:latest
+    container_name: omnicassion-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    networks:
+      - infra-network
+      - coolify
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.omnicassion-frontend.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.omnicassion-frontend.entrypoints=https"
+      - "traefik.http.routers.omnicassion-frontend.tls=true"
+      - "traefik.http.routers.omnicassion-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.omnicassion-frontend.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ===========================================
+  # Backend - NestJS
+  # ===========================================
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-nikhil2247/omni-new}/backend:latest
+    container_name: omnicassion-backend
+    ports:
+      - "8090:6000"
+    environment:
+      # Core
+      - NODE_ENV=production
+      - PORT=6000
+      - BACKEND_PORT=6000
+      # Database - connects to shared PostgreSQL
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@infra-postgres:5432/${POSTGRES_DB:-omnicassion}?schema=public
+      # Cache - connects to shared Dragonfly
+      - REDIS_URL=redis://infra-dragonfly:6379
+      - REDIS_HOST=infra-dragonfly
+      - REDIS_PORT=6379
+      # JWT
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-30m}
+      - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-7d}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      # File Storage - connects to shared MinIO
+      - MINIO_ENDPOINT=http://infra-minio:9000
+      - MINIO_BUCKET=${MINIO_BUCKET:-omnicassion-uploads}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin123}
+      - MINIO_REGION=${MINIO_REGION:-us-east-1}
+      # Meilisearch
+      - MEILISEARCH_HOST=http://infra-meilisearch:7700
+      - MEILISEARCH_API_KEY=${MEILISEARCH_API_KEY}
+      # Node.js memory optimization
+      - NODE_OPTIONS=--max-old-space-size=512
+    volumes:
+      - backend-uploads:/app/uploads
+      - backend-logs:/app/logs
+    networks:
+      - infra-network
+      - coolify
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.omnicassion-backend.rule=Host(`api.your-domain.com`)"
+      - "traefik.http.routers.omnicassion-backend.entrypoints=https"
+      - "traefik.http.routers.omnicassion-backend.tls=true"
+      - "traefik.http.routers.omnicassion-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.omnicassion-backend.loadbalancer.server.port=6000"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+        reservations:
+          cpus: "0.25"
+          memory: 384M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:6000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+networks:
+  infra-network:
+    external: true
+    name: infra-network
+  coolify:
+    external: true
+    name: coolify
+
+volumes:
+  backend-uploads:
+    name: omnicassion-backend-uploads
+  backend-logs:
+    name: omnicassion-backend-logs

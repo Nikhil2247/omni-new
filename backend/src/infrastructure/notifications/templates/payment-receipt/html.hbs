@@ -1,0 +1,23 @@
+<html>
+  <body style="font-family: Arial, sans-serif; color: #111;">
+    <h2>Payment Receipt</h2>
+    <p>Hello {{name}},</p>
+    <p>We received your payment.</p>
+    <ul>
+      <li><strong>Order #:</strong> {{orderNumber}}</li>
+      <li><strong>Amount:</strong> {{amount}} {{currency}}</li>
+      <li><strong>Method:</strong> {{paymentMethod}}</li>
+    </ul>
+    {{#if items}}
+    <h4>Items</h4>
+    <ul>
+      {{#each items}}
+      <li>{{description}} — Qty: {{quantity}} — Price: {{price}}</li>
+      {{/each}}
+    </ul>
+    {{/if}}
+    {{#if receiptUrl}}
+    <p>Receipt: {{receiptUrl}}</p>
+    {{/if}}
+  </body>
+</html>

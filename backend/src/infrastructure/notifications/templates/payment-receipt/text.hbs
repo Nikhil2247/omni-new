@@ -1,0 +1,12 @@
+Hello {{name}},
+
+Payment received.
+Order #: {{orderNumber}}
+Amount: {{amount}} {{currency}}
+Method: {{paymentMethod}}
+{{#if items}}
+Items:
+{{#each items}}- {{description}} x{{quantity}} ({{price}})
+{{/each}}
+{{/if}}
+{{#if receiptUrl}}Receipt: {{receiptUrl}}{{/if}}

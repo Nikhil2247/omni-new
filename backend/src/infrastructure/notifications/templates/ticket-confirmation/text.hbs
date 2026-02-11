@@ -1,0 +1,13 @@
+Hello {{name}},
+
+Your tickets for {{eventName}} on {{eventDate}}.
+{{#if ticketDetails}}
+{{#each ticketDetails}}- {{ticketType}} x{{quantity}} ({{price}})
+{{/each}}
+{{/if}}
+{{#if tickets}}
+{{#each tickets}}- {{type}} x{{quantity}}
+{{/each}}
+{{/if}}
+{{#if qrCodeUrl}}QR Code: {{qrCodeUrl}}{{/if}}
+{{#if ticketDownloadUrl}}Download: {{ticketDownloadUrl}}{{/if}}

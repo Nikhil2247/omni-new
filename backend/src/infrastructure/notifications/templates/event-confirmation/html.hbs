@@ -1,0 +1,16 @@
+<html>
+  <body style="font-family: Arial, sans-serif; color: #111;">
+    <h2>Event Confirmation</h2>
+    <p>Hello {{name}},</p>
+    <p>Your event has been confirmed.</p>
+    <ul>
+      <li><strong>Event:</strong> {{eventName}}</li>
+      <li><strong>Date:</strong> {{eventDate}}</li>
+      <li><strong>Location:</strong> {{eventLocation}}</li>
+      <li><strong>Order #:</strong> {{orderNumber}}</li>
+      {{#if ticketCount}}
+      <li><strong>Tickets:</strong> {{ticketCount}}</li>
+      {{/if}}
+    </ul>
+  </body>
+</html>
