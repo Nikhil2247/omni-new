@@ -79,6 +79,9 @@ async function bootstrap() {
   const allowedOrigins = configService.get<string>('CORS_ORIGINS')?.split(',') || [
     'http://localhost:3000',
     'http://localhost:3001',
+    'https://omnicassion.com',
+    'https://www.omnicassion.com',
+    'https://backend.omnicassion.com',
   ]
 
   app.enableCors({

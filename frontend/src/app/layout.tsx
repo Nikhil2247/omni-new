@@ -20,7 +20,8 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = generateMetadata({
   title: "Omnicassion - India's Premier Event Planning Platform",
-  description: "Plan your perfect wedding, corporate event, party, or celebration with Omnicassion. Discover 10,000+ verified vendors, get instant quotes, compare prices, and book with confidence. India's most efficient, visual-first event planning ecosystem.",
+  description:
+    "Plan your perfect wedding, corporate event, party, or celebration with Omnicassion. Discover 10,000+ verified vendors, get instant quotes, compare prices, and book with confidence. India's most efficient, visual-first event planning ecosystem.",
   keywords: [
     "event planning India",
     "wedding planning",
@@ -56,23 +57,19 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Structured Data */}
         <JsonLd data={[createOrganizationSchema(), createWebsiteSchema()]} />
-        
+
         {/* Preconnect to external domains for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* DNS Prefetch for external resources */}
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
-        
+
         {/* Unregister any existing service workers to clear cache issues */}
         <script
           dangerouslySetInnerHTML={{
@@ -97,7 +94,6 @@ export default function RootLayout({
             `,
           }}
         />
-        <script src="https://cdn.jsdelivr.net/gh/sukeerat/jsdeliver-accessibilty@main/dist-cdn/accessibility-widget.min.js"></script>
       </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
         <ErrorBoundaryWrapper>
