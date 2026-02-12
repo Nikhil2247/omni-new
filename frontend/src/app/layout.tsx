@@ -70,7 +70,6 @@ export default function RootLayout({
         {/* Preconnect to external domains for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        
         {/* DNS Prefetch for external resources */}
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
         
@@ -98,6 +97,7 @@ export default function RootLayout({
             `,
           }}
         />
+        <script src="https://cdn.jsdelivr.net/gh/sukeerat/jsdeliver-accessibilty@main/dist-cdn/accessibility-widget.min.js"></script>
       </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
         <ErrorBoundaryWrapper>

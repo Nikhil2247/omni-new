@@ -17,7 +17,7 @@
 #   MINIO_ROOT_USER     - MinIO admin username (default: minioadmin)
 #   MINIO_ROOT_PASSWORD - MinIO admin password (default: minioadmin123)
 #   MINIO_DEFAULT_BUCKETS - Comma-separated bucket names (default: uploads,backups,cms-uploads)
-#   MEILI_MASTER_KEY    - Meilisearch master key (default: masterKey123)
+#   MEILI_MASTER_KEY    - Meilisearch master key (default: masterKey123456789)
 #
 # Connecting from other services (use these in your app):
 #   - PostgreSQL: postgresql://postgres:password@infra-postgres:5432/app_db
@@ -251,7 +251,7 @@ services:
     ports:
       - "7700:7700"
     environment:
-      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKey123}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKey123456789}
       MEILI_ENV: ${MEILI_ENV:-production}
       MEILI_NO_ANALYTICS: "true"
     volumes:

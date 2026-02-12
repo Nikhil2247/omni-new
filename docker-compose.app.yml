@@ -84,10 +84,10 @@ services:
       - MINIO_ENDPOINT=infra-minio
       - MINIO_PORT=9000
       - MINIO_USE_SSL=false
-      - MINIO_DEFAULT_BUCKET=${MINIO_BUCKET:-omnicassion-uploads}
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin123}
-      - MINIO_REGION=${MINIO_REGION:-us-east-1}
+      - MINIO_DEFAULT_BUCKET=uploads
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_REGION=us-east-1
       # Meilisearch
       - MEILISEARCH_HOST=http://infra-meilisearch:7700
       - MEILISEARCH_API_KEY=${MEILISEARCH_API_KEY}
