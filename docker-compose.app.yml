@@ -57,6 +57,7 @@ services:
   backend:
     image: ghcr.io/${GITHUB_REPOSITORY:-nikhil2247/omni-new}/backend:latest
     container_name: omnicassion-backend
+    command: ["node", "dist/src/main.js"]
     ports:
       - "3001:6000"
     environment:
