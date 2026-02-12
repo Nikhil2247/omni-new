@@ -11,8 +11,8 @@ export {
   DetailPageSkeleton,
 } from './loading-skeletons'
 export { Breadcrumb } from './Breadcrumb'
-export { default as SEOHead } from './SEOHead'
-export { default as HomePageSEO } from './HomePageSEO'
+export { SEOHead } from './SEOHead'
+export { HomePageSEO } from './HomePageSEO'
 export { JsonLd } from './JsonLd'
 export { VideoSchema } from './VideoSchema'
 export { ExportDropdown } from './export-dropdown'

@@ -160,7 +160,6 @@ export default function BusinessPortfolioPage() {
             file,
             options: {
               altText: file.name.replace(/\.[^/.]+$/, ''),
-              caption: uploadCaption || undefined,
             },
           })
           setUploadProgress(100)

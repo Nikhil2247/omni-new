@@ -37,6 +37,7 @@ const createEventSchema = z.object({
   eventDate: z.string().optional(),
   eventEndDate: z.string().optional(),
   venueName: z.string().optional(),
+  venueAddressId: z.string().optional(),
   totalBudget: z.string().optional(),
   opsManagerId: z.string().optional(),
 })

@@ -33,13 +33,13 @@ export default function BlogPage() {
 
   const categoryOptions = Array.isArray(categories)
     ? categories
-    : Array.isArray((categories as { data?: unknown })?.data)
+    : categories && Array.isArray((categories as { data?: unknown })?.data)
       ? ((categories as { data: unknown[] }).data as typeof categories)
       : []
 
   const tagOptions = Array.isArray(tags)
     ? tags
-    : Array.isArray((tags as { data?: unknown })?.data)
+    : tags && Array.isArray((tags as { data?: unknown })?.data)
       ? ((tags as { data: unknown[] }).data as typeof tags)
       : []
 

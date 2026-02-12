@@ -164,7 +164,7 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
     )
   }
 
-  const completedCount = data.items?.filter(item => item.isCompleted).length || 0
+  const completedCount = data.items?.filter((item: any) => item.isCompleted).length || 0
   const totalCount = data.items?.length || 0
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
   const isComplete = progress === 100 && totalCount > 0
@@ -356,7 +356,7 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
             {totalCount > 0 ? (
               <motion.div layout className="space-y-3">
                 <AnimatePresence mode="popLayout">
-                  {data.items?.map((item) => {
+                  {data.items?.map((item: any) => {
                     const dueDate = item.dueDate ? new Date(item.dueDate) : null
                     const isOverdue = dueDate && !item.isCompleted && dueDate < new Date()
                     const isDueSoon = dueDate && !item.isCompleted && dueDate > new Date() && 

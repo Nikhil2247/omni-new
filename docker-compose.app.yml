@@ -58,14 +58,14 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY:-nikhil2247/omni-new}/backend:latest
     container_name: omnicassion-backend
     ports:
-      - "8090:6000"
+      - "3001:6000"
     environment:
       # Core
       - NODE_ENV=production
       - PORT=6000
       - BACKEND_PORT=6000
       # Database - connects to shared PostgreSQL
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@infra-postgres:5432/${POSTGRES_DB:-omnicassion}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres123}@infra-postgres:5432/${POSTGRES_DB:-omnicassion}
       # Cache - connects to shared Dragonfly
       - REDIS_URL=redis://infra-dragonfly:6379
       - REDIS_HOST=infra-dragonfly

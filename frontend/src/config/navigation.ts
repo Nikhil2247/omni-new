@@ -578,7 +578,7 @@ export const marketingNav: NavGroup[] = [
         title: 'Settings',
         href: '/marketing/settings',
         icon: Settings,
-        roles: ROLE_GROUPS.MARKETING_SERVICES,
+        roles: ROLE_GROUPS.MARKETING,
       },
     ],
   },

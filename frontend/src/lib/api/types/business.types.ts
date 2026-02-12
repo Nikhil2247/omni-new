@@ -226,6 +226,7 @@ export interface BusinessReview {
   rating: number
   title?: string | null
   body?: string | null
+  status?: string
   reviewNotes?: string | null
   reviewedAt?: string | null
   createdAt: string

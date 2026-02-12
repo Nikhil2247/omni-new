@@ -11,8 +11,9 @@ export default function WishlistsPage() {
   const userId = user?.id
   const { data: wishlists = [] } = useWishlistMine(Boolean(userId))
 
-  const totalItems = wishlists.reduce((total, list) => total + (list.items?.length ?? 0), 0)
-  const totalBoards = wishlists.length
+  const wishlistArray = Array.isArray(wishlists) ? wishlists : (wishlists?.data ?? [])
+  const totalItems = wishlistArray.reduce((total, list) => total + (list.items?.length ?? 0), 0)
+  const totalBoards = wishlistArray.length
 
   return (
     <div className="space-y-6">

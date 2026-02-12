@@ -39,7 +39,8 @@ export function WishlistList() {
     form.reset()
   }
 
-  const totalItems = wishlists.reduce((total, list) => total + (list.items?.length ?? 0), 0)
+  const wishlistArray = Array.isArray(wishlists) ? wishlists : (wishlists?.data ?? [])
+  const totalItems = wishlistArray.reduce((total, list) => total + (list.items?.length ?? 0), 0)
 
   if (!userId) {
     return <div className="text-sm text-muted-foreground">Loading user profile...</div>
@@ -117,9 +118,9 @@ export function WishlistList() {
       </Card>
 
       {/* Wishlists Grid */}
-      {wishlists.length ? (
+      {wishlistArray.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {wishlists.map((wishlist) => (
+          {wishlistArray.map((wishlist) => (
             <Link key={wishlist.id} href={`/wishlists/${wishlist.id}`}>
               <Card className="group h-full cursor-pointer overflow-hidden transition-shadow hover:shadow-md">
                 {/* Gradient header */}

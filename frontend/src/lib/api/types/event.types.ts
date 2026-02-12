@@ -11,9 +11,13 @@ export interface EventSummary {
   name: string
   eventTypeId: string
   date: string | null
+  eventDate?: string | null
   description?: string | null
   venueName?: string | null
   guestCount?: number | null
+  confirmedGuests?: number
+  declinedGuests?: number
+  checklistProgress?: number
   status: EventStatus
   createdAt: string
   updatedAt: string

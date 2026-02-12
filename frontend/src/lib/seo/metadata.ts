@@ -102,7 +102,7 @@ export function generateMetadata(seo: Partial<SEOMetadata>): Metadata {
     },
     openGraph: merged.openGraph
       ? {
-          type: merged.openGraph.type,
+          type: merged.openGraph.type === 'product' ? 'website' : merged.openGraph.type,
           title: merged.openGraph.title,
           description: merged.openGraph.description,
           url: merged.openGraph.url,
@@ -141,7 +141,6 @@ export function generateMetadata(seo: Partial<SEOMetadata>): Metadata {
     verification: {
       google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
       yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
-      bing: process.env.NEXT_PUBLIC_BING_VERIFICATION,
     },
   };
 

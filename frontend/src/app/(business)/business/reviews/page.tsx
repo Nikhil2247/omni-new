@@ -248,8 +248,8 @@ export default function BusinessReviewsPage() {
                 {selectedReview.title && (
                   <p className="font-medium text-sm">{selectedReview.title}</p>
                 )}
-                {selectedReview.content && (
-                  <p className="text-sm text-muted-foreground mt-1">{selectedReview.content}</p>
+                {selectedReview.body && (
+                  <p className="text-sm text-muted-foreground mt-1">{selectedReview.body}</p>
                 )}
               </div>
 

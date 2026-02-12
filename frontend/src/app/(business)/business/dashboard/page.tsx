@@ -45,7 +45,7 @@ export default function BusinessDashboardPage() {
   // Calculate stats
   const pendingTasks = tasks?.filter(t => ['PENDING', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status)).length || 0
   const activeAgreements = agreements?.filter(a => a.status === 'LOCKED').length || 0
-  const reviewsToRespond = reviews?.filter(r => !r.response).length || 0
+  const reviewsToRespond = reviews?.filter(r => r.status === 'PENDING').length || 0
 
   // Overdue tasks
   const overdueTasks = tasks?.filter(t => {
@@ -236,7 +236,7 @@ export default function BusinessDashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {upcomingTasks.map((task) => {
-                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date()
+                    const isOverdue = !!task.dueDate && new Date(task.dueDate) < new Date()
                     return (
                       <TaskItem
                         key={task.id}
@@ -311,9 +311,9 @@ export default function BusinessDashboardPage() {
               {reviews.slice(0, 4).map((review) => (
                 <ReviewCard
                   key={review.id}
-                  author={review.user?.name || 'Anonymous'}
+                  author={review.reviewer ? `${review.reviewer.firstName || ''} ${review.reviewer.lastName || ''}`.trim() || 'Anonymous' : 'Anonymous'}
                   rating={review.rating}
-                  text={review.content || review.title || ''}
+                  text={review.body || review.title || ''}
                   date={format(new Date(review.createdAt), 'MMM d, yyyy')}
                 />
               ))}

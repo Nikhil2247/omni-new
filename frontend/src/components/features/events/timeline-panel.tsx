@@ -236,7 +236,7 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
         <CardContent>
           {data.items?.length ? (
             <div className="space-y-3">
-              {data.items.map((item, index) => (
+              {data.items.map((item: any, index: number) => (
                 <div
                   key={item.id || index}
                   className="group relative flex gap-4 rounded-lg border p-4 transition-all hover:shadow-md"

@@ -72,7 +72,8 @@ export type JsonLdSchema =
   | ProductSchema
   | ArticleSchema
   | FAQSchema
-  | ReviewSchema;
+  | ReviewSchema
+  | VideoObjectSchema;
 
 export interface OrganizationSchema {
   '@context': 'https://schema.org';
@@ -293,4 +294,16 @@ export interface Rating {
   ratingValue: number;
   bestRating?: number;
   worstRating?: number;
+}
+
+export interface VideoObjectSchema {
+  '@context': 'https://schema.org';
+  '@type': 'VideoObject';
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  duration?: string;
+  contentUrl?: string;
+  embedUrl?: string;
 }

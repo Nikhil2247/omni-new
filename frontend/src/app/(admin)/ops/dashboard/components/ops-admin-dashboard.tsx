@@ -165,12 +165,12 @@ export function OpsAdminDashboard() {
               <TeamStatItem 
                 label="Ops Managers" 
                 count={totalManagers} 
-                active={managers.filter(m => m.isActive).length} 
+                active={totalManagers} 
               />
               <TeamStatItem 
                 label="Ops Assistants" 
                 count={totalAssistants} 
-                active={assistants.filter(a => a.isActive).length} 
+                active={totalAssistants} 
               />
             </div>
             <div className="mt-4 space-y-2">

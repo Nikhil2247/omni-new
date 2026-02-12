@@ -97,11 +97,11 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
   // Calculate RSVP statistics
   const stats = {
     total: data.guests?.length ?? 0,
-    attending: data.guests?.filter(g => g.rsvpStatus === 'ATTENDING').length ?? 0,
-    notAttending: data.guests?.filter(g => g.rsvpStatus === 'NOT_ATTENDING').length ?? 0,
-    pending: data.guests?.filter(g => g.rsvpStatus === 'PENDING').length ?? 0,
-    maybe: data.guests?.filter(g => g.rsvpStatus === 'MAYBE').length ?? 0,
-    totalPlusOnes: data.guests?.reduce((sum, g) => sum + (g.plusOne || 0), 0) ?? 0,
+    attending: data.guests?.filter((g: any) => g.rsvpStatus === 'ATTENDING').length ?? 0,
+    notAttending: data.guests?.filter((g: any) => g.rsvpStatus === 'NOT_ATTENDING').length ?? 0,
+    pending: data.guests?.filter((g: any) => g.rsvpStatus === 'PENDING').length ?? 0,
+    maybe: data.guests?.filter((g: any) => g.rsvpStatus === 'MAYBE').length ?? 0,
+    totalPlusOnes: data.guests?.reduce((sum: number, g: any) => sum + (g.plusOne || 0), 0) ?? 0,
   }
 
   return (
@@ -263,7 +263,7 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
             </TableHeader>
             <TableBody>
               {data.guests?.length ? (
-                data.guests.map((guest) => (
+                data.guests.map((guest: any) => (
                   <TableRow key={guest.id}>
                     <TableCell>{guest.firstName} {guest.lastName ?? ''}</TableCell>
                     <TableCell>{guest.email ?? '-'}</TableCell>

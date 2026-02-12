@@ -189,14 +189,14 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
   const isOverBudget = percentUsed > 100
 
   // Group items by category
-  const itemsByCategory = (data.items || []).reduce((acc, item) => {
+  const itemsByCategory = (data.items || []).reduce((acc: Record<string, any[]>, item: any) => {
     const category = item.category || 'Uncategorized'
     if (!acc[category]) {
       acc[category] = []
     }
     acc[category].push(item)
     return acc
-  }, {} as Record<string, typeof data.items>)
+  }, {} as Record<string, any[]>)
 
   return (
     <motion.div
@@ -446,8 +446,8 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
       {/* Budget Items by Category */}
       <AnimatePresence mode="popLayout">
         {Object.entries(itemsByCategory).map(([category, items]) => {
-          const categoryTotal = items.reduce((sum, item) => sum + (Number(item.actualCost || item.estimatedCost) || 0), 0)
-          const categoryPaid = items.filter(item => item.isPaid).length
+          const categoryTotal = (items as any[]).reduce((sum: number, item: any) => sum + (Number(item.actualCost || item.estimatedCost) || 0), 0)
+          const categoryPaid = (items as any[]).filter((item: any) => item.isPaid).length
 
           return (
             <motion.div
@@ -462,7 +462,7 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                     <div>
                       <CardTitle className="text-base">{category}</CardTitle>
                       <CardDescription>
-                        {categoryPaid} of {items.length} paid • {formatCurrency(categoryTotal)}
+                        {categoryPaid} of {(items as any[]).length} paid • {formatCurrency(categoryTotal)}
                       </CardDescription>
                     </div>
                   </div>
@@ -470,7 +470,7 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                 <CardContent>
                   <div className="space-y-3">
                     <AnimatePresence mode="popLayout">
-                      {items.map((item) => {
+                      {(items as any[]).map((item: any) => {
                         const cost = Number(item.actualCost || item.estimatedCost) || 0
                         const variance = item.actualCost && item.estimatedCost 
                           ? Number(item.actualCost) - Number(item.estimatedCost) 

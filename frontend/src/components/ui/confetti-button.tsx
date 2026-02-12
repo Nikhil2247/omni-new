@@ -2,10 +2,11 @@
 
 import { useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Button, ButtonProps } from './button'
+import { Button } from './button'
 import { cn } from '@/lib/utils'
+import type React from 'react'
 
-interface ConfettiButtonProps extends ButtonProps {
+interface ConfettiButtonProps extends React.ComponentProps<typeof Button> {
   confettiColors?: string[]
   particleCount?: number
 }

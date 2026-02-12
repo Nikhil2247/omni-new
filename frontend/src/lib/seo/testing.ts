@@ -84,13 +84,13 @@ export function parseSEO(html: string): SEOTestResult {
   }
 
   return {
-    title,
-    description,
-    canonical,
-    ogTitle,
-    ogDescription,
-    ogImage,
-    twitterCard,
+    title: title ?? undefined,
+    description: description ?? undefined,
+    canonical: canonical ?? undefined,
+    ogTitle: ogTitle ?? undefined,
+    ogDescription: ogDescription ?? undefined,
+    ogImage: ogImage ?? undefined,
+    twitterCard: twitterCard ?? undefined,
     structuredData,
     errors,
     warnings,

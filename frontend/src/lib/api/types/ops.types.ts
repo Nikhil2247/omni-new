@@ -38,6 +38,8 @@ export interface OpsActiveEvent {
   status: string
   totalBudget?: number | string | null
   totalSpend?: number | string | null
+  opsAdminId?: string | null
+  opsManagerId?: string | null
   createdAt?: string | null
   updatedAt?: string | null
 }

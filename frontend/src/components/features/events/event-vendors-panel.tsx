@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 const addVendorSchema = z.object({
   vendorProfileId: z.string().min(1, 'Vendor profile ID is required'),
-  status: z.enum(['SHORTLISTED', 'CONTACTED', 'BOOKED', 'CONFIRMED', 'CANCELLED']).default('SHORTLISTED'),
+  status: z.enum(['SHORTLISTED', 'CONTACTED', 'BOOKED', 'CONFIRMED', 'CANCELLED']),
   contractAmount: z.string().optional(),
   depositPaid: z.string().optional(),
   notes: z.string().optional(),

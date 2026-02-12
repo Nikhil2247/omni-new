@@ -319,7 +319,7 @@ export default function BusinessAgreementsPage() {
                             <p className="text-muted-foreground">Venue</p>
                             <p className="font-medium flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              {agreement.activeEvent.venue}
+                              {agreement.activeEvent.venueName}
                             </p>
                           </div>
                         )}
@@ -414,7 +414,7 @@ export default function BusinessAgreementsPage() {
                 {selectedAgreement.activeEvent?.venueName && (
                   <div>
                     <p className="text-sm text-muted-foreground">Venue</p>
-                    <p className="font-medium">{selectedAgreement.activeEvent.venue}</p>
+                    <p className="font-medium">{selectedAgreement.activeEvent.venueName}</p>
                   </div>
                 )}
               </div>

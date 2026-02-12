@@ -50,7 +50,8 @@ export function ProgressRing({
   }, [percent, springValue])
 
   const offset = circumference - (percent / 100) * circumference
-  const colorConfig = colorMap[color]
+  const colorKey = color as keyof typeof colorMap
+  const colorConfig = colorMap[colorKey] || colorMap.primary
 
   return (
     <div className={cn('flex flex-col items-center', className)}>

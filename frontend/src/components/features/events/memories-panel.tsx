@@ -35,9 +35,9 @@ import {
 import { toast } from 'sonner'
 
 const memorySchema = z.object({
-  isActive: z.boolean().default(true),
-  allowUploads: z.boolean().default(true),
-  requireApproval: z.boolean().default(false),
+  isActive: z.boolean(),
+  allowUploads: z.boolean(),
+  requireApproval: z.boolean(),
   expiresAt: z.string().optional(),
 })
 
@@ -471,11 +471,11 @@ function GalleryModeration({ eventMemoryId, requireApproval }: { eventMemoryId: 
 function PendingBadge({ memoryId }: { memoryId: string }) {
   const { data: pendingCount } = usePendingUploadCount(memoryId)
   
-  if (!pendingCount || pendingCount.count === 0) return null
+  if (!pendingCount || pendingCount.pendingCount === 0) return null
   
   return (
     <Badge variant="destructive" className="animate-pulse">
-      {pendingCount.count} Pending
+      {pendingCount.pendingCount} Pending
     </Badge>
   )
 }

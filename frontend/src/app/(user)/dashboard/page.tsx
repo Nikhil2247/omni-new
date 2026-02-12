@@ -43,7 +43,8 @@ export default function UserDashboardPage() {
 
   const totalEvents = eventsData?.meta?.total ?? 0
   const totalLeads = leadsData?.meta?.total ?? 0
-  const wishlistCount = wishlists.reduce((total, list) => total + (list.items?.length ?? 0), 0)
+  const wishlistArray = Array.isArray(wishlists) ? wishlists : (wishlists?.data ?? [])
+  const wishlistCount = wishlistArray.reduce((total, list) => total + (list.items?.length ?? 0), 0)
 
   const isLoading = eventsLoading || leadsLoading || wishlistLoading
 
