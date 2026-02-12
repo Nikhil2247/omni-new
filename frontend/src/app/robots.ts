@@ -13,7 +13,7 @@ export default function robots(): MetadataRoute.Robots {
           '/admin/',
           '/dashboard/',
           '/settings/',
-          '/*?*utm_*', // Disallow URL parameters used for tracking
+          '/*?*utm_*', 
           '/events/*/edit',
           '/business/*',
           '/ops/*',
