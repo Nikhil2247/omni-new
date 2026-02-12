@@ -65,7 +65,7 @@ export class MinioService implements OnModuleInit {
     const port = this.configService.get<number>('MINIO_PORT', 9000)
     const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin')
     const secretKey = this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin')
-    const useSSL = this.configService.get<boolean>('MINIO_USE_SSL', false)
+    const useSSL = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true'
 
     this.client = new Minio.Client({
       endPoint,
