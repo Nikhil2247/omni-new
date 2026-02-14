@@ -49,4 +49,8 @@ export const marketingService = {
     const { data } = await apiClient.delete(API_ENDPOINTS.MARKETING.CONTENT.POST_BY_ID(id))
     return data?.data ?? data
   },
+  publishBlogPost: async (id: string): Promise<BlogPost> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.MARKETING.CONTENT.PUBLISH_POST(id))
+    return data?.data ?? data
+  },
 }

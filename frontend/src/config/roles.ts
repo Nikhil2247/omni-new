@@ -117,7 +117,7 @@ export const ROLE_DEFAULT_PATHS: Record<Role, string> = {
   [ROLES.OPERATIONAL_MANAGER]: '/ops/dashboard',
   [ROLES.OPERATIONAL_ASSISTANT]: '/ops/tasks',
   [ROLES.MARKETING_SERVICES_ADMIN]: '/marketing/dashboard',
-  [ROLES.CONTENT_WRITER]: '/marketing/content',
+  [ROLES.CONTENT_WRITER]: '/marketing/content-writer/dashboard',
   [ROLES.MULTI_MEDIA_MANAGER]: '/marketing/media',
   [ROLES.SALES_MANAGER]: '/sales/dashboard',
   [ROLES.BUSINESS_ADMIN]: '/dashboard',

@@ -12,7 +12,7 @@ export default function WishlistDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 px-6 py-12 lg:py-16">
       <WishlistDetail wishlistId={boardId} />
     </div>
   )

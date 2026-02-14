@@ -527,7 +527,19 @@ export const marketingNav: NavGroup[] = [
         title: 'Dashboard',
         href: '/marketing/dashboard',
         icon: LayoutDashboard,
-        roles: ROLE_GROUPS.MARKETING,
+        roles: [ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN],
+      },
+      {
+        title: 'Dashboard',
+        href: '/marketing/content-writer/dashboard',
+        icon: LayoutDashboard,
+        roles: [ROLES.CONTENT_WRITER],
+      },
+      {
+        title: 'Dashboard',
+        href: '/marketing/media',
+        icon: LayoutDashboard,
+        roles: [ROLES.MULTI_MEDIA_MANAGER],
       },
     ],
   },
@@ -550,7 +562,7 @@ export const marketingNav: NavGroup[] = [
         title: 'Media Library',
         href: '/marketing/media',
         icon: Image,
-        roles: ROLE_GROUPS.MARKETING,
+        roles: [ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER],
       },
     ],
   },
@@ -567,7 +579,7 @@ export const marketingNav: NavGroup[] = [
         title: 'Analytics',
         href: '/marketing/analytics',
         icon: TrendingUp,
-        roles: ROLE_GROUPS.MARKETING,
+        roles: [ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER],
       },
     ],
   },
@@ -689,12 +701,6 @@ export const businessNav: NavGroup[] = [
     title: 'Communication',
     items: [
       {
-        title: 'Messages',
-        href: '/business/messages',
-        icon: MessageSquare,
-        roles: [ROLES.BUSINESS_ADMIN],
-      },
-      {
         title: 'Leads',
         href: '/business/leads',
         icon: Users,
@@ -772,18 +778,6 @@ export const userNav: NavGroup[] = [
   {
     title: 'Vendors & Planning',
     items: [
-      {
-        title: 'Wishlists',
-        href: '/wishlists',
-        icon: Heart,
-        roles: [ROLES.USER],
-      },
-      {
-        title: 'Messages',
-        href: '/messages',
-        icon: MessageSquare,
-        roles: [ROLES.USER],
-      },
       {
         title: 'Inquiries',
         href: '/inquiries',

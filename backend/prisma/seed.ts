@@ -23,6 +23,7 @@ import {
   DocumentType,
   DocumentStatus,
   VendorBadgeMetric,
+  ReviewStatus,
   BlogStatus,
   PlanTier,
   FeatureLimitType,
@@ -124,9 +125,16 @@ async function cleanupDatabase() {
   await prisma.eventType.deleteMany()
 
   // Interaction schema
+  await prisma.messageAttachment.deleteMany()
+  await prisma.messageReaction.deleteMany()
+  await prisma.messageReceipt.deleteMany()
+  await prisma.messageDeletion.deleteMany()
+  await prisma.conversationParticipant.deleteMany()
   await prisma.message.deleteMany()
+  await prisma.conversation.deleteMany()
   await prisma.leadStatusHistory.deleteMany()
   await prisma.lead.deleteMany()
+  await prisma.vendorFollow.deleteMany()
 
   // Catalog schema
   await prisma.vendorBadge.deleteMany()
@@ -302,6 +310,10 @@ async function main() {
 
   const marketingRole = await prisma.role.create({
     data: { name: 'MARKETING_SERVICES_ADMIN', displayName: 'Marketing Admin', description: 'Marketing services administrator', isSystem: true, level: 70 },
+  })
+
+  const contentWriterRole = await prisma.role.create({
+    data: { name: 'CONTENT_WRITER', displayName: 'Content Writer', description: 'Creates and edits draft marketing content', isSystem: true, level: 60, parentRoleId: marketingRole.id },
   })
 
   const vendorRole = await prisma.role.create({
@@ -576,6 +588,21 @@ async function main() {
     },
   })
   await prisma.userRoleAssignment.create({ data: { userId: marketingAdmin.id, roleId: marketingRole.id } })
+
+  // Content Writer
+  const contentWriter = await prisma.user.create({
+    data: {
+      email: 'writer@omnicassion.com',
+      passwordHash: hashedPassword,
+      firstName: 'Taylor',
+      lastName: 'Writer',
+      status: UserStatus.ACTIVE,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      hasCompletedOnboarding: true,
+    },
+  })
+  await prisma.userRoleAssignment.create({ data: { userId: contentWriter.id, roleId: contentWriterRole.id } })
 
   // Vendor Users (1000 vendors for performance testing)
   console.log('Creating 1000 vendor users...')
@@ -1246,6 +1273,72 @@ async function main() {
     })
   }
 
+  // Vendor Timeline Events (1 event for each vendor profile)
+  console.log('  Creating timeline events for each vendor profile...')
+
+  const eventStatusCycle = [EventStatus.PLANNING, EventStatus.CONFIRMED, EventStatus.COMPLETED]
+  const eventVendorStatusCycle = [
+    EventVendorStatus.SHORTLISTED,
+    EventVendorStatus.CONTACTED,
+    EventVendorStatus.BOOKED,
+    EventVendorStatus.CONFIRMED,
+  ]
+  const vendorEventBatchSize = 100
+
+  for (let start = 0; start < vendorProfiles.length; start += vendorEventBatchSize) {
+    const vendorBatch = vendorProfiles.slice(start, start + vendorEventBatchSize)
+
+    const createdEvents = await Promise.all(
+      vendorBatch.map((vendorProfile, batchIndex) => {
+        const globalIndex = start + batchIndex
+        const planner = plannerUsers[globalIndex % plannerUsers.length]
+        const eventType = eventTypes[globalIndex % eventTypes.length]
+        const address = addresses[globalIndex % addresses.length]
+
+        const eventDate = new Date()
+        eventDate.setDate(eventDate.getDate() - (globalIndex % 160) + 45)
+
+        const endDate = new Date(eventDate)
+        endDate.setDate(endDate.getDate() + ((globalIndex % 2) + 1))
+
+        return prisma.event.create({
+          data: {
+            userId: planner.id,
+            eventTypeId: eventType.id,
+            name: `${vendorProfile.businessName} • ${eventType.name} Showcase`,
+            date: eventDate,
+            endDate,
+            addressId: address.id,
+            venueName: `Venue ${((globalIndex % 18) + 1).toString().padStart(2, '0')}`,
+            guestCount: 80 + (globalIndex % 220),
+            description: `Showcase event delivered by ${vendorProfile.businessName} for ${eventType.name.toLowerCase()} clients.`,
+            status: eventStatusCycle[globalIndex % eventStatusCycle.length],
+          },
+        })
+      }),
+    )
+
+    await prisma.eventVendor.createMany({
+      data: createdEvents.map((createdEvent, batchIndex) => {
+        const globalIndex = start + batchIndex
+        const contractAmount = 30000 + (globalIndex % 45) * 2500
+        const depositPaid = Math.floor(contractAmount * 0.35)
+
+        return {
+          eventId: createdEvent.id,
+          vendorProfileId: vendorBatch[batchIndex].id,
+          status: eventVendorStatusCycle[globalIndex % eventVendorStatusCycle.length],
+          notes: 'Seeded vendor timeline event for public profile visibility.',
+          contractAmount,
+          depositPaid,
+        }
+      }),
+      skipDuplicates: true,
+    })
+  }
+
+  console.log(`✅ Vendor timeline events created (${vendorProfiles.length})`)
+
   console.log('✅ Events with planning data created')
 
   // ============================================================================
@@ -1311,6 +1404,141 @@ async function main() {
   }
 
   console.log('✅ Leads and messages created')
+
+  // ============================================================================
+  // STEP 15.5: VENDOR REVIEWS
+  // ============================================================================
+  console.log('⭐ Creating vendor reviews...')
+
+  const reviewBodies = [
+    'Amazing experience from start to finish. Professional, responsive, and delivered exactly what we wanted.',
+    'Great quality and very easy to work with. Would definitely recommend for weddings and special events.',
+    'The team was punctual and detail-oriented. They made our event stress-free and beautiful.',
+    'Excellent service and communication. We are very happy with the final outcome.',
+    'Very professional vendor with strong creativity and execution. Highly recommended.',
+  ]
+
+  const vendorReviewsData: any[] = []
+  const reviewTargetCount = vendorProfiles.length
+
+  for (let i = 0; i < reviewTargetCount; i++) {
+    const planner = plannerUsers[i % plannerUsers.length]
+    const event = events[i % events.length]
+    const rating = 4 + (i % 2) // 4 or 5 stars
+    const body = reviewBodies[i % reviewBodies.length]
+
+    vendorReviewsData.push({
+      vendorProfileId: vendorProfiles[i].id,
+      reviewerId: planner.id,
+      eventId: event.id,
+      rating,
+      title: `${rating}-star experience`,
+      body,
+      status: ReviewStatus.APPROVED,
+      reviewedBy: adminUser.id,
+      reviewedAt: new Date(),
+    })
+  }
+
+  for (let i = 0; i < vendorReviewsData.length; i += 200) {
+    await prisma.vendorReview.createMany({
+      data: vendorReviewsData.slice(i, i + 200),
+    })
+  }
+
+  console.log(`✅ Vendor reviews created (${vendorReviewsData.length})`)
+
+  // ============================================================================
+  // STEP 15.6: VENDOR FOLLOWS & FOLLOWER BADGES
+  // ============================================================================
+  console.log('👥 Creating vendor follows and follower badges...')
+
+  const followerPool = [
+    adminUser.id,
+    generalAdmin.id,
+    opsAdmin.id,
+    opsManager.id,
+    opsAssistant.id,
+    marketingAdmin.id,
+    contentWriter.id,
+    ...plannerUsers.map((planner) => planner.id),
+    ...vendorUsers.map((vendorUser) => vendorUser.id),
+  ]
+
+  const vendorFollowsData: any[] = []
+
+  for (let i = 0; i < vendorProfiles.length; i++) {
+    const vendorProfile = vendorProfiles[i]
+
+    let targetFollowers = 0
+    if (i < 20) {
+      targetFollowers = 180 + (i % 14) * 40
+    } else if (i < 120) {
+      targetFollowers = 50 + (i % 35)
+    } else if (i < 400) {
+      targetFollowers = 12 + (i % 18)
+    } else {
+      targetFollowers = 3 + (i % 8)
+    }
+
+    targetFollowers = Math.min(targetFollowers, followerPool.length)
+    const followerStartOffset = (i * 19) % followerPool.length
+
+    for (let j = 0; j < targetFollowers; j++) {
+      const followerId = followerPool[(followerStartOffset + j) % followerPool.length]
+      if (followerId === vendorProfile.userId) continue
+
+      vendorFollowsData.push({
+        userId: followerId,
+        vendorProfileId: vendorProfile.id,
+      })
+    }
+  }
+
+  for (let i = 0; i < vendorFollowsData.length; i += 3000) {
+    await prisma.vendorFollow.createMany({
+      data: vendorFollowsData.slice(i, i + 3000),
+      skipDuplicates: true,
+    })
+  }
+
+  const followerBadgeDefinitions = await prisma.vendorBadgeDefinition.findMany({
+    where: {
+      metric: VendorBadgeMetric.FOLLOWERS,
+      isActive: true,
+    },
+    orderBy: { threshold: 'asc' },
+  })
+
+  const followerCounts = await prisma.vendorFollow.groupBy({
+    by: ['vendorProfileId'],
+    _count: {
+      _all: true,
+    },
+  })
+
+  const vendorBadgeAwards: any[] = []
+
+  for (const row of followerCounts) {
+    for (const definition of followerBadgeDefinitions) {
+      if (row._count._all >= definition.threshold) {
+        vendorBadgeAwards.push({
+          vendorProfileId: row.vendorProfileId,
+          badgeDefinitionId: definition.id,
+        })
+      }
+    }
+  }
+
+  for (let i = 0; i < vendorBadgeAwards.length; i += 3000) {
+    await prisma.vendorBadge.createMany({
+      data: vendorBadgeAwards.slice(i, i + 3000),
+      skipDuplicates: true,
+    })
+  }
+
+  console.log(`✅ Vendor follows created (${vendorFollowsData.length})`)
+  console.log(`✅ Follower badges awarded (${vendorBadgeAwards.length})`)
 
   // ============================================================================
   // STEP 16: WISHLISTS
@@ -1767,6 +1995,7 @@ async function main() {
         console.log(`  ⚠️ Skipping post ${postIndex + 1} - no topic defined`)
         continue
       }
+      const isDraftPost = postIndex % 20 === 0
       
       const slug = topic.title.toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
@@ -1787,9 +2016,9 @@ async function main() {
             keywords: [topic.title.split(':')[0].trim().substring(0, 40), 'wedding planning', 'wedding ideas'],
             featuredImage: blogImages[postIndex % blogImages.length],
             featuredImageAlt: topic.title.substring(0, 100),
-            status: postIndex % 20 === 0 ? BlogStatus.DRAFT : BlogStatus.PUBLISHED,
-            publishedAt: postIndex % 20 === 0 ? undefined : new Date(Date.now() - (postIndex * 86400000)),
-            authorId: marketingAdmin.id,
+            status: isDraftPost ? BlogStatus.DRAFT : BlogStatus.PUBLISHED,
+            publishedAt: isDraftPost ? undefined : new Date(Date.now() - (postIndex * 86400000)),
+            authorId: isDraftPost ? contentWriter.id : marketingAdmin.id,
             categoryId: blogCategories[topic.category].id,
             viewCount: Math.floor(Math.random() * 5000) + 500,
             readingTime: topic.readTime,
@@ -1963,7 +2192,7 @@ async function main() {
   console.log(`   - Portfolios: ${allPortfolios.length}`)
   console.log(`   - Media Items: ~${allMediaItems.length}`)
   console.log(`   - Categories: 8`)
-  console.log(`   - Events: ${events.length}`)
+  console.log(`   - Events: ${events.length + vendorProfiles.length}`)
   console.log(`   - Leads: ${leads.length}`)
   console.log(`   - Blog Posts: 100`)
   console.log(`   - Blog Categories: 8`)

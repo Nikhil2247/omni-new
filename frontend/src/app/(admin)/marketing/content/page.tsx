@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
+import { useAuthStore } from '@/store/auth-store'
+import { ROLES } from '@/config/roles'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,6 +23,8 @@ import {
 import type { BlogStatus } from '@/lib/api/types/marketing.types'
 
 export default function MarketingContentPage() {
+  const { user } = useAuthStore()
+  const isContentWriter = user?.role === ROLES.CONTENT_WRITER
   const [keyword, setKeyword] = useState('')
   const [status, setStatus] = useState<BlogStatus | 'all'>('all')
   const [categoryId, setCategoryId] = useState('all')
@@ -58,11 +62,15 @@ export default function MarketingContentPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Content manager</h1>
-          <p className="text-muted-foreground">Manage blog posts and editorial updates.</p>
+          <h1 className="text-2xl font-semibold">{isContentWriter ? 'My Drafts' : 'Content manager'}</h1>
+          <p className="text-muted-foreground">
+            {isContentWriter
+              ? 'Write and update your drafts for marketing admin review.'
+              : 'Manage blog posts and editorial updates.'}
+          </p>
         </div>
         <Button asChild>
-          <Link href="/marketing/content/new">Create post</Link>
+          <Link href="/marketing/content/new">{isContentWriter ? 'Write draft' : 'Create post'}</Link>
         </Button>
       </div>
 

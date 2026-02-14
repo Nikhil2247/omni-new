@@ -42,6 +42,11 @@ export const API_ENDPOINTS = {
     CHATBOT: {
       MESSAGE: '/public/chatbot/message',
     },
+    SEARCH: {
+      GLOBAL: '/public/search',
+      QUICK: '/public/search/quick',
+      SUGGESTIONS: '/public/search/suggestions',
+    },
   },
   ADMIN: {
     USERS: '/admin/users',
@@ -72,6 +77,7 @@ export const API_ENDPOINTS = {
     CONTENT: {
       POSTS: '/marketing/content/posts',
       POST_BY_ID: (id: string) => `/marketing/content/posts/${id}`,
+      PUBLISH_POST: (id: string) => `/marketing/content/posts/${id}/publish`,
     },
   },
   OPS: {

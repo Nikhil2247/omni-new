@@ -1,5 +1,7 @@
 'use client'
 
+import { RoleGuard } from '@/components/auth'
+import { ROLES } from '@/config/roles'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -12,6 +14,7 @@ export default function MarketingAnalyticsPage() {
   const drafts = data?.data?.filter((post) => post.status === 'DRAFT').length ?? 0
 
   return (
+    <RoleGuard allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]} redirectOnFail={true}>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Marketing analytics</h1>
@@ -35,6 +38,7 @@ export default function MarketingAnalyticsPage() {
         </CardContent>
       </Card>
     </div>
+    </RoleGuard>
   )
 }
 

@@ -204,6 +204,11 @@ export class UpdateBlogPostDto {
 // ============================================================================
 
 export class SearchBlogPostsDto {
+  @ApiPropertyOptional({ description: 'Filter by author ID' })
+  @IsOptional()
+  @IsUUID()
+  authorId?: string
+
   @ApiPropertyOptional({ description: 'Filter by status', enum: BlogStatus })
   @IsOptional()
   @IsEnum(BlogStatus)

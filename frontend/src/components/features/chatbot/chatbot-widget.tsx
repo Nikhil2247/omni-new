@@ -229,7 +229,7 @@ export function ChatbotWidget() {
       <SheetTrigger asChild>
         <Button className="fixed bottom-24 right-4 z-50 h-12 gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 px-5 shadow-xl shadow-primary/20 md:bottom-6 md:right-6 hover:shadow-2xl hover:shadow-primary/30 transition-all">
           <MessageCircle className="h-5 w-5" />
-          <span className="text-sm font-medium">Chat</span>
+          <span className="text-sm font-medium">AI ChatBot</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">

@@ -91,6 +91,67 @@ const formatPrice = (price?: number | null) => {
   }).format(price)
 }
 
+const formatEventDate = (date?: string | null) => {
+  if (!date) return 'Date TBA'
+  return new Date(date).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const formatEventVendorStatus = (status?: string) => {
+  switch (status) {
+    case 'SHORTLISTED':
+      return 'Shortlisted'
+    case 'CONTACTED':
+      return 'Contacted'
+    case 'BOOKED':
+      return 'Booked'
+    case 'CONFIRMED':
+      return 'Confirmed'
+    case 'CANCELLED':
+      return 'Cancelled'
+    default:
+      return 'In Progress'
+  }
+}
+
+const getEventStatusTone = (status?: string) => {
+  switch (status) {
+    case 'BOOKED':
+      return {
+        dot: 'bg-emerald-500',
+        badge: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+        card: 'border-emerald-100/70 dark:border-emerald-900/40',
+      }
+    case 'CONFIRMED':
+      return {
+        dot: 'bg-sky-500',
+        badge: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-900/30 dark:text-sky-300',
+        card: 'border-sky-100/70 dark:border-sky-900/40',
+      }
+    case 'CONTACTED':
+      return {
+        dot: 'bg-violet-500',
+        badge: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
+        card: 'border-violet-100/70 dark:border-violet-900/40',
+      }
+    case 'CANCELLED':
+      return {
+        dot: 'bg-rose-500',
+        badge: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
+        card: 'border-rose-100/70 dark:border-rose-900/40',
+      }
+    default:
+      return {
+        dot: 'bg-amber-500',
+        badge: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+        card: 'border-amber-100/70 dark:border-amber-900/40',
+      }
+  }
+}
+
 type VendorPageClientProps = {
   slug: string
   initialVendor?: VendorProfile | null
@@ -270,7 +331,24 @@ export default function VendorPageClient({ slug, initialVendor }: VendorPageClie
     : null
 
   // Get events count (using portfolios count as proxy)
-  const eventsCount = portfolios.length || 0
+  const eventHistory = ((vendor as any).eventHistory || []) as Array<{
+    id: string
+    status?: string
+    notes?: string | null
+    event?: {
+      id: string
+      name: string
+      date?: string | null
+      venueName?: string | null
+      guestCount?: number | null
+      description?: string | null
+      eventType?: {
+        name?: string | null
+      } | null
+    }
+  }>
+
+  const eventsCount = eventHistory.length
 
   // Calculate average rating
   const avgRating = vendorReviews.length > 0
@@ -530,42 +608,71 @@ export default function VendorPageClient({ slug, initialVendor }: VendorPageClie
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {portfolios.length > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {portfolios.map((portfolio, idx) => (
-                      <motion.div
-                        key={portfolio.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="group overflow-hidden rounded-lg border bg-card transition-colors hover:border-primary/50"
-                      >
-                        {portfolio.mediaItems?.[0] && (
-                          <div className="relative aspect-video overflow-hidden">
-                            <Image
-                              src={portfolio.mediaItems[0].cdnUrl || portfolio.mediaItems[0].url}
-                              alt={portfolio.title || 'Event'}
-                              fill
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                            <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                              <Badge variant="secondary" className="bg-white/90 text-foreground">
-                                {portfolio.mediaItems.length} photos
+                {eventHistory.length > 0 ? (
+                  <div className="mx-auto max-w-3xl">
+                    <div className="relative pl-6">
+                      <div className="absolute bottom-2 left-2 top-2 w-px bg-border" />
+
+                      {eventHistory.map((entry, idx) => {
+                        const statusTone = getEventStatusTone(entry.status)
+
+                        return (
+                        <motion.div
+                          key={entry.id}
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.06 }}
+                          className="relative pb-5 last:pb-0"
+                        >
+                          <span className={cn('absolute -left-5.25 top-3 h-3 w-3 rounded-full ring-4 ring-background', statusTone.dot)} />
+
+                          <div className={cn('rounded-lg border bg-card p-4', statusTone.card)}>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <h3 className="font-semibold text-foreground">
+                                {entry.event?.name || 'Event'}
+                              </h3>
+                              <Badge variant="outline" className={statusTone.badge}>
+                                {formatEventVendorStatus(entry.status)}
                               </Badge>
                             </div>
+
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <CalendarDays className="h-3.5 w-3.5" />
+                                {formatEventDate(entry.event?.date)}
+                              </span>
+                              {entry.event?.eventType?.name && (
+                                <span className="rounded-full bg-muted px-2 py-0.5">
+                                  {entry.event.eventType.name}
+                                </span>
+                              )}
+                              {entry.event?.venueName && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  {entry.event.venueName}
+                                </span>
+                              )}
+                              {typeof entry.event?.guestCount === 'number' && (
+                                <span>{entry.event.guestCount} guests</span>
+                              )}
+                            </div>
+
+                            {entry.event?.description && (
+                              <p className="mt-2 text-sm text-muted-foreground">
+                                {entry.event.description}
+                              </p>
+                            )}
+
+                            {entry.notes && (
+                              <p className="mt-2 text-xs text-muted-foreground/90">
+                                {entry.notes}
+                              </p>
+                            )}
                           </div>
-                        )}
-                        <div className="p-4">
-                          <h3 className="font-semibold text-foreground">{portfolio.title || 'Untitled Event'}</h3>
-                          {portfolio.description && (
-                            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                              {portfolio.description}
-                            </p>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                        )
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">

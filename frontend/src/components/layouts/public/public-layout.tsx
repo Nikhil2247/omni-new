@@ -43,11 +43,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   }, [pathname]);
 
   const navItems = [
-    { href: "/vendors", label: "Find Vendors", icon: Users },
     { href: "/discover", label: "Discover", icon: Compass },
-    { href: "/about", label: "About", icon: Info },
+    { href: "/vendors", label: "Find Vendors", icon: Users },
     { href: "/blog", label: "Blog", icon: Newspaper },
-    { href: "/for-vendors", label: "Partner with Us", icon: BadgeDollarSign },
+    // { href: "/for-vendors", label: "Partner with Us", icon: BadgeDollarSign },
   ];
 
   if (isAuthRoute) {
@@ -61,14 +60,14 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         isSidebarOpen={isSidebarOpen}
       />
       <div className="relative flex flex-1 pt-16">
-        {/* Desktop Sidebar (Overlay) */}
+        {/* Tablet/Desktop Sidebar (Overlay) */}
         {isSidebarOpen && (
           <>
             <div
-              className="fixed inset-0 z-[60] hidden bg-black/30 backdrop-blur-[2px] transition-all duration-200 lg:block"
+              className="fixed inset-0 z-60 hidden bg-black/30 backdrop-blur-[2px] transition-all duration-200 md:block"
               onClick={() => setIsSidebarOpen(false)}
             />
-            <aside className="border-border/40 bg-background/95 supports-backdrop-filter:bg-background/95 fixed top-0 left-0 z-[70] hidden h-screen w-64 flex-col border-r shadow-xl backdrop-blur transition-all duration-200 ease-out lg:flex">
+            <aside className="border-border/40 bg-background/95 supports-backdrop-filter:bg-background/95 fixed top-0 left-0 z-70 hidden h-screen w-64 flex-col border-r shadow-xl backdrop-blur transition-all duration-200 ease-out md:flex">
               {/* Sidebar Header with Close Button */}
               <div className="border-border/40 flex items-center justify-between border-b px-4 py-3">
                 <div className="flex items-center gap-2">

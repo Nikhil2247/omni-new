@@ -330,6 +330,9 @@ export class VendorProfileResponseDto {
   reviewsCount?: number
 
   @ApiPropertyOptional()
+  averageRating?: number | null
+
+  @ApiPropertyOptional()
   verifiedAt?: Date | null
 
   @ApiPropertyOptional()

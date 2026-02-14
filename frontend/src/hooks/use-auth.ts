@@ -9,8 +9,8 @@ import { getDefaultPath } from '@/lib/utils/permissions'
 import { getSafeReturnUrl } from '@/lib/utils/navigation'
 import type { Role } from '@/config/roles'
 
-function mapUser(user: { id: string; email: string; firstName: string | null; lastName: string | null; roles: string[]; emailVerified: boolean; twoFactorEnabled: boolean; hasCompletedOnboarding: boolean }) {
-  const primaryRole = user.roles?.[0] || 'USER'
+function mapUser(user: { id: string; email: string; firstName: string | null; lastName: string | null; role?: string; roles: string[]; emailVerified: boolean; twoFactorEnabled: boolean; hasCompletedOnboarding: boolean }) {
+  const primaryRole = user.role || user.roles?.[0] || 'USER'
   const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email
   return {
     id: user.id,

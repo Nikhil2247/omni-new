@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useBlogPost, useDeleteBlogPost, useUpdateBlogPost } from '@/hooks/queries/use-marketing'
+import { useBlogPost, useDeleteBlogPost, usePublishBlogPost, useUpdateBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
+import { useAuthStore } from '@/store/auth-store'
+import { ROLES } from '@/config/roles'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,6 +24,9 @@ import { getMinioViewUrl } from '@/lib/utils/minio'
 export default function MarketingContentDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuthStore()
+  const isContentWriter = user?.role === ROLES.CONTENT_WRITER
+  const canManagePublishing = user?.role === ROLES.ADMIN_SYSTEM || user?.role === ROLES.MARKETING_SERVICES_ADMIN
   const contentId = useMemo(() => {
     const value = params?.contentId
     return Array.isArray(value) ? value[0] : value
@@ -30,6 +35,7 @@ export default function MarketingContentDetailPage() {
   const { data, isLoading } = useBlogPost(contentId ?? '')
   const updatePost = useUpdateBlogPost(contentId ?? '')
   const deletePost = useDeleteBlogPost()
+  const publishPost = usePublishBlogPost()
   const { data: categories } = usePublicBlogCategories()
   const { data: tags } = usePublicBlogTags()
 
@@ -127,7 +133,7 @@ export default function MarketingContentDetailPage() {
       slug,
       excerpt: excerpt || undefined,
       content,
-      status,
+      status: isContentWriter ? 'DRAFT' : status,
       metaTitle: metaTitle || undefined,
       metaDescription: metaDescription || undefined,
       focusKeyword: focusKeyword || undefined,
@@ -146,9 +152,14 @@ export default function MarketingContentDetailPage() {
   }
 
   const handleDelete = async () => {
-    if (!contentId) return
+    if (!contentId || !canManagePublishing) return
     await deletePost.mutateAsync(contentId)
     router.push('/marketing/content')
+  }
+
+  const handlePublish = async () => {
+    if (!contentId || !canManagePublishing) return
+    await publishPost.mutateAsync(contentId)
   }
 
   if (isLoading) {
@@ -171,9 +182,18 @@ export default function MarketingContentDetailPage() {
           <h1 className="text-2xl font-semibold">Edit post</h1>
           <p className="text-muted-foreground">Last updated {formatDate(data.updatedAt)}</p>
         </div>
-        <Button variant="destructive" onClick={handleDelete} disabled={deletePost.isPending}>
-          Delete
-        </Button>
+        <div className="flex items-center gap-2">
+          {canManagePublishing && data.status === 'DRAFT' ? (
+            <Button onClick={handlePublish} disabled={publishPost.isPending}>
+              {publishPost.isPending ? 'Publishing...' : 'Publish'}
+            </Button>
+          ) : null}
+          {canManagePublishing ? (
+            <Button variant="destructive" onClick={handleDelete} disabled={deletePost.isPending}>
+              Delete
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <Card>
@@ -201,8 +221,8 @@ export default function MarketingContentDetailPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="DRAFT">Draft</SelectItem>
-                <SelectItem value="PUBLISHED">Published</SelectItem>
-                <SelectItem value="ARCHIVED">Archived</SelectItem>
+                {canManagePublishing ? <SelectItem value="PUBLISHED">Published</SelectItem> : null}
+                {canManagePublishing ? <SelectItem value="ARCHIVED">Archived</SelectItem> : null}
               </SelectContent>
             </Select>
           </div>
@@ -358,7 +378,7 @@ export default function MarketingContentDetailPage() {
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={updatePost.isPending || !title || !content}>
-          Save changes
+          {isContentWriter ? 'Save Draft' : 'Save changes'}
         </Button>
       </div>
     </div>

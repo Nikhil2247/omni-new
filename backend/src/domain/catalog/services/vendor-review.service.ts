@@ -36,9 +36,12 @@ export class VendorReviewService {
     })
   }
 
-  async listForVendor(vendorProfileId: string) {
+  async listForVendor(vendorProfileId: string, approvedOnly = false) {
     return this.prisma.vendorReview.findMany({
-      where: { vendorProfileId },
+      where: {
+        vendorProfileId,
+        ...(approvedOnly ? { status: 'APPROVED' } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         reviewer: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },

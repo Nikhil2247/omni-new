@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { useMemo } from 'react'
+import { RoleGuard } from '@/components/auth'
 import { useAuthStore } from '@/store/auth-store'
-import { Role, ROLE_LABELS } from '@/config/roles'
+import { Role, ROLE_LABELS, ROLES } from '@/config/roles'
 import { useBlogPosts, useMarketingCampaigns, useMarketingMedia, useMarketingPromotions } from '@/hooks/queries/use-marketing'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,6 +30,10 @@ export default function MarketingDashboardPage() {
   )
 
   return (
+    <RoleGuard
+      allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]}
+      redirectOnFail={true}
+    >
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Marketing dashboard</h1>
@@ -126,6 +131,7 @@ export default function MarketingDashboardPage() {
         </Card>
       </div>
     </div>
+    </RoleGuard>
   )
 }
 

@@ -13,6 +13,7 @@ interface RoleGuardProps {
   fallback?: React.ReactNode;
   redirectOnFail?: boolean;
   showAccessDenied?: boolean;
+  exactMatch?: boolean;
 }
 
 /**
@@ -25,13 +26,16 @@ export function RoleGuard({
   fallback,
   redirectOnFail = true,
   showAccessDenied = true,
+  exactMatch = false,
 }: RoleGuardProps) {
   const router = useRouter();
   const { user, isLoading, hasHydrated } = useAuthStore();
   const userRole = user?.role as Role | undefined;
   const userRoles = (user?.roles?.length ? user.roles : userRole ? [userRole] : []) as Role[];
 
-  const hasAccess = userRoles.some((role) => hasAnyRole(role, allowedRoles));
+  const hasAccess = exactMatch
+    ? (userRole ? allowedRoles.includes(userRole) : false)
+    : userRoles.some((role) => hasAnyRole(role, allowedRoles));
 
   useEffect(() => {
     // Wait for auth state to be determined

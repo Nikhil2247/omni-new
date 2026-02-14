@@ -14,7 +14,7 @@ export const apiClient = axios.create({
 
 const mapUser = (user: any) => {
   if (!user) return null
-  const primaryRole = user.roles?.[0] || user.role || 'USER'
+  const primaryRole = user.role || user.roles?.[0] || 'USER'
   const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email
   return {
     id: user.id,

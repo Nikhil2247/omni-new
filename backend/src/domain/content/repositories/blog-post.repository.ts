@@ -42,9 +42,10 @@ export class BlogPostRepository extends BaseRepository<
   }
 
   async search(dto: SearchBlogPostsDto): Promise<PaginatedResult<BlogPost>> {
-    const { status, categoryId, tagId, keyword, page = 1, limit = 20 } = dto
+    const { authorId, status, categoryId, tagId, keyword, page = 1, limit = 20 } = dto
 
     const where: Prisma.BlogPostWhereInput = {
+      ...(authorId && { authorId }),
       ...(status && { status: status as any }),
       ...(categoryId && { categoryId }),
       ...(tagId && {

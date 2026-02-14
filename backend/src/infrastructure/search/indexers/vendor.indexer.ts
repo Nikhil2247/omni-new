@@ -50,6 +50,30 @@ export class VendorIndexer implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.ensureIndexExists()
+    
+    // Check if index is empty and there are vendors in DB
+    try {
+      const stats = await this.getIndexStats()
+      const vendorCount = await this.prisma.vendorProfile.count({})
+      
+      if (stats.totalDocuments === 0 && vendorCount > 0) {
+        this.logger.warn(
+          `Vendor index is empty but ${vendorCount} vendors exist in database. Triggering automatic reindex...`,
+        )
+        // Trigger reindex asynchronously to not block app startup
+        setImmediate(() => {
+          this.reindexAll().catch((error) => {
+            this.logger.error('Auto-reindex failed', error)
+          })
+        })
+      } else if (stats.totalDocuments > 0) {
+        this.logger.log(`Vendor index initialized with ${stats.totalDocuments} documents`)
+      } else {
+        this.logger.log('No vendors found in database to index')
+      }
+    } catch (error) {
+      this.logger.error('Failed to check index status', error)
+    }
   }
 
   private async ensureIndexExists(): Promise<void> {
@@ -404,6 +428,29 @@ export class VendorIndexer implements OnModuleInit {
   }
 
   async getVendorSuggestions(query: string, limit: number = 5): Promise<string[]> {
-    return this.search.getSuggestions(VENDOR_INDEX_NAME, query, limit)
+    const result = await this.search.search<VendorSearchDocument>(
+      VENDOR_INDEX_NAME,
+      query,
+      {
+        hitsPerPage: limit,
+        attributesToRetrieve: ['businessName'],
+      },
+    )
+
+    return result.hits
+      .map((hit) => hit.businessName)
+      .filter((name) => name && name.length > 0)
+  }
+
+  async getIndexStats(): Promise<{
+    totalDocuments: number
+    isIndexing: boolean
+  }> {
+    const index = this.search.getIndex(VENDOR_INDEX_NAME)
+    const stats = await index.getStats()
+    return {
+      totalDocuments: stats.numberOfDocuments || 0,
+      isIndexing: stats.isIndexing || false,
+    }
   }
 }

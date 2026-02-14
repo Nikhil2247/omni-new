@@ -1,5 +1,7 @@
 'use client'
 
+import { RoleGuard } from '@/components/auth'
+import { ROLES } from '@/config/roles'
 import { useMarketingMedia } from '@/hooks/queries/use-marketing'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -8,6 +10,7 @@ export default function MarketingMediaPage() {
   const { data, isLoading } = useMarketingMedia()
 
   return (
+    <RoleGuard allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]} redirectOnFail={true}>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Media library</h1>
@@ -37,5 +40,6 @@ export default function MarketingMediaPage() {
         </CardContent>
       </Card>
     </div>
+    </RoleGuard>
   )
 }

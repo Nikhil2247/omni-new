@@ -7,6 +7,6 @@ export class VendorReviewsController {
 
   @Get(':vendorProfileId')
   list(@Param('vendorProfileId') vendorProfileId: string) {
-    return this.vendorReviewService.listForVendor(vendorProfileId)
+    return this.vendorReviewService.listForVendor(vendorProfileId, true)
   }
 }

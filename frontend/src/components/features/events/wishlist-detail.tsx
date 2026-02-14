@@ -53,9 +53,9 @@ export function WishlistDetail({ wishlistId }: { wishlistId: string }) {
   if (error || !wishlist) {
     return (
       <div className="space-y-6">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/wishlists" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
-          Back to dashboard
+          Back to wishlists
         </Link>
         <Card>
           <CardContent className="py-12 text-center">
@@ -75,9 +75,9 @@ export function WishlistDetail({ wishlistId }: { wishlistId: string }) {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2">
+          <Link href="/wishlists" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2">
             <ArrowLeft className="h-4 w-4" />
-            Back to dashboard
+            Back to wishlists
           </Link>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Heart className="h-6 w-6 text-pink-500" />

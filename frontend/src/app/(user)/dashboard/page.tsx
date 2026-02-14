@@ -226,14 +226,6 @@ export default function UserDashboardPage() {
               </Link>
             </Button>
             <Button asChild variant="outline" className="w-full justify-start gap-3 border-2 hover:border-primary hover:shadow-md">
-              <Link href="/wishlists">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-red-100 to-pink-100">
-                  <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                </div>
-                <span className="flex-1 text-left font-medium">View Wishlists</span>
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full justify-start gap-3 border-2 hover:border-primary hover:shadow-md">
               <Link href="/inquiries">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100">
                   <MessageSquare className="h-4 w-4 text-blue-600" />

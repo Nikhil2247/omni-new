@@ -80,3 +80,14 @@ export function useDeleteBlogPost() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: marketingKeys.blogPosts({}) }),
   })
 }
+
+export function usePublishBlogPost() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => marketingService.publishBlogPost(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: marketingKeys.blogPost(id) })
+      queryClient.invalidateQueries({ queryKey: marketingKeys.blogPosts({}) })
+    },
+  })
+}

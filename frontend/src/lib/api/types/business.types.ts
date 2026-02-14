@@ -22,6 +22,7 @@ export interface VendorProfile {
   viewCount: number
   followersCount?: number | null
   reviewsCount?: number | null
+  averageRating?: number | null
   verifiedAt?: string | null
   featuredUntil?: string | null
   isFollowing?: boolean
@@ -43,6 +44,34 @@ export interface VendorProfile {
   services?: VendorService[]
   portfolios?: PortfolioItem[]
   badges?: VendorBadge[]
+  eventHistory?: VendorEventHistory[]
+}
+
+export type EventVendorStatus = 'SHORTLISTED' | 'CONTACTED' | 'BOOKED' | 'CONFIRMED' | 'CANCELLED'
+export type EventStatus = 'PLANNING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+
+export interface VendorEventHistory {
+  id: string
+  status: EventVendorStatus
+  notes?: string | null
+  contractAmount?: number | null
+  depositPaid?: number | null
+  createdAt: string
+  event: {
+    id: string
+    name: string
+    date?: string | null
+    endDate?: string | null
+    venueName?: string | null
+    guestCount?: number | null
+    description?: string | null
+    status: EventStatus
+    eventType?: {
+      id: string
+      name: string
+      slug: string
+    } | null
+  }
 }
 
 export type VendorBadgeMetric = 'FOLLOWERS' | 'REVIEWS' | 'LEADS' | 'VIEWS'

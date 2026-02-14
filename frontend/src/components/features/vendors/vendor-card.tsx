@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Heart, MapPin, Star, ArrowRight, CheckCircle2, Sparkles, UserPlus, UserCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
@@ -58,6 +58,10 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
   // Use isFollowing from vendor data if available (when authenticated), otherwise false
   const [isFollowing, setIsFollowing] = useState(vendor.isFollowing ?? false)
 
+  useEffect(() => {
+    setIsFollowing(vendor.isFollowing ?? false)
+  }, [vendor.id, vendor.isFollowing])
+
   const isSaved =
     locallySaved ||
     (Array.isArray(wishlists) && wishlists.some((list) =>
@@ -67,9 +71,9 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
   const isVerified = !!vendor.verifiedAt
   const isFeatured = vendor.featuredUntil && new Date(vendor.featuredUntil) > new Date()
 
-  // Default rating (will be replaced with actual data when available)
-  const averageRating = '4.8'
-  const reviewCount = vendor.leadCount || 0
+  const reviewCount = vendor.reviewsCount ?? 0
+  const averageRating =
+    typeof vendor.averageRating === 'number' ? vendor.averageRating.toFixed(1) : null
 
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -95,14 +99,17 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
       return
     }
 
-    // Optimistically update the UI
-    setIsFollowing(!isFollowing)
+    const previousState = isFollowing
+    setIsFollowing(!previousState)
     
     try {
-      await toggleFollow.mutateAsync(vendor.id)
+      const result = await toggleFollow.mutateAsync(vendor.id)
+      if (typeof result?.following === 'boolean') {
+        setIsFollowing(result.following)
+      }
     } catch (error) {
       // Revert on error
-      setIsFollowing(isFollowing)
+      setIsFollowing(previousState)
       toast.error('Failed to update follow status')
     }
   }
@@ -240,7 +247,7 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
               <div className="flex items-center gap-1 shrink-0">
                 <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-primary text-primary" />
                 <span className="text-foreground font-semibold text-xs">
-                  {averageRating}
+                  {averageRating ?? '—'}
                 </span>
                 <span className="text-muted-foreground text-xs hidden sm:inline">
                   ({reviewCount})
@@ -273,6 +280,7 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
                 variant="outline"
                 size="sm"
                 onClick={handleFollow}
+                disabled={toggleFollow.isPending}
                 className="flex-1"
               >
                 {isFollowing ? (
@@ -280,7 +288,7 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
                 ) : (
                   <UserPlus className="mr-2 h-4 w-4" />
                 )}
-                {isFollowing ? 'Following' : 'Follow'}
+                {isFollowing ? 'Unfollow' : 'Follow'}
               </Button>
             </div>
 

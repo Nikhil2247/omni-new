@@ -12,6 +12,7 @@ import slugify from 'slugify'
 import { CacheAsideStrategy } from '../../../infrastructure/cache/strategies/cache-aside.strategy'
 import { VENDOR_EVENTS } from '../../../core/events/event-constants'
 import { UploadService, FileCategory } from '../../../infrastructure/storage/upload.service'
+import { PrismaService } from '../../../core/database/prisma.service'
 
 @Injectable()
 export class VendorProfileService {
@@ -22,7 +23,45 @@ export class VendorProfileService {
     private readonly eventEmitter: EventEmitter2,
     private readonly cacheAside: CacheAsideStrategy,
     private readonly uploadService: UploadService,
+    private readonly prisma: PrismaService,
   ) {}
+
+  private async attachReviewMetrics<T extends { id: string }>(vendors: T[]): Promise<Array<T & { reviewsCount: number; averageRating: number | null }>> {
+    if (vendors.length === 0) {
+      return []
+    }
+
+    const vendorIds = vendors.map((vendor) => vendor.id)
+
+    const reviewGroups = await this.prisma.vendorReview.groupBy({
+      by: ['vendorProfileId'],
+      where: {
+        vendorProfileId: { in: vendorIds },
+        status: 'APPROVED',
+      },
+      _count: { _all: true },
+      _avg: { rating: true },
+    })
+
+    const metricsMap = new Map(
+      reviewGroups.map((group) => [
+        group.vendorProfileId,
+        {
+          reviewsCount: group._count._all,
+          averageRating: group._avg.rating,
+        },
+      ]),
+    )
+
+    return vendors.map((vendor) => {
+      const metrics = metricsMap.get(vendor.id)
+      return {
+        ...vendor,
+        reviewsCount: metrics?.reviewsCount ?? 0,
+        averageRating: metrics?.averageRating ?? null,
+      }
+    })
+  }
 
   /**
    * Create vendor profile
@@ -168,6 +207,45 @@ export class VendorProfileService {
       throw new NotFoundException(`Vendor profile not found`)
     }
 
+    const eventHistoryRows = await this.prisma.eventVendor.findMany({
+      where: { vendorProfileId: vendorProfile.id },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+      include: {
+        event: {
+          include: {
+            eventType: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    const eventHistory = eventHistoryRows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      notes: row.notes,
+      contractAmount: row.contractAmount,
+      depositPaid: row.depositPaid,
+      createdAt: row.createdAt,
+      event: {
+        id: row.event.id,
+        name: row.event.name,
+        date: row.event.date,
+        endDate: row.event.endDate,
+        venueName: row.event.venueName,
+        guestCount: row.event.guestCount,
+        description: row.event.description,
+        status: row.event.status,
+        eventType: row.event.eventType,
+      },
+    }))
+
     // Increment view count asynchronously
     this.vendorProfileRepository.incrementViewCount(vendorProfile.id).catch(err => {
       this.logger.error(`Failed to increment view count: ${err.message}`)
@@ -176,10 +254,22 @@ export class VendorProfileService {
     const followersCount = (vendorProfile as any)?._count?.followers ?? 0
     const reviewsCount = (vendorProfile as any)?._count?.reviews ?? 0
 
+    const ratingAggregate = await this.prisma.vendorReview.aggregate({
+      where: {
+        vendorProfileId: vendorProfile.id,
+        status: 'APPROVED',
+      },
+      _avg: {
+        rating: true,
+      },
+    })
+
     return {
       ...(vendorProfile as any),
       followersCount,
       reviewsCount,
+      averageRating: ratingAggregate._avg.rating ?? null,
+      eventHistory,
     }
   }
 
@@ -277,7 +367,12 @@ export class VendorProfileService {
    */
   async search(searchDto: SearchVendorProfileDto, userId?: string): Promise<PaginatedResult<VendorProfile>> {
     this.logger.debug('Searching vendor profiles', searchDto)
-    return this.vendorProfileRepository.search(searchDto, userId)
+    const result = await this.vendorProfileRepository.search(searchDto, userId)
+    const withMetrics = await this.attachReviewMetrics(result.data as Array<{ id: string }>)
+    return {
+      ...result,
+      data: withMetrics as unknown as VendorProfile[],
+    }
   }
 
   /**
@@ -285,11 +380,13 @@ export class VendorProfileService {
    */
   async getFeatured(limit: number = 10): Promise<VendorProfile[]> {
     this.logger.debug(`Getting featured vendors (limit: ${limit})`)
-    return this.cacheAside.get(
+    const vendors = await this.cacheAside.get(
       `discovery:featured:${limit}`,
       () => this.vendorProfileRepository.findFeatured(limit),
       { ttl: 900 },
     )
+    const withMetrics = await this.attachReviewMetrics(vendors as Array<{ id: string }>)
+    return withMetrics as unknown as VendorProfile[]
   }
 
   /**
@@ -297,11 +394,13 @@ export class VendorProfileService {
    */
   async getByCategory(categoryIdOrSlug: string, limit: number = 20): Promise<VendorProfile[]> {
     this.logger.debug(`Getting vendors by category: ${categoryIdOrSlug}`)
-    return this.cacheAside.get(
+    const vendors = await this.cacheAside.get(
       `discovery:category:${categoryIdOrSlug}:limit:${limit}`,
       () => this.vendorProfileRepository.findByCategoryIdOrSlug(categoryIdOrSlug, limit),
       { ttl: 900 },
     )
+    const withMetrics = await this.attachReviewMetrics(vendors as Array<{ id: string }>)
+    return withMetrics as unknown as VendorProfile[]
   }
 
   /**
@@ -309,11 +408,13 @@ export class VendorProfileService {
    */
   async getByCity(cityId: string, limit: number = 20): Promise<VendorProfile[]> {
     this.logger.debug(`Getting vendors by city: ${cityId}`)
-    return this.cacheAside.get(
+    const vendors = await this.cacheAside.get(
       `discovery:city:${cityId}:limit:${limit}`,
       () => this.vendorProfileRepository.findByCity(cityId, limit),
       { ttl: 900 },
     )
+    const withMetrics = await this.attachReviewMetrics(vendors as Array<{ id: string }>)
+    return withMetrics as unknown as VendorProfile[]
   }
 
   /**

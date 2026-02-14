@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCreateBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
+import { useAuthStore } from '@/store/auth-store'
+import { ROLES } from '@/config/roles'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -23,6 +25,8 @@ import { FileText, Image, Settings, Tags } from 'lucide-react'
 export default function MarketingContentNewPage() {
   const router = useRouter()
   const createPost = useCreateBlogPost()
+  const { user } = useAuthStore()
+  const isContentWriter = user?.role === ROLES.CONTENT_WRITER
   const { data: categories } = usePublicBlogCategories()
   const { data: tags } = usePublicBlogTags()
 
@@ -126,10 +130,14 @@ export default function MarketingContentNewPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Create Blog Post</h1>
-          <p className="text-muted-foreground mt-1">Draft new marketing content with rich formatting</p>
+          <p className="text-muted-foreground mt-1">
+            {isContentWriter
+              ? 'Create a draft blog post for marketing admin review.'
+              : 'Create content and publish when ready.'}
+          </p>
         </div>
         <Button onClick={handleCreate} disabled={!title || !content || createPost.isPending} size="lg">
-          {createPost.isPending ? 'Publishing...' : 'Publish Post'}
+          {createPost.isPending ? 'Saving...' : 'Save Draft'}
         </Button>
       </div>
 

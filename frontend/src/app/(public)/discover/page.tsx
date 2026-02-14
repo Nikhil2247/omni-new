@@ -4,7 +4,7 @@ import { useState, useCallback, Suspense, useMemo, useEffect, useRef } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, useInView } from 'framer-motion'
 import Lenis from 'lenis'
-import { usePublicMediaFeed, usePublicVendors } from '@/hooks/queries/use-public-vendors'
+import { usePublicMediaFeed } from '@/hooks/queries/use-public-vendors'
 import { MasonryGrid } from '@/components/features/vendors/masonry-grid'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,12 +12,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   Search,
   ImageIcon,
-  Camera,
-  Sparkles,
-  Flower2,
-  UtensilsCrossed,
-  Building2,
-  Music,
 } from 'lucide-react'
 
 // ─── Lenis Smooth Scroll ─────────────────────────────────────────────────────
@@ -69,25 +63,12 @@ function FadeIn({
   )
 }
 
-// ─── Quick Categories ────────────────────────────────────────────────────────
-
-const quickCategories = [
-  { title: 'Venues', icon: Building2, slug: 'venues', bg: 'bg-rose-50 dark:bg-rose-950/30', iconColor: 'text-rose-600 dark:text-rose-400' },
-  { title: 'Photography', icon: Camera, slug: 'photography', bg: 'bg-amber-50 dark:bg-amber-950/30', iconColor: 'text-amber-600 dark:text-amber-400' },
-  { title: 'Decor', icon: Sparkles, slug: 'decor', bg: 'bg-violet-50 dark:bg-violet-950/30', iconColor: 'text-violet-600 dark:text-violet-400' },
-  { title: 'Florists', icon: Flower2, slug: 'florists', bg: 'bg-pink-50 dark:bg-pink-950/30', iconColor: 'text-pink-600 dark:text-pink-400' },
-  { title: 'Catering', icon: UtensilsCrossed, slug: 'catering', bg: 'bg-emerald-50 dark:bg-emerald-950/30', iconColor: 'text-emerald-600 dark:text-emerald-400' },
-  { title: 'Entertainment', icon: Music, slug: 'dj-music', bg: 'bg-sky-50 dark:bg-sky-950/30', iconColor: 'text-sky-600 dark:text-sky-400' },
-]
-
 // ─── Inspiration Grid ────────────────────────────────────────────────────────
 
 function InspirationGrid({
   query,
-  categoryId,
 }: {
   query?: string
-  categoryId?: string
 }) {
   const [page, setPage] = useState(1)
   const [allMedia, setAllMedia] = useState<any[]>([])
@@ -96,11 +77,10 @@ function InspirationGrid({
   const filters = useMemo(
     () => ({
       query,
-      categoryId,
       page,
       limit: 30,
     }),
-    [query, categoryId, page],
+    [query, page],
   )
 
   const { data: mediaData, isLoading: mediaLoading, isFetching } = usePublicMediaFeed(filters)
@@ -200,108 +180,47 @@ function DiscoverPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryParam = searchParams.get('query') ?? ''
-  const categoryParam = searchParams.get('category') ?? ''
   const [searchQuery, setSearchQuery] = useState(queryParam)
-  const [selectedCategory, setSelectedCategory] = useState(categoryParam)
 
   useSmoothScroll()
 
-  const { data: vendorsData } = usePublicVendors({ limit: 100 })
-
-  const categoryMap = useMemo(() => {
-    const map = new Map<string, string>()
-    if (vendorsData?.data) {
-      vendorsData.data.forEach(vendor => {
-        if (vendor.category?.slug && vendor.category?.id) {
-          map.set(vendor.category.slug, vendor.category.id)
-        }
-      })
-    }
-    return map
-  }, [vendorsData])
-
-  const categoryId = selectedCategory ? (categoryMap.get(selectedCategory) || undefined) : undefined
-
   useEffect(() => {
     setSearchQuery(queryParam)
-    setSelectedCategory(categoryParam)
-  }, [queryParam, categoryParam])
+  }, [queryParam])
 
   const handleSearch = useCallback(() => {
+    const normalizedQuery = searchQuery.trim()
     const params = new URLSearchParams()
-    if (searchQuery) params.set('query', searchQuery)
-    if (selectedCategory) params.set('category', selectedCategory)
-    router.push(`/discover?${params.toString()}`)
-  }, [searchQuery, selectedCategory, router])
-
-  const handleCategoryClick = useCallback((slug: string) => {
-    setSelectedCategory(slug)
-    const params = new URLSearchParams()
-    if (searchQuery) params.set('query', searchQuery)
-    params.set('category', slug)
-    router.push(`/discover?${params.toString()}`)
+    if (normalizedQuery) params.set('query', normalizedQuery)
+    router.push(params.toString() ? `/discover?${params.toString()}` : '/discover')
   }, [searchQuery, router])
 
   return (
     <main className="min-h-screen bg-background">
       {/* Compact Header */}
-      <section className="border-b bg-muted/20 py-12 lg:py-16">
+      <section className="border-b bg-muted/20 py-6 lg:py-8">
         <div className="mx-auto max-w-7xl px-6">
-          <FadeIn className="text-center mb-8">
-            <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-primary">
-              Discover
-            </p>
-            <h1 className="font-serif text-3xl font-bold sm:text-4xl lg:text-5xl">
+          <FadeIn className="mb-4 text-left">
+            <h1 className="font-serif text-2xl font-bold sm:text-3xl">
               Get inspired
             </h1>
           </FadeIn>
 
           {/* Search Bar */}
-          <FadeIn delay={0.1} className="max-w-2xl mx-auto">
+          <FadeIn delay={0.05} className="max-w-xl">
             <div className="relative flex items-center bg-background border border-border rounded-full shadow-sm p-1.5 transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30">
-              <Search className="h-5 w-5 text-muted-foreground ml-4 shrink-0" />
+              <Search className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search for ideas..."
+                placeholder="Search inspiration, styles, themes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="border-0 shadow-none focus-visible:ring-0 bg-transparent h-11 text-base px-4"
+                className="h-9 border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
               />
-              <Button onClick={handleSearch} className="rounded-full px-6 shrink-0">
+              <Button onClick={handleSearch} className="h-9 shrink-0 rounded-full px-4 text-sm">
                 Explore
               </Button>
-            </div>
-          </FadeIn>
-
-          {/* Quick Category Pills */}
-          <FadeIn delay={0.15} className="mt-8">
-            <div className="flex flex-wrap justify-center gap-2">
-              {quickCategories.map((cat) => (
-                <button
-                  key={cat.slug}
-                  onClick={() => handleCategoryClick(cat.slug)}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 ${
-                    selectedCategory === cat.slug
-                      ? 'bg-primary text-primary-foreground shadow-md'
-                      : `${cat.bg} ${cat.iconColor} hover:shadow-sm`
-                  }`}
-                >
-                  <cat.icon className="h-4 w-4" />
-                  {cat.title}
-                </button>
-              ))}
-              {selectedCategory && (
-                <button
-                  onClick={() => {
-                    setSelectedCategory('')
-                    router.push('/discover')
-                  }}
-                  className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-all"
-                >
-                  Clear
-                </button>
-              )}
             </div>
           </FadeIn>
         </div>
@@ -310,9 +229,8 @@ function DiscoverPageContent() {
       {/* Main Content */}
       <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
         <InspirationGrid
-          key={`${queryParam}-${categoryId}`}
+          key={queryParam}
           query={queryParam}
-          categoryId={categoryId}
         />
       </div>
     </main>

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -13,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const wishlistSchema = z.object({
   name: z.string().min(2, 'Wishlist name is required'),
@@ -21,6 +23,7 @@ const wishlistSchema = z.object({
 type WishlistValues = z.infer<typeof wishlistSchema>
 
 export function WishlistList() {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const { user } = useAuthStore()
   const userId = user?.id
   const { data: wishlists = [], isLoading, error } = useWishlistMine(Boolean(userId))
@@ -37,6 +40,7 @@ export function WishlistList() {
     }
     await createWishlist.mutateAsync({ name: values.name })
     form.reset()
+    setIsCreateDialogOpen(false)
   }
 
   const wishlistArray = Array.isArray(wishlists) ? wishlists : (wishlists?.data ?? [])
@@ -64,58 +68,60 @@ export function WishlistList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold">My Wishlists</h2>
+          <h2 className="text-xl font-bold">My Wishlists</h2>
           <p className="text-sm text-muted-foreground">Save vendors you love and revisit them anytime.</p>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-pink-500/10 px-4 py-2">
-          <Heart className="h-5 w-5 fill-pink-500 text-pink-500" />
-          <span className="font-semibold text-pink-600">{totalItems} saved</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full bg-pink-500/10 px-4 py-2">
+            <Heart className="h-5 w-5 fill-pink-500 text-pink-500" />
+            <span className="font-semibold text-pink-600">{totalItems} saved</span>
+          </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)} size="sm" className="rounded-full">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Wishlist
+          </Button>
         </div>
       </div>
 
-      {/* Create Wishlist Card */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <FolderHeart className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold">Create a new wishlist</h3>
-              <p className="mb-4 text-sm text-muted-foreground">
-                Organize your favorite vendors by category or event
-              </p>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-3">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., Haldi Inspirations, Reception Venues"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" disabled={createWishlist.isPending}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    {createWishlist.isPending ? 'Creating...' : 'Create'}
-                  </Button>
-                </form>
-              </Form>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-130">
+          <DialogHeader>
+            <DialogTitle>Create a new wishlist</DialogTitle>
+            <DialogDescription>
+              Organize your favorite vendors by category or event.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Haldi Inspirations, Reception Venues"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end">
+                <Button type="submit" disabled={createWishlist.isPending}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {createWishlist.isPending ? 'Creating...' : 'Create'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {/* Wishlists Grid */}
       {wishlistArray.length ? (
@@ -124,7 +130,7 @@ export function WishlistList() {
             <Link key={wishlist.id} href={`/wishlists/${wishlist.id}`}>
               <Card className="group h-full cursor-pointer overflow-hidden transition-shadow hover:shadow-md">
                 {/* Gradient header */}
-                <div className="relative h-20 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500">
+                <div className="relative h-20 bg-linear-to-br from-pink-500 via-purple-500 to-indigo-500">
                   <div className="absolute inset-0 bg-black/20" />
                   <div className="absolute right-3 top-3">
                     <Heart className="h-6 w-6 fill-white/80 text-white" />
@@ -146,7 +152,7 @@ export function WishlistList() {
                       {[...Array(Math.min(4, wishlist.items?.length ?? 0))].map((_, i) => (
                         <div
                           key={i}
-                          className="h-8 w-8 rounded-full border-2 border-background bg-gradient-to-br from-pink-400 to-purple-500"
+                          className="h-8 w-8 rounded-full border-2 border-background bg-linear-to-br from-pink-400 to-purple-500"
                         />
                       ))}
                       {(wishlist.items?.length ?? 0) > 4 && (
