@@ -455,7 +455,7 @@ function HeroSection() {
   return (
     <section
       ref={heroRef}
-      className="from-background via-primary/5 to-background relative flex min-h-[80vh] items-center justify-center overflow-hidden bg-gradient-to-br py-12 sm:min-h-[75vh] sm:py-16"
+      className="from-background via-primary/5 to-background relative z-20 flex min-h-[80vh] items-center justify-center overflow-visible bg-linear-to-br py-12 sm:min-h-[75vh] sm:py-16"
     >
       {/* Floating blobs with parallax */}
       <motion.div
