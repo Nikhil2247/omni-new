@@ -8,6 +8,8 @@ import { Module, Global } from '@nestjs/common'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { CacheInvalidationHandler } from './handlers/cache-invalidation.handler'
 import { SearchIndexHandler } from './handlers/search-index.handler'
+import { EmailEventHandler } from './handlers/email.handler'
+import { NotificationsModule } from '../../infrastructure/notifications/notifications.module'
 
 @Global()
 @Module({
@@ -27,10 +29,12 @@ import { SearchIndexHandler } from './handlers/search-index.handler'
       // Ignore errors in event handlers (log them instead)
       ignoreErrors: false,
     }),
+    NotificationsModule,
   ],
   providers: [
     CacheInvalidationHandler,
     SearchIndexHandler,
+    EmailEventHandler,
   ],
   exports: [
     EventEmitterModule,

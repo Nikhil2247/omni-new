@@ -15,7 +15,7 @@ import * as path from 'path'
 
 export interface EmailOptions {
   to: string | string[]
-  subject: string
+  subject?: string
   html?: string
   text?: string
   template?: string

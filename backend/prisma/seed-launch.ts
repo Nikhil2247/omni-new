@@ -229,6 +229,18 @@ async function seedRolesAndUsers() {
       level: 55,
       parentRoleName: 'ADMIN',
     },
+    {
+      name: 'BUSINESS_ADMIN',
+      displayName: 'Business Admin',
+      description: 'Vendor/business admin account',
+      level: 50,
+    },
+    {
+      name: 'USER',
+      displayName: 'User',
+      description: 'End user/planner account',
+      level: 10,
+    },
   ]
 
   const roleByName = new Map<string, string>()

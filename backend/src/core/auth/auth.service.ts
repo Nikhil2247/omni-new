@@ -718,7 +718,7 @@ export class AuthService {
     this.eventEmitter.emit('user.passwordResetRequested', {
       userId: user.id,
       email: user.email,
-      resetToken, // Plain token to be sent via email
+      token: resetToken, // Plain token to be sent via email
       expiresAt: resetTokenExpiry,
     })
   }
