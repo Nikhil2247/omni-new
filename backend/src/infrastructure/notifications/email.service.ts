@@ -42,6 +42,11 @@ export interface EmailResult {
   error?: string
 }
 
+export interface EmailConnectionResult {
+  connected: boolean
+  error?: string
+}
+
 interface CompiledTemplate {
   subject: Handlebars.TemplateDelegate
   html: Handlebars.TemplateDelegate
@@ -70,6 +75,42 @@ export class EmailService implements OnModuleInit {
     await this.initializeTransporter()
     await this.loadTemplates()
     this.registerHandlebarsHelpers()
+  }
+
+  private async ensureTransporterInitialized(): Promise<void> {
+    if (!this.transporter) {
+      await this.initializeTransporter()
+    }
+  }
+
+  private getBooleanConfig(key: string, defaultValue: boolean): boolean {
+    const rawValue = this.configService.get<string | boolean>(key)
+
+    if (rawValue === undefined || rawValue === null) {
+      return defaultValue
+    }
+
+    if (typeof rawValue === 'boolean') {
+      return rawValue
+    }
+
+    const normalized = rawValue.toString().trim().toLowerCase()
+    return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on'
+  }
+
+  private getNumberConfig(key: string, defaultValue: number): number {
+    const rawValue = this.configService.get<string | number>(key)
+
+    if (rawValue === undefined || rawValue === null || rawValue === '') {
+      return defaultValue
+    }
+
+    if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
+      return rawValue
+    }
+
+    const parsedValue = Number(rawValue)
+    return Number.isFinite(parsedValue) ? parsedValue : defaultValue
   }
 
   private async initializeTransporter(): Promise<void> {
@@ -114,6 +155,9 @@ export class EmailService implements OnModuleInit {
       default:
         const smtpUser = this.configService.get<string>('SMTP_USER')
         const smtpPass = this.configService.get<string>('SMTP_PASSWORD')
+        const smtpHost = this.configService.get<string>('SMTP_HOST', 'localhost')
+        const smtpPort = this.getNumberConfig('SMTP_PORT', 587)
+        const smtpSecure = this.getBooleanConfig('SMTP_SECURE', false)
 
         if (!smtpUser || !smtpPass) {
           const testAccount = await nodemailer.createTestAccount()
@@ -129,9 +173,9 @@ export class EmailService implements OnModuleInit {
           this.logger.warn('SMTP credentials missing. Using Ethereal test account for development.')
         } else {
           this.transporter = nodemailer.createTransport({
-            host: this.configService.get<string>('SMTP_HOST', 'localhost'),
-            port: this.configService.get<number>('SMTP_PORT', 587),
-            secure: this.configService.get<boolean>('SMTP_SECURE', false),
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpSecure,
             auth: {
               user: smtpUser,
               pass: smtpPass,
@@ -434,10 +478,24 @@ export class EmailService implements OnModuleInit {
 
   async verifyConnection(): Promise<boolean> {
     try {
+      await this.ensureTransporterInitialized()
       await this.transporter.verify()
       return true
     } catch {
       return false
+    }
+  }
+
+  async verifyConnectionWithDetails(): Promise<EmailConnectionResult> {
+    try {
+      await this.ensureTransporterInitialized()
+      await this.transporter.verify()
+      return { connected: true }
+    } catch (error) {
+      return {
+        connected: false,
+        error: error instanceof Error ? error.message : String(error),
+      }
     }
   }
 

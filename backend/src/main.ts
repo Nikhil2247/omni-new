@@ -15,6 +15,7 @@ import { AppModule } from './app.module'
 import { createRedisIoAdapter } from './infrastructure/websockets/redis-io.adapter'
 import { IdempotencyInterceptor } from './infrastructure/idempotency/idempotency.interceptor'
 import { IdempotencyService } from './infrastructure/idempotency/idempotency.service'
+import { EmailService } from './infrastructure/notifications/email.service'
 
 if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
   process.env.PRISMA_CLIENT_ENGINE_TYPE = 'binary'
@@ -232,6 +233,24 @@ async function bootstrap() {
 
   const port = configService.get<number>('PORT') || 3001
   const host = configService.get<string>('HOST') || '0.0.0.0'
+
+  // ===========================================================================
+  // EMAIL SERVER CONNECTIVITY
+  // ===========================================================================
+
+  const emailService = app.get(EmailService)
+  const emailProvider = configService.get<string>('EMAIL_PROVIDER', 'smtp')
+  const smtpHost = configService.get<string>('SMTP_HOST', 'localhost')
+  const smtpPortRaw = configService.get<string | number>('SMTP_PORT', 587)
+  const smtpPort = typeof smtpPortRaw === 'number' ? smtpPortRaw : Number(smtpPortRaw) || 587
+  const emailStatus = await emailService.verifyConnectionWithDetails()
+
+  if (emailStatus.connected) {
+    logger.log(`📧 Email server connected (${emailProvider}: ${smtpHost}:${smtpPort})`)
+  } else {
+    const emailError = emailStatus.error ? ` - ${emailStatus.error}` : ''
+    logger.warn(`📧 Email server connection failed (${emailProvider}: ${smtpHost}:${smtpPort})${emailError}`)
+  }
 
   await app.listen(port, host)
 
