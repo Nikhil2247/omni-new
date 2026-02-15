@@ -33,6 +33,50 @@ export class AccountController {
 		return this.getUserProfile(user.id)
 	}
 
+	@Get('addresses')
+	async getAddresses(@CurrentUser() user: CurrentUserData) {
+		const eventsWithAddresses = await this.prisma.event.findMany({
+			where: {
+				userId: user.id,
+				addressId: { not: null },
+			},
+			distinct: ['addressId'],
+			select: {
+				address: {
+					select: {
+						id: true,
+						addressLine1: true,
+						addressLine2: true,
+						postalCode: true,
+						city: {
+							select: {
+								name: true,
+								state: {
+									select: {
+										name: true,
+										country: {
+											select: {
+												name: true,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		return eventsWithAddresses
+			.map((entry) => entry.address)
+			.filter((address): address is NonNullable<typeof address> => Boolean(address))
+			.map((address) => ({
+				id: address.id,
+				label: this.formatAddressLabel(address),
+			}))
+	}
+
 	@Patch('profile')
 	async updateProfile(
 		@CurrentUser() user: CurrentUserData,
@@ -158,6 +202,30 @@ export class AccountController {
 
 	private getNotificationPreferencesCacheKey(userId: string) {
 		return `user:notification-preferences:${userId}`
+	}
+
+	private formatAddressLabel(address: {
+		addressLine1: string
+		addressLine2: string | null
+		postalCode: string | null
+		city: {
+			name: string
+			state: {
+				name: string
+				country: { name: string }
+			}
+		}
+	}) {
+		return [
+			address.addressLine1,
+			address.addressLine2,
+			address.city.name,
+			address.city.state.name,
+			address.city.state.country.name,
+			address.postalCode,
+		]
+			.filter(Boolean)
+			.join(', ')
 	}
 
 	private getDefaultNotificationPreferences(): NotificationPreferencesDto {

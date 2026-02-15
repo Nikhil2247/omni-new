@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -8,6 +9,14 @@ import { useAddEventVendor, useDeleteEventVendor, useEventVendors, useUpdateEven
 import type { EventVendorStatus } from '@/lib/api/types/event-vendor.types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -33,6 +42,7 @@ const statusOptions: { label: string; value: EventVendorStatus }[] = [
 ]
 
 export function EventVendorsPanel({ eventId }: { eventId: string }) {
+  const [showAddVendorDialog, setShowAddVendorDialog] = useState(false)
   const { data, isLoading, error } = useEventVendors(eventId)
   const addVendor = useAddEventVendor(eventId)
   const updateVendor = useUpdateEventVendor(eventId)
@@ -59,6 +69,7 @@ export function EventVendorsPanel({ eventId }: { eventId: string }) {
       notes: values.notes || undefined,
     })
     form.reset()
+    setShowAddVendorDialog(false)
   }
 
   if (isLoading) {
@@ -76,11 +87,19 @@ export function EventVendorsPanel({ eventId }: { eventId: string }) {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Add vendor</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setShowAddVendorDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Vendor
+        </Button>
+      </div>
+
+      <Dialog open={showAddVendorDialog} onOpenChange={setShowAddVendorDialog}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Add vendor</DialogTitle>
+            <DialogDescription>Add a vendor to this event.</DialogDescription>
+          </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-3">
               <FormField
@@ -159,16 +178,19 @@ export function EventVendorsPanel({ eventId }: { eventId: string }) {
                   </FormItem>
                 )}
               />
-              <div className="md:col-span-3">
-                <Button type="submit" size="sm" disabled={addVendor.isPending}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add vendor
+              <DialogFooter className="md:col-span-3">
+                <Button type="button" variant="outline" onClick={() => setShowAddVendorDialog(false)}>
+                  Cancel
                 </Button>
-              </div>
+                <Button type="submit" disabled={addVendor.isPending}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {addVendor.isPending ? 'Adding...' : 'Add vendor'}
+                </Button>
+              </DialogFooter>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>

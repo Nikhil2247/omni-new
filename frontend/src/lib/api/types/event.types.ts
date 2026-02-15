@@ -18,6 +18,8 @@ export interface EventSummary {
   confirmedGuests?: number
   declinedGuests?: number
   checklistProgress?: number
+  totalBudget?: number
+  totalSpent?: number
   status: EventStatus
   createdAt: string
   updatedAt: string

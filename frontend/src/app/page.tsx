@@ -139,6 +139,69 @@ const staggerChild: Variants = {
   },
 };
 
+function HeroVideoBackground() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(containerRef, { once: true, margin: "200px" });
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
+
+  useEffect(() => {
+    if (isInView) {
+      setShouldLoadVideo(true);
+    }
+  }, [isInView]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => setPrefersReducedMotion(mediaQuery.matches);
+
+    onChange();
+    mediaQuery.addEventListener("change", onChange);
+
+    return () => mediaQuery.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!videoRef.current || !shouldLoadVideo || prefersReducedMotion) {
+      return;
+    }
+
+    const playPromise = videoRef.current.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {
+        setIsVideoReady(false);
+      });
+    }
+  }, [shouldLoadVideo, prefersReducedMotion]);
+
+  return (
+    <div ref={containerRef} className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-background" />
+
+      {shouldLoadVideo && !prefersReducedMotion && (
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster="/images/hero-video-poster.jpg"
+          onCanPlay={() => setIsVideoReady(true)}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${isVideoReady ? "opacity-100" : "opacity-0"}`}
+        >
+          <source src="/video/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
+          <source src="/video/hero-desktop.mp4" type="video/mp4" />
+        </video>
+      )}
+
+      <div className="absolute inset-0 bg-black/55" />
+    </div>
+  );
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const CATEGORY_IDS = {
@@ -157,41 +220,41 @@ const serviceCategories = [
     title: "Venues",
     icon: Building2,
     href: `/vendors?categoryId=${CATEGORY_IDS.VENUES}`,
-    bg: "bg-rose-50",
-    iconBg: "bg-rose-100",
-    iconColor: "text-rose-600",
+    bg: "bg-stone-50",
+    iconBg: "bg-stone-100",
+    iconColor: "text-sky-600",
   },
   {
     title: "Photographers",
     icon: Camera,
     href: `/vendors?categoryId=${CATEGORY_IDS.PHOTOGRAPHY}`,
-    bg: "bg-amber-50",
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
+    bg: "bg-zinc-50",
+    iconBg: "bg-zinc-100",
+    iconColor: "text-sky-600",
   },
   {
     title: "Caterers",
     icon: UtensilsCrossed,
     href: `/vendors?categoryId=${CATEGORY_IDS.CATERING}`,
-    bg: "bg-emerald-50",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
+    bg: "bg-neutral-50",
+    iconBg: "bg-neutral-100",
+    iconColor: "text-sky-600",
   },
   {
     title: "Decorators",
     icon: Sparkles,
     href: `/vendors?categoryId=${CATEGORY_IDS.DECOR}`,
-    bg: "bg-violet-50",
-    iconBg: "bg-violet-100",
-    iconColor: "text-violet-600",
+    bg: "bg-slate-50",
+    iconBg: "bg-slate-100",
+    iconColor: "text-sky-600",
   },
   {
     title: "Florists",
     icon: Flower2,
     href: `/vendors?categoryId=${CATEGORY_IDS.FLORISTS}`,
-    bg: "bg-pink-50",
-    iconBg: "bg-pink-100",
-    iconColor: "text-pink-600",
+    bg: "bg-stone-50",
+    iconBg: "bg-stone-100",
+    iconColor: "text-sky-600",
   },
   {
     title: "Entertainment",
@@ -205,17 +268,17 @@ const serviceCategories = [
     title: "Planners",
     icon: Users,
     href: `/vendors?categoryId=${CATEGORY_IDS.WEDDING_PLANNING}`,
-    bg: "bg-indigo-50",
-    iconBg: "bg-indigo-100",
-    iconColor: "text-indigo-600",
+    bg: "bg-zinc-50",
+    iconBg: "bg-zinc-100",
+    iconColor: "text-sky-600",
   },
   {
     title: "Makeup & Hair",
     icon: Lightbulb,
     href: `/vendors?categoryId=${CATEGORY_IDS.MAKEUP_HAIR}`,
-    bg: "bg-fuchsia-50",
-    iconBg: "bg-fuchsia-100",
-    iconColor: "text-fuchsia-600",
+    bg: "bg-neutral-50",
+    iconBg: "bg-neutral-100",
+    iconColor: "text-sky-600",
   },
 ];
 
@@ -286,7 +349,7 @@ const featureCards: {
     ],
     cta: "Explore Vendors",
     ctaHref: "/vendors",
-    bg: "bg-sky-50 dark:bg-sky-950/40",
+    bg: "bg-sky-50 dark:bg-slate-900",
     iconBg: "bg-sky-100 dark:bg-sky-900/50",
     iconColor: "text-sky-600 dark:text-sky-400",
     badgeBg: "bg-sky-100 dark:bg-sky-900/50",
@@ -306,7 +369,7 @@ const featureCards: {
     ],
     cta: "Start Planning",
     ctaHref: "/register",
-    bg: "bg-violet-50 dark:bg-violet-950/40",
+    bg: "bg-violet-50 dark:bg-slate-900",
     iconBg: "bg-violet-100 dark:bg-violet-900/50",
     iconColor: "text-violet-600 dark:text-violet-400",
     badgeBg: "bg-violet-100 dark:bg-violet-900/50",
@@ -321,7 +384,7 @@ const featureCards: {
     highlights: ["RSVP tracking", "Group tags", "Dietary & meal prefs", "Export guest data"],
     cta: "Start Planning",
     ctaHref: "/register",
-    bg: "bg-teal-50 dark:bg-teal-950/40",
+    bg: "bg-teal-50 dark:bg-slate-900",
     iconBg: "bg-teal-100 dark:bg-teal-900/50",
     iconColor: "text-teal-600 dark:text-teal-400",
     badgeBg: "bg-teal-100 dark:bg-teal-900/50",
@@ -336,7 +399,7 @@ const featureCards: {
     highlights: ["Real-time spending", "Category budgets", "Vendor payments", "Visual breakdowns"],
     cta: "Start Planning",
     ctaHref: "/register",
-    bg: "bg-amber-50 dark:bg-amber-950/40",
+    bg: "bg-amber-50 dark:bg-slate-900",
     iconBg: "bg-amber-100 dark:bg-amber-900/50",
     iconColor: "text-amber-600 dark:text-amber-400",
     badgeBg: "bg-amber-100 dark:bg-amber-900/50",
@@ -356,7 +419,7 @@ const featureCards: {
     ],
     cta: "Start Planning",
     ctaHref: "/register",
-    bg: "bg-rose-50 dark:bg-rose-950/40",
+    bg: "bg-rose-50 dark:bg-slate-900",
     iconBg: "bg-rose-100 dark:bg-rose-900/50",
     iconColor: "text-rose-600 dark:text-rose-400",
     badgeBg: "bg-rose-100 dark:bg-rose-900/50",
@@ -371,7 +434,7 @@ const featureCards: {
     highlights: ["Day-of schedule", "Vendor assignments", "Team sharing", "Countdown timer"],
     cta: "Start Planning",
     ctaHref: "/register",
-    bg: "bg-indigo-50 dark:bg-indigo-950/40",
+    bg: "bg-indigo-50 dark:bg-slate-900",
     iconBg: "bg-indigo-100 dark:bg-indigo-900/50",
     iconColor: "text-indigo-600 dark:text-indigo-400",
     badgeBg: "bg-indigo-100 dark:bg-indigo-900/50",
@@ -391,7 +454,7 @@ const featureCards: {
     ],
     cta: "Start Planning",
     ctaHref: "/register",
-    bg: "bg-emerald-50 dark:bg-emerald-950/40",
+    bg: "bg-emerald-50 dark:bg-slate-900",
     iconBg: "bg-emerald-100 dark:bg-emerald-900/50",
     iconColor: "text-emerald-600 dark:text-emerald-400",
     badgeBg: "bg-emerald-100 dark:bg-emerald-900/50",
@@ -434,106 +497,12 @@ function HeroSection() {
   const heroOpacity = useSpring(rawOpacity, { stiffness: 100, damping: 30 });
   const heroScale = useSpring(rawScale, { stiffness: 100, damping: 30 });
 
-  // Floating blob parallax
-  const blob1Y = useTransform(scrollYProgress, [0, 1], [0, -60]);
-  const blob2Y = useTransform(scrollYProgress, [0, 1], [0, 40]);
-
-  // Sparkling stars data
-  const sparkles = [
-    { left: "10%", top: "15%", delay: 0, duration: 3 },
-    { left: "85%", top: "20%", delay: 0.5, duration: 2.5 },
-    { left: "20%", top: "75%", delay: 1, duration: 3.2 },
-    { left: "75%", top: "65%", delay: 0.3, duration: 2.8 },
-    { left: "50%", top: "10%", delay: 1.5, duration: 3.5 },
-    { left: "15%", top: "45%", delay: 0.8, duration: 2.7 },
-    { left: "90%", top: "50%", delay: 1.2, duration: 3.1 },
-    { left: "40%", top: "80%", delay: 0.2, duration: 2.9 },
-    { left: "65%", top: "30%", delay: 1.8, duration: 3.3 },
-    { left: "30%", top: "25%", delay: 0.6, duration: 2.6 },
-  ];
-
   return (
     <section
       ref={heroRef}
-      className="from-background via-primary/5 to-background relative z-20 flex min-h-[80vh] items-center justify-center overflow-visible bg-linear-to-br py-12 sm:min-h-[75vh] sm:py-16"
+      className="relative z-20 flex min-h-[60vh] w-full items-center justify-center overflow-x-hidden overflow-y-visible bg-background py-12 sm:min-h-[80vh] sm:py-16"
     >
-      {/* Floating blobs with parallax */}
-      <motion.div
-        style={{ y: blob1Y }}
-        className="absolute -top-32 -left-32 h-[450px] w-[450px] rounded-full bg-sky-500/10 blur-[120px]"
-      />
-      <motion.div
-        style={{ y: blob2Y }}
-        className="absolute -right-32 -bottom-32 h-[400px] w-[400px] rounded-full bg-rose-500/8 blur-[120px]"
-      />
-      <motion.div
-        style={{ y: blob1Y }}
-        className="absolute top-1/3 left-1/2 h-[350px] w-[350px] -translate-x-1/2 rounded-full bg-violet-500/10 blur-[120px]"
-      />
-
-      {/* Floating sparkles */}
-      {sparkles.map((sparkle, i) => (
-        <motion.div
-          key={i}
-          className="absolute z-10 h-1 w-1 rounded-full bg-white shadow-lg"
-          style={{
-            left: sparkle.left,
-            top: sparkle.top,
-          }}
-          animate={{
-            scale: [0, 1, 1, 0],
-            opacity: [0, 1, 1, 0],
-            y: [0, -20, -40, -60],
-          }}
-          transition={{
-            duration: sparkle.duration,
-            delay: sparkle.delay,
-            repeat: Infinity,
-            repeatDelay: 2,
-            ease: "easeOut",
-          }}
-        />
-      ))}
-
-      {/* Larger floating sparkles with glow */}
-      <motion.div
-        className="absolute top-[30%] left-[15%] z-10 h-2 w-2 rounded-full bg-amber-400/80 shadow-lg shadow-amber-400/50 blur-[1px]"
-        animate={{
-          scale: [1, 1.5, 1],
-          opacity: [0.4, 1, 0.4],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute top-[40%] right-[20%] z-10 h-2 w-2 rounded-full bg-sky-400/80 shadow-lg shadow-sky-400/50 blur-[1px]"
-        animate={{
-          scale: [1, 1.5, 1],
-          opacity: [0.4, 1, 0.4],
-        }}
-        transition={{
-          duration: 3.5,
-          delay: 1,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-      <motion.div
-        className="absolute top-[70%] left-[70%] z-10 h-2 w-2 rounded-full bg-violet-400/80 shadow-lg shadow-violet-400/50 blur-[1px]"
-        animate={{
-          scale: [1, 1.5, 1],
-          opacity: [0.4, 1, 0.4],
-        }}
-        transition={{
-          duration: 4.2,
-          delay: 0.5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
+      <HeroVideoBackground />
 
       <motion.div
         style={{ y: heroTextY, opacity: heroOpacity, scale: heroScale }}
@@ -543,11 +512,11 @@ function HeroSection() {
           initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 1, delay: 0.2, ease }}
-          className="text-foreground font-serif text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl"
+          className="font-serif text-4xl leading-tight font-bold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-6xl xl:text-7xl"
         >
           Your dream event
           <br />
-          <span className="from-primary bg-gradient-to-r via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <span className="from-primary bg-linear-to-r via-purple-600 to-pink-600 bg-clip-text text-transparent">
             starts here
           </span>
         </motion.h1>
@@ -557,7 +526,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.4, ease }}
-          className="relative z-50 mx-auto mt-6 max-w-3xl sm:mt-8"
+          className="relative z-50 mx-auto mt-6 max-w-3xl rounded-2xl bg-black/25 p-2 backdrop-blur-sm sm:mt-8 sm:p-3"
         >
           <GlobalSearch
             placeholder="Search for photographers, venues, caterers..."
@@ -565,10 +534,10 @@ function HeroSection() {
             showOnHomePage={true}
           />
 
-          <p className="text-muted-foreground mt-3 text-sm">
-            Popular: <button className="text-primary mx-1 hover:underline">Wedding Venues</button> •
-            <button className="text-primary mx-1 hover:underline">Photographers</button> •
-            <button className="text-primary mx-1 hover:underline">Caterers in Mumbai</button>
+          <p className="mt-3 text-sm text-white/80">
+            Popular: <button className="mx-1 text-sky-300 hover:underline">Wedding Venues</button> •
+            <button className="mx-1 text-sky-300 hover:underline">Photographers</button> •
+            <button className="mx-1 text-sky-300 hover:underline">Caterers in Mumbai</button>
           </p>
         </motion.div>
 
@@ -581,14 +550,14 @@ function HeroSection() {
         >
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-green-500" />
-            <span className="text-muted-foreground">
-              <strong className="text-foreground font-semibold">10,000+</strong> Verified Vendors
+            <span className="text-white/85">
+              <strong className="font-semibold text-white">10,000+</strong> Verified Vendors
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Star className="h-5 w-5 text-amber-500" />
-            <span className="text-muted-foreground">
-              <strong className="text-foreground font-semibold">50,000+</strong> Happy Events
+            <span className="text-white/85">
+              <strong className="font-semibold text-white">50,000+</strong> Happy Events
             </span>
           </div>
         </motion.div>
@@ -600,7 +569,7 @@ function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2, duration: 0.6 }}
-        className="text-muted-foreground hover:text-foreground animate-bounce-slow absolute bottom-20 left-1/2 z-20 -translate-x-1/2 transition-colors sm:bottom-24"
+        className="animate-bounce-slow absolute bottom-20 left-1/2 z-20 -translate-x-1/2 text-white/75 transition-colors hover:text-white sm:bottom-24"
         aria-label="Scroll down"
       >
         <ArrowDown className="h-6 w-6" />
@@ -753,7 +722,7 @@ function FeatureCard({ card, index }: { card: (typeof featureCards)[number]; ind
     <div ref={cardRef} className="sticky top-0 min-h-screen" style={{ zIndex: index + 1 }}>
       <motion.div
         style={{ scale, opacity: exitOpacity }}
-        className={`${card.bg} relative flex min-h-screen items-center overflow-hidden`}
+        className={`${card.bg} relative flex min-h-screen items-center overflow-hidden border-y border-black/5 shadow-sm dark:border-white/10 dark:shadow-black/30`}
       >
         {/* Subtle decorative gradient orb */}
         <div
@@ -1087,7 +1056,7 @@ export default function Home() {
       <TrustSection />
       <FeaturedVendorsSection />
       {/* <VendorDiscoverySection /> */}
-      <CTASection />
+      {/* <CTASection /> */}
     </PublicLayout>
   );
 }

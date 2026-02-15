@@ -437,7 +437,7 @@ export default function BusinessPortfolioPage() {
               <CardDescription>Organize your media into albums for clients to browse.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
                 {albums.map((album) => (
                   <AlbumCard
                     key={album.id}
@@ -984,39 +984,42 @@ function MediaListItem({
   const resolvedUrl = item.cdnUrl || getMinioViewUrl(previewUrl) || previewUrl
 
   return (
-    <Card className="flex items-center gap-4 p-4">
-      <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted shrink-0">
-        {item.type === 'IMAGE' ? (
-          <img src={resolvedUrl} alt={item.altText || 'Media item'} className="object-cover w-full h-full" />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <Video className="h-6 w-6 text-muted-foreground" />
-          </div>
-        )}
+    <Card className="p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted shrink-0">
+          {item.type === 'IMAGE' ? (
+            <img src={resolvedUrl} alt={item.altText || 'Media item'} className="object-cover w-full h-full" />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <Video className="h-6 w-6 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <h3 className="font-medium truncate">{item.caption || item.altText || 'Media item'}</h3>
+          {item.caption && item.altText && (
+            <p className="text-xs text-muted-foreground line-clamp-1">{item.altText}</p>
+          )}
+          <p className="text-sm text-muted-foreground">{item.type}</p>
+          <MediaTagChips mediaItemId={item.id} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 sm:w-auto sm:flex-col sm:items-stretch lg:flex-row lg:items-center lg:justify-end">
+          <Button variant="ghost" size="sm" className="justify-start" onClick={onCaption}>
+            <Edit className="mr-2 h-4 w-4" />
+            Caption
+          </Button>
+          <Button variant="ghost" size="sm" className="justify-start" onClick={onDelete}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </Button>
+          <Button variant="ghost" size="sm" className="justify-start" onClick={onTags}>
+            <Tag className="mr-2 h-4 w-4" />
+            Tags
+          </Button>
+        </div>
       </div>
-
-      <div className="flex-1 min-w-0">
-        <h3 className="font-medium truncate">{item.caption || item.altText || 'Media item'}</h3>
-        {item.caption && item.altText && (
-          <p className="text-xs text-muted-foreground line-clamp-1">{item.altText}</p>
-        )}
-        <p className="text-sm text-muted-foreground">{item.type}</p>
-        <MediaTagChips mediaItemId={item.id} />
-      </div>
-
-      <Button variant="ghost" size="sm" onClick={onCaption}>
-        <Edit className="mr-2 h-4 w-4" />
-        Caption
-      </Button>
-
-      <Button variant="ghost" size="sm" onClick={onDelete}>
-        <Trash2 className="mr-2 h-4 w-4" />
-        Delete
-      </Button>
-      <Button variant="ghost" size="sm" onClick={onTags}>
-        <Tag className="mr-2 h-4 w-4" />
-        Tags
-      </Button>
     </Card>
   )
 }
@@ -1055,20 +1058,20 @@ function AlbumCard({
 
   return (
     <Card
-      className={`cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+      className={`cursor-pointer overflow-hidden transition-all ${isSelected ? 'ring-1 ring-primary' : 'hover:shadow-sm'}`}
       onClick={onSelect}
     >
-      <div className="relative aspect-4/3 bg-muted">
+      <div className="relative h-28 bg-muted sm:h-30">
         {coverUrl ? (
           <img src={coverUrl} alt={album.title} className="object-cover w-full h-full" />
         ) : (
           <div className="flex items-center justify-center h-full">
-            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+            <ImageIcon className="h-8 w-8 text-muted-foreground" />
           </div>
         )}
         {album.isFeatured && (
-          <Badge className="absolute top-2 left-2 bg-yellow-500 hover:bg-yellow-600">
-            <Star className="mr-1 h-3 w-3" />
+          <Badge className="absolute top-2 left-2 h-5 px-1.5 text-[10px] bg-yellow-500 hover:bg-yellow-600">
+            <Star className="mr-1 h-2.5 w-2.5" />
             Featured
           </Badge>
         )}
@@ -1078,10 +1081,10 @@ function AlbumCard({
               <Button
                 variant="secondary"
                 size="sm"
-                className="h-8 w-8 p-0"
+                className="h-7 w-7 p-0"
                 onClick={(event) => event.stopPropagation()}
               >
-                <MoreVertical className="h-4 w-4" />
+                <MoreVertical className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -1109,16 +1112,16 @@ function AlbumCard({
           </DropdownMenu>
         </div>
       </div>
-      <CardContent className="p-4 space-y-2">
+      <CardContent className="space-y-1.5 p-2.5">
         <div>
-          <h3 className="font-semibold truncate">{album.title}</h3>
+          <h3 className="truncate text-sm font-semibold">{album.title}</h3>
           {album.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">{album.description}</p>
+            <p className="line-clamp-1 text-xs text-muted-foreground">{album.description}</p>
           )}
         </div>
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{mediaCount} items</span>
-          {isSelected ? <Badge variant="secondary">Selected</Badge> : null}
+          {isSelected ? <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">Selected</Badge> : null}
         </div>
       </CardContent>
     </Card>

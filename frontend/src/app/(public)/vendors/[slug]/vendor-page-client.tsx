@@ -155,9 +155,16 @@ const getEventStatusTone = (status?: string) => {
 type VendorPageClientProps = {
   slug: string
   initialVendor?: VendorProfile | null
+  showReviews?: boolean
+  showSimilarVendors?: boolean
 }
 
-export default function VendorPageClient({ slug, initialVendor }: VendorPageClientProps) {
+export default function VendorPageClient({
+  slug,
+  initialVendor,
+  showReviews = true,
+  showSimilarVendors = true,
+}: VendorPageClientProps) {
   const router = useRouter()
   const { user, isAuthenticated } = useAuthStore()
   const userId = user?.id
@@ -172,7 +179,7 @@ export default function VendorPageClient({ slug, initialVendor }: VendorPageClie
   const categoryId = vendor?.categoryId
   const { data: similarVendorsData } = usePublicVendors(
     { categoryId: categoryId || undefined, limit: 4 },
-    { enabled: !!categoryId },
+    { enabled: showSimilarVendors && !!categoryId },
   )
 
   // Filter out the current vendor from similar vendors
@@ -256,7 +263,7 @@ export default function VendorPageClient({ slug, initialVendor }: VendorPageClie
 
   const followStatus = useVendorFollowStatus(vendor?.id || '', Boolean(userId))
   const toggleFollow = useToggleVendorFollow()
-  const { data: vendorReviews = [] } = useVendorReviews(vendor?.id || '')
+  const { data: vendorReviews = [] } = useVendorReviews(showReviews ? (vendor?.id || '') : '')
   const createReview = useCreateVendorReview()
 
   const handleFollow = async () => {
@@ -365,7 +372,7 @@ export default function VendorPageClient({ slug, initialVendor }: VendorPageClie
   return (
     <main className="min-h-screen bg-background">
       {/* Instagram-style centered container */}
-      <div className="mx-auto max-w-[935px] px-4 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-8">
         {/* Profile Header Section */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -815,6 +822,7 @@ export default function VendorPageClient({ slug, initialVendor }: VendorPageClie
         </div>
 
         {/* Reviews Section */}
+        {showReviews && (
         <section className="border-t py-8">
           <div className="mb-6 flex items-center justify-between">
             <div>
@@ -979,12 +987,13 @@ export default function VendorPageClient({ slug, initialVendor }: VendorPageClie
             </div>
           )}
         </section>
+        )}
       </div>
 
       {/* Similar Vendors Section */}
-      {similarVendors && similarVendors.length > 0 && (
+      {showSimilarVendors && similarVendors && similarVendors.length > 0 && (
         <section className="border-t bg-muted/30">
-          <div className="mx-auto max-w-[935px] px-4 py-10">
+          <div className="mx-auto max-w-5xl px-4 py-10">
             <div className="mb-6 flex items-end justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Similar Vendors</h2>
@@ -998,7 +1007,7 @@ export default function VendorPageClient({ slug, initialVendor }: VendorPageClie
               </Button>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ">
               {similarVendors.map((similarVendor) => (
                 <VendorCard key={similarVendor.id} vendor={similarVendor} />
               ))}

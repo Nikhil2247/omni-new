@@ -19,6 +19,12 @@ interface ProfileFormProps {
 export function ProfileForm({ rolePrefix = '' }: ProfileFormProps) {
   const { data, isLoading, error } = useUserProfile()
   const updateProfile = useUpdateProfile()
+  const roleValue = data?.role || data?.roles?.[0] || 'USER'
+  const formattedRole = roleValue
+    .toLowerCase()
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
@@ -60,7 +66,7 @@ export function ProfileForm({ rolePrefix = '' }: ProfileFormProps) {
           <Skeleton className="h-8 w-32" />
           <Skeleton className="h-4 w-64" />
         </div>
-        <Skeleton className="h-[400px] w-full rounded-xl" />
+        <Skeleton className="h-100 w-full rounded-xl" />
       </div>
     )
   }
@@ -190,7 +196,7 @@ export function ProfileForm({ rolePrefix = '' }: ProfileFormProps) {
                 <Button 
                   type="submit" 
                   disabled={updateProfile.isPending}
-                  className="gap-2 min-w-[120px]"
+                  className="min-w-30 gap-2"
                 >
                   <Save className="h-4 w-4" />
                   {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
@@ -231,8 +237,8 @@ export function ProfileForm({ rolePrefix = '' }: ProfileFormProps) {
                 <p className="text-sm font-medium">Role</p>
                 <p className="text-xs text-muted-foreground">Your account access level</p>
               </div>
-              <Badge variant="secondary" className="font-medium capitalize">
-                {data.role ?? 'User'}
+              <Badge variant="secondary" className="font-medium">
+                {formattedRole}
               </Badge>
             </div>
             

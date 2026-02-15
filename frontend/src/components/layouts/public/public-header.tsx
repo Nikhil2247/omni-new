@@ -1,32 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
-import { Menu, X, User, Settings, LogOut, Bell, MessageSquare, LayoutDashboard, Heart } from "lucide-react";
+import { User, Settings, LogOut, Bell, MessageSquare, Heart, Moon, Sun } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
 import { useLogout } from "@/hooks/use-auth";
-import { getDefaultPath, getSettingsPath } from "@/lib/utils/permissions";
+import { getSettingsPath } from "@/lib/utils/permissions";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/config/roles";
 import { ROLES } from "@/config/roles";
 import { useRouter } from "next/navigation";
 import { NotificationPopover } from "@/components/features/notifications/notification-popover";
 import { GlobalSearch } from "@/components/common/global-search";
+import { useTheme } from "next-themes";
 
 interface PublicHeaderProps {
-  onToggleSidebar?: () => void;
-  isSidebarOpen?: boolean;
 }
 
-export function PublicHeader({ onToggleSidebar, isSidebarOpen }: PublicHeaderProps) {
+export function PublicHeader({}: PublicHeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { isAuthenticated, hasHydrated, user } = useAuthStore();
   const logoutMutation = useLogout();
   const router = useRouter();
-  const dashboardPath = getDefaultPath(user?.role as Role | undefined);
+  const { theme, setTheme } = useTheme();
   const settingsPath = getSettingsPath(user?.role as Role | undefined);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -34,26 +38,28 @@ export function PublicHeader({ onToggleSidebar, isSidebarOpen }: PublicHeaderPro
 
   // Check if user is business or regular user
   const isBusinessOrUser = user?.role === ROLES.BUSINESS_ADMIN || user?.role === ROLES.USER;
-  const messagesPath = user?.role === ROLES.BUSINESS_ADMIN ? '/business-messages' : '/user-messages';
+  const messagesPath = user?.role === ROLES.BUSINESS_ADMIN ? '/business-messages' : '/messages';
   const profilePath = user?.role === ROLES.BUSINESS_ADMIN ? '/business/profile' : '/settings/profile';
   const isUser = user?.role === ROLES.USER;
+  const guestNavItems = [
+    { href: '/vendors', label: 'Find Vendors' },
+    { href: '/discover', label: 'Discover' },
+    { href: '/blog', label: 'Blog' },
+  ];
+  const loggedInUserNavItems = [
+    { href: '/events', label: 'Events' },
+    { href: '/checklist', label: 'Checklist' },
+    { href: '/budget', label: 'Budget' },
+  ];
+  const desktopNavItems = hasHydrated && isAuthenticated && isUser
+    ? loggedInUserNavItems
+    : guestNavItems;
 
   return (
-    <header className="fixed top-0 left-0 z-50 w-full bg-linear-to-b from-[#9cc0e4] to-transparent shadow-lg backdrop-blur-md">
+    <header className="fixed top-0 left-0 z-50 w-full bg-linear-to-b from-[#9cc0e4] to-transparent backdrop-blur-md md:hidden">
       <nav className="mx-auto flex items-center justify-between px-4 py-3 lg:px-6">
         {/* Left Section: Sidebar Toggle + Logo */}
         <div className="flex items-center gap-2">
-          {/* Sidebar Toggle (Tablet & Desktop) */}
-          {onToggleSidebar && !isSidebarOpen && (
-            <button
-              className="hidden rounded-lg p-2 text-white/80 transition-all duration-200 hover:bg-gray-100 hover:text-white md:inline-flex"
-              onClick={onToggleSidebar}
-              aria-label="Open sidebar"
-            >
-              <Menu className="h-5 w-5 text-black" />
-            </button>
-          )}
-
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <img
@@ -75,52 +81,32 @@ export function PublicHeader({ onToggleSidebar, isSidebarOpen }: PublicHeaderPro
 
         {/* Desktop Navigation (Tablet) */}
         <div className="hidden items-center gap-6 md:flex lg:hidden">
-          <Link
-            href="/vendors"
-            className="text-sm font-medium text-white/90 transition-colors hover:text-white"
-          >
-            Find Vendors
-          </Link>
-          <Link
-            href="/discover"
-            className="text-sm font-medium text-white/90 transition-colors hover:text-white"
-          >
-            Discover
-          </Link>
-          <Link
-            href="/#features"
-            className="text-sm font-medium text-white/90 transition-colors hover:text-white"
-          >
-            Features
-          </Link>
-          <Link
-            href="/#how-it-works"
-            className="text-sm font-medium text-white/90 transition-colors hover:text-white"
-          >
-            How It Works
-          </Link>
-          <Link
-            href="/#pricing"
-            className="text-sm font-medium text-white/90 transition-colors hover:text-white"
-          >
-            Pricing
-          </Link>
-          <Link
-            href="/about"
-            className="text-sm font-medium text-white/90 transition-colors hover:text-white"
-          >
-            About
-          </Link>
-          <Link
-            href="/blog"
-            className="text-sm font-medium text-white/90 transition-colors hover:text-white"
-          >
-            Blog
-          </Link>
+          {desktopNavItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm font-medium text-white/90 transition-colors hover:text-white"
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
 
         {/* Right Section: Auth Buttons */}
         <div className="flex items-center gap-2 md:gap-4">
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-lg p-2 text-black transition-all hover:bg-gray-100 inline-flex items-center justify-center"
+            aria-label="Toggle theme"
+            title="Toggle theme"
+          >
+            {mounted && theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </button>
+
           {hasHydrated && !isAuthenticated && (
             <Button asChild className="bg-white text-[#4597e3] shadow-lg hover:bg-white/90">
               <Link href="/login">Login</Link>
@@ -172,16 +158,6 @@ export function PublicHeader({ onToggleSidebar, isSidebarOpen }: PublicHeaderPro
                         <p className="text-xs text-gray-500">{user?.email}</p>
                       </div>
                       <div className="py-2">
-                        <button
-                          onClick={() => {
-                            router.push(dashboardPath);
-                            setShowUserMenu(false);
-                          }}
-                          className="flex w-full items-center gap-3 rounded-md px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100"
-                        >
-                          <LayoutDashboard className="h-4 w-4" />
-                          Dashboard
-                        </button>
                         <button
                           onClick={() => {
                             router.push(profilePath);

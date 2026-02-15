@@ -16,6 +16,14 @@ import {
 } from '@/hooks/queries/use-guest-uploads'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -44,6 +52,7 @@ const memorySchema = z.object({
 type MemoryValues = z.infer<typeof memorySchema>
 
 export function MemoriesPanel({ eventId }: { eventId: string }) {
+  const [showCreateMemoryDialog, setShowCreateMemoryDialog] = useState(false)
   const { data, isLoading, error } = useMemories(eventId)
   const createMemory = useCreateMemory()
 
@@ -74,6 +83,7 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
       console.log('Created memory result:', result)
       console.log('QR Code from result:', result?.qrCode)
       toast.success('Memory wall created successfully!')
+      setShowCreateMemoryDialog(false)
     } catch (err) {
       console.error('Failed to create memory:', err)
       toast.error('Failed to create memory wall')
@@ -147,11 +157,11 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
     return (
       <div className="space-y-6">
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-pink-950/30 dark:via-purple-950/30 dark:to-blue-950/30 p-8">
+        <div className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-pink-950/30 dark:via-purple-950/30 dark:to-blue-950/30 p-8">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-pink-500 to-purple-500">
                 <ImageIcon className="h-7 w-7 text-white" />
               </div>
               <div>
@@ -170,89 +180,108 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onCreate)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base font-medium">Active Status</FormLabel>
-                        <FormDescription>
-                          Enable the memory wall for your event
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="allowUploads"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base font-medium flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          Allow Guest Uploads
-                        </FormLabel>
-                        <FormDescription>
-                          Let guests upload their own photos and videos
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="requireApproval"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base font-medium flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Require Approval
-                        </FormLabel>
-                        <FormDescription>
-                          Review uploads before they appear on the memory wall
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="expiresAt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        Expiration Date (Optional)
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} className="max-w-xs" />
-                      </FormControl>
-                      <FormDescription>
-                        Set when guests can no longer upload content
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" size="lg" disabled={createMemory.isPending}>
-                  {createMemory.isPending ? 'Creating...' : 'Create Memory Wall'}
-                </Button>
-              </form>
-            </Form>
+            <Button size="lg" onClick={() => setShowCreateMemoryDialog(true)}>
+              Create Memory Wall
+            </Button>
+
+            <Dialog open={showCreateMemoryDialog} onOpenChange={setShowCreateMemoryDialog}>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Create memory wall</DialogTitle>
+                  <DialogDescription>
+                    Configure how guests can share photos and videos for this event.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onCreate)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base font-medium">Active Status</FormLabel>
+                            <FormDescription>
+                              Enable the memory wall for your event
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="allowUploads"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base font-medium flex items-center gap-2">
+                              <Upload className="h-4 w-4" />
+                              Allow Guest Uploads
+                            </FormLabel>
+                            <FormDescription>
+                              Let guests upload their own photos and videos
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="requireApproval"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base font-medium flex items-center gap-2">
+                              <Shield className="h-4 w-4" />
+                              Require Approval
+                            </FormLabel>
+                            <FormDescription>
+                              Review uploads before they appear on the memory wall
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="expiresAt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Expiration Date (Optional)
+                          </FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} className="max-w-xs" />
+                          </FormControl>
+                          <FormDescription>
+                            Set when guests can no longer upload content
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setShowCreateMemoryDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={createMemory.isPending}>
+                        {createMemory.isPending ? 'Creating...' : 'Create Memory Wall'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </div>
@@ -264,12 +293,12 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
   return (
     <div className="space-y-6">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-pink-950/30 dark:via-purple-950/30 dark:to-blue-950/30 p-8">
+      <div className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-pink-950/30 dark:via-purple-950/30 dark:to-blue-950/30 p-8">
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-pink-500 to-purple-500">
                 <ImageIcon className="h-7 w-7 text-white" />
               </div>
               <div>

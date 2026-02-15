@@ -44,14 +44,14 @@ export default function BlogPage() {
       : []
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-12">
-      <section className="relative overflow-hidden rounded-3xl border bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 p-10 text-white shadow-xl">
+    <main className="mx-auto flex w-full max-w-8xl flex-col gap-5 px-6 py-12">
+      <section className="relative overflow-hidden rounded-3xl border bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white shadow-xl md:p-8">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.25), transparent 60%)' }} />
-        <div className="relative space-y-4">
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-200">Omnicassion Journal</p>
-          <h1 className="text-4xl font-semibold leading-tight md:text-5xl">Planning insights crafted for modern celebrations.</h1>
-          <p className="max-w-2xl text-base text-slate-200">
-            Deep dives, trend reports, and vendor spotlights to help you design unforgettable events with confidence.
+        <div className="relative space-y-2">
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-200">Omnicassion Journal</p>
+          <h1 className="text-3xl font-semibold leading-tight md:text-4xl">Planning insights crafted for modern celebrations.</h1>
+          <p className="max-w-2xl text-sm text-slate-200">
+        Deep dives, trend reports, and vendor spotlights to help you design unforgettable events with confidence.
           </p>
         </div>
       </section>
@@ -97,7 +97,7 @@ export default function BlogPage() {
       {isLoading ? (
         <Skeleton className="h-64" />
       ) : data?.data?.length ? (
-        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {data.data.map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group">
               <Card className="flex h-full flex-col overflow-hidden transition-shadow group-hover:shadow-lg">
@@ -124,7 +124,7 @@ export default function BlogPage() {
                   </div>
                   <CardTitle className="text-lg leading-snug">{post.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-1 flex-col justify-between gap-4 text-sm text-muted-foreground">
+                <CardContent className="flex flex-1 flex-col justify-between gap-3 text-sm text-muted-foreground">
                   <p className="line-clamp-3">{post.excerpt || 'Read the full story on Omnicassion Journal.'}</p>
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-3">

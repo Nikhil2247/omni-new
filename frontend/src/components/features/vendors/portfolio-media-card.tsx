@@ -84,24 +84,6 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
     }
   }
 
-  const handleGetQuote = () => {
-    if (!hasHydrated) {
-      return
-    }
-    if (!isAuthenticated) {
-      router.push('/login')
-      return
-    }
-    const params = new URLSearchParams({
-      mediaId: item.id,
-      vendorId: item.vendor.id,
-      vendorSlug: item.vendor.slug,
-      vendorName: item.vendor.businessName || '',
-      image: imageUrl,
-    })
-    router.push(`/quote?${params.toString()}`)
-  }
-
   const { data: tags = [] } = useMediaItemTags(item.id)
 
   return (
@@ -110,11 +92,10 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <button
-        type="button"
-        onClick={handleGetQuote}
+      <Link
+        href={`/vendors/${item.vendor.slug}`}
         className="block w-full"
-        aria-label={`Get a quote inspired by ${item.vendor.businessName || 'this vendor'}`}
+        aria-label={`View ${item.vendor.businessName || 'vendor'} profile`}
       >
         <img
           src={imageUrl}
@@ -122,7 +103,7 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
           className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
         />
-      </button>
+      </Link>
       
       {/* Overlay - Always visible on mobile, fade in on hover for desktop */}
       <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 via-black/60 to-transparent p-3 sm:p-4 text-white transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100">
@@ -172,18 +153,6 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
               aria-label={isSaved ? 'Saved to wishlist' : 'Save to wishlist'}
             >
               <Heart className={isSaved ? 'h-3.5 w-3.5 sm:h-4 sm:w-4 fill-primary text-primary' : 'h-3.5 w-3.5 sm:h-4 sm:w-4'} />
-            </Button>
-            <Button 
-              type="button" 
-              size="sm" 
-              variant="secondary" 
-              onClick={(e) => {
-                e.stopPropagation()
-                handleGetQuote()
-              }}
-              className="h-7 sm:h-8 text-[10px] sm:text-xs px-2 sm:px-3 bg-white/90 hover:bg-white backdrop-blur-sm"
-            >
-              Get Quote
             </Button>
           </div>
         </div>

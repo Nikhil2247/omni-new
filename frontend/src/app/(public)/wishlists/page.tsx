@@ -15,7 +15,7 @@ export default function WishlistsPage() {
   const totalBoards = wishlistArray.length;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-6 py-12 lg:py-16">
+    <div className="mx-auto max-w-8xl space-y-6 px-6 py-8 lg:py-10">
       {/* Hero Section */}
       {/* <div className="relative overflow-hidden rounded-xl border bg-linear-to-br from-pink-50 via-rose-50 to-purple-50 p-6 dark:from-pink-950/30 dark:via-rose-950/30 dark:to-purple-950/30">
         <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

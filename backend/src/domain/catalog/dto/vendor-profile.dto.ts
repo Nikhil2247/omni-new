@@ -354,5 +354,6 @@ export class VendorProfileResponseDto {
   services?: any[]
   portfolios?: any[]
   badges?: any[]
+  eventHistory?: any[]
 }
 

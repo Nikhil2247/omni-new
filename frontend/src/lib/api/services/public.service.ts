@@ -7,6 +7,46 @@ import type { BlogCategory, BlogPost, BlogPostSearchParams, BlogTag } from '../t
 import type { SystemStatusState } from '../types/system.types'
 import type { VendorReview } from '../types/vendor-review.types'
 import type { MediaTag } from '../types/media-tag.types'
+import { getMinioViewUrl } from '@/lib/utils/minio'
+
+const resolveMediaUrl = (value?: string | null): string | null | undefined => {
+  if (value == null) {
+    return value
+  }
+  return getMinioViewUrl(value) || value
+}
+
+const normalizeVendor = (vendor: VendorProfile): VendorProfile => ({
+  ...vendor,
+  profilePhotoUrl: resolveMediaUrl(vendor.profilePhotoUrl) ?? vendor.profilePhotoUrl,
+})
+
+const normalizeDiscoveryMedia = (item: PortfolioMediaItem): PortfolioMediaItem => ({
+  ...item,
+  url: resolveMediaUrl(item.url) || item.url,
+  thumbnailUrl: resolveMediaUrl(item.thumbnailUrl) ?? item.thumbnailUrl,
+  cdnUrl: resolveMediaUrl(item.cdnUrl) ?? item.cdnUrl,
+})
+
+const normalizeBlogPost = (post: BlogPost): BlogPost => ({
+  ...post,
+  featuredImage: resolveMediaUrl(post.featuredImage) ?? post.featuredImage,
+  ogImage: resolveMediaUrl(post.ogImage) ?? post.ogImage,
+})
+
+const normalizePaginated = <T>(
+  response: PaginatedResponse<T>,
+  mapper: (item: T) => T,
+): PaginatedResponse<T> => {
+  if (!response?.data || !Array.isArray(response.data)) {
+    return response
+  }
+
+  return {
+    ...response,
+    data: response.data.map(mapper),
+  }
+}
 
 export const publicService = {
   getVendors: async (
@@ -15,13 +55,13 @@ export const publicService = {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.DISCOVERY.VENDORS, {
       params,
     })
-    return data
+    return normalizePaginated(data, normalizeVendor)
   },
 
   getVendorBySlug: async (slug: string): Promise<VendorProfile> => {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.DISCOVERY.VENDOR(slug))
     // Backend wraps responses in { success, data, meta } format
-    return data?.data || data
+    return normalizeVendor(data?.data || data)
   },
 
   getFeatured: async (limit = 10): Promise<VendorProfile[]> => {
@@ -29,7 +69,7 @@ export const publicService = {
       params: { limit },
     })
     // Backend wraps responses in { success, data, meta } format
-    return data?.data || data
+    return (data?.data || data).map(normalizeVendor)
   },
 
   getDiscoveryMedia: async (
@@ -38,7 +78,7 @@ export const publicService = {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.DISCOVERY.MEDIA, {
       params,
     })
-    return data
+    return normalizePaginated(data, normalizeDiscoveryMedia)
   },
 
   getByCategory: async (
@@ -50,7 +90,7 @@ export const publicService = {
       { params: { limit } },
     )
     // Backend wraps responses in { success, data, meta } format
-    return data?.data || data
+    return (data?.data || data).map(normalizeVendor)
   },
 
   getByCity: async (cityId: string, limit = 20): Promise<VendorProfile[]> => {
@@ -59,7 +99,7 @@ export const publicService = {
       { params: { limit } },
     )
     // Backend wraps responses in { success, data, meta } format
-    return data?.data || data
+    return (data?.data || data).map(normalizeVendor)
   },
 
   healthCheck: async (): Promise<{ status: string; timestamp: string }> => {
@@ -76,12 +116,12 @@ export const publicService = {
     params: BlogPostSearchParams = {},
   ): Promise<PaginatedResponse<BlogPost>> => {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.BLOG.POSTS, { params })
-    return data
+    return normalizePaginated(data, normalizeBlogPost)
   },
 
   getBlogPostBySlug: async (slug: string): Promise<BlogPost> => {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.BLOG.POST_BY_SLUG(slug))
-    return data?.data || data
+    return normalizeBlogPost(data?.data || data)
   },
 
   getBlogCategories: async (): Promise<BlogCategory[]> => {

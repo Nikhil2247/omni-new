@@ -9,6 +9,7 @@ import { EventRepository } from '../repositories/event.repository'
 import { WeddingIdentityRepository } from '../repositories/wedding-identity.repository'
 import { CreateEventDto, UpdateEventDto, SearchEventDto } from '../dto/event.dto'
 import { PaginatedResult } from '../../../core/database/repositories/base.repository'
+import { PrismaService } from '../../../core/database/prisma.service'
 
 @Injectable()
 export class EventService {
@@ -18,6 +19,7 @@ export class EventService {
     private readonly eventRepository: EventRepository,
     private readonly weddingIdentityRepository: WeddingIdentityRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly prisma: PrismaService,
   ) {}
 
   async create(dto: CreateEventDto, userId: string): Promise<Event> {
@@ -77,7 +79,13 @@ export class EventService {
 
   async search(searchDto: SearchEventDto, userId: string): Promise<PaginatedResult<Event>> {
     const sharedUserIds = await this.resolveSharedUserIds(userId)
-    return this.eventRepository.search(searchDto, sharedUserIds)
+    const result = await this.eventRepository.search(searchDto, sharedUserIds)
+    const enriched = await this.enrichEventsWithPlanningStats(result.data)
+
+    return {
+      ...result,
+      data: enriched as Event[],
+    }
   }
 
   async update(id: string, dto: UpdateEventDto): Promise<Event> {
@@ -131,5 +139,102 @@ export class EventService {
     if (partnerIds.length === 0) return [userId]
 
     return Array.from(new Set(partnerIds))
+  }
+
+  private async enrichEventsWithPlanningStats(events: Event[]) {
+    if (!events.length) return events
+
+    const eventIds = events.map((event) => event.id)
+
+    const [guestlists, checklists, budgets] = await Promise.all([
+      this.prisma.guestlist.findMany({
+        where: { eventId: { in: eventIds } },
+        include: {
+          guests: {
+            select: {
+              rsvpStatus: true,
+            },
+          },
+        },
+      }),
+      this.prisma.checklist.findMany({
+        where: { eventId: { in: eventIds } },
+        include: {
+          items: {
+            select: {
+              isCompleted: true,
+            },
+          },
+        },
+      }),
+      this.prisma.budget.findMany({
+        where: { eventId: { in: eventIds } },
+        include: {
+          items: {
+            select: {
+              actualCost: true,
+            },
+          },
+        },
+      }),
+    ])
+
+    const guestStatsByEvent = new Map<
+      string,
+      { total: number; confirmed: number; declined: number }
+    >()
+
+    guestlists.forEach((guestlist) => {
+      const total = guestlist.guests.length
+      const confirmed = guestlist.guests.filter((guest) => guest.rsvpStatus === 'ATTENDING').length
+      const declined = guestlist.guests.filter((guest) => guest.rsvpStatus === 'NOT_ATTENDING').length
+
+      guestStatsByEvent.set(guestlist.eventId, { total, confirmed, declined })
+    })
+
+    const checklistStatsByEvent = new Map<string, { totalItems: number; completedItems: number }>()
+
+    checklists.forEach((checklist) => {
+      const current = checklistStatsByEvent.get(checklist.eventId) || { totalItems: 0, completedItems: 0 }
+      const totalItems = current.totalItems + checklist.items.length
+      const completedItems =
+        current.completedItems + checklist.items.filter((item) => item.isCompleted).length
+
+      checklistStatsByEvent.set(checklist.eventId, { totalItems, completedItems })
+    })
+
+    const budgetStatsByEvent = new Map<string, { totalBudget: number; totalSpent: number }>()
+
+    budgets.forEach((budget) => {
+      const totalBudget = Number(budget.totalBudget ?? 0)
+      const totalSpent = budget.items.reduce(
+        (sum, item) => sum + Number(item.actualCost ?? 0),
+        0,
+      )
+
+      budgetStatsByEvent.set(budget.eventId, { totalBudget, totalSpent })
+    })
+
+    return events.map((event) => {
+      const guestStats = guestStatsByEvent.get(event.id) || { total: 0, confirmed: 0, declined: 0 }
+      const checklistStats = checklistStatsByEvent.get(event.id) || { totalItems: 0, completedItems: 0 }
+      const budgetStats = budgetStatsByEvent.get(event.id) || { totalBudget: 0, totalSpent: 0 }
+
+      const checklistProgress =
+        checklistStats.totalItems > 0
+          ? Math.round((checklistStats.completedItems / checklistStats.totalItems) * 100)
+          : 0
+
+      return {
+        ...event,
+        eventDate: event.date,
+        guestCount: guestStats.total > 0 ? guestStats.total : (event.guestCount ?? 0),
+        confirmedGuests: guestStats.confirmed,
+        declinedGuests: guestStats.declined,
+        checklistProgress,
+        totalBudget: budgetStats.totalBudget,
+        totalSpent: budgetStats.totalSpent,
+      }
+    })
   }
 }

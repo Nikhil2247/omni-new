@@ -63,6 +63,73 @@ export class VendorProfileService {
     })
   }
 
+  private async getEventHistory(vendorProfileId: string) {
+    const eventHistoryRows = await this.prisma.eventVendor.findMany({
+      where: { vendorProfileId },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+      include: {
+        event: {
+          include: {
+            eventType: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    return eventHistoryRows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      notes: row.notes,
+      contractAmount: row.contractAmount,
+      depositPaid: row.depositPaid,
+      createdAt: row.createdAt,
+      event: {
+        id: row.event.id,
+        name: row.event.name,
+        date: row.event.date,
+        endDate: row.event.endDate,
+        venueName: row.event.venueName,
+        guestCount: row.event.guestCount,
+        description: row.event.description,
+        status: row.event.status,
+        eventType: row.event.eventType,
+      },
+    }))
+  }
+
+  private async enrichVendorProfile<T extends { id: string }>(vendorProfile: T) {
+    const followersCount = (vendorProfile as any)?._count?.followers ?? 0
+    const reviewsCount = (vendorProfile as any)?._count?.reviews ?? 0
+
+    const [ratingAggregate, eventHistory] = await Promise.all([
+      this.prisma.vendorReview.aggregate({
+        where: {
+          vendorProfileId: vendorProfile.id,
+          status: 'APPROVED',
+        },
+        _avg: {
+          rating: true,
+        },
+      }),
+      this.getEventHistory(vendorProfile.id),
+    ])
+
+    return {
+      ...(vendorProfile as any),
+      followersCount,
+      reviewsCount,
+      averageRating: ratingAggregate._avg.rating ?? null,
+      eventHistory,
+    }
+  }
+
   /**
    * Create vendor profile
    */
@@ -207,70 +274,12 @@ export class VendorProfileService {
       throw new NotFoundException(`Vendor profile not found`)
     }
 
-    const eventHistoryRows = await this.prisma.eventVendor.findMany({
-      where: { vendorProfileId: vendorProfile.id },
-      orderBy: { createdAt: 'desc' },
-      take: 30,
-      include: {
-        event: {
-          include: {
-            eventType: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-          },
-        },
-      },
-    })
-
-    const eventHistory = eventHistoryRows.map((row) => ({
-      id: row.id,
-      status: row.status,
-      notes: row.notes,
-      contractAmount: row.contractAmount,
-      depositPaid: row.depositPaid,
-      createdAt: row.createdAt,
-      event: {
-        id: row.event.id,
-        name: row.event.name,
-        date: row.event.date,
-        endDate: row.event.endDate,
-        venueName: row.event.venueName,
-        guestCount: row.event.guestCount,
-        description: row.event.description,
-        status: row.event.status,
-        eventType: row.event.eventType,
-      },
-    }))
-
     // Increment view count asynchronously
     this.vendorProfileRepository.incrementViewCount(vendorProfile.id).catch(err => {
       this.logger.error(`Failed to increment view count: ${err.message}`)
     })
 
-    const followersCount = (vendorProfile as any)?._count?.followers ?? 0
-    const reviewsCount = (vendorProfile as any)?._count?.reviews ?? 0
-
-    const ratingAggregate = await this.prisma.vendorReview.aggregate({
-      where: {
-        vendorProfileId: vendorProfile.id,
-        status: 'APPROVED',
-      },
-      _avg: {
-        rating: true,
-      },
-    })
-
-    return {
-      ...(vendorProfile as any),
-      followersCount,
-      reviewsCount,
-      averageRating: ratingAggregate._avg.rating ?? null,
-      eventHistory,
-    }
+    return this.enrichVendorProfile(vendorProfile as any) as any
   }
 
   /**
@@ -283,6 +292,29 @@ export class VendorProfileService {
       category: true,
       address: true,
       services: true,
+      badges: {
+        include: {
+          definition: true,
+        },
+        orderBy: {
+          achievedAt: 'desc',
+        },
+      },
+      _count: {
+        select: {
+          followers: true,
+          reviews: true,
+        },
+      },
+      portfolios: {
+        orderBy: { createdAt: 'desc' },
+        include: {
+          mediaItems: {
+            orderBy: { sortOrder: 'asc' },
+            take: 20,
+          },
+        },
+      },
       serviceAreas: true,
     })
 
@@ -290,7 +322,7 @@ export class VendorProfileService {
       throw new NotFoundException(`Vendor profile not found for user`)
     }
 
-    return vendorProfile
+    return (await this.enrichVendorProfile(vendorProfile as any)) as any
   }
 
   /**

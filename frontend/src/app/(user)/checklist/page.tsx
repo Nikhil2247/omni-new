@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -11,10 +11,6 @@ import { CheckSquare, Calendar, ChevronRight, Plus, ListChecks, Target, Trending
 import { useEvents } from '@/hooks/queries/use-events'
 import { Progress } from '@/components/ui/progress'
 import type { EventSummary } from '@/lib/api/types/event.types'
-
-interface EventChecklistData extends EventSummary {
-  checklistProgress: number
-}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -39,23 +35,7 @@ export default function ChecklistPage() {
   const router = useRouter()
   const { data: response, isLoading } = useEvents()
   const events = response?.data ?? []
-
-  // Generate mock checklist data for each event
-  const eventsWithChecklist: EventChecklistData[] = useMemo(() => {
-    return events.map((event) => {
-      const hashCode = event.id.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0)
-        return a & a
-      }, 0)
-      const rand = Math.abs(hashCode) / 2147483647
-      const checklistProgress = Math.floor(rand * 100)
-      
-      return {
-        ...event,
-        checklistProgress,
-      }
-    })
-  }, [events])
+  const eventsWithChecklist: EventSummary[] = events
 
   // If user has only one event, redirect to that event's checklist
   useEffect(() => {
@@ -307,8 +287,8 @@ export default function ChecklistPage() {
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
-                          {event.date
-                            ? new Date(event.date).toLocaleDateString('en-US', {
+                          {event.eventDate
+                            ? new Date(event.eventDate).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 year: 'numeric'

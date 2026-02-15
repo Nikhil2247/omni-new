@@ -32,6 +32,36 @@ const nextConfig: NextConfig = {
         hostname: 'localhost',
         port: '3001', // Backend port for proxied images
       },
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+        port: '9000', // MinIO HTTPS
+      },
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+        port: '3001', // Backend HTTPS
+      },
+      {
+        protocol: 'http',
+        hostname: '147.93.106.69',
+        port: '9000', // MinIO public IP
+      },
+      {
+        protocol: 'https',
+        hostname: '147.93.106.69',
+        port: '9000', // MinIO public IP HTTPS
+      },
+      {
+        protocol: 'http',
+        hostname: '147.93.106.69',
+        port: '3001', // Backend public IP
+      },
+      {
+        protocol: 'https',
+        hostname: '147.93.106.69',
+        port: '3001', // Backend public IP HTTPS
+      },
     ],
   },
 

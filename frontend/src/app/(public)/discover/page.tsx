@@ -198,18 +198,11 @@ function DiscoverPageContent() {
   return (
     <main className="min-h-screen bg-background">
       {/* Compact Header */}
-      <section className="border-b bg-muted/20 py-6 lg:py-8">
-        <div className="mx-auto max-w-7xl px-6">
-          <FadeIn className="mb-4 text-left">
-            <h1 className="font-serif text-2xl font-bold sm:text-3xl">
-              Get inspired
-            </h1>
-          </FadeIn>
-
+      <section className="border-b bg-muted/20 py-3 lg:py-4">
+        <div className="mx-auto max-w-8xl px-6">
           {/* Search Bar */}
-          <FadeIn delay={0.05} className="max-w-xl">
+          <FadeIn delay={0.05} className="max-w-5xl">
             <div className="relative flex items-center bg-background border border-border rounded-full shadow-sm p-1.5 transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30">
-              <Search className="ml-3 h-4 w-4 shrink-0 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search inspiration, styles, themes..."
@@ -218,16 +211,22 @@ function DiscoverPageContent() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="h-9 border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
               />
-              <Button onClick={handleSearch} className="h-9 shrink-0 rounded-full px-4 text-sm">
-                Explore
+              <Button onClick={handleSearch} className="h-9 w-9 shrink-0 rounded-full p-0" aria-label="Search">
+                <Search className="h-4 w-4" />
               </Button>
             </div>
+          </FadeIn>
+
+          <FadeIn className="mt-3 text-left">
+            <h1 className="font-serif text-2xl font-bold sm:text-3xl">
+              Get inspired
+            </h1>
           </FadeIn>
         </div>
       </section>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
+      <div className="mx-auto max-w-8xl px-6 py-8 lg:py-10">
         <InspirationGrid
           key={queryParam}
           query={queryParam}

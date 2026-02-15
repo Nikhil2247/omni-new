@@ -9,6 +9,28 @@ import type {
   UpdateEventInput,
 } from '../types/event.types'
 
+const normalizeEventSummary = (event: EventSummary): EventSummary => {
+  const normalizedDate = (event.eventDate ?? event.date ?? null) as string | null
+
+  return {
+    ...event,
+    date: normalizedDate,
+    eventDate: normalizedDate,
+    guestCount: event.guestCount ?? 0,
+    confirmedGuests: event.confirmedGuests ?? 0,
+    declinedGuests: event.declinedGuests ?? 0,
+    checklistProgress: event.checklistProgress ?? 0,
+  }
+}
+
+const normalizeEventDetail = (event: EventDetail): EventDetail => {
+  const base = normalizeEventSummary(event)
+  return {
+    ...event,
+    ...base,
+  }
+}
+
 export const eventService = {
   async getEvents(params: SearchEventParams = {}) {
     const response = await apiClient.get<PaginatedResponse<EventSummary>>(
@@ -22,12 +44,13 @@ export const eventService = {
 
     if (payload?.data && Array.isArray(payload.data)) {
       const meta = payload.meta
+      const normalizedData = payload.data.map((event) => normalizeEventSummary(event))
       return {
-        data: payload.data,
+        data: normalizedData,
         meta: {
-          total: meta?.total ?? payload.data.length,
+          total: meta?.total ?? normalizedData.length,
           page: meta?.page ?? 1,
-          limit: meta?.limit ?? payload.data.length,
+          limit: meta?.limit ?? normalizedData.length,
           totalPages: meta?.totalPages ?? 1,
           hasNextPage: meta?.hasNextPage ?? false,
           hasPreviousPage: meta?.hasPreviousPage ?? false,
@@ -36,7 +59,12 @@ export const eventService = {
     }
 
     const wrapped = response.data as unknown as { data?: PaginatedResponse<EventSummary> }
-    return wrapped?.data ?? (response.data as PaginatedResponse<EventSummary>)
+    const raw = wrapped?.data ?? (response.data as PaginatedResponse<EventSummary>)
+
+    return {
+      ...raw,
+      data: (raw.data || []).map((event) => normalizeEventSummary(event)),
+    }
   },
 
   async getEvent(id: string) {
@@ -44,7 +72,8 @@ export const eventService = {
       API_ENDPOINTS.USER.EVENT_BY_ID(id),
     )
     const payload = response.data as unknown as { data?: EventDetail }
-    return payload?.data ?? (response.data as EventDetail)
+    const raw = payload?.data ?? (response.data as EventDetail)
+    return normalizeEventDetail(raw)
   },
 
   async createEvent(input: CreateEventInput) {
@@ -53,7 +82,8 @@ export const eventService = {
       input,
     )
     const payload = response.data as unknown as { data?: EventDetail }
-    return payload?.data ?? (response.data as EventDetail)
+    const raw = payload?.data ?? (response.data as EventDetail)
+    return normalizeEventDetail(raw)
   },
 
   async updateEvent(id: string, input: UpdateEventInput) {
@@ -62,7 +92,8 @@ export const eventService = {
       input,
     )
     const payload = response.data as unknown as { data?: EventDetail }
-    return payload?.data ?? (response.data as EventDetail)
+    const raw = payload?.data ?? (response.data as EventDetail)
+    return normalizeEventDetail(raw)
   },
 
   async deleteEvent(id: string) {

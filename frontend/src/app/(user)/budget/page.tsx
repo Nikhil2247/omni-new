@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,27 +48,11 @@ export default function BudgetPage() {
   const { data: response, isLoading } = useEvents()
   const events = response?.data ?? []
 
-  // Generate mock budget data for each event
-  // In a real app, this would come from the API
-  const eventsWithBudget: EventBudgetData[] = useMemo(() => {
-    return events.map((event) => {
-      // Generate consistent mock data based on event ID
-      const hashCode = event.id.split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0)
-        return a & a
-      }, 0)
-      const rand = Math.abs(hashCode) / 2147483647
-      
-      const totalBudget = Math.floor((300000 + rand * 700000) / 10000) * 10000
-      const totalSpent = Math.floor((totalBudget * (0.2 + rand * 0.6)) / 5000) * 5000
-      
-      return {
-        ...event,
-        totalBudget,
-        totalSpent,
-      }
-    })
-  }, [events])
+  const eventsWithBudget: EventBudgetData[] = events.map((event) => ({
+    ...event,
+    totalBudget: Number(event.totalBudget ?? 0),
+    totalSpent: Number(event.totalSpent ?? 0),
+  }))
 
   // If user has only one event, redirect to that event's budget
   useEffect(() => {
@@ -298,8 +282,8 @@ export default function BudgetPage() {
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Calendar className="h-3.5 w-3.5" />
                           <span>
-                            {event.date
-                              ? new Date(event.date).toLocaleDateString('en-US', {
+                            {event.eventDate
+                              ? new Date(event.eventDate).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric'

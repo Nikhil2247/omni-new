@@ -1,6 +1,8 @@
 import { apiClient } from '../client'
 import { API_ENDPOINTS } from '../endpoints'
 
+const unwrapResponse = <T>(payload: any): T => payload?.data ?? payload
+
 export interface UserProfileResponse {
   id: string
   email: string
@@ -55,15 +57,25 @@ export interface Verify2FAPayload {
   code: string
 }
 
+export interface UserAddressOption {
+  id: string
+  label: string
+}
+
 export const userService = {
   getProfile: async (): Promise<UserProfileResponse> => {
-    const { data } = await apiClient.get(API_ENDPOINTS.USER.ACCOUNT.PROFILE)
-    return data
+    const response = await apiClient.get(API_ENDPOINTS.USER.ACCOUNT.PROFILE)
+    return unwrapResponse<UserProfileResponse>(response.data)
+  },
+
+  getAddresses: async (): Promise<UserAddressOption[]> => {
+    const response = await apiClient.get(API_ENDPOINTS.USER.ACCOUNT.ADDRESSES)
+    return unwrapResponse<UserAddressOption[]>(response.data)
   },
 
   updateProfile: async (payload: UpdateProfilePayload): Promise<UserProfileResponse> => {
-    const { data } = await apiClient.patch(API_ENDPOINTS.USER.ACCOUNT.PROFILE, payload)
-    return data
+    const response = await apiClient.patch(API_ENDPOINTS.USER.ACCOUNT.PROFILE, payload)
+    return unwrapResponse<UserProfileResponse>(response.data)
   },
 
   changePassword: async (payload: ChangePasswordPayload): Promise<void> => {

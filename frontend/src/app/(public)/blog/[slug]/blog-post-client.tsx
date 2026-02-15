@@ -156,7 +156,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
         <div className="absolute top-0 right-0 h-96 w-96 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 h-96 w-96 bg-sky-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
         
-        <div className="relative mx-auto w-full max-w-7xl px-6 py-12 lg:py-16">
+        <div className="relative mx-auto w-full max-w-8xl px-6 py-12 lg:py-16">
           <div className="mb-8">
             <Button asChild variant="ghost" size="sm" className="-ml-3 hover:bg-muted/50">
               <Link href="/blog">
@@ -219,7 +219,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto w-full max-w-7xl px-6 py-12">
+      <main className="mx-auto w-full max-w-8xl px-6 py-12">
         <div className="flex gap-12">
           {/* Article Content */}
           <div className="flex-1 min-w-0">

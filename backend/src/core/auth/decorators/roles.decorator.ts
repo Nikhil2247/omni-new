@@ -33,4 +33,16 @@ export const SalesAccess = () => Roles('ADMIN_SYSTEM', 'SALES_MANAGER', 'OPERATI
 export const VendorAccess = () => Roles('ADMIN_SYSTEM', 'OPERATIONAL_ADMIN', 'BUSINESS_ADMIN')
 
 export const UserAccess = () =>
-  Roles('ADMIN_SYSTEM', 'USER', 'BUSINESS_ADMIN')
+  Roles(
+    'ADMIN_SYSTEM',
+    'ADMIN',
+    'OPERATIONAL_ADMIN',
+    'OPERATIONAL_MANAGER',
+    'OPERATIONAL_ASSISTANT',
+    'MARKETING_SERVICES_ADMIN',
+    'CONTENT_WRITER',
+    'MULTI_MEDIA_MANAGER',
+    'SALES_MANAGER',
+    'BUSINESS_ADMIN',
+    'USER',
+  )

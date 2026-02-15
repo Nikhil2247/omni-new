@@ -19,6 +19,14 @@ export function useEvents(params: SearchEventParams = {}) {
   })
 }
 
+export function useEventsEnabled(params: SearchEventParams = {}, enabled = true) {
+  return useQuery({
+    queryKey: eventKeys.list(params),
+    queryFn: () => eventService.getEvents(params),
+    enabled,
+  })
+}
+
 export function useEvent(eventId: string) {
   return useQuery({
     queryKey: eventKeys.detail(eventId),

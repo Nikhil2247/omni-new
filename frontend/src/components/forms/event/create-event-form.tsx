@@ -6,7 +6,9 @@ import * as z from 'zod'
 import { useRouter } from 'next/navigation'
 import { useCreateEvent } from '@/hooks/queries/use-events'
 import { useEventTypes } from '@/hooks/queries/use-lookups'
+import { useUserAddresses } from '@/hooks/queries/use-user-profile'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { toast } from 'sonner'
 import {
   Form,
@@ -28,17 +30,30 @@ import {
 
 const createEventSchema = z.object({
   name: z.string().min(2, 'Event name is required'),
-  eventTypeId: z.string().min(1, 'Event type ID is required'),
-  eventDate: z.string().min(1, 'Event date is required'),
+  eventTypeId: z.string().uuid('Please select a valid event type'),
+  eventDate: z
+    .string()
+    .min(1, 'Event date is required')
+    .refine((value) => !Number.isNaN(Date.parse(value)), {
+      message: 'Please select a valid event date',
+    }),
   description: z.string().optional(),
   venue: z.string().optional(),
   expectedGuests: z
     .string()
     .optional()
+    .refine((value) => !value || /^\d+$/.test(value), {
+      message: 'Guest count must be a whole number',
+    })
     .refine((value) => !value || Number(value) > 0, {
-      message: 'Guest count must be greater than 0',
+      message: 'Guest count must be at least 1',
     }),
-  addressId: z.string().optional(),
+  addressId: z
+    .string()
+    .optional()
+    .refine((value) => !value || z.string().uuid().safeParse(value).success, {
+      message: 'Address ID must be a valid UUID',
+    }),
 })
 
 type CreateEventFormValues = z.infer<typeof createEventSchema>
@@ -47,6 +62,7 @@ export function CreateEventForm() {
   const router = useRouter()
   const createEvent = useCreateEvent()
   const { data: eventTypes, isLoading: isEventTypesLoading } = useEventTypes()
+  const { data: userAddresses, isLoading: isAddressesLoading } = useUserAddresses()
 
   const form = useForm<CreateEventFormValues>({
     resolver: zodResolver(createEventSchema),
@@ -82,9 +98,17 @@ export function CreateEventForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2">
+    <Card>
+      <CardHeader>
+        <CardTitle>Event details</CardTitle>
+        <CardDescription>
+          This form maps directly to backend event creation fields.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
           <FormField
             control={form.control}
             name="name"
@@ -171,47 +195,73 @@ export function CreateEventForm() {
             name="addressId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Address ID</FormLabel>
-                <FormControl>
-                  <Input placeholder="Address UUID (optional)" {...field} />
-                </FormControl>
+                <FormLabel>Event address (optional)</FormLabel>
+                <Select
+                  value={field.value || 'none'}
+                  onValueChange={(value) => field.onChange(value === 'none' ? '' : value)}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          isAddressesLoading
+                            ? 'Loading saved addresses...'
+                            : 'Select a saved address'
+                        }
+                      />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">No address</SelectItem>
+                    {(userAddresses || []).map((address) => (
+                      <SelectItem key={address.id} value={address.id}>
+                        {address.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
+            </div>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  rows={4}
-                  placeholder="Tell us about your event goals"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      rows={4}
+                      placeholder="Tell us about your event goals"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div className="flex items-center gap-3">
-          <Button type="submit" disabled={createEvent.isPending}>
-            {createEvent.isPending ? 'Creating...' : 'Create event'}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.push('/events')}
-          >
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </Form>
+            <div className="flex items-center gap-3">
+              <Button
+                type="submit"
+                disabled={createEvent.isPending || isEventTypesLoading || isAddressesLoading}
+              >
+                {createEvent.isPending ? 'Creating...' : 'Create event'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => router.push('/events')}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   )
 }

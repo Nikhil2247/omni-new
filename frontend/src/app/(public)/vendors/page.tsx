@@ -3,14 +3,29 @@
 import { useState, useCallback, Suspense, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { motion, useInView, type Variants, AnimatePresence } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Lenis from "lenis";
 import { usePublicVendors, useFeaturedVendors } from "@/hooks/queries/use-public-vendors";
 import { VendorCard } from "@/components/features/vendors/vendor-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Users, ArrowRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import type { VendorSearchParams } from "@/lib/api/types/vendor.types";
+import { Search, Users, ArrowRight, SlidersHorizontal } from "lucide-react";
 
 // ─── Lenis Smooth Scroll ─────────────────────────────────────────────────────
 
@@ -87,9 +102,15 @@ function AnimatedCard({ children, index }: { children: React.ReactNode; index: n
 
 function VendorResults({
   query,
+  categoryId,
+  sortBy,
+  sortOrder,
   onTotalChange,
 }: {
   query?: string;
+  categoryId?: string;
+  sortBy?: VendorSearchParams["sortBy"];
+  sortOrder?: VendorSearchParams["sortOrder"];
   onTotalChange: (total: number) => void;
 }) {
   const [page, setPage] = useState(1);
@@ -99,10 +120,13 @@ function VendorResults({
   const filters = useMemo(
     () => ({
       query,
+      categoryId: categoryId || undefined,
+      sortBy,
+      sortOrder,
       page,
       limit: 24,
     }),
-    [query, page]
+    [query, categoryId, sortBy, sortOrder, page]
   );
 
   const { data: vendorsData, isLoading: vendorsLoading, isFetching } = usePublicVendors(filters);
@@ -113,6 +137,11 @@ function VendorResults({
       onTotalChange(vendorsData.meta.total);
     }
   }, [vendorsData?.meta?.total, onTotalChange]);
+
+  useEffect(() => {
+    setPage(1);
+    setAllVendors([]);
+  }, [query, categoryId, sortBy, sortOrder]);
 
   useEffect(() => {
     if (vendorsData?.data) {
@@ -127,7 +156,7 @@ function VendorResults({
         });
       }
     }
-  }, [vendorsData, page]);
+  }, [vendorsData, page, query, categoryId, sortBy, sortOrder]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -207,120 +236,287 @@ function VendorResults({
   );
 }
 
+type SortByValue = NonNullable<VendorSearchParams["sortBy"]>;
+type SortOrderValue = NonNullable<VendorSearchParams["sortOrder"]>;
+
+type CategoryOption = {
+  id: string;
+  name: string;
+};
+
+function VendorFilters({
+  searchQuery,
+  setSearchQuery,
+  selectedCategoryId,
+  setSelectedCategoryId,
+  sortBy,
+  setSortBy,
+  sortOrder,
+  setSortOrder,
+  categoryOptions,
+  activeFiltersCount,
+  onApply,
+  onClear,
+}: {
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  selectedCategoryId: string;
+  setSelectedCategoryId: (value: string) => void;
+  sortBy: SortByValue;
+  setSortBy: (value: SortByValue) => void;
+  sortOrder: SortOrderValue;
+  setSortOrder: (value: SortOrderValue) => void;
+  categoryOptions: CategoryOption[];
+  activeFiltersCount: number;
+  onApply: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="bg-muted/20 border-border rounded-2xl border p-4 sm:p-5">
+      <div className="mb-5 flex items-center justify-between">
+        <h2 className="font-serif text-lg font-semibold">Filters</h2>
+        {activeFiltersCount > 0 && (
+          <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-semibold">
+            {activeFiltersCount} active
+          </span>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="mb-2 block text-sm font-medium">Search</label>
+          <div className="relative">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && onApply()}
+              placeholder="Vendors, services..."
+              className="pl-9"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium">Category</label>
+          <Select
+            value={selectedCategoryId || "all"}
+            onValueChange={(value) => setSelectedCategoryId(value === "all" ? "" : value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {categoryOptions.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium">Sort by</label>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortByValue)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="viewCount">Most Viewed</SelectItem>
+              <SelectItem value="leadCount">Most Leads</SelectItem>
+              <SelectItem value="createdAt">Newest</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium">Order</label>
+          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrderValue)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">Descending</SelectItem>
+              <SelectItem value="asc">Ascending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        <Button variant="outline" onClick={onClear}>
+          Clear
+        </Button>
+        <Button onClick={onApply}>Apply</Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page Content ────────────────────────────────────────────────────────────
 
 function VendorsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryParam = searchParams.get("query") ?? "";
+  const categoryParam = searchParams.get("categoryId") ?? "";
+  const sortByParam = (searchParams.get("sortBy") as SortByValue | null) ?? "viewCount";
+  const sortOrderParam = (searchParams.get("sortOrder") as SortOrderValue | null) ?? "desc";
+
   const [searchQuery, setSearchQuery] = useState(queryParam);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(categoryParam);
+  const [sortBy, setSortBy] = useState<SortByValue>(sortByParam);
+  const [sortOrder, setSortOrder] = useState<SortOrderValue>(sortOrderParam);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [totalVendors, setTotalVendors] = useState(0);
 
   useSmoothScroll();
 
-  const { data: featuredVendors, isLoading: featuredLoading } = useFeaturedVendors(8);
+  const { data: featuredVendors } = useFeaturedVendors(60);
+
+  const categoryOptions = useMemo(() => {
+    if (!featuredVendors?.length) return [];
+
+    const map = new Map<string, string>();
+    featuredVendors.forEach((vendor) => {
+      if (vendor.category?.id && vendor.category?.name) {
+        map.set(vendor.category.id, vendor.category.name);
+      }
+    });
+
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [featuredVendors]);
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (queryParam) count += 1;
+    if (categoryParam) count += 1;
+    if (sortByParam !== "viewCount") count += 1;
+    if (sortOrderParam !== "desc") count += 1;
+    return count;
+  }, [queryParam, categoryParam, sortByParam, sortOrderParam]);
 
   useEffect(() => {
     setSearchQuery(queryParam);
-  }, [queryParam]);
+    setSelectedCategoryId(categoryParam);
+    setSortBy(sortByParam);
+    setSortOrder(sortOrderParam);
+  }, [queryParam, categoryParam, sortByParam, sortOrderParam]);
 
-  const handleSearch = useCallback(() => {
+  const applyFilters = useCallback(() => {
     const normalizedQuery = searchQuery.trim();
     const params = new URLSearchParams();
-    if (normalizedQuery) params.set("query", normalizedQuery);
-    router.push(params.toString() ? `/vendors?${params.toString()}` : "/vendors");
-  }, [searchQuery, router]);
 
-  const showFeatured = !queryParam && featuredVendors && featuredVendors.length > 0;
+    if (normalizedQuery) params.set("query", normalizedQuery);
+    if (selectedCategoryId) params.set("categoryId", selectedCategoryId);
+    if (sortBy !== "viewCount") params.set("sortBy", sortBy);
+    if (sortOrder !== "desc") params.set("sortOrder", sortOrder);
+
+    router.push(params.toString() ? `/vendors?${params.toString()}` : "/vendors");
+    setMobileFiltersOpen(false);
+  }, [searchQuery, selectedCategoryId, sortBy, sortOrder, router]);
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery("");
+    setSelectedCategoryId("");
+    setSortBy("viewCount");
+    setSortOrder("desc");
+    router.push("/vendors");
+    setMobileFiltersOpen(false);
+  }, [router]);
 
   return (
     <main className="bg-background min-h-screen">
-      {/* Compact Search Header */}
-      <section className="bg-muted/20 border-b py-6 lg:py-8">
-        <div className="mx-auto max-w-7xl px-6">
-          <FadeIn className="mb-4 text-left">
-            <h1 className="font-serif text-2xl font-bold sm:text-3xl">Find your perfect team</h1>
-          </FadeIn>
-
-          {/* Search Bar */}
-          <FadeIn delay={0.05} className="max-w-xl">
-            <div className="bg-background border-border focus-within:ring-primary/20 focus-within:border-primary/30 relative flex items-center rounded-full border p-1.5 shadow-sm transition-shadow focus-within:ring-2 hover:shadow-md">
-              <Search className="text-muted-foreground ml-3 h-4 w-4 shrink-0" />
-              <Input
-                type="text"
-                placeholder="Search vendors, services..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className="h-9 border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
-              />
-              <Button onClick={handleSearch} className="h-9 shrink-0 rounded-full px-4 text-sm">
-                Search
-              </Button>
+      <section className="bg-muted/20 border-b py-4 lg:py-5">
+        <div className="mx-auto max-w-8xl px-6">
+          <FadeIn className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="font-serif text-2xl font-bold sm:text-3xl">Find your perfect team</h1>
+              <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+                Browse and filter vendors like an e-commerce catalog.
+              </p>
             </div>
+
+            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+              <Button variant="outline" className="lg:hidden" onClick={() => setMobileFiltersOpen(true)}>
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                Filters
+              </Button>
+
+              <SheetContent side="right" className="w-full max-w-sm p-0">
+                <SheetHeader>
+                  <SheetTitle>Filters</SheetTitle>
+                  <SheetDescription>Refine your vendor results</SheetDescription>
+                </SheetHeader>
+                <div className="px-4 pb-6">
+                  <VendorFilters
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    selectedCategoryId={selectedCategoryId}
+                    setSelectedCategoryId={setSelectedCategoryId}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    sortOrder={sortOrder}
+                    setSortOrder={setSortOrder}
+                    categoryOptions={categoryOptions}
+                    activeFiltersCount={activeFiltersCount}
+                    onApply={applyFilters}
+                    onClear={clearFilters}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
           </FadeIn>
         </div>
       </section>
 
-      {/* Main Content */}
-      <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
-        {/* Featured Section */}
-        {showFeatured && (
-          <section className="mb-16">
-            <FadeIn className="mb-8 flex items-center justify-between">
+      <div className="mx-auto max-w-8xl px-6 py-8 lg:py-10">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <VendorFilters
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedCategoryId={selectedCategoryId}
+                setSelectedCategoryId={setSelectedCategoryId}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                sortOrder={sortOrder}
+                setSortOrder={setSortOrder}
+                categoryOptions={categoryOptions}
+                activeFiltersCount={activeFiltersCount}
+                onApply={applyFilters}
+                onClear={clearFilters}
+              />
+            </div>
+          </aside>
+
+          <section>
+            <FadeIn className="mb-5 flex items-center justify-between">
               <div>
-                <p className="text-primary mb-1 text-sm font-semibold tracking-widest uppercase">
-                  Featured
-                </p>
-                <h2 className="font-serif text-2xl font-bold sm:text-3xl">
-                  Top-rated professionals
-                </h2>
+                <p className="text-muted-foreground text-sm">Showing results</p>
+                <h2 className="font-serif text-xl font-semibold sm:text-2xl">{totalVendors} vendors</h2>
               </div>
-              <Button variant="ghost" className="group hidden sm:flex" asChild>
-                <Link href="/vendors?featured=true">
-                  View all
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+              <Button variant="outline" className="lg:hidden" onClick={() => setMobileFiltersOpen(true)}>
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                Filters
               </Button>
             </FadeIn>
 
-            {featuredLoading ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="aspect-4/5 rounded-2xl" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {featuredVendors!.slice(0, 4).map((vendor, index) => (
-                  <AnimatedCard key={vendor.id} index={index}>
-                    <VendorCard vendor={vendor} />
-                  </AnimatedCard>
-                ))}
-              </div>
-            )}
+            <VendorResults
+              key={`${queryParam}-${categoryParam}-${sortByParam}-${sortOrderParam}`}
+              query={queryParam}
+              categoryId={categoryParam}
+              sortBy={sortByParam}
+              sortOrder={sortOrderParam}
+              onTotalChange={setTotalVendors}
+            />
           </section>
-        )}
-
-        {/* All Vendors */}
-        <section>
-          <FadeIn className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-serif text-2xl font-bold sm:text-3xl">
-                  {queryParam ? "Search Results" : "All Vendors"}
-                </h2>
-                {totalVendors > 0 && (
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    {totalVendors} professionals found
-                  </p>
-                )}
-              </div>
-            </div>
-          </FadeIn>
-
-          <VendorResults key={queryParam} query={queryParam} onTotalChange={setTotalVendors} />
-        </section>
+        </div>
       </div>
 
       {/* CTA Section */}

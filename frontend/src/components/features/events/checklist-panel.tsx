@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -10,6 +11,14 @@ import { useExportChecklist } from '@/hooks/queries/use-export'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -57,6 +66,8 @@ const itemVariants = {
 }
 
 export function ChecklistPanel({ eventId }: { eventId: string }) {
+  const [showCreateChecklistDialog, setShowCreateChecklistDialog] = useState(false)
+  const [showAddTaskDialog, setShowAddTaskDialog] = useState(false)
   const { data, isLoading, error } = useChecklist(eventId)
   const createChecklist = useCreateChecklist()
   const addItem = useAddChecklistItem(eventId, data?.id)
@@ -80,6 +91,7 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
   const onCreateChecklist = async (values: CreateChecklistValues) => {
     await createChecklist.mutateAsync({ eventId, name: values.name })
     checklistForm.reset()
+    setShowCreateChecklistDialog(false)
   }
 
   const onAddItem = async (values: AddItemValues) => {
@@ -89,6 +101,7 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
       dueDate: values.dueDate || undefined,
     })
     itemForm.reset()
+    setShowAddTaskDialog(false)
   }
 
   if (isLoading) {
@@ -138,26 +151,43 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
             </div>
           </div>
           <CardContent className="p-6">
-            <Form {...checklistForm}>
-              <form onSubmit={checklistForm.handleSubmit(onCreateChecklist)} className="space-y-4">
-                <FormField
-                  control={checklistForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Checklist name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Wedding Venue Checklist" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={createChecklist.isPending} className="w-full">
-                  {createChecklist.isPending ? 'Creating...' : 'Create checklist'}
-                </Button>
-              </form>
-            </Form>
+            <Button className="w-full" onClick={() => setShowCreateChecklistDialog(true)}>
+              Create checklist
+            </Button>
+
+            <Dialog open={showCreateChecklistDialog} onOpenChange={setShowCreateChecklistDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create checklist</DialogTitle>
+                  <DialogDescription>Set up your first checklist for this event.</DialogDescription>
+                </DialogHeader>
+                <Form {...checklistForm}>
+                  <form onSubmit={checklistForm.handleSubmit(onCreateChecklist)} className="space-y-4">
+                    <FormField
+                      control={checklistForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Checklist name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Wedding Venue Checklist" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setShowCreateChecklistDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={createChecklist.isPending}>
+                        {createChecklist.isPending ? 'Creating...' : 'Create'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </motion.div>
@@ -273,16 +303,20 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
         </Card>
       </motion.div>
 
-      {/* Add Task Card */}
       <motion.div variants={itemVariants}>
-        <Card className="transition-shadow hover:shadow-md">
-          <CardHeader className="bg-muted/30">
-            <div className="flex items-center gap-2">
-              <Plus className="h-4 w-4 text-primary" />
-              <CardTitle className="text-base">Add New Task</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4">
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => setShowAddTaskDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Task
+          </Button>
+        </div>
+
+        <Dialog open={showAddTaskDialog} onOpenChange={setShowAddTaskDialog}>
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Add new task</DialogTitle>
+              <DialogDescription>Add a task to your checklist.</DialogDescription>
+            </DialogHeader>
             <Form {...itemForm}>
               <form onSubmit={itemForm.handleSubmit(onAddItem)} className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -326,14 +360,19 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" disabled={addItem.isPending} className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {addItem.isPending ? 'Adding...' : 'Add task'}
-                </Button>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAddTaskDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={addItem.isPending}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {addItem.isPending ? 'Adding...' : 'Add task'}
+                  </Button>
+                </DialogFooter>
               </form>
             </Form>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       </motion.div>
 
       {/* Tasks List */}

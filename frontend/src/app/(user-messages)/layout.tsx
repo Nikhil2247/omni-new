@@ -2,8 +2,7 @@
 
 import { AuthGuard, RoleGuard } from '@/components/auth';
 import { ROLES } from '@/config/roles';
-import { PublicHeader } from '@/components/layouts/public';
-import { BottomNav } from '@/components/ui/bottom-nav';
+import { PublicLayout } from '@/components/layouts/public';
 
 export default function UserMessagesLayout({
   children,
@@ -13,13 +12,7 @@ export default function UserMessagesLayout({
   return (
     <AuthGuard>
       <RoleGuard allowedRoles={[ROLES.USER]} redirectOnFail={true}>
-        <div className="min-h-screen bg-background">
-          <PublicHeader />
-          <main className="pt-16 pb-20 md:pb-0">
-            {children}
-          </main>
-          <BottomNav />
-        </div>
+        <PublicLayout>{children}</PublicLayout>
       </RoleGuard>
     </AuthGuard>
   );

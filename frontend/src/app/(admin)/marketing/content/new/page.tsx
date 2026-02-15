@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCreateBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
@@ -21,6 +21,15 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { uploadService } from '@/lib/api/services/upload.service'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { FileText, Image, Settings, Tags } from 'lucide-react'
+
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
 
 export default function MarketingContentNewPage() {
   const router = useRouter()
@@ -47,6 +56,7 @@ export default function MarketingContentNewPage() {
   const [readingTime, setReadingTime] = useState('')
   const [isUploadingFeatured, setIsUploadingFeatured] = useState(false)
   const [isUploadingOg, setIsUploadingOg] = useState(false)
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
 
   const categoryOptions = useMemo(
     () =>
@@ -67,6 +77,11 @@ export default function MarketingContentNewPage() {
           : [],
     [tags],
   )
+
+  useEffect(() => {
+    if (isSlugManuallyEdited) return
+    setSlug(slugify(title))
+  }, [title, isSlugManuallyEdited])
 
   const handleUpload = async (files: File[], type: 'featured' | 'og') => {
     if (!files.length) return
@@ -127,7 +142,7 @@ export default function MarketingContentNewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Create Blog Post</h1>
           <p className="text-muted-foreground mt-1">
@@ -136,13 +151,13 @@ export default function MarketingContentNewPage() {
               : 'Create content and publish when ready.'}
           </p>
         </div>
-        <Button onClick={handleCreate} disabled={!title || !content || createPost.isPending} size="lg">
+        <Button onClick={handleCreate} disabled={!title || !content || createPost.isPending} size="lg" className="w-full sm:w-auto">
           {createPost.isPending ? 'Saving...' : 'Save Draft'}
         </Button>
       </div>
 
       <Tabs defaultValue="content" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
           <TabsTrigger value="content" className="gap-2">
             <FileText className="h-4 w-4" />
             Content
@@ -169,30 +184,60 @@ export default function MarketingContentNewPage() {
               <CardDescription>Enter the main content for your blog post</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
-                <Input 
-                  id="title"
-                  placeholder="Enter a compelling title" 
-                  value={title} 
-                  onChange={(event) => setTitle(event.target.value)}
-                  className="text-lg"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="slug">URL Slug</Label>
-                <Input 
-                  id="slug"
-                  placeholder="auto-generated-from-title" 
-                  value={slug} 
-                  onChange={(event) => setSlug(event.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">Leave empty to auto-generate from title</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="title">Title *</Label>
+                    <span className="text-xs text-muted-foreground">{title.length} characters</span>
+                  </div>
+                  <Input
+                    id="title"
+                    placeholder="Enter a compelling title"
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    className="text-base"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="slug">URL Slug</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => {
+                        setIsSlugManuallyEdited(false)
+                        setSlug(slugify(title))
+                      }}
+                    >
+                      Regenerate
+                    </Button>
+                  </div>
+                  <Input
+                    id="slug"
+                    placeholder="auto-generated-from-title"
+                    value={slug}
+                    onChange={(event) => {
+                      setIsSlugManuallyEdited(true)
+                      setSlug(slugify(event.target.value))
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Slug is auto-generated from title. Edit manually if needed.
+                  </p>
+                  <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                    Preview URL: /blog/{slug || 'your-post-slug'}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="excerpt">Excerpt</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="excerpt">Excerpt</Label>
+                  <span className="text-xs text-muted-foreground">{excerpt.length} characters</span>
+                </div>
                 <Textarea
                   id="excerpt"
                   placeholder="Brief summary of your post (optional)"

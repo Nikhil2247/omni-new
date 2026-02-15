@@ -1,7 +1,7 @@
 'use client';
 
 import { AuthGuard, RoleGuard, OnboardingGuard } from '@/components/auth';
-import { DashboardLayout } from '@/components/layouts/dashboard';
+import { PublicLayout } from '@/components/layouts/public';
 import { ROLES } from '@/config/roles';
 
 export default function UserLayout({
@@ -13,7 +13,11 @@ export default function UserLayout({
     <AuthGuard>
       <RoleGuard allowedRoles={[ROLES.USER]} redirectOnFail={true}>
         <OnboardingGuard>
-          <DashboardLayout>{children}</DashboardLayout>
+          <PublicLayout>
+            <main className="p-4 sm:p-6 lg:p-6">
+              <div className="mx-auto w-full max-w-8xl">{children}</div>
+            </main>
+          </PublicLayout>
         </OnboardingGuard>
       </RoleGuard>
     </AuthGuard>

@@ -28,10 +28,10 @@ export default function UserDashboardPage() {
   const upcomingEvents = useMemo(() => {
     const events = eventsData?.data ?? []
     return [...events]
-      .filter((event) => (event.date ? new Date(event.date) >= new Date() : true))
+      .filter((event) => (event.eventDate ? new Date(event.eventDate) >= new Date() : true))
       .sort((a, b) => {
-        const aDate = a.date ? new Date(a.date).getTime() : Number.MAX_SAFE_INTEGER
-        const bDate = b.date ? new Date(b.date).getTime() : Number.MAX_SAFE_INTEGER
+        const aDate = a.eventDate ? new Date(a.eventDate).getTime() : Number.MAX_SAFE_INTEGER
+        const bDate = b.eventDate ? new Date(b.eventDate).getTime() : Number.MAX_SAFE_INTEGER
         return aDate - bDate
       })
       .slice(0, 3)
@@ -59,7 +59,7 @@ export default function UserDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Hero Header with Gradient */}
-      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-violet-50 via-purple-50 to-pink-50 dark:from-violet-950/30 dark:via-purple-950/30 dark:to-pink-950/30 p-6">
+      <div className="relative overflow-hidden rounded-xl border bg-linear-to-br from-violet-50 via-purple-50 to-pink-50 dark:from-violet-950/30 dark:via-purple-950/30 dark:to-pink-950/30 p-6">
         <div className="relative z-10">
           <h1 className="text-2xl font-bold md:text-3xl">
             {getGreeting()}, {user?.name?.split(' ')[0] || 'Planner'}! ✨
@@ -151,13 +151,13 @@ export default function UserDashboardPage() {
                     <div className="group rounded-xl border-2 p-4 transition-all hover:border-primary hover:shadow-md">
                       <div className="flex items-start justify-between">
                         <div className="flex gap-3">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-100 to-pink-100">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-purple-100 to-pink-100">
                             <Calendar className="h-6 w-6 text-purple-600" />
                           </div>
                           <div>
                             <p className="font-semibold group-hover:text-primary">{event.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {event.date ? new Date(event.date).toLocaleDateString('en-US', {
+                              {event.eventDate ? new Date(event.eventDate).toLocaleDateString('en-US', {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -211,7 +211,7 @@ export default function UserDashboardPage() {
           <CardContent className="space-y-2">
             <Button asChild variant="outline" className="w-full justify-start gap-3 border-2 hover:border-primary hover:shadow-md">
               <Link href="/discover">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-100 to-emerald-100">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-green-100 to-emerald-100">
                   <Search className="h-4 w-4 text-green-600" />
                 </div>
                 <span className="flex-1 text-left font-medium">Browse Vendors</span>
@@ -219,7 +219,7 @@ export default function UserDashboardPage() {
             </Button>
             <Button asChild variant="outline" className="w-full justify-start gap-3 border-2 hover:border-primary hover:shadow-md">
               <Link href="/events/new">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 to-pink-100">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-purple-100 to-pink-100">
                   <Plus className="h-4 w-4 text-purple-600" />
                 </div>
                 <span className="flex-1 text-left font-medium">New Event</span>
@@ -227,7 +227,7 @@ export default function UserDashboardPage() {
             </Button>
             <Button asChild variant="outline" className="w-full justify-start gap-3 border-2 hover:border-primary hover:shadow-md">
               <Link href="/inquiries">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-blue-100 to-cyan-100">
                   <MessageSquare className="h-4 w-4 text-blue-600" />
                 </div>
                 <span className="flex-1 text-left font-medium">Track Inquiries</span>
@@ -262,7 +262,7 @@ export default function UserDashboardPage() {
                 className="flex items-center justify-between rounded-xl border-2 p-4 transition-all hover:border-primary hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-blue-100 to-cyan-100">
                     <MessageSquare className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>

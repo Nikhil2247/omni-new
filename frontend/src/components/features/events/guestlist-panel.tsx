@@ -3,12 +3,21 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { useState } from 'react'
 import { Trash2, Plus, Users, CheckCircle, XCircle, HelpCircle } from 'lucide-react'
 import { useAddGuest, useCreateGuestlist, useDeleteGuest, useGuestlist, useUpdateRsvp } from '@/hooks/queries/use-guestlist'
 import { WhatsAppInvitePanel } from './whatsapp-invite-panel'
 import { useExportGuestlist } from '@/hooks/queries/use-export'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -45,6 +54,8 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
     onSuccess: () => toast.success('Export downloaded'),
     onError: () => toast.error('Export failed'),
   })
+  const [showCreateGuestlistDialog, setShowCreateGuestlistDialog] = useState(false)
+  const [showAddGuestDialog, setShowAddGuestDialog] = useState(false)
 
   const guestForm = useForm<AddGuestValues>({
     resolver: zodResolver(addGuestSchema),
@@ -53,6 +64,7 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
 
   const handleCreate = async () => {
     await createGuestlist.mutateAsync({ eventId })
+    setShowCreateGuestlistDialog(false)
   }
 
   const onAddGuest = async (values: AddGuestValues) => {
@@ -64,6 +76,7 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
       plusOne: values.plusOne ? Number(values.plusOne) : undefined,
     })
     guestForm.reset()
+    setShowAddGuestDialog(false)
   }
 
   if (isLoading) {
@@ -86,9 +99,28 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
           <CardTitle>Create your guest list</CardTitle>
         </CardHeader>
         <CardContent>
-          <Button onClick={handleCreate} disabled={createGuestlist.isPending}>
-            {createGuestlist.isPending ? 'Creating...' : 'Create guest list'}
+          <Button onClick={() => setShowCreateGuestlistDialog(true)}>
+            Create guest list
           </Button>
+
+          <Dialog open={showCreateGuestlistDialog} onOpenChange={setShowCreateGuestlistDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create guest list</DialogTitle>
+                <DialogDescription>
+                  This will create the guest list for this event.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowCreateGuestlistDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreate} disabled={createGuestlist.isPending}>
+                  {createGuestlist.isPending ? 'Creating...' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     )
@@ -154,11 +186,20 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
       {/* WhatsApp Integration */}
       <WhatsAppInvitePanel guestlistId={data.id} guests={data.guests ?? []} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Add guest</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setShowAddGuestDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Guest
+        </Button>
+      </div>
+
+      <Dialog open={showAddGuestDialog} onOpenChange={setShowAddGuestDialog}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add guest</DialogTitle>
+            <DialogDescription>Add a guest to this event guest list.</DialogDescription>
+          </DialogHeader>
+
           <Form {...guestForm}>
             <form onSubmit={guestForm.handleSubmit(onAddGuest)} className="grid gap-4 md:grid-cols-2">
               <FormField
@@ -226,16 +267,20 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
                   </FormItem>
                 )}
               />
-              <div className="md:col-span-2">
-                <Button type="submit" size="sm" disabled={addGuest.isPending}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add guest
+
+              <DialogFooter className="md:col-span-2">
+                <Button type="button" variant="outline" onClick={() => setShowAddGuestDialog(false)}>
+                  Cancel
                 </Button>
-              </div>
+                <Button type="submit" size="sm" disabled={addGuest.isPending}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {addGuest.isPending ? 'Adding...' : 'Add guest'}
+                </Button>
+              </DialogFooter>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">

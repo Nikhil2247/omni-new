@@ -3,8 +3,23 @@ import { API_ENDPOINTS } from '@/lib/api/endpoints'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 const MINIO_ENDPOINT = process.env.NEXT_PUBLIC_MINIO_ENDPOINT || 'localhost'
 const MINIO_PORT = process.env.NEXT_PUBLIC_MINIO_PORT || '9000'
+const MINIO_BUCKET = process.env.NEXT_PUBLIC_MINIO_BUCKET || 'omnicassion'
 const CDN_ENABLED = process.env.NEXT_PUBLIC_CDN_ENABLED === 'true'
 const CDN_BASE_URL = process.env.NEXT_PUBLIC_CDN_BASE_URL || ''
+
+const normalizedMinioEndpoint = MINIO_ENDPOINT.replace(/^https?:\/\//, '').replace(/\/$/, '')
+
+/**
+ * Check if URL is already our backend media viewer endpoint
+ */
+const isMediaViewApiUrl = (url: string): boolean => {
+  try {
+    const urlObj = new URL(url)
+    return urlObj.pathname.endsWith(API_ENDPOINTS.PUBLIC.MEDIA.VIEW)
+  } catch {
+    return false
+  }
+}
 
 /**
  * Check if URL has AWS/MinIO presigned parameters
@@ -18,17 +33,25 @@ const hasPresignedParams = (url: string) =>
 const isMinioUrl = (url: string): boolean => {
   try {
     const urlObj = new URL(url)
+    const pathParts = urlObj.pathname.split('/').filter(Boolean)
     const minioHosts = [
       'localhost',
       '127.0.0.1',
-      MINIO_ENDPOINT,
-      `${MINIO_ENDPOINT}:${MINIO_PORT}`,
+      normalizedMinioEndpoint,
+      `${normalizedMinioEndpoint}:${MINIO_PORT}`,
     ]
-    return minioHosts.some(host =>
+    const isKnownHost = minioHosts.some(host =>
       urlObj.host === host ||
-      urlObj.host === `${host}:${MINIO_PORT}` ||
-      urlObj.hostname === host
+      urlObj.host === `${host}:${MINIO_PORT}`
     )
+
+    // MinIO commonly serves on 9000, even when accessed via public IP/hostname
+    const isMinioPort = urlObj.port === MINIO_PORT
+
+    // Bucket-style path heuristic for non-configured hosts
+    const hasBucketLikePath = pathParts.length >= 2 && pathParts[0] === MINIO_BUCKET
+
+    return isKnownHost || isMinioPort || hasBucketLikePath
   } catch {
     return false
   }
@@ -74,6 +97,11 @@ export const getMinioViewUrl = (
   options?: { expiresIn?: number; useCdn?: boolean }
 ): string | null => {
   if (!pathOrUrl) return null
+
+  // Already correctly routed through backend media viewer
+  if (pathOrUrl.startsWith('http') && isMediaViewApiUrl(pathOrUrl)) {
+    return pathOrUrl
+  }
 
   // If it's an external URL (like Unsplash), return as-is
   if (isExternalUrl(pathOrUrl)) {
@@ -164,6 +192,9 @@ export const getBestImageUrl = (
  */
 export const needsMinioProxy = (url?: string | null): boolean => {
   if (!url) return false
+
+  // Already routed through backend media viewer
+  if (url.startsWith('http') && isMediaViewApiUrl(url)) return false
 
   // External URLs don't need proxy
   if (isExternalUrl(url)) return false

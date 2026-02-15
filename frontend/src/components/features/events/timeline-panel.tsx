@@ -7,6 +7,14 @@ import * as z from 'zod'
 import { useCreateTimeline, useTimeline, useUpdateTimeline, useAddTimelineItem, useUpdateTimelineItem, useDeleteTimelineItem } from '@/hooks/queries/use-timeline'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -38,6 +46,7 @@ const createTimelineSchema = z.object({
 type CreateTimelineValues = z.infer<typeof createTimelineSchema>
 
 export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defaultDate?: string | null }) {
+  const [isCreateTimelineOpen, setIsCreateTimelineOpen] = useState(false)
   const [isEditTimelineOpen, setIsEditTimelineOpen] = useState(false)
   const [isItemFormOpen, setIsItemFormOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
@@ -65,6 +74,7 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
       eventDate: values.eventDate,
     })
     timelineForm.reset()
+    setIsCreateTimelineOpen(false)
   }
 
   const handleUpdateTimeline = async (values: any) => {
@@ -139,39 +149,54 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
           <CardTitle>Create a timeline</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form {...timelineForm}>
-            <form onSubmit={timelineForm.handleSubmit(onCreateTimeline)} className="space-y-4">
-              <FormField
-                control={timelineForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Timeline name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Wedding day schedule" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={timelineForm.control}
-                name="eventDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Event date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={createTimeline.isPending}>
-                {createTimeline.isPending ? 'Creating...' : 'Create timeline'}
-              </Button>
-            </form>
-          </Form>
+          <Button onClick={() => setIsCreateTimelineOpen(true)}>Create timeline</Button>
+
+          <Dialog open={isCreateTimelineOpen} onOpenChange={setIsCreateTimelineOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create timeline</DialogTitle>
+                <DialogDescription>Create a schedule for this event.</DialogDescription>
+              </DialogHeader>
+              <Form {...timelineForm}>
+                <form onSubmit={timelineForm.handleSubmit(onCreateTimeline)} className="space-y-4">
+                  <FormField
+                    control={timelineForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timeline name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Wedding day schedule" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={timelineForm.control}
+                    name="eventDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Event date</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsCreateTimelineOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={createTimeline.isPending}>
+                      {createTimeline.isPending ? 'Creating...' : 'Create'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     )
@@ -180,7 +205,7 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-orange-50 via-pink-50 to-rose-50 dark:from-orange-950/30 dark:via-pink-950/30 dark:to-rose-950/30 p-6">
+      <div className="relative overflow-hidden rounded-xl border bg-linear-to-br from-orange-50 via-pink-50 to-rose-50 dark:from-orange-950/30 dark:via-pink-950/30 dark:to-rose-950/30 p-6">
         <div className="relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
