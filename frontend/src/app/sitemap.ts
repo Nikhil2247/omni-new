@@ -1,8 +1,131 @@
 import { MetadataRoute } from 'next';
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com';
+const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com').replace(/\/$/, '');
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
 
-export default function sitemap(): MetadataRoute.Sitemap {
+type VendorSitemapItem = {
+  slug?: string | null
+  updatedAt?: string | Date | null
+}
+
+type VendorsPageResponse = {
+  data?: VendorSitemapItem[]
+  meta?: {
+    page?: number
+    totalPages?: number
+    hasNextPage?: boolean
+  }
+  success?: boolean
+}
+
+type BlogSitemapItem = {
+  slug?: string | null
+  updatedAt?: string | Date | null
+  publishedAt?: string | Date | null
+  status?: string | null
+}
+
+type BlogPageResponse = {
+  data?: BlogSitemapItem[]
+  meta?: {
+    page?: number
+    totalPages?: number
+    hasNextPage?: boolean
+  }
+  success?: boolean
+}
+
+async function fetchVendorSlugRoutes(currentDate: Date): Promise<MetadataRoute.Sitemap> {
+  const slugMap = new Map<string, Date>()
+  const limit = 200
+  const maxPages = 50
+
+  for (let page = 1; page <= maxPages; page++) {
+    const response = await fetch(
+      `${API_URL}/public/discovery/vendors?page=${page}&limit=${limit}`,
+      {
+        next: { revalidate: 3600 },
+      },
+    )
+
+    if (!response.ok) break
+
+    const payload = (await response.json()) as VendorsPageResponse | { data?: VendorsPageResponse }
+    const paginated = (payload as { data?: VendorsPageResponse })?.data?.data
+      ? (payload as { data?: VendorsPageResponse }).data
+      : (payload as VendorsPageResponse)
+
+    const vendors = Array.isArray(paginated?.data) ? paginated.data : []
+
+    for (const vendor of vendors) {
+      const slug = vendor?.slug?.trim()
+      if (!slug) continue
+
+      const parsedDate = vendor.updatedAt ? new Date(vendor.updatedAt) : currentDate
+      slugMap.set(slug, Number.isNaN(parsedDate.getTime()) ? currentDate : parsedDate)
+    }
+
+    const hasNext = Boolean(paginated?.meta?.hasNextPage)
+    const totalPages = paginated?.meta?.totalPages || page
+
+    if (!hasNext || page >= totalPages) break
+  }
+
+  return Array.from(slugMap.entries()).map(([slug, lastModified]) => ({
+    url: `${SITE_URL}/vendors/${slug}`,
+    lastModified,
+    changeFrequency: 'daily' as const,
+    priority: 0.8,
+  }))
+}
+
+async function fetchBlogSlugRoutes(currentDate: Date): Promise<MetadataRoute.Sitemap> {
+  const slugMap = new Map<string, Date>()
+  const limit = 100
+  const maxPages = 30
+
+  for (let page = 1; page <= maxPages; page++) {
+    const response = await fetch(
+      `${API_URL}/public/blog/posts?page=${page}&limit=${limit}&status=PUBLISHED`,
+      {
+        next: { revalidate: 3600 },
+      },
+    )
+
+    if (!response.ok) break
+
+    const payload = (await response.json()) as BlogPageResponse | { data?: BlogPageResponse }
+    const paginated = (payload as { data?: BlogPageResponse })?.data?.data
+      ? (payload as { data?: BlogPageResponse }).data
+      : (payload as BlogPageResponse)
+
+    const posts = Array.isArray(paginated?.data) ? paginated.data : []
+
+    for (const post of posts) {
+      const slug = post?.slug?.trim()
+      if (!slug) continue
+      if (post?.status && post.status !== 'PUBLISHED') continue
+
+      const sourceDate = post.publishedAt || post.updatedAt
+      const parsedDate = sourceDate ? new Date(sourceDate) : currentDate
+      slugMap.set(slug, Number.isNaN(parsedDate.getTime()) ? currentDate : parsedDate)
+    }
+
+    const hasNext = Boolean(paginated?.meta?.hasNextPage)
+    const totalPages = paginated?.meta?.totalPages || page
+
+    if (!hasNext || page >= totalPages) break
+  }
+
+  return Array.from(slugMap.entries()).map(([slug, lastModified]) => ({
+    url: `${SITE_URL}/blog/${slug}`,
+    lastModified,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }))
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const currentDate = new Date();
   
   // Static pages with high priority
@@ -69,18 +192,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Vendor category pages (example categories)
   const categoryRoutes: MetadataRoute.Sitemap = [
-    'venues',
-    'catering',
     'photography',
-    'decorators',
-    'wedding-planning',
-    'dj-music',
-    'florists',
-    'makeup-hair',
     'videography',
-    'invitations',
+    'catering',
+    'venues',
+    'entertainment',
+    'decor-design',
+    'florist',
+    'makeup-hair',
+    'mehndi-artists',
+    'wedding-planning',
   ].map((category) => ({
-    url: `${SITE_URL}/vendors?category=${category}`,
+    url: `${SITE_URL}/vendors/category/${category}`,
     lastModified: currentDate,
     changeFrequency: 'daily' as const,
     priority: 0.9,
@@ -96,5 +219,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  return [...staticRoutes, ...authRoutes, ...categoryRoutes, ...onboardingRoutes];
+  let dynamicVendorRoutes: MetadataRoute.Sitemap = []
+  let dynamicBlogRoutes: MetadataRoute.Sitemap = []
+  try {
+    dynamicVendorRoutes = await fetchVendorSlugRoutes(currentDate)
+  } catch {
+    dynamicVendorRoutes = []
+  }
+
+  try {
+    dynamicBlogRoutes = await fetchBlogSlugRoutes(currentDate)
+  } catch {
+    dynamicBlogRoutes = []
+  }
+
+  return [
+    ...staticRoutes,
+    ...authRoutes,
+    ...categoryRoutes,
+    ...onboardingRoutes,
+    ...dynamicVendorRoutes,
+    ...dynamicBlogRoutes,
+  ];
 }

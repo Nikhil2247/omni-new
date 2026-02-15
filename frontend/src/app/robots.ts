@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com';
+  const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com').replace(/\/$/, '');
   
   return {
     rules: [
@@ -13,7 +13,8 @@ export default function robots(): MetadataRoute.Robots {
           '/admin/',
           '/dashboard/',
           '/settings/',
-          '/*?*utm_*', 
+          '/*?*utm_*',
+          '/*?*gclid=*',
           '/events/*/edit',
           '/business/*',
           '/ops/*',

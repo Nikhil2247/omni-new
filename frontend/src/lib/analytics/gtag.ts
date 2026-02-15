@@ -4,12 +4,20 @@
  */
 
 // Google Analytics 4 Integration
-export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-66Y82VSR50';
+export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || 'AW-16748718555';
+
+const hasWindow = () => typeof window !== 'undefined';
+const hasGtag = () => hasWindow() && typeof window.gtag === 'function';
 
 // Track page views
 export function pageview(url: string) {
-  if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('config', GA_MEASUREMENT_ID!, {
+  if (hasGtag()) {
+    window.gtag('config', GA_MEASUREMENT_ID, {
+      page_path: url,
+    });
+
+    window.gtag('config', GOOGLE_ADS_ID, {
       page_path: url,
     });
   }
@@ -22,11 +30,22 @@ export function event({ action, category, label, value }: {
   label?: string;
   value?: number;
 }) {
-  if (typeof window !== 'undefined' && window.gtag) {
+  if (hasGtag()) {
     window.gtag('event', action, {
       event_category: category,
       event_label: label,
       value: value,
+    });
+  }
+}
+
+// Optional Ads conversion helper
+export function conversion(conversionLabel: string, value?: number, currency = 'INR') {
+  if (hasGtag()) {
+    window.gtag('event', 'conversion', {
+      send_to: `${GOOGLE_ADS_ID}/${conversionLabel}`,
+      value,
+      currency,
     });
   }
 }
@@ -71,5 +90,6 @@ export function trackExternalLink(url: string) {
 declare global {
   interface Window {
     gtag: (...args: any[]) => void;
+    dataLayer: unknown[];
   }
 }
