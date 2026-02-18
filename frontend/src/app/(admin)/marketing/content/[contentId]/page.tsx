@@ -49,7 +49,9 @@ export default function MarketingContentDetailPage() {
   const [focusKeyword, setFocusKeyword] = useState('')
   const [keywords, setKeywords] = useState('')
   const [ogImage, setOgImage] = useState('')
+  const [ogImagePreview, setOgImagePreview] = useState('')
   const [featuredImage, setFeaturedImage] = useState('')
+  const [featuredImagePreview, setFeaturedImagePreview] = useState('')
   const [featuredImageAlt, setFeaturedImageAlt] = useState('')
   const [categoryId, setCategoryId] = useState('none')
   const [tagIds, setTagIds] = useState<string[]>([])
@@ -89,7 +91,9 @@ export default function MarketingContentDetailPage() {
     setMetaDescription(data.metaDescription || '')
     setFocusKeyword(data.focusKeyword || '')
     setKeywords((data.keywords || []).join(', '))
+    setOgImagePreview('')
     setOgImage(data.ogImage || '')
+    setFeaturedImagePreview('')
     setFeaturedImage(data.featuredImage || '')
     setFeaturedImageAlt(data.featuredImageAlt || '')
     setCategoryId(data.categoryId || 'none')
@@ -98,25 +102,50 @@ export default function MarketingContentDetailPage() {
     setReadingTime(data.readingTime ? String(data.readingTime) : '')
   }, [data])
 
+  useEffect(() => {
+    return () => {
+      if (featuredImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(featuredImagePreview)
+      }
+      if (ogImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(ogImagePreview)
+      }
+    }
+  }, [featuredImagePreview, ogImagePreview])
+
   const handleUpload = async (files: File[], type: 'featured' | 'og') => {
     if (!files.length) return
     const file = files[0]
+    const localPreview = file.type.startsWith('image/') ? URL.createObjectURL(file) : ''
     try {
       if (type === 'featured') {
         setIsUploadingFeatured(true)
+        setFeaturedImagePreview((prev) => {
+          if (prev.startsWith('blob:')) {
+            URL.revokeObjectURL(prev)
+          }
+          return localPreview
+        })
       } else {
         setIsUploadingOg(true)
+        setOgImagePreview((prev) => {
+          if (prev.startsWith('blob:')) {
+            URL.revokeObjectURL(prev)
+          }
+          return localPreview
+        })
       }
       const presigned = await uploadService.getPresignedUrl(file.name, file.type, 'media')
       await uploadService.uploadToPresignedUrl(presigned.uploadUrl, file)
+      const resolvedUploadedUrl = presigned.fileUrl || presigned.filePath
 
       if (type === 'featured') {
-        setFeaturedImage(presigned.fileUrl)
+        setFeaturedImage(resolvedUploadedUrl)
         if (!featuredImageAlt) {
-          setFeaturedImageAlt(file.name.replace(/\.[^/.]+$/, ''))
+          setFeaturedImageAlt(file.name.replace(/\.[^/.]+$/, '').trim().slice(0, 125))
         }
       } else {
-        setOgImage(presigned.fileUrl)
+        setOgImage(resolvedUploadedUrl)
       }
     } finally {
       if (type === 'featured') {
@@ -128,6 +157,7 @@ export default function MarketingContentDetailPage() {
   }
 
   const handleSave = () => {
+    const normalizedFeaturedImageAlt = featuredImageAlt.trim().slice(0, 125)
     updatePost.mutate({
       title,
       slug,
@@ -143,7 +173,7 @@ export default function MarketingContentDetailPage() {
         .filter(Boolean),
       ogImage: ogImage || undefined,
       featuredImage: featuredImage || undefined,
-      featuredImageAlt: featuredImageAlt || undefined,
+      featuredImageAlt: normalizedFeaturedImageAlt || undefined,
       categoryId: categoryId === 'none' ? undefined : categoryId,
       tagIds: tagIds.length ? tagIds : undefined,
       vendorId: vendorId || undefined,
@@ -280,19 +310,23 @@ export default function MarketingContentDetailPage() {
             />
             <Input
               value={featuredImage}
-              onChange={(event) => setFeaturedImage(event.target.value)}
+              onChange={(event) => {
+                setFeaturedImagePreview('')
+                setFeaturedImage(event.target.value)
+              }}
               placeholder="Featured image URL"
             />
             {featuredImage ? (
               <img
-                src={getMinioViewUrl(featuredImage) || featuredImage}
+                src={featuredImagePreview || getMinioViewUrl(featuredImage) || featuredImage}
                 alt={featuredImageAlt || 'Featured image preview'}
                 className="h-40 w-full rounded-md object-cover"
               />
             ) : null}
             <Input
               value={featuredImageAlt}
-              onChange={(event) => setFeaturedImageAlt(event.target.value)}
+              maxLength={125}
+              onChange={(event) => setFeaturedImageAlt(event.target.value.slice(0, 125))}
               placeholder="Featured image alt text"
             />
           </div>
@@ -308,12 +342,15 @@ export default function MarketingContentDetailPage() {
             />
             <Input
               value={ogImage}
-              onChange={(event) => setOgImage(event.target.value)}
+              onChange={(event) => {
+                setOgImagePreview('')
+                setOgImage(event.target.value)
+              }}
               placeholder="OG image URL"
             />
             {ogImage ? (
               <img
-                src={getMinioViewUrl(ogImage) || ogImage}
+                src={ogImagePreview || getMinioViewUrl(ogImage) || ogImage}
                 alt="Open Graph preview"
                 className="h-40 w-full rounded-md object-cover"
               />
@@ -377,7 +414,7 @@ export default function MarketingContentDetailPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={updatePost.isPending || !title || !content}>
+        <Button onClick={handleSave} disabled={updatePost.isPending || isUploadingFeatured || isUploadingOg || !title || !content}>
           {isContentWriter ? 'Save Draft' : 'Save changes'}
         </Button>
       </div>

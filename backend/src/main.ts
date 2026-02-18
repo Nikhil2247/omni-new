@@ -28,6 +28,14 @@ if (!process.env.PRISMA_QUERY_ENGINE_TYPE) {
 async function bootstrap() {
   const logger = new Logger('Bootstrap')
 
+  const parseBoolean = (value: string | boolean | undefined, defaultValue: boolean): boolean => {
+    if (value === undefined || value === null) return defaultValue
+    if (typeof value === 'boolean') return value
+
+    const normalized = value.toString().trim().toLowerCase()
+    return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on'
+  }
+
   // Create application with Express platform
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -243,13 +251,23 @@ async function bootstrap() {
   const smtpHost = configService.get<string>('SMTP_HOST', 'localhost')
   const smtpPortRaw = configService.get<string | number>('SMTP_PORT', 587)
   const smtpPort = typeof smtpPortRaw === 'number' ? smtpPortRaw : Number(smtpPortRaw) || 587
-  const emailStatus = await emailService.verifyConnectionWithDetails()
+  const nodeEnv = configService.get<string>('NODE_ENV', 'development')
+  const shouldVerifyEmailOnStartup = parseBoolean(
+    configService.get<string | boolean>('EMAIL_VERIFY_ON_STARTUP'),
+    nodeEnv === 'production',
+  )
 
-  if (emailStatus.connected) {
-    logger.log(`📧 Email server connected (${emailProvider}: ${smtpHost}:${smtpPort})`)
+  if (!shouldVerifyEmailOnStartup) {
+    logger.log(`📧 Email server startup check skipped (${emailProvider}: ${smtpHost}:${smtpPort})`)
   } else {
-    const emailError = emailStatus.error ? ` - ${emailStatus.error}` : ''
-    logger.warn(`📧 Email server connection failed (${emailProvider}: ${smtpHost}:${smtpPort})${emailError}`)
+    const emailStatus = await emailService.verifyConnectionWithDetails()
+
+    if (emailStatus.connected) {
+      logger.log(`📧 Email server connected (${emailProvider}: ${smtpHost}:${smtpPort})`)
+    } else {
+      const emailError = emailStatus.error ? ` - ${emailStatus.error}` : ''
+      logger.warn(`📧 Email server connection failed (${emailProvider}: ${smtpHost}:${smtpPort})${emailError}`)
+    }
   }
 
   await app.listen(port, host)

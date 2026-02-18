@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useEffect, useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
+import { getMinioViewUrl } from '@/lib/utils/minio'
 import type { BlogPost } from '@/lib/api/types/marketing.types'
 
 type BlogPostClientProps = {
@@ -148,6 +149,8 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
     )
   }
 
+  const featuredImageUrl = getMinioViewUrl(post.featuredImage) || post.featuredImage
+
   return (
     <>
       {/* Hero Section */}
@@ -224,12 +227,12 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
           {/* Article Content */}
           <div className="flex-1 min-w-0">
             {/* Featured Image */}
-            {post.featuredImage && (
+            {featuredImageUrl && (
               <div className="mb-12 overflow-hidden rounded-2xl border shadow-lg">
                 <AspectRatio ratio={16 / 9}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={post.featuredImage}
+                    src={featuredImageUrl}
                     alt={post.featuredImageAlt || post.title}
                     className="h-full w-full object-cover"
                   />

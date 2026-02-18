@@ -31,6 +31,11 @@ export interface PresignedUrlResponse {
   fileUrl: string
 }
 
+interface ApiEnvelope<T> {
+  success?: boolean
+  data?: T
+}
+
 export const uploadService = {
   /**
    * Upload a single image file with automatic WebP conversion
@@ -146,7 +151,7 @@ export const uploadService = {
     mimeType: string,
     category: string
   ): Promise<PresignedUrlResponse> => {
-    const { data } = await apiClient.post<PresignedUrlResponse>(
+    const { data } = await apiClient.post<PresignedUrlResponse | ApiEnvelope<PresignedUrlResponse>>(
       API_ENDPOINTS.UPLOAD.PRESIGNED,
       {
         filename,
@@ -155,7 +160,13 @@ export const uploadService = {
       }
     )
 
-    return data
+    const resolved = (data as ApiEnvelope<PresignedUrlResponse>)?.data ?? (data as PresignedUrlResponse)
+
+    return {
+      uploadUrl: resolved?.uploadUrl,
+      filePath: resolved?.filePath,
+      fileUrl: resolved?.fileUrl || resolved?.filePath,
+    }
   },
 
   /**
@@ -165,12 +176,16 @@ export const uploadService = {
     uploadUrl: string,
     file: File
   ): Promise<void> => {
-    await fetch(uploadUrl, {
+    const response = await fetch(uploadUrl, {
       method: 'PUT',
       body: file,
       headers: {
         'Content-Type': file.type,
       },
     })
+
+    if (!response.ok) {
+      throw new Error(`Direct upload failed with status ${response.status}`)
+    }
   },
 }

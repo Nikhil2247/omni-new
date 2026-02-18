@@ -17,6 +17,7 @@ import { PrismaService } from '../../../core/database/prisma.service'
 @Injectable()
 export class VendorProfileService {
   private readonly logger = new Logger(VendorProfileService.name)
+  private readonly uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
   constructor(
     private readonly vendorProfileRepository: VendorProfileRepository,
@@ -25,6 +26,67 @@ export class VendorProfileService {
     private readonly uploadService: UploadService,
     private readonly prisma: PrismaService,
   ) {}
+
+  private async resolveCategoryId(input?: string): Promise<string> {
+    const candidate = input?.trim()
+
+    if (candidate && this.uuidRegex.test(candidate)) {
+      const existingById = await this.prisma.category.findUnique({
+        where: { id: candidate },
+        select: { id: true },
+      })
+
+      if (!existingById) {
+        throw new BadRequestException('Invalid categoryId')
+      }
+
+      return existingById.id
+    }
+
+    if (candidate?.startsWith('cat-')) {
+      const rawIndex = Number(candidate.replace('cat-', ''))
+      if (Number.isInteger(rawIndex) && rawIndex > 0) {
+        const categories = await this.prisma.category.findMany({
+          where: { isActive: true },
+          orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+          select: { id: true },
+        })
+        const fallback = categories[rawIndex - 1]
+        if (fallback) {
+          return fallback.id
+        }
+      }
+    }
+
+    if (candidate) {
+      const bySlugOrName = await this.prisma.category.findFirst({
+        where: {
+          OR: [
+            { slug: candidate.toLowerCase() },
+            { name: { equals: candidate, mode: 'insensitive' } },
+          ],
+          isActive: true,
+        },
+        select: { id: true },
+      })
+
+      if (bySlugOrName) {
+        return bySlugOrName.id
+      }
+    }
+
+    const defaultCategory = await this.prisma.category.findFirst({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      select: { id: true },
+    })
+
+    if (!defaultCategory) {
+      throw new BadRequestException('No active category found. Please contact support.')
+    }
+
+    return defaultCategory.id
+  }
 
   private async attachReviewMetrics<T extends { id: string }>(vendors: T[]): Promise<Array<T & { reviewsCount: number; averageRating: number | null }>> {
     if (vendors.length === 0) {
@@ -136,24 +198,26 @@ export class VendorProfileService {
   async create(dto: CreateVendorProfileDto): Promise<VendorProfile> {
     this.logger.log(`Creating vendor profile for user: ${dto.userId}`)
 
+    if (!dto.userId || !this.uuidRegex.test(dto.userId)) {
+      throw new BadRequestException('Invalid user context')
+    }
+
     // Check if user already has a vendor profile
     const existingProfile = await this.vendorProfileRepository.findByUserId(dto.userId)
     if (existingProfile) {
       throw new ConflictException('User already has a vendor profile')
     }
 
-    // Check if slug is already taken
-    const existingSlug = await this.vendorProfileRepository.findBySlug(dto.slug)
-    if (existingSlug) {
-      throw new ConflictException(`Slug '${dto.slug}' is already taken`)
-    }
+    const baseSlug = dto.slug?.trim() || dto.businessName
+    const resolvedSlug = await this.generateSlug(baseSlug)
+    const resolvedCategoryId = await this.resolveCategoryId(dto.categoryId)
 
     // Create vendor profile
     const vendorProfile = await this.vendorProfileRepository.create({
       user: { connect: { id: dto.userId } },
       businessName: dto.businessName,
-      slug: dto.slug,
-      category: { connect: { id: dto.categoryId } },
+      slug: resolvedSlug,
+      category: { connect: { id: resolvedCategoryId } },
       description: dto.description,
       tagline: dto.tagline,
       contactEmail: dto.contactEmail,
@@ -356,7 +420,8 @@ export class VendorProfileService {
     }
 
     if (dto.categoryId) {
-      updateData.category = { connect: { id: dto.categoryId } }
+      const resolvedCategoryId = await this.resolveCategoryId(dto.categoryId)
+      updateData.category = { connect: { id: resolvedCategoryId } }
     }
 
     if (dto.addressId) {
@@ -453,11 +518,12 @@ export class VendorProfileService {
    * Generate unique slug from business name
    */
   async generateSlug(businessName: string): Promise<string> {
-    let slug = slugify(businessName, { lower: true, strict: true })
+    const base = slugify(businessName || 'vendor', { lower: true, strict: true }) || 'vendor'
+    let slug = base
     let counter = 1
 
     while (await this.vendorProfileRepository.findBySlug(slug)) {
-      slug = `${slugify(businessName, { lower: true, strict: true })}-${counter}`
+      slug = `${base}-${counter}`
       counter++
     }
 

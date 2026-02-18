@@ -99,8 +99,8 @@ export type VendorStatus = 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'SUSPENDED' |
 
 export interface CreateVendorProfileRequest {
   businessName: string
-  slug: string
-  categoryId: string
+  slug?: string
+  categoryId?: string
   tagline?: string
   description?: string
   contactEmail?: string

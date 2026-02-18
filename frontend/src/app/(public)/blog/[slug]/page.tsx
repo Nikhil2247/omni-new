@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import BlogPostClient from './blog-post-client'
 import { pageMetadata, generateJsonLd } from '@/lib/seo/metadata'
 import { publicService } from '@/lib/api/services/public.service'
+import { getMinioViewUrl } from '@/lib/utils/minio'
 import type { BlogPost } from '@/lib/api/types/marketing.types'
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com'
@@ -40,8 +41,9 @@ function buildArticleJsonLd(post: BlogPost, slug: string) {
   }
 
   // Add optional fields
-  if (post.featuredImage) {
-    Object.assign(schema, { image: [post.featuredImage] })
+  const articleImage = getMinioViewUrl(post.featuredImage) || post.featuredImage
+  if (articleImage) {
+    Object.assign(schema, { image: [articleImage] })
   }
   if (post.updatedAt) {
     Object.assign(schema, { dateModified: post.updatedAt })
@@ -70,7 +72,7 @@ export async function generateMetadata(
 
   const title = post.metaTitle || post.title
   const description = post.metaDescription || post.excerpt || 'Read the latest insights from Omnicassion.'
-  const image = post.ogImage || post.featuredImage || undefined
+  const image = getMinioViewUrl(post.ogImage) || getMinioViewUrl(post.featuredImage) || post.ogImage || post.featuredImage || undefined
   const keywords = post.keywords?.length ? post.keywords : undefined
 
   return pageMetadata(title, description, {

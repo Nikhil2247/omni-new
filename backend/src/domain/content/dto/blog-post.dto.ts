@@ -3,6 +3,7 @@
 // ============================================================================
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { Transform } from 'class-transformer'
 import { IsString, IsUUID, IsOptional, IsEnum, IsArray, IsInt, Min, Max, MaxLength } from 'class-validator'
 
 export enum BlogStatus {
@@ -75,6 +76,7 @@ export class CreateBlogPostDto {
 
   @ApiPropertyOptional({ description: 'Featured image alt text', nullable: true })
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().slice(0, 125) : value))
   @IsString()
   @MaxLength(125)
   featuredImageAlt?: string
@@ -168,7 +170,9 @@ export class UpdateBlogPostDto {
 
   @ApiPropertyOptional({ description: 'Featured image alt text', nullable: true })
   @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().slice(0, 125) : value))
   @IsString()
+  @MaxLength(125)
   featuredImageAlt?: string
 
   @ApiPropertyOptional({ description: 'Status', enum: BlogStatus })

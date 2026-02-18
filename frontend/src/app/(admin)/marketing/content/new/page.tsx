@@ -48,7 +48,9 @@ export default function MarketingContentNewPage() {
   const [focusKeyword, setFocusKeyword] = useState('')
   const [keywords, setKeywords] = useState('')
   const [ogImage, setOgImage] = useState('')
+  const [ogImagePreview, setOgImagePreview] = useState('')
   const [featuredImage, setFeaturedImage] = useState('')
+  const [featuredImagePreview, setFeaturedImagePreview] = useState('')
   const [featuredImageAlt, setFeaturedImageAlt] = useState('')
   const [categoryId, setCategoryId] = useState('none')
   const [tagIds, setTagIds] = useState<string[]>([])
@@ -83,25 +85,50 @@ export default function MarketingContentNewPage() {
     setSlug(slugify(title))
   }, [title, isSlugManuallyEdited])
 
+  useEffect(() => {
+    return () => {
+      if (featuredImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(featuredImagePreview)
+      }
+      if (ogImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(ogImagePreview)
+      }
+    }
+  }, [featuredImagePreview, ogImagePreview])
+
   const handleUpload = async (files: File[], type: 'featured' | 'og') => {
     if (!files.length) return
     const file = files[0]
+    const localPreview = file.type.startsWith('image/') ? URL.createObjectURL(file) : ''
     try {
       if (type === 'featured') {
         setIsUploadingFeatured(true)
+        setFeaturedImagePreview((prev) => {
+          if (prev.startsWith('blob:')) {
+            URL.revokeObjectURL(prev)
+          }
+          return localPreview
+        })
       } else {
         setIsUploadingOg(true)
+        setOgImagePreview((prev) => {
+          if (prev.startsWith('blob:')) {
+            URL.revokeObjectURL(prev)
+          }
+          return localPreview
+        })
       }
       const presigned = await uploadService.getPresignedUrl(file.name, file.type, 'media')
       await uploadService.uploadToPresignedUrl(presigned.uploadUrl, file)
+      const resolvedUploadedUrl = presigned.fileUrl || presigned.filePath
 
       if (type === 'featured') {
-        setFeaturedImage(presigned.fileUrl)
+        setFeaturedImage(resolvedUploadedUrl)
         if (!featuredImageAlt) {
-          setFeaturedImageAlt(file.name.replace(/\.[^/.]+$/, ''))
+          setFeaturedImageAlt(file.name.replace(/\.[^/.]+$/, '').trim().slice(0, 125))
         }
       } else {
-        setOgImage(presigned.fileUrl)
+        setOgImage(resolvedUploadedUrl)
       }
     } finally {
       if (type === 'featured') {
@@ -113,6 +140,7 @@ export default function MarketingContentNewPage() {
   }
 
   const handleCreate = async () => {
+    const normalizedFeaturedImageAlt = featuredImageAlt.trim().slice(0, 125)
     const payload = {
       title,
       content,
@@ -127,7 +155,7 @@ export default function MarketingContentNewPage() {
         .filter(Boolean),
       ogImage: ogImage || undefined,
       featuredImage: featuredImage || undefined,
-      featuredImageAlt: featuredImageAlt || undefined,
+      featuredImageAlt: normalizedFeaturedImageAlt || undefined,
       categoryId: categoryId === 'none' ? undefined : categoryId,
       tagIds: tagIds.length ? tagIds : undefined,
       vendorId: vendorId || undefined,
@@ -151,7 +179,12 @@ export default function MarketingContentNewPage() {
               : 'Create content and publish when ready.'}
           </p>
         </div>
-        <Button onClick={handleCreate} disabled={!title || !content || createPost.isPending} size="lg" className="w-full sm:w-auto">
+        <Button
+          onClick={handleCreate}
+          disabled={!title || !content || createPost.isPending || isUploadingFeatured || isUploadingOg}
+          size="lg"
+          className="w-full sm:w-auto"
+        >
           {createPost.isPending ? 'Saving...' : 'Save Draft'}
         </Button>
       </div>
@@ -293,7 +326,10 @@ export default function MarketingContentNewPage() {
                   id="featuredImageUrl"
                   placeholder="https://example.com/image.jpg"
                   value={featuredImage}
-                  onChange={(event) => setFeaturedImage(event.target.value)}
+                  onChange={(event) => {
+                    setFeaturedImagePreview('')
+                    setFeaturedImage(event.target.value)
+                  }}
                 />
               </div>
 
@@ -303,7 +339,7 @@ export default function MarketingContentNewPage() {
                   <div className="overflow-hidden rounded-lg border">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={getMinioViewUrl(featuredImage) || featuredImage}
+                      src={featuredImagePreview || getMinioViewUrl(featuredImage) || featuredImage}
                       alt={featuredImageAlt || 'Featured image preview'}
                       className="h-48 w-full object-cover"
                     />
@@ -317,7 +353,8 @@ export default function MarketingContentNewPage() {
                   id="featuredImageAlt"
                   placeholder="Describe the image for accessibility"
                   value={featuredImageAlt}
-                  onChange={(event) => setFeaturedImageAlt(event.target.value)}
+                  maxLength={125}
+                  onChange={(event) => setFeaturedImageAlt(event.target.value.slice(0, 125))}
                 />
               </div>
             </CardContent>
@@ -347,7 +384,10 @@ export default function MarketingContentNewPage() {
                   id="ogImageUrl"
                   placeholder="https://example.com/og-image.jpg"
                   value={ogImage}
-                  onChange={(event) => setOgImage(event.target.value)}
+                  onChange={(event) => {
+                    setOgImagePreview('')
+                    setOgImage(event.target.value)
+                  }}
                 />
               </div>
 
@@ -357,7 +397,7 @@ export default function MarketingContentNewPage() {
                   <div className="overflow-hidden rounded-lg border">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={getMinioViewUrl(ogImage) || ogImage}
+                      src={ogImagePreview || getMinioViewUrl(ogImage) || ogImage}
                       alt="Open Graph preview"
                       className="h-48 w-full object-cover"
                     />

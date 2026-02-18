@@ -54,7 +54,7 @@ export const businessService = {
 
   generateSlug: async (businessName: string): Promise<{ slug: string }> => {
     const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.PROFILE.GENERATE_SLUG, { businessName })
-    return data
+    return data?.data ?? data
   },
 
   uploadProfilePhoto: async (file: File): Promise<ApiResponse<VendorProfile>> => {

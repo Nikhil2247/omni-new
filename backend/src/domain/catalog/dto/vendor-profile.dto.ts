@@ -13,6 +13,7 @@ import { VendorStatus } from '@prisma/client'
 
 export class CreateVendorProfileDto {
   @ApiProperty({ description: 'User ID (owner of the profile)' })
+  @IsOptional()
   @IsUUID()
   userId: string
 
@@ -20,13 +21,15 @@ export class CreateVendorProfileDto {
   @IsString()
   businessName: string
 
-  @ApiProperty({ description: 'Business slug (unique identifier)' })
+  @ApiPropertyOptional({ description: 'Business slug (unique identifier)' })
+  @IsOptional()
   @IsString()
-  slug: string
+  slug?: string
 
-  @ApiProperty({ description: 'Service category ID' })
-  @IsUUID()
-  categoryId: string
+  @ApiPropertyOptional({ description: 'Service category identifier (UUID, slug, name, or legacy cat-N)' })
+  @IsOptional()
+  @IsString()
+  categoryId?: string
 
   @ApiPropertyOptional({ description: 'Business tagline' })
   @IsOptional()

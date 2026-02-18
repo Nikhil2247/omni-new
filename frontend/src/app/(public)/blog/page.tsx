@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { getMinioViewUrl } from '@/lib/utils/minio'
 
 export default function BlogPage() {
   const [keyword, setKeyword] = useState('')
@@ -103,10 +104,10 @@ export default function BlogPage() {
               <Card className="flex h-full flex-col overflow-hidden transition-shadow group-hover:shadow-lg">
                 <CardContent className="p-0">
                   <AspectRatio ratio={16 / 9} className="bg-muted">
-                    {post.featuredImage ? (
+                    {(getMinioViewUrl(post.featuredImage) || post.featuredImage) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={post.featuredImage}
+                        src={getMinioViewUrl(post.featuredImage) || post.featuredImage || ''}
                         alt={post.featuredImageAlt || post.title}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />

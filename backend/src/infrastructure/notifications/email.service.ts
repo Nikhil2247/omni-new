@@ -115,12 +115,20 @@ export class EmailService implements OnModuleInit {
 
   private async initializeTransporter(): Promise<void> {
     const provider = this.configService.get<string>('EMAIL_PROVIDER', 'smtp')
+    const nodeEnv = this.configService.get<string>('NODE_ENV', 'development')
+    const shouldVerifyOnStartup = this.getBooleanConfig('EMAIL_VERIFY_ON_STARTUP', nodeEnv === 'production')
+    const smtpConnectionTimeout = this.getNumberConfig('SMTP_CONNECTION_TIMEOUT_MS', 10000)
+    const smtpGreetingTimeout = this.getNumberConfig('SMTP_GREETING_TIMEOUT_MS', 10000)
+    const smtpSocketTimeout = this.getNumberConfig('SMTP_SOCKET_TIMEOUT_MS', 20000)
 
     switch (provider) {
       case 'sendgrid':
         this.transporter = nodemailer.createTransport({
           host: 'smtp.sendgrid.net',
           port: 587,
+          connectionTimeout: smtpConnectionTimeout,
+          greetingTimeout: smtpGreetingTimeout,
+          socketTimeout: smtpSocketTimeout,
           auth: {
             user: 'apikey',
             pass: this.configService.get<string>('SENDGRID_API_KEY'),
@@ -133,6 +141,9 @@ export class EmailService implements OnModuleInit {
         this.transporter = nodemailer.createTransport({
           host: `email-smtp.${this.configService.get<string>('AWS_REGION', 'us-east-1')}.amazonaws.com`,
           port: 587,
+          connectionTimeout: smtpConnectionTimeout,
+          greetingTimeout: smtpGreetingTimeout,
+          socketTimeout: smtpSocketTimeout,
           auth: {
             user: this.configService.get<string>('AWS_SES_ACCESS_KEY'),
             pass: this.configService.get<string>('AWS_SES_SECRET_KEY'),
@@ -144,6 +155,9 @@ export class EmailService implements OnModuleInit {
         this.transporter = nodemailer.createTransport({
           host: 'smtp.mailgun.org',
           port: 587,
+          connectionTimeout: smtpConnectionTimeout,
+          greetingTimeout: smtpGreetingTimeout,
+          socketTimeout: smtpSocketTimeout,
           auth: {
             user: this.configService.get<string>('MAILGUN_USER'),
             pass: this.configService.get<string>('MAILGUN_PASSWORD'),
@@ -165,6 +179,9 @@ export class EmailService implements OnModuleInit {
             host: testAccount.smtp.host,
             port: testAccount.smtp.port,
             secure: testAccount.smtp.secure,
+            connectionTimeout: smtpConnectionTimeout,
+            greetingTimeout: smtpGreetingTimeout,
+            socketTimeout: smtpSocketTimeout,
             auth: {
               user: testAccount.user,
               pass: testAccount.pass,
@@ -172,16 +189,31 @@ export class EmailService implements OnModuleInit {
           })
           this.logger.warn('SMTP credentials missing. Using Ethereal test account for development.')
         } else {
+          const smtpRequireTls = this.getBooleanConfig('SMTP_REQUIRE_TLS', true)
+          const smtpRejectUnauthorized = this.getBooleanConfig('SMTP_REJECT_UNAUTHORIZED', true)
+
           this.transporter = nodemailer.createTransport({
             host: smtpHost,
             port: smtpPort,
             secure: smtpSecure,
+            connectionTimeout: smtpConnectionTimeout,
+            greetingTimeout: smtpGreetingTimeout,
+            socketTimeout: smtpSocketTimeout,
+            requireTLS: smtpRequireTls,
+            tls: {
+              rejectUnauthorized: smtpRejectUnauthorized,
+            },
             auth: {
               user: smtpUser,
               pass: smtpPass,
             },
           })
         }
+    }
+
+    if (!shouldVerifyOnStartup) {
+      this.logger.log(`Email transporter initialized (${provider}) - startup verification skipped`)
+      return
     }
 
     try {
@@ -282,6 +314,8 @@ export class EmailService implements OnModuleInit {
   // ============================================================================
 
   async send(options: EmailOptions): Promise<EmailResult> {
+    await this.ensureTransporterInitialized()
+
     try {
       let html = options.html
       let text = options.text
@@ -321,18 +355,53 @@ export class EmailService implements OnModuleInit {
         headers: options.headers,
       }
 
-      const result = await this.transporter.sendMail(mailOptions)
+      const retryAttempts = Math.max(0, this.getNumberConfig('EMAIL_SEND_RETRY_ATTEMPTS', 2))
+      const retryDelayMs = Math.max(100, this.getNumberConfig('EMAIL_SEND_RETRY_DELAY_MS', 1500))
 
-      this.logger.debug(`Email sent to ${options.to}: ${result.messageId}`)
+      let lastError: unknown = null
 
-      const previewUrl = nodemailer.getTestMessageUrl(result)
-      if (previewUrl) {
-        this.logger.debug(`Ethereal preview URL: ${previewUrl}`)
+      for (let attempt = 0; attempt <= retryAttempts; attempt++) {
+        try {
+          const result = await this.transporter.sendMail(mailOptions)
+
+          this.logger.debug(`Email sent to ${options.to}: ${result.messageId}`)
+
+          const previewUrl = nodemailer.getTestMessageUrl(result)
+          if (previewUrl) {
+            this.logger.debug(`Ethereal preview URL: ${previewUrl}`)
+          }
+
+          return {
+            success: true,
+            messageId: result.messageId,
+          }
+        } catch (error) {
+          lastError = error
+
+          const shouldRetry = this.shouldRetryEmailError(error)
+          const isLastAttempt = attempt >= retryAttempts
+
+          if (!shouldRetry || isLastAttempt) {
+            break
+          }
+
+          const delayMs = retryDelayMs * 2 ** attempt
+          const currentAttempt = attempt + 1
+          const totalAttempts = retryAttempts + 1
+
+          this.logger.warn(
+            `Transient email delivery failure to ${options.to} (attempt ${currentAttempt}/${totalAttempts}): ${(error as Error).message}. Retrying in ${delayMs}ms`,
+          )
+
+          await this.sleep(delayMs)
+        }
       }
 
+      this.logger.error(`Failed to send email to ${options.to}:`, lastError)
+
       return {
-        success: true,
-        messageId: result.messageId,
+        success: false,
+        error: (lastError as Error)?.message || 'Unknown email delivery error',
       }
     } catch (error) {
       this.logger.error(`Failed to send email to ${options.to}:`, error)
@@ -342,6 +411,46 @@ export class EmailService implements OnModuleInit {
         error: (error as Error).message,
       }
     }
+  }
+
+  private shouldRetryEmailError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') {
+      return false
+    }
+
+    const smtpError = error as {
+      code?: string
+      responseCode?: number
+      message?: string
+    }
+
+    const responseCode = smtpError.responseCode
+    const code = (smtpError.code || '').toUpperCase()
+    const message = smtpError.message || ''
+
+    if (responseCode !== undefined && responseCode >= 400 && responseCode < 500) {
+      return true
+    }
+
+    const transientCodes = new Set([
+      'ETIMEDOUT',
+      'ECONNRESET',
+      'ECONNREFUSED',
+      'EHOSTUNREACH',
+      'ENETUNREACH',
+      'ENOTFOUND',
+      'ESOCKET',
+    ])
+
+    if (transientCodes.has(code)) {
+      return true
+    }
+
+    return /try again later|temporar|timeout|timed out|rate limit/i.test(message)
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   private renderInlineTemplate(templateName: string, context: Record<string, unknown>): string {

@@ -73,15 +73,24 @@ const statusConfig: Record<VendorStatus, { label: string; color: string; icon: E
 }
 
 const CATEGORIES = [
-  { id: 'cat-1', name: 'Photography' },
-  { id: 'cat-2', name: 'Videography' },
-  { id: 'cat-3', name: 'Catering' },
-  { id: 'cat-4', name: 'Decoration' },
-  { id: 'cat-5', name: 'Venue' },
-  { id: 'cat-6', name: 'Music & Entertainment' },
-  { id: 'cat-7', name: 'Florist' },
-  { id: 'cat-8', name: 'Makeup & Hair' },
+  { id: 'photography', name: 'Photography' },
+  { id: 'videography', name: 'Videography' },
+  { id: 'catering', name: 'Catering' },
+  { id: 'decoration', name: 'Decoration' },
+  { id: 'venue', name: 'Venue' },
+  { id: 'music-entertainment', name: 'Music & Entertainment' },
+  { id: 'florist', name: 'Florist' },
+  { id: 'makeup-hair', name: 'Makeup & Hair' },
 ]
+
+const slugifyBusinessName = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
 
 type TabId = 'portfolio' | 'events' | 'services' | 'badges'
 
@@ -113,10 +122,14 @@ export default function BusinessProfilePage() {
   const deletePhoto = useDeleteProfilePhoto()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const createPhotoInputRef = useRef<HTMLInputElement>(null)
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showManageDialog, setShowManageDialog] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>('portfolio')
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
+  const [createPhotoFile, setCreatePhotoFile] = useState<File | null>(null)
+  const [createPhotoPreviewUrl, setCreatePhotoPreviewUrl] = useState('')
   const [formData, setFormData] = useState({
     businessName: '',
     slug: '',
@@ -144,32 +157,86 @@ export default function BusinessProfilePage() {
     })
   }, [profile])
 
+  useEffect(() => {
+    if (profile || isSlugManuallyEdited) return
+
+    const nextSlug = slugifyBusinessName(formData.businessName)
+    setFormData((prev) => (prev.slug === nextSlug ? prev : { ...prev, slug: nextSlug }))
+  }, [formData.businessName, isSlugManuallyEdited, profile])
+
+  useEffect(() => {
+    return () => {
+      if (createPhotoPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(createPhotoPreviewUrl)
+      }
+    }
+  }, [createPhotoPreviewUrl])
+
   const handleGenerateSlug = async () => {
     if (!formData.businessName) return
     const result = await generateSlug.mutateAsync(formData.businessName)
+    setIsSlugManuallyEdited(true)
     setFormData(prev => ({ ...prev, slug: result.slug }))
   }
 
-  const handleCreate = () => {
-    createProfile.mutate(
-      {
+  const handleCreatePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB')
+      return
+    }
+
+    const localPreview = URL.createObjectURL(file)
+    setCreatePhotoPreviewUrl((prev) => {
+      if (prev.startsWith('blob:')) {
+        URL.revokeObjectURL(prev)
+      }
+      return localPreview
+    })
+    setCreatePhotoFile(file)
+
+    if (createPhotoInputRef.current) {
+      createPhotoInputRef.current.value = ''
+    }
+  }
+
+  const handleCreate = async () => {
+    try {
+      await createProfile.mutateAsync({
         businessName: formData.businessName,
-        slug: formData.slug,
-        categoryId: formData.categoryId,
+        slug: formData.slug.trim() || undefined,
+        categoryId: formData.categoryId || undefined,
         tagline: formData.tagline || undefined,
         description: formData.description || undefined,
         contactEmail: formData.contactEmail || undefined,
         contactPhone: formData.contactPhone || undefined,
         website: formData.website || undefined,
         serviceRadius: formData.serviceRadius ? parseInt(formData.serviceRadius, 10) : undefined,
-      },
-      {
-        onSuccess: () => {
-          setShowCreateDialog(false)
-          toast.success('Business profile created')
-        },
-      },
-    )
+      })
+
+      if (createPhotoFile) {
+        await uploadPhoto.mutateAsync(createPhotoFile)
+      }
+
+      setShowCreateDialog(false)
+      setCreatePhotoFile(null)
+      setCreatePhotoPreviewUrl((prev) => {
+        if (prev.startsWith('blob:')) {
+          URL.revokeObjectURL(prev)
+        }
+        return ''
+      })
+      toast.success('Business profile created')
+    } catch (createError: any) {
+      toast.error(createError?.message || 'Failed to create profile')
+    }
   }
 
   const handleUpdate = () => {
@@ -223,6 +290,19 @@ export default function BusinessProfilePage() {
     })
   }
 
+  const portfolios = profile?.portfolios || []
+  const allMedia = portfolios.flatMap((portfolio) => portfolio.mediaItems || [])
+
+  const normalizedMedia = useMemo(
+    () =>
+      allMedia.map((media) => ({
+        ...media,
+        viewerUrl: getMinioViewUrl(media.cdnUrl || media.url || media.thumbnailUrl || ''),
+        viewerThumbnailUrl: getMinioViewUrl(media.thumbnailUrl || media.cdnUrl || media.url || ''),
+      })),
+    [allMedia],
+  )
+
   if (isLoading) {
     return (
       <div className="flex min-h-105 items-center justify-center">
@@ -264,7 +344,14 @@ export default function BusinessProfilePage() {
                 <div className="space-y-2">
                   <Label>URL Slug *</Label>
                   <div className="flex gap-2">
-                    <Input value={formData.slug} onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))} placeholder="your-business-name" />
+                    <Input
+                      value={formData.slug}
+                      onChange={(e) => {
+                        setIsSlugManuallyEdited(true)
+                        setFormData(prev => ({ ...prev, slug: slugifyBusinessName(e.target.value) }))
+                      }}
+                      placeholder="your-business-name"
+                    />
                     <Button type="button" variant="outline" onClick={handleGenerateSlug} disabled={!formData.businessName || generateSlug.isPending}>
                       {generateSlug.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Generate'}
                     </Button>
@@ -272,8 +359,34 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
 
+              <input
+                ref={createPhotoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleCreatePhotoSelect}
+                className="hidden"
+              />
+
               <div className="space-y-2">
-                <Label>Category *</Label>
+                <Label>Profile Photo</Label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button type="button" variant="outline" onClick={() => createPhotoInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    {createPhotoFile ? 'Change Photo' : 'Upload Photo'}
+                  </Button>
+                  {createPhotoFile && (
+                    <span className="text-xs text-muted-foreground">{createPhotoFile.name}</span>
+                  )}
+                </div>
+                {createPhotoPreviewUrl && (
+                  <div className="h-28 w-28 overflow-hidden rounded-full border bg-muted">
+                    <img src={createPhotoPreviewUrl} alt="Profile preview" className="h-full w-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Category</Label>
                 <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -323,8 +436,8 @@ export default function BusinessProfilePage() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
-              <Button onClick={handleCreate} disabled={createProfile.isPending || !formData.businessName || !formData.slug || !formData.categoryId}>
-                {createProfile.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              <Button onClick={handleCreate} disabled={createProfile.isPending || uploadPhoto.isPending || !formData.businessName}>
+                {createProfile.isPending || uploadPhoto.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Create Profile
               </Button>
             </DialogFooter>
@@ -337,24 +450,12 @@ export default function BusinessProfilePage() {
   const status = statusConfig[profile.status] || statusConfig.DRAFT
   const StatusIcon = status.icon
 
-  const portfolios = profile.portfolios || []
-  const allMedia = portfolios.flatMap((portfolio) => portfolio.mediaItems || [])
   const services = profile.services || []
   const badges = profile.badges || []
   const eventHistory = profile.eventHistory || []
   const profilePhotoViewUrl = profile.profilePhotoUrl
     ? getMinioViewUrl(profile.profilePhotoUrl) || profile.profilePhotoUrl
     : null
-
-  const normalizedMedia = useMemo(
-    () =>
-      allMedia.map((media) => ({
-        ...media,
-        viewerUrl: getMinioViewUrl(media.cdnUrl || media.url || media.thumbnailUrl || ''),
-        viewerThumbnailUrl: getMinioViewUrl(media.thumbnailUrl || media.cdnUrl || media.url || ''),
-      })),
-    [allMedia],
-  )
 
   const tabs = [
     { id: 'portfolio' as const, label: 'Portfolio', icon: ImageIcon },
@@ -664,7 +765,13 @@ export default function BusinessProfilePage() {
               <div className="space-y-2">
                 <Label>Slug</Label>
                 <div className="flex gap-2">
-                  <Input value={formData.slug} onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))} />
+                  <Input
+                    value={formData.slug}
+                    onChange={(e) => {
+                      setIsSlugManuallyEdited(true)
+                      setFormData(prev => ({ ...prev, slug: slugifyBusinessName(e.target.value) }))
+                    }}
+                  />
                   <Button type="button" variant="outline" onClick={handleGenerateSlug} disabled={!formData.businessName || generateSlug.isPending}>
                     {generateSlug.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Generate'}
                   </Button>
