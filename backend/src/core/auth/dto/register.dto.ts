@@ -10,8 +10,8 @@ import {
   Matches,
   IsOptional,
   IsIn,
-} from 'class-validator'
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
   @ApiPropertyOptional({
@@ -22,31 +22,29 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   @IsIn(['USER', 'VENDOR'], { message: 'Account type must be USER or VENDOR' })
-  accountType?: 'USER' | 'VENDOR'
+  accountType?: 'USER' | 'VENDOR';
 
   @ApiProperty({
     description: 'User email address',
     example: 'user@example.com',
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
-  email: string
+  email: string;
 
   @ApiProperty({
-    description: 'User password (min 8 chars, must contain uppercase, lowercase, number, and special character)',
+    description:
+      'User password (min 8 chars, must contain uppercase, lowercase, number, and special character)',
     example: 'SecureP@ss123',
     minLength: 8,
   })
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @MaxLength(128, { message: 'Password must not exceed 128 characters' })
-  @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/,
-    {
-      message:
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-    },
-  )
-  password: string
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/, {
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+  })
+  password: string;
 
   @ApiPropertyOptional({
     description: 'User first name',
@@ -55,7 +53,7 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  firstName?: string
+  firstName?: string;
 
   @ApiPropertyOptional({
     description: 'User last name',
@@ -64,19 +62,19 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  lastName?: string
+  lastName?: string;
 }
 
 export class RegisterResponseDto {
   @ApiProperty({ description: 'Registration success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({ description: 'Response message' })
-  message: string
+  message: string;
 
   @ApiProperty({ description: 'User ID' })
-  userId: string
+  userId: string;
 
   @ApiProperty({ description: 'User email' })
-  email: string
+  email: string;
 }

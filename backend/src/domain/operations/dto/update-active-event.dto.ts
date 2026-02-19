@@ -1,1 +1,1 @@
-export { UpdateActiveEventDto } from './active-event.dto'
+export { UpdateActiveEventDto } from './active-event.dto';

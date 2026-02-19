@@ -4,60 +4,60 @@
 // Tracks and aggregates user engagement metrics for retention analysis
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service'
-import { Prisma } from '@prisma/client'
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service';
+import { Prisma } from '@prisma/client';
 
 export interface EngagementMetrics {
-  userId: string
-  date: Date
-  sessionCount: number
-  totalDuration: number
-  profileViews: number
-  searchCount: number
-  leadsSent: number
-  messagesSent: number
-  wishlistAdds: number
-  checklistUpdates: number
-  budgetUpdates: number
+  userId: string;
+  date: Date;
+  sessionCount: number;
+  totalDuration: number;
+  profileViews: number;
+  searchCount: number;
+  leadsSent: number;
+  messagesSent: number;
+  wishlistAdds: number;
+  checklistUpdates: number;
+  budgetUpdates: number;
 }
 
 export interface UserEngagementSummary {
-  userId: string
-  totalSessions: number
-  totalDuration: number
-  averageSessionDuration: number
-  totalProfileViews: number
-  totalSearches: number
-  totalLeadsSent: number
-  totalMessagesSent: number
-  engagementScore: number
-  lastActiveDate: Date
-  activeDays: number
+  userId: string;
+  totalSessions: number;
+  totalDuration: number;
+  averageSessionDuration: number;
+  totalProfileViews: number;
+  totalSearches: number;
+  totalLeadsSent: number;
+  totalMessagesSent: number;
+  engagementScore: number;
+  lastActiveDate: Date;
+  activeDays: number;
 }
 
 export interface EngagementTrend {
-  date: Date
-  activeUsers: number
-  totalSessions: number
-  avgSessionDuration: number
-  totalSearches: number
-  totalLeads: number
+  date: Date;
+  activeUsers: number;
+  totalSessions: number;
+  avgSessionDuration: number;
+  totalSearches: number;
+  totalLeads: number;
 }
 
 export interface RetentionCohort {
-  cohortDate: Date
-  cohortSize: number
-  retentionByWeek: number[]
-  retentionByMonth: number[]
+  cohortDate: Date;
+  cohortSize: number;
+  retentionByWeek: number[];
+  retentionByMonth: number[];
 }
 
 @Injectable()
 export class UserEngagementService {
-  private readonly logger = new Logger(UserEngagementService.name)
-  private readonly CACHE_PREFIX = 'engagement:'
-  private readonly CACHE_TTL = 300 // 5 minutes
+  private readonly logger = new Logger(UserEngagementService.name);
+  private readonly CACHE_PREFIX = 'engagement:';
+  private readonly CACHE_TTL = 300; // 5 minutes
 
   constructor(
     private readonly prisma: PrismaService,
@@ -72,7 +72,7 @@ export class UserEngagementService {
    * Track a user session
    */
   async trackSession(userId: string, durationSeconds: number): Promise<void> {
-    const today = this.getToday()
+    const today = this.getToday();
 
     await this.prisma.userEngagement.upsert({
       where: {
@@ -88,58 +88,58 @@ export class UserEngagementService {
         sessionCount: { increment: 1 },
         totalDuration: { increment: durationSeconds },
       },
-    })
+    });
 
-    await this.invalidateCache(userId)
+    await this.invalidateCache(userId);
   }
 
   /**
    * Track profile view activity
    */
   async trackProfileView(userId: string): Promise<void> {
-    await this.incrementMetric(userId, 'profileViews')
+    await this.incrementMetric(userId, 'profileViews');
   }
 
   /**
    * Track search activity
    */
   async trackSearch(userId: string): Promise<void> {
-    await this.incrementMetric(userId, 'searchCount')
+    await this.incrementMetric(userId, 'searchCount');
   }
 
   /**
    * Track lead sent
    */
   async trackLeadSent(userId: string): Promise<void> {
-    await this.incrementMetric(userId, 'leadsSent')
+    await this.incrementMetric(userId, 'leadsSent');
   }
 
   /**
    * Track message sent
    */
   async trackMessageSent(userId: string): Promise<void> {
-    await this.incrementMetric(userId, 'messagesSent')
+    await this.incrementMetric(userId, 'messagesSent');
   }
 
   /**
    * Track wishlist addition
    */
   async trackWishlistAdd(userId: string): Promise<void> {
-    await this.incrementMetric(userId, 'wishlistAdds')
+    await this.incrementMetric(userId, 'wishlistAdds');
   }
 
   /**
    * Track checklist update
    */
   async trackChecklistUpdate(userId: string): Promise<void> {
-    await this.incrementMetric(userId, 'checklistUpdates')
+    await this.incrementMetric(userId, 'checklistUpdates');
   }
 
   /**
    * Track budget update
    */
   async trackBudgetUpdate(userId: string): Promise<void> {
-    await this.incrementMetric(userId, 'budgetUpdates')
+    await this.incrementMetric(userId, 'budgetUpdates');
   }
 
   // ============================================================================
@@ -163,7 +163,7 @@ export class UserEngagementService {
         },
       },
       orderBy: { date: 'asc' },
-    })
+    });
 
     return engagements.map((e) => ({
       userId: e.userId,
@@ -177,18 +177,18 @@ export class UserEngagementService {
       wishlistAdds: e.wishlistAdds,
       checklistUpdates: e.checklistUpdates,
       budgetUpdates: e.budgetUpdates,
-    }))
+    }));
   }
 
   /**
    * Get user engagement summary
    */
   async getUserSummary(userId: string): Promise<UserEngagementSummary | null> {
-    const cacheKey = `${this.CACHE_PREFIX}summary:${userId}`
-    const cached = await this.cache.get<UserEngagementSummary>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}summary:${userId}`;
+    const cached = await this.cache.get<UserEngagementSummary>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
     const result = await this.prisma.userEngagement.aggregate({
@@ -206,10 +206,10 @@ export class UserEngagementService {
       },
       _count: { id: true },
       _max: { date: true },
-    })
+    });
 
     if (!result._count.id) {
-      return null
+      return null;
     }
 
     const summary: UserEngagementSummary = {
@@ -227,11 +227,11 @@ export class UserEngagementService {
       engagementScore: this.calculateEngagementScore(result._sum),
       lastActiveDate: result._max.date || new Date(),
       activeDays: result._count.id,
-    }
+    };
 
-    await this.cache.set(cacheKey, summary, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, summary, { ttl: this.CACHE_TTL });
 
-    return summary
+    return summary;
   }
 
   /**
@@ -241,11 +241,11 @@ export class UserEngagementService {
     startDate: Date,
     endDate: Date,
   ): Promise<EngagementTrend[]> {
-    const cacheKey = `${this.CACHE_PREFIX}trends:${startDate.toISOString()}:${endDate.toISOString()}`
-    const cached = await this.cache.get<EngagementTrend[]>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}trends:${startDate.toISOString()}:${endDate.toISOString()}`;
+    const cached = await this.cache.get<EngagementTrend[]>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
     const results = await this.prisma.userEngagement.groupBy({
@@ -264,7 +264,7 @@ export class UserEngagementService {
         leadsSent: true,
       },
       orderBy: { date: 'asc' },
-    })
+    });
 
     const trends: EngagementTrend[] = results.map((r) => ({
       date: r.date,
@@ -276,11 +276,11 @@ export class UserEngagementService {
           : 0,
       totalSearches: r._sum.searchCount || 0,
       totalLeads: r._sum.leadsSent || 0,
-    }))
+    }));
 
-    await this.cache.set(cacheKey, trends, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, trends, { ttl: this.CACHE_TTL });
 
-    return trends
+    return trends;
   }
 
   /**
@@ -290,8 +290,8 @@ export class UserEngagementService {
     limit: number = 10,
     days: number = 30,
   ): Promise<UserEngagementSummary[]> {
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     const results = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
@@ -312,7 +312,7 @@ export class UserEngagementService {
         _sum: { sessionCount: 'desc' },
       },
       take: limit,
-    })
+    });
 
     return results.map((r) => ({
       userId: r.userId,
@@ -329,21 +329,21 @@ export class UserEngagementService {
       engagementScore: this.calculateEngagementScore(r._sum),
       lastActiveDate: r._max.date || new Date(),
       activeDays: r._count.id,
-    }))
+    }));
   }
 
   /**
    * Get retention cohorts
    */
   async getRetentionCohorts(weeks: number = 8): Promise<RetentionCohort[]> {
-    const cohorts: RetentionCohort[] = []
-    const today = new Date()
+    const cohorts: RetentionCohort[] = [];
+    const today = new Date();
 
     for (let week = 0; week < weeks; week++) {
-      const cohortStart = new Date(today)
-      cohortStart.setDate(cohortStart.getDate() - (week + 1) * 7)
-      const cohortEnd = new Date(cohortStart)
-      cohortEnd.setDate(cohortEnd.getDate() + 7)
+      const cohortStart = new Date(today);
+      cohortStart.setDate(cohortStart.getDate() - (week + 1) * 7);
+      const cohortEnd = new Date(cohortStart);
+      cohortEnd.setDate(cohortEnd.getDate() + 7);
 
       // Get users who were first active in this week
       const cohortUsers = await this.prisma.userEngagement.groupBy({
@@ -355,27 +355,32 @@ export class UserEngagementService {
           },
         },
         _min: { date: true },
-      })
+      });
 
       const cohortUserIds = cohortUsers
-        .filter((u) => u._min.date && u._min.date >= cohortStart && u._min.date < cohortEnd)
-        .map((u) => u.userId)
+        .filter(
+          (u) =>
+            u._min.date &&
+            u._min.date >= cohortStart &&
+            u._min.date < cohortEnd,
+        )
+        .map((u) => u.userId);
 
-      const cohortSize = cohortUserIds.length
+      const cohortSize = cohortUserIds.length;
 
       if (cohortSize === 0) {
-        continue
+        continue;
       }
 
       // Calculate retention for each subsequent week
-      const retentionByWeek: number[] = []
+      const retentionByWeek: number[] = [];
       for (let w = 1; w <= weeks - week; w++) {
-        const periodStart = new Date(cohortEnd)
-        periodStart.setDate(periodStart.getDate() + (w - 1) * 7)
-        const periodEnd = new Date(periodStart)
-        periodEnd.setDate(periodEnd.getDate() + 7)
+        const periodStart = new Date(cohortEnd);
+        periodStart.setDate(periodStart.getDate() + (w - 1) * 7);
+        const periodEnd = new Date(periodStart);
+        periodEnd.setDate(periodEnd.getDate() + 7);
 
-        if (periodStart > today) break
+        if (periodStart > today) break;
 
         const activeInPeriod = await this.prisma.userEngagement.groupBy({
           by: ['userId'],
@@ -386,11 +391,11 @@ export class UserEngagementService {
               lt: periodEnd,
             },
           },
-        })
+        });
 
         retentionByWeek.push(
           Math.round((activeInPeriod.length / cohortSize) * 100),
-        )
+        );
       }
 
       cohorts.push({
@@ -398,33 +403,33 @@ export class UserEngagementService {
         cohortSize,
         retentionByWeek,
         retentionByMonth: [], // Can be calculated similarly
-      })
+      });
     }
 
-    return cohorts
+    return cohorts;
   }
 
   /**
    * Get daily active users (DAU)
    */
   async getDailyActiveUsers(date?: Date): Promise<number> {
-    const targetDate = date || this.getToday()
+    const targetDate = date || this.getToday();
 
     const result = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
       where: { date: targetDate },
-    })
+    });
 
-    return result.length
+    return result.length;
   }
 
   /**
    * Get weekly active users (WAU)
    */
   async getWeeklyActiveUsers(endDate?: Date): Promise<number> {
-    const end = endDate || new Date()
-    const start = new Date(end)
-    start.setDate(start.getDate() - 7)
+    const end = endDate || new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - 7);
 
     const result = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
@@ -434,18 +439,18 @@ export class UserEngagementService {
           lte: end,
         },
       },
-    })
+    });
 
-    return result.length
+    return result.length;
   }
 
   /**
    * Get monthly active users (MAU)
    */
   async getMonthlyActiveUsers(endDate?: Date): Promise<number> {
-    const end = endDate || new Date()
-    const start = new Date(end)
-    start.setDate(start.getDate() - 30)
+    const end = endDate || new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - 30);
 
     const result = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
@@ -455,9 +460,9 @@ export class UserEngagementService {
           lte: end,
         },
       },
-    })
+    });
 
-    return result.length
+    return result.length;
   }
 
   // ============================================================================
@@ -468,7 +473,7 @@ export class UserEngagementService {
     userId: string,
     field: keyof Prisma.UserEngagementUpdateInput,
   ): Promise<void> {
-    const today = this.getToday()
+    const today = this.getToday();
 
     await this.prisma.userEngagement.upsert({
       where: {
@@ -482,21 +487,21 @@ export class UserEngagementService {
       update: {
         [field]: { increment: 1 },
       },
-    })
+    });
 
-    await this.invalidateCache(userId)
+    await this.invalidateCache(userId);
   }
 
   private calculateEngagementScore(metrics: {
-    sessionCount?: number | null
-    totalDuration?: number | null
-    profileViews?: number | null
-    searchCount?: number | null
-    leadsSent?: number | null
-    messagesSent?: number | null
-    wishlistAdds?: number | null
-    checklistUpdates?: number | null
-    budgetUpdates?: number | null
+    sessionCount?: number | null;
+    totalDuration?: number | null;
+    profileViews?: number | null;
+    searchCount?: number | null;
+    leadsSent?: number | null;
+    messagesSent?: number | null;
+    wishlistAdds?: number | null;
+    checklistUpdates?: number | null;
+    budgetUpdates?: number | null;
   }): number {
     // Weighted engagement score calculation
     const weights = {
@@ -509,29 +514,29 @@ export class UserEngagementService {
       wishlistAdds: 5,
       checklistUpdates: 3,
       budgetUpdates: 3,
-    }
+    };
 
-    let score = 0
-    score += (metrics.sessionCount || 0) * weights.sessionCount
-    score += (metrics.totalDuration || 0) * weights.totalDuration
-    score += (metrics.profileViews || 0) * weights.profileViews
-    score += (metrics.searchCount || 0) * weights.searchCount
-    score += (metrics.leadsSent || 0) * weights.leadsSent
-    score += (metrics.messagesSent || 0) * weights.messagesSent
-    score += (metrics.wishlistAdds || 0) * weights.wishlistAdds
-    score += (metrics.checklistUpdates || 0) * weights.checklistUpdates
-    score += (metrics.budgetUpdates || 0) * weights.budgetUpdates
+    let score = 0;
+    score += (metrics.sessionCount || 0) * weights.sessionCount;
+    score += (metrics.totalDuration || 0) * weights.totalDuration;
+    score += (metrics.profileViews || 0) * weights.profileViews;
+    score += (metrics.searchCount || 0) * weights.searchCount;
+    score += (metrics.leadsSent || 0) * weights.leadsSent;
+    score += (metrics.messagesSent || 0) * weights.messagesSent;
+    score += (metrics.wishlistAdds || 0) * weights.wishlistAdds;
+    score += (metrics.checklistUpdates || 0) * weights.checklistUpdates;
+    score += (metrics.budgetUpdates || 0) * weights.budgetUpdates;
 
-    return Math.round(score)
+    return Math.round(score);
   }
 
   private getToday(): Date {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
   }
 
   private async invalidateCache(userId: string): Promise<void> {
-    await this.cache.delete(`${this.CACHE_PREFIX}summary:${userId}`)
+    await this.cache.delete(`${this.CACHE_PREFIX}summary:${userId}`);
   }
 }

@@ -2,7 +2,7 @@
 // KYC DOCUMENT DTOs - Operations Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsUUID,
@@ -10,7 +10,7 @@ import {
   IsEnum,
   IsUrl,
   MaxLength,
-} from 'class-validator'
+} from 'class-validator';
 
 export enum DocumentType {
   BUSINESS_LICENSE = 'BUSINESS_LICENSE',
@@ -35,37 +35,37 @@ export enum DocumentStatus {
 export class CreateKYCDocumentDto {
   @ApiProperty({ description: 'KYC ID this document belongs to' })
   @IsUUID()
-  kycId: string
+  kycId: string;
 
   @ApiProperty({ description: 'Document type', enum: DocumentType })
   @IsEnum(DocumentType)
-  type: DocumentType
+  type: DocumentType;
 
   @ApiProperty({ description: 'Document URL (S3/MinIO path)' })
   @IsUrl()
-  url: string
+  url: string;
 
   @ApiPropertyOptional({ description: 'Document notes', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  notes?: string
+  notes?: string;
 }
 
 export class UploadKYCDocumentDto {
   @ApiProperty({ description: 'KYC ID this document belongs to' })
   @IsUUID()
-  kycId: string
+  kycId: string;
 
   @ApiProperty({ description: 'Document type', enum: DocumentType })
   @IsEnum(DocumentType)
-  type: DocumentType
+  type: DocumentType;
 
   @ApiPropertyOptional({ description: 'Document notes', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  notes?: string
+  notes?: string;
 }
 
 // ============================================================================
@@ -76,29 +76,32 @@ export class UpdateKYCDocumentDto {
   @ApiPropertyOptional({ description: 'Document type', enum: DocumentType })
   @IsOptional()
   @IsEnum(DocumentType)
-  type?: DocumentType
+  type?: DocumentType;
 
   @ApiPropertyOptional({ description: 'Document notes', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  notes?: string
+  notes?: string;
 }
 
 export class ReviewKYCDocumentDto {
   @ApiProperty({ description: 'Document ID' })
   @IsUUID()
-  documentId: string
+  documentId: string;
 
-  @ApiProperty({ description: 'Review decision', enum: ['VERIFIED', 'REJECTED'] })
+  @ApiProperty({
+    description: 'Review decision',
+    enum: ['VERIFIED', 'REJECTED'],
+  })
   @IsEnum(['VERIFIED', 'REJECTED'])
-  decision: 'VERIFIED' | 'REJECTED'
+  decision: 'VERIFIED' | 'REJECTED';
 
   @ApiPropertyOptional({ description: 'Review notes', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  notes?: string
+  notes?: string;
 }
 
 // ============================================================================
@@ -107,23 +110,23 @@ export class ReviewKYCDocumentDto {
 
 export class KYCDocumentResponseDto {
   @ApiProperty({ description: 'Document ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'KYC ID' })
-  kycId: string
+  kycId: string;
 
   @ApiProperty({ description: 'Document type', enum: DocumentType })
-  type: DocumentType
+  type: DocumentType;
 
   @ApiProperty({ description: 'Document URL' })
-  url: string
+  url: string;
 
   @ApiProperty({ description: 'Document status', enum: DocumentStatus })
-  status: DocumentStatus
+  status: DocumentStatus;
 
   @ApiPropertyOptional({ description: 'Notes', nullable: true })
-  notes: string | null
+  notes: string | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 }

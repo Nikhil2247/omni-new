@@ -12,4 +12,4 @@ export class OperationalTaskUpdatedEvent {
 
 export class OperationalTaskCompletedEvent {
   constructor(public readonly taskId: string) {}
-} 
+}

@@ -2,5 +2,5 @@
 // LEADS DTOs - Barrel Export
 // ============================================================================
 
-export * from './lead.dto'
-export * from './message.dto'
+export * from './lead.dto';
+export * from './message.dto';

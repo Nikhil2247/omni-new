@@ -2,4 +2,4 @@
 // CONTENT EVENTS - Barrel Export
 // ============================================================================
 
-export * from './blog-post.handler'
+export * from './blog-post.handler';

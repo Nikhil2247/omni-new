@@ -4,16 +4,16 @@
 // Listens to domain events and tracks engagement/metrics automatically
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { OnEvent } from '@nestjs/event-emitter'
-import { UserEngagementService } from '../services/user-engagement.service'
-import { VendorMetricsService } from '../services/vendor-metrics.service'
-import { AnalyticsTrackingService } from '../services/analytics-tracking.service'
-import { ANALYTICS_EVENTS } from '../../../core/events/event-constants'
+import { Injectable, Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+import { UserEngagementService } from '../services/user-engagement.service';
+import { VendorMetricsService } from '../services/vendor-metrics.service';
+import { AnalyticsTrackingService } from '../services/analytics-tracking.service';
+import { ANALYTICS_EVENTS } from '../../../core/events/event-constants';
 
 @Injectable()
 export class EngagementListener {
-  private readonly logger = new Logger(EngagementListener.name)
+  private readonly logger = new Logger(EngagementListener.name);
 
   constructor(
     private readonly userEngagement: UserEngagementService,
@@ -27,36 +27,39 @@ export class EngagementListener {
 
   @OnEvent('user.session.started')
   async handleSessionStarted(payload: { userId: string }): Promise<void> {
-    this.logger.debug(`Session started for user ${payload.userId}`)
+    this.logger.debug(`Session started for user ${payload.userId}`);
   }
 
   @OnEvent('user.session.ended')
   async handleSessionEnded(payload: {
-    userId: string
-    durationSeconds: number
+    userId: string;
+    durationSeconds: number;
   }): Promise<void> {
-    await this.userEngagement.trackSession(payload.userId, payload.durationSeconds)
+    await this.userEngagement.trackSession(
+      payload.userId,
+      payload.durationSeconds,
+    );
     this.logger.debug(
       `Session ended for user ${payload.userId}: ${payload.durationSeconds}s`,
-    )
+    );
   }
 
   @OnEvent(ANALYTICS_EVENTS.SEARCH_PERFORMED)
   async handleSearchPerformed(payload: {
-    query: string
-    resultCount: number
-    hasResults: boolean
-    userId?: string
-    sessionId?: string
-    categoryId?: string
-    cityId?: string
-    filters?: Record<string, unknown>
-    deviceType?: string
-    country?: string
-    city?: string
+    query: string;
+    resultCount: number;
+    hasResults: boolean;
+    userId?: string;
+    sessionId?: string;
+    categoryId?: string;
+    cityId?: string;
+    filters?: Record<string, unknown>;
+    deviceType?: string;
+    country?: string;
+    city?: string;
   }): Promise<void> {
     if (payload.userId) {
-      await this.userEngagement.trackSearch(payload.userId)
+      await this.userEngagement.trackSearch(payload.userId);
     }
 
     await this.analyticsTracking.trackSearchQuery({
@@ -71,34 +74,34 @@ export class EngagementListener {
       deviceType: payload.deviceType,
       country: payload.country,
       city: payload.city,
-    })
+    });
   }
 
   @OnEvent(ANALYTICS_EVENTS.PROFILE_VIEWED)
   async handleProfileViewed(payload: {
-    viewerId?: string
-    vendorProfileId: string
-    sessionId?: string
-    source?: string
-    referrer?: string
-    utmSource?: string
-    utmMedium?: string
-    utmCampaign?: string
-    deviceType?: string
-    browser?: string
-    os?: string
-    duration?: number
-    scrollDepth?: number
-    country?: string
-    city?: string
+    viewerId?: string;
+    vendorProfileId: string;
+    sessionId?: string;
+    source?: string;
+    referrer?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    deviceType?: string;
+    browser?: string;
+    os?: string;
+    duration?: number;
+    scrollDepth?: number;
+    country?: string;
+    city?: string;
   }): Promise<void> {
     // Track user engagement
     if (payload.viewerId) {
-      await this.userEngagement.trackProfileView(payload.viewerId)
+      await this.userEngagement.trackProfileView(payload.viewerId);
     }
 
     // Track vendor metrics
-    await this.vendorMetrics.trackProfileView(payload.vendorProfileId)
+    await this.vendorMetrics.trackProfileView(payload.vendorProfileId);
 
     // Store raw profile view
     await this.analyticsTracking.trackProfileView({
@@ -117,26 +120,26 @@ export class EngagementListener {
       scrollDepth: payload.scrollDepth,
       country: payload.country,
       city: payload.city,
-    })
+    });
   }
 
   @OnEvent('wishlist.item.added')
   async handleWishlistAdded(payload: {
-    userId: string
-    vendorProfileId: string
+    userId: string;
+    vendorProfileId: string;
   }): Promise<void> {
-    await this.userEngagement.trackWishlistAdd(payload.userId)
-    await this.vendorMetrics.trackWishlistAdd(payload.vendorProfileId)
+    await this.userEngagement.trackWishlistAdd(payload.userId);
+    await this.vendorMetrics.trackWishlistAdd(payload.vendorProfileId);
   }
 
   @OnEvent('checklist.updated')
   async handleChecklistUpdated(payload: { userId: string }): Promise<void> {
-    await this.userEngagement.trackChecklistUpdate(payload.userId)
+    await this.userEngagement.trackChecklistUpdate(payload.userId);
   }
 
   @OnEvent('budget.updated')
   async handleBudgetUpdated(payload: { userId: string }): Promise<void> {
-    await this.userEngagement.trackBudgetUpdate(payload.userId)
+    await this.userEngagement.trackBudgetUpdate(payload.userId);
   }
 
   // ============================================================================
@@ -145,33 +148,33 @@ export class EngagementListener {
 
   @OnEvent('lead.created')
   async handleLeadCreated(payload: {
-    userId: string
-    vendorProfileId: string
+    userId: string;
+    vendorProfileId: string;
   }): Promise<void> {
-    await this.userEngagement.trackLeadSent(payload.userId)
-    await this.vendorMetrics.trackLeadReceived(payload.vendorProfileId)
+    await this.userEngagement.trackLeadSent(payload.userId);
+    await this.vendorMetrics.trackLeadReceived(payload.vendorProfileId);
   }
 
   @OnEvent('lead.responded')
   async handleLeadResponded(payload: {
-    vendorProfileId: string
-    responseTimeMinutes: number
+    vendorProfileId: string;
+    responseTimeMinutes: number;
   }): Promise<void> {
     await this.vendorMetrics.trackLeadResponded(
       payload.vendorProfileId,
       payload.responseTimeMinutes,
-    )
+    );
   }
 
   @OnEvent('lead.converted')
   async handleLeadConverted(payload: {
-    vendorProfileId: string
-    revenue?: number
+    vendorProfileId: string;
+    revenue?: number;
   }): Promise<void> {
     await this.vendorMetrics.trackLeadConverted(
       payload.vendorProfileId,
       payload.revenue,
-    )
+    );
   }
 
   // ============================================================================
@@ -180,7 +183,7 @@ export class EngagementListener {
 
   @OnEvent('message.sent')
   async handleMessageSent(payload: { senderId: string }): Promise<void> {
-    await this.userEngagement.trackMessageSent(payload.senderId)
+    await this.userEngagement.trackMessageSent(payload.senderId);
   }
 
   // ============================================================================
@@ -189,22 +192,22 @@ export class EngagementListener {
 
   @OnEvent('vendor.search.appeared')
   async handleVendorSearchAppeared(payload: {
-    vendorProfileId: string
+    vendorProfileId: string;
   }): Promise<void> {
-    await this.vendorMetrics.trackSearchAppearance(payload.vendorProfileId)
+    await this.vendorMetrics.trackSearchAppearance(payload.vendorProfileId);
   }
 
   @OnEvent('vendor.search.clicked')
   async handleVendorSearchClicked(payload: {
-    vendorProfileId: string
+    vendorProfileId: string;
   }): Promise<void> {
-    await this.vendorMetrics.trackSearchClick(payload.vendorProfileId)
+    await this.vendorMetrics.trackSearchClick(payload.vendorProfileId);
   }
 
   @OnEvent('vendor.portfolio.viewed')
   async handlePortfolioViewed(payload: {
-    vendorProfileId: string
+    vendorProfileId: string;
   }): Promise<void> {
-    await this.vendorMetrics.trackPortfolioView(payload.vendorProfileId)
+    await this.vendorMetrics.trackPortfolioView(payload.vendorProfileId);
   }
 }

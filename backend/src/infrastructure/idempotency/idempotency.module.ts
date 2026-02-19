@@ -5,9 +5,9 @@
 // Stores results in Redis/Dragonfly for fast lookup
 // ============================================================================
 
-import { Module, Global } from '@nestjs/common'
-import { IdempotencyService } from './idempotency.service'
-import { IdempotencyInterceptor } from './idempotency.interceptor'
+import { Module, Global } from '@nestjs/common';
+import { IdempotencyService } from './idempotency.service';
+import { IdempotencyInterceptor } from './idempotency.interceptor';
 
 @Global()
 @Module({

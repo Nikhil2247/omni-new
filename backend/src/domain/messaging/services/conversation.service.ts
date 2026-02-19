@@ -2,16 +2,21 @@
 // CONVERSATION SERVICE - Messaging Domain
 // ============================================================================
 
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { Conversation, ParticipantRole } from '@prisma/client'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { ConversationRepository } from '../repositories/conversation.repository'
-import { PaginatedResult } from '../../../core/database/repositories/base.repository'
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Conversation, ParticipantRole } from '@prisma/client';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { ConversationRepository } from '../repositories/conversation.repository';
+import { PaginatedResult } from '../../../core/database/repositories/base.repository';
 
 @Injectable()
 export class ConversationService {
-  private readonly logger = new Logger(ConversationService.name)
+  private readonly logger = new Logger(ConversationService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -19,36 +24,45 @@ export class ConversationService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async createDirectConversationForVendor(userId: string, vendorProfileId: string): Promise<Conversation> {
+  async createDirectConversationForVendor(
+    userId: string,
+    vendorProfileId: string,
+  ): Promise<Conversation> {
     const vendor = await this.prisma.vendorProfile.findUnique({
       where: { id: vendorProfileId },
       select: { userId: true },
-    })
+    });
 
     if (!vendor) {
-      throw new NotFoundException('Vendor profile not found')
+      throw new NotFoundException('Vendor profile not found');
     }
 
-    return this.createDirectConversation(userId, vendor.userId)
+    return this.createDirectConversation(userId, vendor.userId);
   }
 
-  async createDirectConversation(userId: string, participantUserId: string): Promise<Conversation> {
+  async createDirectConversation(
+    userId: string,
+    participantUserId: string,
+  ): Promise<Conversation> {
     if (userId === participantUserId) {
-      throw new BadRequestException('Cannot create a conversation with yourself')
+      throw new BadRequestException(
+        'Cannot create a conversation with yourself',
+      );
     }
 
     const [userRole, participantRole] = await Promise.all([
       this.resolveParticipantRole(userId),
       this.resolveParticipantRole(participantUserId),
-    ])
+    ]);
 
-    const existing = await this.conversationRepository.findDirectConversationByUsers(
-      userId,
-      participantUserId,
-    )
+    const existing =
+      await this.conversationRepository.findDirectConversationByUsers(
+        userId,
+        participantUserId,
+      );
 
     if (existing) {
-      return existing
+      return existing;
     }
 
     const conversation = await this.prisma.$transaction(async (tx) => {
@@ -62,49 +76,55 @@ export class ConversationService {
             ],
           },
         },
-      })
+      });
 
-      return created
-    })
+      return created;
+    });
 
     this.eventEmitter.emit('conversation.created', {
       conversation,
       participants: [userId, participantUserId],
-    })
+    });
 
-    return conversation
+    return conversation;
   }
 
-  async createLeadConversation(leadId: string, plannerId: string, vendorProfileId: string): Promise<Conversation> {
+  async createLeadConversation(
+    leadId: string,
+    plannerId: string,
+    vendorProfileId: string,
+  ): Promise<Conversation> {
     // Check if a conversation already exists for this lead
-    const existingByLead = await this.conversationRepository.findByLeadId(leadId)
+    const existingByLead =
+      await this.conversationRepository.findByLeadId(leadId);
     if (existingByLead) {
-      return existingByLead
+      return existingByLead;
     }
 
     const vendor = await this.prisma.vendorProfile.findUnique({
       where: { id: vendorProfileId },
       select: { userId: true },
-    })
+    });
 
     if (!vendor) {
-      throw new NotFoundException('Vendor profile not found')
+      throw new NotFoundException('Vendor profile not found');
     }
 
     // Check if there's an existing direct conversation between these users
     // If so, link it to the lead instead of creating a new one
-    const existingDirect = await this.conversationRepository.findDirectConversationByUsers(
-      plannerId,
-      vendor.userId,
-    )
+    const existingDirect =
+      await this.conversationRepository.findDirectConversationByUsers(
+        plannerId,
+        vendor.userId,
+      );
 
     if (existingDirect) {
       // Update the existing conversation to link to this lead
       const updated = await this.prisma.conversation.update({
         where: { id: existingDirect.id },
         data: { leadId },
-      })
-      return updated
+      });
+      return updated;
     }
 
     // No existing conversation, create a new one
@@ -120,32 +140,43 @@ export class ConversationService {
             ],
           },
         },
-      })
-    })
+      });
+    });
 
     this.eventEmitter.emit('conversation.created', {
       conversation,
       participants: [plannerId, vendor.userId],
-    })
+    });
 
-    return conversation
+    return conversation;
   }
 
-  async getUserConversations(userId: string, page = 1, limit = 20): Promise<PaginatedResult<Conversation>> {
-    return this.conversationRepository.findUserConversations(userId, page, limit)
+  async getUserConversations(
+    userId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<PaginatedResult<Conversation>> {
+    return this.conversationRepository.findUserConversations(
+      userId,
+      page,
+      limit,
+    );
   }
 
   async getUserConversationIds(userId: string): Promise<string[]> {
     const conversations = await this.prisma.conversation.findMany({
       where: { participants: { some: { userId } } },
       select: { id: true },
-    })
+    });
 
-    return conversations.map((conversation) => conversation.id)
+    return conversations.map((conversation) => conversation.id);
   }
 
-  async getConversationById(conversationId: string, userId: string): Promise<Conversation> {
-    await this.ensureParticipant(conversationId, userId)
+  async getConversationById(
+    conversationId: string,
+    userId: string,
+  ): Promise<Conversation> {
+    await this.ensureParticipant(conversationId, userId);
 
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
@@ -188,16 +219,19 @@ export class ConversationService {
           },
         },
       },
-    })
+    });
 
     if (!conversation) {
-      throw new NotFoundException('Conversation not found')
+      throw new NotFoundException('Conversation not found');
     }
 
-    return conversation
+    return conversation;
   }
 
-  async ensureParticipant(conversationId: string, userId: string): Promise<void> {
+  async ensureParticipant(
+    conversationId: string,
+    userId: string,
+  ): Promise<void> {
     const participant = await this.prisma.conversationParticipant.findUnique({
       where: {
         conversationId_userId: {
@@ -206,26 +240,31 @@ export class ConversationService {
         },
       },
       select: { id: true },
-    })
+    });
 
     if (!participant) {
-      throw new NotFoundException('Conversation not found or access denied')
+      throw new NotFoundException('Conversation not found or access denied');
     }
   }
 
-  async updateLastMessageAt(conversationId: string, timestamp: Date): Promise<void> {
+  async updateLastMessageAt(
+    conversationId: string,
+    timestamp: Date,
+  ): Promise<void> {
     await this.prisma.conversation.update({
       where: { id: conversationId },
       data: { lastMessageAt: timestamp },
-    })
+    });
   }
 
-  private async resolveParticipantRole(userId: string): Promise<ParticipantRole> {
+  private async resolveParticipantRole(
+    userId: string,
+  ): Promise<ParticipantRole> {
     const vendorProfile = await this.prisma.vendorProfile.findUnique({
       where: { userId },
       select: { id: true },
-    })
+    });
 
-    return vendorProfile ? 'VENDOR' : 'PLANNER'
+    return vendorProfile ? 'VENDOR' : 'PLANNER';
   }
 }

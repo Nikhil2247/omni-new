@@ -5,11 +5,11 @@
 // Supports image optimization, video transcoding, and thumbnail generation
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { InjectQueue } from '@nestjs/bullmq'
-import { Queue, JobsOptions } from 'bullmq'
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue, JobsOptions } from 'bullmq';
 
-export const MEDIA_QUEUE_NAME = 'media'
+export const MEDIA_QUEUE_NAME = 'media';
 
 export enum MediaJobType {
   IMAGE_OPTIMIZE = 'image-optimize',
@@ -22,83 +22,83 @@ export enum MediaJobType {
 }
 
 export interface ImageOptimizeJobData {
-  type: MediaJobType.IMAGE_OPTIMIZE
-  sourcePath: string
-  destinationPath: string
-  quality?: number
-  format?: 'jpeg' | 'png' | 'webp' | 'avif'
-  maxWidth?: number
-  maxHeight?: number
-  metadata?: Record<string, unknown>
+  type: MediaJobType.IMAGE_OPTIMIZE;
+  sourcePath: string;
+  destinationPath: string;
+  quality?: number;
+  format?: 'jpeg' | 'png' | 'webp' | 'avif';
+  maxWidth?: number;
+  maxHeight?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ImageResizeJobData {
-  type: MediaJobType.IMAGE_RESIZE
-  sourcePath: string
-  destinationPath: string
-  width: number
-  height?: number
-  fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'
-  format?: 'jpeg' | 'png' | 'webp'
-  quality?: number
-  metadata?: Record<string, unknown>
+  type: MediaJobType.IMAGE_RESIZE;
+  sourcePath: string;
+  destinationPath: string;
+  width: number;
+  height?: number;
+  fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
+  format?: 'jpeg' | 'png' | 'webp';
+  quality?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ImageThumbnailJobData {
-  type: MediaJobType.IMAGE_THUMBNAIL
-  sourcePath: string
-  destinationPath: string
+  type: MediaJobType.IMAGE_THUMBNAIL;
+  sourcePath: string;
+  destinationPath: string;
   sizes: Array<{
-    width: number
-    height?: number
-    suffix: string
-  }>
-  format?: 'jpeg' | 'png' | 'webp'
-  quality?: number
-  metadata?: Record<string, unknown>
+    width: number;
+    height?: number;
+    suffix: string;
+  }>;
+  format?: 'jpeg' | 'png' | 'webp';
+  quality?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface VideoTranscodeJobData {
-  type: MediaJobType.VIDEO_TRANSCODE
-  sourcePath: string
-  destinationPath: string
-  codec?: 'h264' | 'h265' | 'vp9' | 'av1'
-  resolution?: '480p' | '720p' | '1080p' | '4k'
-  bitrate?: string
-  format?: 'mp4' | 'webm'
-  metadata?: Record<string, unknown>
+  type: MediaJobType.VIDEO_TRANSCODE;
+  sourcePath: string;
+  destinationPath: string;
+  codec?: 'h264' | 'h265' | 'vp9' | 'av1';
+  resolution?: '480p' | '720p' | '1080p' | '4k';
+  bitrate?: string;
+  format?: 'mp4' | 'webm';
+  metadata?: Record<string, unknown>;
 }
 
 export interface VideoThumbnailJobData {
-  type: MediaJobType.VIDEO_THUMBNAIL
-  sourcePath: string
-  destinationPath: string
-  timestamp?: string // e.g., '00:00:05'
-  count?: number // Generate multiple thumbnails
-  width?: number
-  height?: number
-  metadata?: Record<string, unknown>
+  type: MediaJobType.VIDEO_THUMBNAIL;
+  sourcePath: string;
+  destinationPath: string;
+  timestamp?: string; // e.g., '00:00:05'
+  count?: number; // Generate multiple thumbnails
+  width?: number;
+  height?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DocumentProcessJobData {
-  type: MediaJobType.DOCUMENT_PROCESS
-  sourcePath: string
-  destinationPath?: string
-  operation: 'extract-text' | 'convert-pdf' | 'generate-preview'
-  metadata?: Record<string, unknown>
+  type: MediaJobType.DOCUMENT_PROCESS;
+  sourcePath: string;
+  destinationPath?: string;
+  operation: 'extract-text' | 'convert-pdf' | 'generate-preview';
+  metadata?: Record<string, unknown>;
 }
 
 export interface BatchOptimizeJobData {
-  type: MediaJobType.BATCH_OPTIMIZE
+  type: MediaJobType.BATCH_OPTIMIZE;
   files: Array<{
-    sourcePath: string
-    destinationPath: string
-  }>
-  quality?: number
-  format?: 'jpeg' | 'png' | 'webp'
-  maxWidth?: number
-  maxHeight?: number
-  metadata?: Record<string, unknown>
+    sourcePath: string;
+    destinationPath: string;
+  }>;
+  quality?: number;
+  format?: 'jpeg' | 'png' | 'webp';
+  maxWidth?: number;
+  maxHeight?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export type MediaJobData =
@@ -108,11 +108,11 @@ export type MediaJobData =
   | VideoTranscodeJobData
   | VideoThumbnailJobData
   | DocumentProcessJobData
-  | BatchOptimizeJobData
+  | BatchOptimizeJobData;
 
 @Injectable()
 export class MediaQueue {
-  private readonly logger = new Logger(MediaQueue.name)
+  private readonly logger = new Logger(MediaQueue.name);
 
   constructor(@InjectQueue(MEDIA_QUEUE_NAME) private readonly queue: Queue) {}
 
@@ -124,10 +124,10 @@ export class MediaQueue {
     sourcePath: string,
     destinationPath: string,
     options?: {
-      quality?: number
-      format?: 'jpeg' | 'png' | 'webp' | 'avif'
-      maxWidth?: number
-      maxHeight?: number
+      quality?: number;
+      format?: 'jpeg' | 'png' | 'webp' | 'avif';
+      maxWidth?: number;
+      maxHeight?: number;
     },
   ): Promise<string> {
     const job = await this.queue.add(
@@ -139,10 +139,10 @@ export class MediaQueue {
         ...options,
       } as ImageOptimizeJobData,
       this.getDefaultOptions(),
-    )
+    );
 
-    this.logger.debug(`Image optimize job queued: ${job.id}`)
-    return job.id as string
+    this.logger.debug(`Image optimize job queued: ${job.id}`);
+    return job.id as string;
   }
 
   async resizeImage(
@@ -150,10 +150,10 @@ export class MediaQueue {
     destinationPath: string,
     width: number,
     options?: {
-      height?: number
-      fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside'
-      format?: 'jpeg' | 'png' | 'webp'
-      quality?: number
+      height?: number;
+      fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
+      format?: 'jpeg' | 'png' | 'webp';
+      quality?: number;
     },
   ): Promise<string> {
     const job = await this.queue.add(
@@ -166,10 +166,10 @@ export class MediaQueue {
         ...options,
       } as ImageResizeJobData,
       this.getDefaultOptions(),
-    )
+    );
 
-    this.logger.debug(`Image resize job queued: ${job.id}`)
-    return job.id as string
+    this.logger.debug(`Image resize job queued: ${job.id}`);
+    return job.id as string;
   }
 
   async generateThumbnails(
@@ -177,8 +177,8 @@ export class MediaQueue {
     destinationPath: string,
     sizes: Array<{ width: number; height?: number; suffix: string }>,
     options?: {
-      format?: 'jpeg' | 'png' | 'webp'
-      quality?: number
+      format?: 'jpeg' | 'png' | 'webp';
+      quality?: number;
     },
   ): Promise<string> {
     const job = await this.queue.add(
@@ -191,10 +191,10 @@ export class MediaQueue {
         ...options,
       } as ImageThumbnailJobData,
       this.getDefaultOptions(),
-    )
+    );
 
-    this.logger.debug(`Image thumbnail job queued: ${job.id}`)
-    return job.id as string
+    this.logger.debug(`Image thumbnail job queued: ${job.id}`);
+    return job.id as string;
   }
 
   async generateStandardThumbnails(
@@ -206,7 +206,7 @@ export class MediaQueue {
       { width: 300, height: 300, suffix: '_small' },
       { width: 600, height: 600, suffix: '_medium' },
       { width: 1200, suffix: '_large' },
-    ])
+    ]);
   }
 
   // ============================================================================
@@ -217,10 +217,10 @@ export class MediaQueue {
     sourcePath: string,
     destinationPath: string,
     options?: {
-      codec?: 'h264' | 'h265' | 'vp9' | 'av1'
-      resolution?: '480p' | '720p' | '1080p' | '4k'
-      bitrate?: string
-      format?: 'mp4' | 'webm'
+      codec?: 'h264' | 'h265' | 'vp9' | 'av1';
+      resolution?: '480p' | '720p' | '1080p' | '4k';
+      bitrate?: string;
+      format?: 'mp4' | 'webm';
     },
   ): Promise<string> {
     const job = await this.queue.add(
@@ -235,20 +235,20 @@ export class MediaQueue {
         ...this.getDefaultOptions(),
         attempts: 2,
       },
-    )
+    );
 
-    this.logger.debug(`Video transcode job queued: ${job.id}`)
-    return job.id as string
+    this.logger.debug(`Video transcode job queued: ${job.id}`);
+    return job.id as string;
   }
 
   async generateVideoThumbnail(
     sourcePath: string,
     destinationPath: string,
     options?: {
-      timestamp?: string
-      count?: number
-      width?: number
-      height?: number
+      timestamp?: string;
+      count?: number;
+      width?: number;
+      height?: number;
     },
   ): Promise<string> {
     const job = await this.queue.add(
@@ -261,10 +261,10 @@ export class MediaQueue {
         ...options,
       } as VideoThumbnailJobData,
       this.getDefaultOptions(),
-    )
+    );
 
-    this.logger.debug(`Video thumbnail job queued: ${job.id}`)
-    return job.id as string
+    this.logger.debug(`Video thumbnail job queued: ${job.id}`);
+    return job.id as string;
   }
 
   // ============================================================================
@@ -285,10 +285,10 @@ export class MediaQueue {
         operation,
       } as DocumentProcessJobData,
       this.getDefaultOptions(),
-    )
+    );
 
-    this.logger.debug(`Document process job queued: ${job.id}`)
-    return job.id as string
+    this.logger.debug(`Document process job queued: ${job.id}`);
+    return job.id as string;
   }
 
   // ============================================================================
@@ -298,10 +298,10 @@ export class MediaQueue {
   async batchOptimize(
     files: Array<{ sourcePath: string; destinationPath: string }>,
     options?: {
-      quality?: number
-      format?: 'jpeg' | 'png' | 'webp'
-      maxWidth?: number
-      maxHeight?: number
+      quality?: number;
+      format?: 'jpeg' | 'png' | 'webp';
+      maxWidth?: number;
+      maxHeight?: number;
     },
   ): Promise<string> {
     const job = await this.queue.add(
@@ -314,10 +314,12 @@ export class MediaQueue {
       {
         ...this.getDefaultOptions(),
       },
-    )
+    );
 
-    this.logger.debug(`Batch optimize job queued: ${job.id} for ${files.length} files`)
-    return job.id as string
+    this.logger.debug(
+      `Batch optimize job queued: ${job.id} for ${files.length} files`,
+    );
+    return job.id as string;
   }
 
   // ============================================================================
@@ -325,18 +327,18 @@ export class MediaQueue {
   // ============================================================================
 
   async getJobStatus(jobId: string): Promise<{
-    id: string
-    status: string
-    progress: number
-    data: MediaJobData
-    failedReason?: string
-    returnvalue?: unknown
+    id: string;
+    status: string;
+    progress: number;
+    data: MediaJobData;
+    failedReason?: string;
+    returnvalue?: unknown;
   } | null> {
-    const job = await this.queue.getJob(jobId)
+    const job = await this.queue.getJob(jobId);
 
-    if (!job) return null
+    if (!job) return null;
 
-    const state = await job.getState()
+    const state = await job.getState();
 
     return {
       id: job.id as string,
@@ -345,31 +347,31 @@ export class MediaQueue {
       data: job.data as MediaJobData,
       failedReason: job.failedReason,
       returnvalue: job.returnvalue,
-    }
+    };
   }
 
   async cancelJob(jobId: string): Promise<boolean> {
-    const job = await this.queue.getJob(jobId)
+    const job = await this.queue.getJob(jobId);
 
-    if (!job) return false
+    if (!job) return false;
 
-    const state = await job.getState()
+    const state = await job.getState();
 
     if (state === 'waiting' || state === 'delayed') {
-      await job.remove()
-      this.logger.debug(`Media job cancelled: ${jobId}`)
-      return true
+      await job.remove();
+      this.logger.debug(`Media job cancelled: ${jobId}`);
+      return true;
     }
 
-    return false
+    return false;
   }
 
   async getQueueStats(): Promise<{
-    waiting: number
-    active: number
-    completed: number
-    failed: number
-    delayed: number
+    waiting: number;
+    active: number;
+    completed: number;
+    failed: number;
+    delayed: number;
   }> {
     const [waiting, active, completed, failed, delayed] = await Promise.all([
       this.queue.getWaitingCount(),
@@ -377,9 +379,9 @@ export class MediaQueue {
       this.queue.getCompletedCount(),
       this.queue.getFailedCount(),
       this.queue.getDelayedCount(),
-    ])
+    ]);
 
-    return { waiting, active, completed, failed, delayed }
+    return { waiting, active, completed, failed, delayed };
   }
 
   private getDefaultOptions(): JobsOptions {
@@ -391,6 +393,6 @@ export class MediaQueue {
       },
       removeOnComplete: 100,
       removeOnFail: 200,
-    }
+    };
   }
 }

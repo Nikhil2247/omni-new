@@ -7,6 +7,11 @@ import { LeadsModule } from '../../domain/leads/leads.module';
 
 @Module({
   imports: [LeadsModule],
-  controllers: [LeadsController, AcquisitionsController, PartnershipsController, AnalyticsController]
+  controllers: [
+    LeadsController,
+    AcquisitionsController,
+    PartnershipsController,
+    AnalyticsController,
+  ],
 })
 export class SalesGatewayModule {}

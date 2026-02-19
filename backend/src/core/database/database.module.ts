@@ -5,9 +5,9 @@
 // Includes read replica support for horizontal scaling
 // ============================================================================
 
-import { Global, Module } from '@nestjs/common'
-import { PrismaService } from './prisma.service'
-import { PrismaReplicaService } from './prisma-replica.service'
+import { Global, Module } from '@nestjs/common';
+import { PrismaService } from './prisma.service';
+import { PrismaReplicaService } from './prisma-replica.service';
 
 @Global()
 @Module({

@@ -2,10 +2,10 @@
 // GUEST UPLOAD REPOSITORY - Planning Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import { GuestUpload, Prisma, UploadStatus } from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { GuestUpload, Prisma, UploadStatus } from '@prisma/client';
 
 @Injectable()
 export class GuestUploadRepository extends BaseRepository<
@@ -16,14 +16,14 @@ export class GuestUploadRepository extends BaseRepository<
   Prisma.GuestUploadWhereUniqueInput,
   Prisma.GuestUploadOrderByWithRelationInput
 > {
-  protected readonly modelName = 'GuestUpload'
+  protected readonly modelName = 'GuestUpload';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.guestUpload
+    return this.prisma.guestUpload;
   }
 
   async findByMemory(eventMemoryId: string, status?: UploadStatus) {
@@ -33,7 +33,7 @@ export class GuestUploadRepository extends BaseRepository<
         ...(status && { status }),
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async findApproved(eventMemoryId: string) {
@@ -43,7 +43,7 @@ export class GuestUploadRepository extends BaseRepository<
         status: 'APPROVED',
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async countPending(eventMemoryId: string) {
@@ -52,7 +52,7 @@ export class GuestUploadRepository extends BaseRepository<
         eventMemoryId,
         status: 'PENDING',
       },
-    })
+    });
   }
 
   async approve(id: string) {
@@ -62,7 +62,7 @@ export class GuestUploadRepository extends BaseRepository<
         status: 'APPROVED',
         approvedAt: new Date(),
       },
-    })
+    });
   }
 
   async reject(id: string) {
@@ -72,6 +72,6 @@ export class GuestUploadRepository extends BaseRepository<
         status: 'REJECTED',
         rejectedAt: new Date(),
       },
-    })
+    });
   }
 }

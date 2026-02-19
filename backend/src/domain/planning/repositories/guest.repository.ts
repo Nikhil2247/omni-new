@@ -2,14 +2,10 @@
 // GUEST REPOSITORY
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import {
-  Guest,
-  Prisma,
-  RSVPStatus,
-} from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { Guest, Prisma, RSVPStatus } from '@prisma/client';
 
 @Injectable()
 export class GuestRepository extends BaseRepository<
@@ -20,21 +16,21 @@ export class GuestRepository extends BaseRepository<
   Prisma.GuestWhereUniqueInput,
   Prisma.GuestOrderByWithRelationInput
 > {
-  protected readonly modelName = 'Guest'
+  protected readonly modelName = 'Guest';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.guest
+    return this.prisma.guest;
   }
 
   async findByGuestlist(guestlistId: string) {
     return this.model.findMany({
       where: { guestlistId },
       orderBy: { createdAt: 'asc' },
-    })
+    });
   }
 
   async findByRSVPStatus(guestlistId: string, rsvpStatus: RSVPStatus) {
@@ -44,34 +40,34 @@ export class GuestRepository extends BaseRepository<
         rsvpStatus,
       },
       orderBy: { firstName: 'asc' },
-    })
+    });
   }
 
   async getRSVPStats(guestlistId: string) {
     const totalInvited = await this.model.count({
       where: { guestlistId },
-    })
+    });
 
     const confirmed = await this.model.count({
       where: {
         guestlistId,
         rsvpStatus: 'ATTENDING',
       },
-    })
+    });
 
     const declined = await this.model.count({
       where: {
         guestlistId,
         rsvpStatus: 'NOT_ATTENDING',
       },
-    })
+    });
 
     const pending = await this.model.count({
       where: {
         guestlistId,
         rsvpStatus: 'PENDING',
       },
-    })
+    });
 
     const guestsWithPlusOnes = await this.model.aggregate({
       where: {
@@ -81,9 +77,10 @@ export class GuestRepository extends BaseRepository<
       _sum: {
         plusOne: true,
       },
-    })
+    });
 
-    const totalExpected = confirmed + Number(guestsWithPlusOnes._sum.plusOne || 0)
+    const totalExpected =
+      confirmed + Number(guestsWithPlusOnes._sum.plusOne || 0);
 
     return {
       totalInvited,
@@ -91,7 +88,7 @@ export class GuestRepository extends BaseRepository<
       declined,
       pending,
       totalExpected,
-    }
+    };
   }
 
   async searchGuests(guestlistId: string, searchTerm: string) {
@@ -105,6 +102,6 @@ export class GuestRepository extends BaseRepository<
         ],
       },
       orderBy: { firstName: 'asc' },
-    })
+    });
   }
 }

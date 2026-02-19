@@ -2,14 +2,18 @@
 // SUBSCRIPTION PLAN SERVICE - Subscription Domain
 // ============================================================================
 
-import { Injectable, NotFoundException, Logger } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { SubscriptionPlanRepository } from '../repositories/subscription-plan.repository'
-import { CreateSubscriptionPlanDto, UpdateSubscriptionPlanDto, PlanTier } from '../dto/subscription-plan.dto'
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SubscriptionPlanRepository } from '../repositories/subscription-plan.repository';
+import {
+  CreateSubscriptionPlanDto,
+  UpdateSubscriptionPlanDto,
+  PlanTier,
+} from '../dto/subscription-plan.dto';
 
 @Injectable()
 export class SubscriptionPlanService {
-  private readonly logger = new Logger(SubscriptionPlanService.name)
+  private readonly logger = new Logger(SubscriptionPlanService.name);
 
   constructor(
     private readonly planRepository: SubscriptionPlanRepository,
@@ -17,10 +21,13 @@ export class SubscriptionPlanService {
   ) {}
 
   async create(dto: CreateSubscriptionPlanDto) {
-    this.logger.log(`Creating subscription plan: ${dto.name}`)
+    this.logger.log(`Creating subscription plan: ${dto.name}`);
 
     // Generate slug from name
-    const slug = dto.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    const slug = dto.name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
 
     const plan = await this.planRepository.create({
       name: dto.name,
@@ -33,7 +40,7 @@ export class SubscriptionPlanService {
       isActive: dto.isActive ?? true,
       isPublic: dto.isPublic ?? true,
       features: {
-        create: dto.features.map(f => ({
+        create: dto.features.map((f) => ({
           featureKey: f.featureKey,
           featureName: f.featureName,
           description: f.description,
@@ -44,7 +51,7 @@ export class SubscriptionPlanService {
         })),
       },
       prices: {
-        create: dto.prices.map(p => ({
+        create: dto.prices.map((p) => ({
           billingCycle: p.billingCycle,
           amount: p.amount,
           currency: p.currency,
@@ -52,39 +59,39 @@ export class SubscriptionPlanService {
           razorpayPlanId: p.razorpayPlanId,
         })),
       },
-    })
+    });
 
-    this.eventEmitter.emit('subscription-plan.created', { planId: plan.id })
-    return plan
+    this.eventEmitter.emit('subscription-plan.created', { planId: plan.id });
+    return plan;
   }
 
   async findById(id: string) {
     const plan = await this.planRepository.findById(id, {
       features: true,
       prices: true,
-    })
+    });
 
     if (!plan) {
-      throw new NotFoundException('Subscription plan not found')
+      throw new NotFoundException('Subscription plan not found');
     }
 
-    return plan
+    return plan;
   }
 
   async findByTier(tier: PlanTier) {
-    return this.planRepository.findByTier(tier)
+    return this.planRepository.findByTier(tier);
   }
 
   async findAll(includeInactive = false) {
-    return this.planRepository.findAll(includeInactive)
+    return this.planRepository.findAll(includeInactive);
   }
 
   async findActive() {
-    return this.planRepository.findActive()
+    return this.planRepository.findActive();
   }
 
   async update(id: string, dto: UpdateSubscriptionPlanDto) {
-    await this.findById(id)
+    await this.findById(id);
 
     const updated = await this.planRepository.update(id, {
       name: dto.name,
@@ -94,29 +101,29 @@ export class SubscriptionPlanService {
       trialDays: dto.trialDays,
       isActive: dto.isActive,
       isPublic: dto.isPublic,
-    })
+    });
 
-    this.eventEmitter.emit('subscription-plan.updated', { planId: id })
-    return updated
+    this.eventEmitter.emit('subscription-plan.updated', { planId: id });
+    return updated;
   }
 
   async deactivate(id: string) {
-    await this.findById(id)
-    return this.planRepository.update(id, { isActive: false })
+    await this.findById(id);
+    return this.planRepository.update(id, { isActive: false });
   }
 
   async activate(id: string) {
-    await this.findById(id)
-    return this.planRepository.update(id, { isActive: true })
+    await this.findById(id);
+    return this.planRepository.update(id, { isActive: true });
   }
 
   async getFeatures(planId: string) {
-    const plan = await this.findById(planId)
-    return (plan as any).features || []
+    const plan = await this.findById(planId);
+    return (plan as any).features || [];
   }
 
   async getPrices(planId: string) {
-    const plan = await this.findById(planId)
-    return (plan as any).prices || []
+    const plan = await this.findById(planId);
+    return (plan as any).prices || [];
   }
 }

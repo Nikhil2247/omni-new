@@ -4,23 +4,23 @@
 // Queue for scheduling and managing metrics aggregation jobs
 // ============================================================================
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
-import { InjectQueue } from '@nestjs/bullmq'
-import { Queue, JobsOptions } from 'bullmq'
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue, JobsOptions } from 'bullmq';
 import {
   METRICS_QUEUE,
   MetricsJobType,
   MetricsJobData,
-} from '../processors/metrics-aggregation.processor'
+} from '../processors/metrics-aggregation.processor';
 
 @Injectable()
 export class MetricsQueue implements OnModuleInit {
-  private readonly logger = new Logger(MetricsQueue.name)
+  private readonly logger = new Logger(MetricsQueue.name);
 
   constructor(@InjectQueue(METRICS_QUEUE) private readonly queue: Queue) {}
 
   async onModuleInit(): Promise<void> {
-    await this.setupRecurringJobs()
+    await this.setupRecurringJobs();
   }
 
   // ============================================================================
@@ -32,9 +32,9 @@ export class MetricsQueue implements OnModuleInit {
    */
   private async setupRecurringJobs(): Promise<void> {
     // Remove existing repeatable jobs to avoid duplicates
-    const existingJobs = await this.queue.getRepeatableJobs()
+    const existingJobs = await this.queue.getRepeatableJobs();
     for (const job of existingJobs) {
-      await this.queue.removeRepeatableByKey(job.key)
+      await this.queue.removeRepeatableByKey(job.key);
     }
 
     // Daily aggregation - runs at 2 AM every day
@@ -50,7 +50,7 @@ export class MetricsQueue implements OnModuleInit {
         removeOnComplete: 100,
         removeOnFail: 50,
       },
-    )
+    );
 
     // Weekly summary - runs every Monday at 3 AM
     await this.queue.add(
@@ -65,7 +65,7 @@ export class MetricsQueue implements OnModuleInit {
         removeOnComplete: 50,
         removeOnFail: 20,
       },
-    )
+    );
 
     // Monthly cleanup - runs on the 1st of every month at 4 AM
     await this.queue.add(
@@ -81,7 +81,7 @@ export class MetricsQueue implements OnModuleInit {
         removeOnComplete: 12,
         removeOnFail: 6,
       },
-    )
+    );
 
     // Score recalculation - runs every Sunday at 5 AM
     await this.queue.add(
@@ -96,9 +96,9 @@ export class MetricsQueue implements OnModuleInit {
         removeOnComplete: 50,
         removeOnFail: 20,
       },
-    )
+    );
 
-    this.logger.log('Metrics recurring jobs scheduled')
+    this.logger.log('Metrics recurring jobs scheduled');
   }
 
   // ============================================================================
@@ -122,10 +122,10 @@ export class MetricsQueue implements OnModuleInit {
         priority: 1,
         ...options,
       },
-    )
+    );
 
-    this.logger.log(`Manual daily aggregation triggered: ${job.id}`)
-    return job.id!
+    this.logger.log(`Manual daily aggregation triggered: ${job.id}`);
+    return job.id!;
   }
 
   /**
@@ -147,10 +147,10 @@ export class MetricsQueue implements OnModuleInit {
         priority: 2,
         ...options,
       },
-    )
+    );
 
-    this.logger.log(`Manual weekly aggregation triggered: ${job.id}`)
-    return job.id!
+    this.logger.log(`Manual weekly aggregation triggered: ${job.id}`);
+    return job.id!;
   }
 
   /**
@@ -172,10 +172,10 @@ export class MetricsQueue implements OnModuleInit {
         priority: 3,
         ...options,
       },
-    )
+    );
 
-    this.logger.log(`Manual monthly aggregation triggered: ${job.id}`)
-    return job.id!
+    this.logger.log(`Manual monthly aggregation triggered: ${job.id}`);
+    return job.id!;
   }
 
   /**
@@ -195,10 +195,10 @@ export class MetricsQueue implements OnModuleInit {
         priority: 10,
         ...options,
       },
-    )
+    );
 
-    this.logger.log(`Manual cleanup triggered: ${job.id}`)
-    return job.id!
+    this.logger.log(`Manual cleanup triggered: ${job.id}`);
+    return job.id!;
   }
 
   /**
@@ -214,10 +214,10 @@ export class MetricsQueue implements OnModuleInit {
         priority: 5,
         ...options,
       },
-    )
+    );
 
-    this.logger.log(`Manual score recalculation triggered: ${job.id}`)
-    return job.id!
+    this.logger.log(`Manual score recalculation triggered: ${job.id}`);
+    return job.id!;
   }
 
   /**
@@ -228,8 +228,8 @@ export class MetricsQueue implements OnModuleInit {
     endDate: Date,
     options?: JobsOptions,
   ): Promise<string[]> {
-    const jobIds: string[] = []
-    const currentDate = new Date(startDate)
+    const jobIds: string[] = [];
+    const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
       const job = await this.queue.add(
@@ -242,17 +242,17 @@ export class MetricsQueue implements OnModuleInit {
           priority: 10, // Lower priority for backfill
           ...options,
         },
-      )
+      );
 
-      jobIds.push(job.id!)
-      currentDate.setDate(currentDate.getDate() + 1)
+      jobIds.push(job.id!);
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
     this.logger.log(
       `Backfill triggered for ${jobIds.length} days: ${startDate.toDateString()} - ${endDate.toDateString()}`,
-    )
+    );
 
-    return jobIds
+    return jobIds;
   }
 
   // ============================================================================
@@ -263,12 +263,12 @@ export class MetricsQueue implements OnModuleInit {
    * Get queue status
    */
   async getQueueStatus(): Promise<{
-    waiting: number
-    active: number
-    completed: number
-    failed: number
-    delayed: number
-    repeatableJobs: number
+    waiting: number;
+    active: number;
+    completed: number;
+    failed: number;
+    delayed: number;
+    repeatableJobs: number;
   }> {
     const [waiting, active, completed, failed, delayed, repeatableJobs] =
       await Promise.all([
@@ -278,7 +278,7 @@ export class MetricsQueue implements OnModuleInit {
         this.queue.getFailedCount(),
         this.queue.getDelayedCount(),
         this.queue.getRepeatableJobs(),
-      ])
+      ]);
 
     return {
       waiting,
@@ -287,7 +287,7 @@ export class MetricsQueue implements OnModuleInit {
       failed,
       delayed,
       repeatableJobs: repeatableJobs.length,
-    }
+    };
   }
 
   /**
@@ -297,38 +297,40 @@ export class MetricsQueue implements OnModuleInit {
     const [completed, failed] = await Promise.all([
       this.queue.getCompleted(0, limit / 2),
       this.queue.getFailed(0, limit / 2),
-    ])
+    ]);
 
     return [...completed, ...failed]
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-      .slice(0, limit)
+      .slice(0, limit);
   }
 
   /**
    * Pause the queue
    */
   async pause(): Promise<void> {
-    await this.queue.pause()
-    this.logger.warn('Metrics queue paused')
+    await this.queue.pause();
+    this.logger.warn('Metrics queue paused');
   }
 
   /**
    * Resume the queue
    */
   async resume(): Promise<void> {
-    await this.queue.resume()
-    this.logger.log('Metrics queue resumed')
+    await this.queue.resume();
+    this.logger.log('Metrics queue resumed');
   }
 
   /**
    * Clean old jobs
    */
-  async cleanOldJobs(gracePeriodMs: number = 24 * 60 * 60 * 1000): Promise<void> {
+  async cleanOldJobs(
+    gracePeriodMs: number = 24 * 60 * 60 * 1000,
+  ): Promise<void> {
     await Promise.all([
       this.queue.clean(gracePeriodMs, 1000, 'completed'),
       this.queue.clean(gracePeriodMs * 7, 100, 'failed'),
-    ])
+    ]);
 
-    this.logger.log('Old jobs cleaned from queue')
+    this.logger.log('Old jobs cleaned from queue');
   }
 }

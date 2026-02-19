@@ -5,67 +5,80 @@
 // Supports buckets, presigned URLs, streaming, and metadata
 // ============================================================================
 
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import * as Minio from 'minio'
-import { Readable } from 'stream'
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as Minio from 'minio';
+import { Readable } from 'stream';
 
 export interface BucketPolicy {
-  Version: string
+  Version: string;
   Statement: Array<{
-    Effect: 'Allow' | 'Deny'
-    Principal: string | { AWS: string[] }
-    Action: string[]
-    Resource: string[]
-  }>
+    Effect: 'Allow' | 'Deny';
+    Principal: string | { AWS: string[] };
+    Action: string[];
+    Resource: string[];
+  }>;
 }
 
 export interface ObjectInfo {
-  name: string
-  size: number
-  etag: string
-  lastModified: Date
-  metadata?: Record<string, string>
+  name: string;
+  size: number;
+  etag: string;
+  lastModified: Date;
+  metadata?: Record<string, string>;
 }
 
 export interface UploadResult {
-  etag: string
-  versionId?: string
+  etag: string;
+  versionId?: string;
 }
 
 export interface CopyObjectResult {
-  etag: string
-  lastModified?: Date
+  etag: string;
+  lastModified?: Date;
 }
 
 export interface UploadOptions {
-  contentType?: string
-  metadata?: Record<string, string>
-  partSize?: number // For multipart uploads
+  contentType?: string;
+  metadata?: Record<string, string>;
+  partSize?: number; // For multipart uploads
 }
 
 export interface PresignedUrlOptions {
-  expiresIn?: number // Seconds
-  contentType?: string
-  responseContentDisposition?: string
+  expiresIn?: number; // Seconds
+  contentType?: string;
+  responseContentDisposition?: string;
 }
 
 @Injectable()
 export class MinioService implements OnModuleInit {
-  private readonly logger = new Logger(MinioService.name)
-  private client: Minio.Client
-  private readonly defaultBucket: string
+  private readonly logger = new Logger(MinioService.name);
+  private client: Minio.Client;
+  private readonly defaultBucket: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.defaultBucket = this.configService.get<string>('MINIO_DEFAULT_BUCKET', 'omnicassion')
+    this.defaultBucket = this.configService.get<string>(
+      'MINIO_DEFAULT_BUCKET',
+      'omnicassion',
+    );
   }
 
   async onModuleInit(): Promise<void> {
-    const endPoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost')
-    const port = this.configService.get<number>('MINIO_PORT', 9000)
-    const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin')
-    const secretKey = this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin')
-    const useSSL = this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true'
+    const endPoint = this.configService.get<string>(
+      'MINIO_ENDPOINT',
+      'localhost',
+    );
+    const port = this.configService.get<number>('MINIO_PORT', 9000);
+    const accessKey = this.configService.get<string>(
+      'MINIO_ACCESS_KEY',
+      'minioadmin',
+    );
+    const secretKey = this.configService.get<string>(
+      'MINIO_SECRET_KEY',
+      'minioadmin',
+    );
+    const useSSL =
+      this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
 
     this.client = new Minio.Client({
       endPoint,
@@ -73,21 +86,21 @@ export class MinioService implements OnModuleInit {
       accessKey,
       secretKey,
       useSSL,
-    })
+    });
 
     try {
       // Verify connection by checking if default bucket exists
-      const bucketExists = await this.client.bucketExists(this.defaultBucket)
+      const bucketExists = await this.client.bucketExists(this.defaultBucket);
 
       if (!bucketExists) {
-        await this.createBucket(this.defaultBucket)
-        this.logger.log(`Created default bucket: ${this.defaultBucket}`)
+        await this.createBucket(this.defaultBucket);
+        this.logger.log(`Created default bucket: ${this.defaultBucket}`);
       }
 
-      this.logger.log(`Connected to MinIO at ${endPoint}:${port}`)
+      this.logger.log(`Connected to MinIO at ${endPoint}:${port}`);
     } catch (error) {
-      this.logger.error('Failed to connect to MinIO', error)
-      throw error
+      this.logger.error('Failed to connect to MinIO', error);
+      throw error;
     }
   }
 
@@ -97,39 +110,39 @@ export class MinioService implements OnModuleInit {
 
   async createBucket(bucket: string, region?: string): Promise<void> {
     try {
-      const exists = await this.client.bucketExists(bucket)
+      const exists = await this.client.bucketExists(bucket);
 
       if (!exists) {
-        await this.client.makeBucket(bucket, region || 'us-east-1')
-        this.logger.log(`Bucket created: ${bucket}`)
+        await this.client.makeBucket(bucket, region || 'us-east-1');
+        this.logger.log(`Bucket created: ${bucket}`);
       }
     } catch (error) {
-      this.logger.error(`Failed to create bucket: ${bucket}`, error)
-      throw error
+      this.logger.error(`Failed to create bucket: ${bucket}`, error);
+      throw error;
     }
   }
 
   async deleteBucket(bucket: string): Promise<void> {
     try {
-      await this.client.removeBucket(bucket)
-      this.logger.log(`Bucket deleted: ${bucket}`)
+      await this.client.removeBucket(bucket);
+      this.logger.log(`Bucket deleted: ${bucket}`);
     } catch (error) {
-      this.logger.error(`Failed to delete bucket: ${bucket}`, error)
-      throw error
+      this.logger.error(`Failed to delete bucket: ${bucket}`, error);
+      throw error;
     }
   }
 
   async listBuckets(): Promise<Minio.BucketItemFromList[]> {
-    return this.client.listBuckets()
+    return this.client.listBuckets();
   }
 
   async setBucketPolicy(bucket: string, policy: BucketPolicy): Promise<void> {
     try {
-      await this.client.setBucketPolicy(bucket, JSON.stringify(policy))
-      this.logger.log(`Bucket policy set for: ${bucket}`)
+      await this.client.setBucketPolicy(bucket, JSON.stringify(policy));
+      this.logger.log(`Bucket policy set for: ${bucket}`);
     } catch (error) {
-      this.logger.error(`Failed to set bucket policy: ${bucket}`, error)
-      throw error
+      this.logger.error(`Failed to set bucket policy: ${bucket}`, error);
+      throw error;
     }
   }
 
@@ -144,9 +157,9 @@ export class MinioService implements OnModuleInit {
           Resource: [`arn:aws:s3:::${bucket}/*`],
         },
       ],
-    }
+    };
 
-    await this.setBucketPolicy(bucket, policy)
+    await this.setBucketPolicy(bucket, policy);
   }
 
   // ============================================================================
@@ -160,13 +173,13 @@ export class MinioService implements OnModuleInit {
     options?: UploadOptions,
     bucket?: string,
   ): Promise<UploadResult> {
-    const targetBucket = bucket || this.defaultBucket
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
       const metaData: Record<string, string> = {
         'Content-Type': options?.contentType || 'application/octet-stream',
         ...options?.metadata,
-      }
+      };
 
       const result = await this.client.putObject(
         targetBucket,
@@ -174,17 +187,17 @@ export class MinioService implements OnModuleInit {
         file,
         size,
         metaData,
-      )
+      );
 
-      this.logger.debug(`File uploaded: ${targetBucket}/${objectName}`)
+      this.logger.debug(`File uploaded: ${targetBucket}/${objectName}`);
 
       return {
         ...result,
         versionId: result.versionId || undefined,
-      }
+      };
     } catch (error) {
-      this.logger.error(`Failed to upload file: ${objectName}`, error)
-      throw error
+      this.logger.error(`Failed to upload file: ${objectName}`, error);
+      throw error;
     }
   }
 
@@ -195,35 +208,35 @@ export class MinioService implements OnModuleInit {
     options?: UploadOptions,
     bucket?: string,
   ): Promise<UploadResult> {
-    return this.uploadFile(objectName, stream, size, options, bucket)
+    return this.uploadFile(objectName, stream, size, options, bucket);
   }
 
   async getFile(objectName: string, bucket?: string): Promise<Buffer> {
-    const targetBucket = bucket || this.defaultBucket
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
-      const stream = await this.client.getObject(targetBucket, objectName)
-      const chunks: Buffer[] = []
+      const stream = await this.client.getObject(targetBucket, objectName);
+      const chunks: Buffer[] = [];
 
       return new Promise((resolve, reject) => {
-        stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)))
-        stream.on('end', () => resolve(Buffer.concat(chunks)))
-        stream.on('error', reject)
-      })
+        stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+        stream.on('error', reject);
+      });
     } catch (error) {
-      this.logger.error(`Failed to get file: ${objectName}`, error)
-      throw error
+      this.logger.error(`Failed to get file: ${objectName}`, error);
+      throw error;
     }
   }
 
   async getFileStream(objectName: string, bucket?: string): Promise<Readable> {
-    const targetBucket = bucket || this.defaultBucket
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
-      return await this.client.getObject(targetBucket, objectName)
+      return await this.client.getObject(targetBucket, objectName);
     } catch (error) {
-      this.logger.error(`Failed to get file stream: ${objectName}`, error)
-      throw error
+      this.logger.error(`Failed to get file stream: ${objectName}`, error);
+      throw error;
     }
   }
 
@@ -233,37 +246,44 @@ export class MinioService implements OnModuleInit {
     length: number,
     bucket?: string,
   ): Promise<Readable> {
-    const targetBucket = bucket || this.defaultBucket
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
-      return await this.client.getPartialObject(targetBucket, objectName, offset, length)
+      return await this.client.getPartialObject(
+        targetBucket,
+        objectName,
+        offset,
+        length,
+      );
     } catch (error) {
-      this.logger.error(`Failed to get partial file: ${objectName}`, error)
-      throw error
+      this.logger.error(`Failed to get partial file: ${objectName}`, error);
+      throw error;
     }
   }
 
   async deleteFile(objectName: string, bucket?: string): Promise<void> {
-    const targetBucket = bucket || this.defaultBucket
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
-      await this.client.removeObject(targetBucket, objectName)
-      this.logger.debug(`File deleted: ${targetBucket}/${objectName}`)
+      await this.client.removeObject(targetBucket, objectName);
+      this.logger.debug(`File deleted: ${targetBucket}/${objectName}`);
     } catch (error) {
-      this.logger.error(`Failed to delete file: ${objectName}`, error)
-      throw error
+      this.logger.error(`Failed to delete file: ${objectName}`, error);
+      throw error;
     }
   }
 
   async deleteFiles(objectNames: string[], bucket?: string): Promise<void> {
-    const targetBucket = bucket || this.defaultBucket
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
-      await this.client.removeObjects(targetBucket, objectNames)
-      this.logger.debug(`Files deleted from ${targetBucket}: ${objectNames.length} files`)
+      await this.client.removeObjects(targetBucket, objectNames);
+      this.logger.debug(
+        `Files deleted from ${targetBucket}: ${objectNames.length} files`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to delete files`, error)
-      throw error
+      this.logger.error(`Failed to delete files`, error);
+      throw error;
     }
   }
 
@@ -273,8 +293,8 @@ export class MinioService implements OnModuleInit {
     sourceBucket?: string,
     destBucket?: string,
   ): Promise<CopyObjectResult> {
-    const srcBucket = sourceBucket || this.defaultBucket
-    const dstBucket = destBucket || this.defaultBucket
+    const srcBucket = sourceBucket || this.defaultBucket;
+    const dstBucket = destBucket || this.defaultBucket;
 
     try {
       const result = await this.client.copyObject(
@@ -282,41 +302,44 @@ export class MinioService implements OnModuleInit {
         destObject,
         `/${srcBucket}/${sourceObject}`,
         new Minio.CopyConditions(),
-      )
+      );
 
-      this.logger.debug(`File copied: ${srcBucket}/${sourceObject} -> ${dstBucket}/${destObject}`)
+      this.logger.debug(
+        `File copied: ${srcBucket}/${sourceObject} -> ${dstBucket}/${destObject}`,
+      );
 
       return {
         ...result,
         // lastModified may not exist on all response types
-        lastModified: (result as any).lastModified instanceof Date 
-          ? (result as any).lastModified 
-          : (result as any).lastModified 
-            ? new Date((result as any).lastModified) 
-            : new Date(),
-      } as any
+        lastModified:
+          (result as any).lastModified instanceof Date
+            ? (result as any).lastModified
+            : (result as any).lastModified
+              ? new Date((result as any).lastModified)
+              : new Date(),
+      } as any;
     } catch (error) {
-      this.logger.error(`Failed to copy file: ${sourceObject}`, error)
-      throw error
+      this.logger.error(`Failed to copy file: ${sourceObject}`, error);
+      throw error;
     }
   }
 
   async fileExists(objectName: string, bucket?: string): Promise<boolean> {
-    const targetBucket = bucket || this.defaultBucket
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
-      await this.client.statObject(targetBucket, objectName)
-      return true
+      await this.client.statObject(targetBucket, objectName);
+      return true;
     } catch {
-      return false
+      return false;
     }
   }
 
   async getFileInfo(objectName: string, bucket?: string): Promise<ObjectInfo> {
-    const targetBucket = bucket || this.defaultBucket
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
-      const stat = await this.client.statObject(targetBucket, objectName)
+      const stat = await this.client.statObject(targetBucket, objectName);
 
       return {
         name: objectName,
@@ -324,10 +347,10 @@ export class MinioService implements OnModuleInit {
         etag: stat.etag,
         lastModified: stat.lastModified,
         metadata: stat.metaData,
-      }
+      };
     } catch (error) {
-      this.logger.error(`Failed to get file info: ${objectName}`, error)
-      throw error
+      this.logger.error(`Failed to get file info: ${objectName}`, error);
+      throw error;
     }
   }
 
@@ -335,12 +358,16 @@ export class MinioService implements OnModuleInit {
   // LIST OPERATIONS
   // ============================================================================
 
-  async listFiles(prefix?: string, recursive?: boolean, bucket?: string): Promise<ObjectInfo[]> {
-    const targetBucket = bucket || this.defaultBucket
-    const objects: ObjectInfo[] = []
+  async listFiles(
+    prefix?: string,
+    recursive?: boolean,
+    bucket?: string,
+  ): Promise<ObjectInfo[]> {
+    const targetBucket = bucket || this.defaultBucket;
+    const objects: ObjectInfo[] = [];
 
     return new Promise((resolve, reject) => {
-      const stream = this.client.listObjects(targetBucket, prefix, recursive)
+      const stream = this.client.listObjects(targetBucket, prefix, recursive);
 
       stream.on('data', (obj) => {
         if (obj.name) {
@@ -349,13 +376,13 @@ export class MinioService implements OnModuleInit {
             size: obj.size ?? 0,
             etag: obj.etag || '',
             lastModified: obj.lastModified ?? new Date(0),
-          })
+          });
         }
-      })
+      });
 
-      stream.on('end', () => resolve(objects))
-      stream.on('error', reject)
-    })
+      stream.on('end', () => resolve(objects));
+      stream.on('error', reject);
+    });
   }
 
   async listFilesV2(
@@ -364,11 +391,16 @@ export class MinioService implements OnModuleInit {
     startAfter?: string,
     bucket?: string,
   ): Promise<ObjectInfo[]> {
-    const targetBucket = bucket || this.defaultBucket
-    const objects: ObjectInfo[] = []
+    const targetBucket = bucket || this.defaultBucket;
+    const objects: ObjectInfo[] = [];
 
     return new Promise((resolve, reject) => {
-      const stream = this.client.listObjectsV2(targetBucket, prefix, recursive, startAfter)
+      const stream = this.client.listObjectsV2(
+        targetBucket,
+        prefix,
+        recursive,
+        startAfter,
+      );
 
       stream.on('data', (obj) => {
         if (obj.name) {
@@ -377,13 +409,13 @@ export class MinioService implements OnModuleInit {
             size: obj.size ?? 0,
             etag: obj.etag || '',
             lastModified: obj.lastModified ?? new Date(0),
-          })
+          });
         }
-      })
+      });
 
-      stream.on('end', () => resolve(objects))
-      stream.on('error', reject)
-    })
+      stream.on('end', () => resolve(objects));
+      stream.on('error', reject);
+    });
   }
 
   // ============================================================================
@@ -395,14 +427,15 @@ export class MinioService implements OnModuleInit {
     options?: PresignedUrlOptions,
     bucket?: string,
   ): Promise<string> {
-    const targetBucket = bucket || this.defaultBucket
-    const expiresIn = options?.expiresIn || 3600 // 1 hour default
+    const targetBucket = bucket || this.defaultBucket;
+    const expiresIn = options?.expiresIn || 3600; // 1 hour default
 
     try {
-      const reqParams: Record<string, string> = {}
+      const reqParams: Record<string, string> = {};
 
       if (options?.responseContentDisposition) {
-        reqParams['response-content-disposition'] = options.responseContentDisposition
+        reqParams['response-content-disposition'] =
+          options.responseContentDisposition;
       }
 
       return await this.client.presignedGetObject(
@@ -410,10 +443,13 @@ export class MinioService implements OnModuleInit {
         objectName,
         expiresIn,
         reqParams,
-      )
+      );
     } catch (error) {
-      this.logger.error(`Failed to get presigned GET URL: ${objectName}`, error)
-      throw error
+      this.logger.error(
+        `Failed to get presigned GET URL: ${objectName}`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -422,44 +458,53 @@ export class MinioService implements OnModuleInit {
     options?: PresignedUrlOptions,
     bucket?: string,
   ): Promise<string> {
-    const targetBucket = bucket || this.defaultBucket
-    const expiresIn = options?.expiresIn || 3600
+    const targetBucket = bucket || this.defaultBucket;
+    const expiresIn = options?.expiresIn || 3600;
 
     try {
-      return await this.client.presignedPutObject(targetBucket, objectName, expiresIn)
+      return await this.client.presignedPutObject(
+        targetBucket,
+        objectName,
+        expiresIn,
+      );
     } catch (error) {
-      this.logger.error(`Failed to get presigned PUT URL: ${objectName}`, error)
-      throw error
+      this.logger.error(
+        `Failed to get presigned PUT URL: ${objectName}`,
+        error,
+      );
+      throw error;
     }
   }
 
   async getPresignedPostPolicy(
     objectName: string,
     expiresIn?: number,
-    conditions?: Array<[string, string, string] | [string, string] | Record<string, string>>,
+    conditions?: Array<
+      [string, string, string] | [string, string] | Record<string, string>
+    >,
     bucket?: string,
   ): Promise<{ postURL: string; formData: Record<string, string> }> {
-    const targetBucket = bucket || this.defaultBucket
-    const expires = new Date()
-    expires.setSeconds(expires.getSeconds() + (expiresIn || 3600))
+    const targetBucket = bucket || this.defaultBucket;
+    const expires = new Date();
+    expires.setSeconds(expires.getSeconds() + (expiresIn || 3600));
 
-    const policy = this.client.newPostPolicy()
-    policy.setBucket(targetBucket)
-    policy.setKey(objectName)
-    policy.setExpires(expires)
+    const policy = this.client.newPostPolicy();
+    policy.setBucket(targetBucket);
+    policy.setKey(objectName);
+    policy.setExpires(expires);
 
     if (conditions) {
       for (const condition of conditions) {
         if (Array.isArray(condition)) {
           if (condition.length === 3) {
-            const [op, key, value] = condition
+            const [op, key, value] = condition;
             if (op === 'starts-with') {
-              policy.setKeyStartsWith(value)
+              policy.setKeyStartsWith(value);
             }
           } else if (condition.length === 2) {
-            const [key, value] = condition
+            const [key, value] = condition;
             if (key === 'content-type') {
-              policy.setContentType(value)
+              policy.setContentType(value);
             }
           }
         }
@@ -467,10 +512,13 @@ export class MinioService implements OnModuleInit {
     }
 
     try {
-      return await this.client.presignedPostPolicy(policy)
+      return await this.client.presignedPostPolicy(policy);
     } catch (error) {
-      this.logger.error(`Failed to get presigned POST policy: ${objectName}`, error)
-      throw error
+      this.logger.error(
+        `Failed to get presigned POST policy: ${objectName}`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -479,21 +527,24 @@ export class MinioService implements OnModuleInit {
   // ============================================================================
 
   async getFileUrl(objectName: string, bucket?: string): Promise<string> {
-    const targetBucket = bucket || this.defaultBucket
-    const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost')
-    const port = this.configService.get<number>('MINIO_PORT', 9000)
-    const useSSL = this.configService.get<boolean>('MINIO_USE_SSL', false)
-    const protocol = useSSL ? 'https' : 'http'
+    const targetBucket = bucket || this.defaultBucket;
+    const endpoint = this.configService.get<string>(
+      'MINIO_ENDPOINT',
+      'localhost',
+    );
+    const port = this.configService.get<number>('MINIO_PORT', 9000);
+    const useSSL = this.configService.get<boolean>('MINIO_USE_SSL', false);
+    const protocol = useSSL ? 'https' : 'http';
 
-    return `${protocol}://${endpoint}:${port}/${targetBucket}/${objectName}`
+    return `${protocol}://${endpoint}:${port}/${targetBucket}/${objectName}`;
   }
 
   getClient(): Minio.Client {
-    return this.client
+    return this.client;
   }
 
   getDefaultBucket(): string {
-    return this.defaultBucket
+    return this.defaultBucket;
   }
 
   // ============================================================================
@@ -507,12 +558,12 @@ export class MinioService implements OnModuleInit {
   ): Promise<string> {
     // MinIO SDK handles multipart internally, but this can be used
     // for tracking purposes
-    const targetBucket = bucket || this.defaultBucket
-    const uploadId = `${targetBucket}/${objectName}/${Date.now()}`
+    const targetBucket = bucket || this.defaultBucket;
+    const uploadId = `${targetBucket}/${objectName}/${Date.now()}`;
 
-    this.logger.debug(`Multipart upload initiated: ${uploadId}`)
+    this.logger.debug(`Multipart upload initiated: ${uploadId}`);
 
-    return uploadId
+    return uploadId;
   }
 
   async uploadLargeFile(
@@ -521,43 +572,49 @@ export class MinioService implements OnModuleInit {
     options?: UploadOptions,
     bucket?: string,
   ): Promise<UploadResult> {
-    const targetBucket = bucket || this.defaultBucket
-    const partSize = options?.partSize || 64 * 1024 * 1024 // 64MB default
+    const targetBucket = bucket || this.defaultBucket;
+    const partSize = options?.partSize || 64 * 1024 * 1024; // 64MB default
 
     try {
       const metaData: Record<string, string> = {
         'Content-Type': options?.contentType || 'application/octet-stream',
         ...options?.metadata,
-      }
+      };
 
       const result = await this.client.fPutObject(
         targetBucket,
         objectName,
         filePath,
         metaData,
-      )
+      );
 
-      this.logger.debug(`Large file uploaded: ${targetBucket}/${objectName}`)
+      this.logger.debug(`Large file uploaded: ${targetBucket}/${objectName}`);
 
       return {
         ...result,
         versionId: result.versionId || undefined,
-      }
+      };
     } catch (error) {
-      this.logger.error(`Failed to upload large file: ${objectName}`, error)
-      throw error
+      this.logger.error(`Failed to upload large file: ${objectName}`, error);
+      throw error;
     }
   }
 
-  async downloadLargeFile(objectName: string, filePath: string, bucket?: string): Promise<void> {
-    const targetBucket = bucket || this.defaultBucket
+  async downloadLargeFile(
+    objectName: string,
+    filePath: string,
+    bucket?: string,
+  ): Promise<void> {
+    const targetBucket = bucket || this.defaultBucket;
 
     try {
-      await this.client.fGetObject(targetBucket, objectName, filePath)
-      this.logger.debug(`Large file downloaded: ${targetBucket}/${objectName} -> ${filePath}`)
+      await this.client.fGetObject(targetBucket, objectName, filePath);
+      this.logger.debug(
+        `Large file downloaded: ${targetBucket}/${objectName} -> ${filePath}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to download large file: ${objectName}`, error)
-      throw error
+      this.logger.error(`Failed to download large file: ${objectName}`, error);
+      throw error;
     }
   }
 }

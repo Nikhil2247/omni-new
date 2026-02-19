@@ -14,18 +14,14 @@ import { ContentModule } from '../../domain/content/content.module';
 import { NotificationService } from 'src/infrastructure/notifications/notification.service';
 
 @Module({
-  imports: [
-    ContentModule,
-  ],
+  imports: [ContentModule],
   controllers: [
     CampaignsController,
     ContentController,
     MediaController,
     PromotionsController,
-    CategoriesController
+    CategoriesController,
   ],
-  providers: [
-    NotificationService
-  ]
+  providers: [NotificationService],
 })
 export class MarketingGatewayModule {}

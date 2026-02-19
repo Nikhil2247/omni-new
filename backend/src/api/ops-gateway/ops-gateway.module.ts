@@ -26,13 +26,8 @@ import { CatalogModule } from '../../domain/catalog/catalog.module';
 import { NotificationService } from 'src/infrastructure/notifications/notification.service';
 import { AuditService } from 'src/core/audit';
 
-
 @Module({
-  imports: [
-    OperationsModule,
-    LeadsModule,
-    CatalogModule,
-  ],
+  imports: [OperationsModule, LeadsModule, CatalogModule],
   controllers: [
     KycController,
     DisputesController,
@@ -48,10 +43,8 @@ import { AuditService } from 'src/core/audit';
     InvoicesController,
     OperationalTasksController,
     TaskAttachmentsController,
-    OpsDashboardController
+    OpsDashboardController,
   ],
-  providers: [
-    NotificationService, AuditService
-  ]
+  providers: [NotificationService, AuditService],
 })
 export class OpsGatewayModule {}

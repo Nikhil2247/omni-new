@@ -2,14 +2,10 @@
 // SERVICE REPOSITORY
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import {
-  Service,
-  Prisma,
-  PricingType,
-} from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { Service, Prisma, PricingType } from '@prisma/client';
 
 @Injectable()
 export class ServiceRepository extends BaseRepository<
@@ -20,14 +16,14 @@ export class ServiceRepository extends BaseRepository<
   Prisma.ServiceWhereUniqueInput,
   Prisma.ServiceOrderByWithRelationInput
 > {
-  protected readonly modelName = 'Service'
+  protected readonly modelName = 'Service';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.service
+    return this.prisma.service;
   }
 
   async findByVendorProfile(vendorProfileId: string, includeInactive = false) {
@@ -48,10 +44,13 @@ export class ServiceRepository extends BaseRepository<
         },
       },
       orderBy: { sortOrder: 'asc' },
-    })
+    });
   }
 
-  async findByServiceType(serviceTypeId: string, options?: { skip?: number; take?: number }) {
+  async findByServiceType(
+    serviceTypeId: string,
+    options?: { skip?: number; take?: number },
+  ) {
     return this.model.findMany({
       where: {
         serviceTypeId,
@@ -80,10 +79,13 @@ export class ServiceRepository extends BaseRepository<
       },
       skip: options?.skip,
       take: options?.take,
-    })
+    });
   }
 
-  async findByPricingType(pricingType: PricingType, options?: { skip?: number; take?: number }) {
+  async findByPricingType(
+    pricingType: PricingType,
+    options?: { skip?: number; take?: number },
+  ) {
     return this.model.findMany({
       where: {
         pricingType,
@@ -100,10 +102,14 @@ export class ServiceRepository extends BaseRepository<
       },
       skip: options?.skip,
       take: options?.take,
-    })
+    });
   }
 
-  async findInPriceRange(minPrice: number, maxPrice: number, options?: { skip?: number; take?: number }) {
+  async findInPriceRange(
+    minPrice: number,
+    maxPrice: number,
+    options?: { skip?: number; take?: number },
+  ) {
     return this.model.findMany({
       where: {
         isActive: true,
@@ -140,6 +146,6 @@ export class ServiceRepository extends BaseRepository<
       },
       skip: options?.skip,
       take: options?.take,
-    })
+    });
   }
 }

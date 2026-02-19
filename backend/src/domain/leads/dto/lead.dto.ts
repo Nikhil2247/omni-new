@@ -2,8 +2,16 @@
 // LEAD DTOs - Leads Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsEnum, IsNumber, IsDateString, Min } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsDateString,
+  Min,
+} from 'class-validator';
 
 export enum LeadStatus {
   NEW = 'NEW',
@@ -31,85 +39,123 @@ export enum LeadSource {
 export class CreateLeadDto {
   @ApiProperty({ description: 'Vendor profile ID' })
   @IsUUID()
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Planner/user ID' })
   @IsUUID()
-  plannerId: string
+  plannerId: string;
 
   @ApiPropertyOptional({ description: 'Event ID (if linked)', nullable: true })
   @IsOptional()
   @IsUUID()
-  eventId?: string
+  eventId?: string;
 
-  @ApiProperty({ description: 'Lead source', enum: LeadSource, default: LeadSource.INQUIRY })
+  @ApiProperty({
+    description: 'Lead source',
+    enum: LeadSource,
+    default: LeadSource.INQUIRY,
+  })
   @IsEnum(LeadSource)
-  source: LeadSource
+  source: LeadSource;
 
   @ApiPropertyOptional({ description: 'Event date (ISO 8601)', nullable: true })
   @IsOptional()
   @IsDateString()
-  eventDate?: string
+  eventDate?: string;
 
-  @ApiPropertyOptional({ description: 'Event type', example: 'Wedding', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Event type',
+    example: 'Wedding',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
-  eventType?: string
+  eventType?: string;
 
-  @ApiPropertyOptional({ description: 'Guest count', example: 150, nullable: true })
+  @ApiPropertyOptional({
+    description: 'Guest count',
+    example: 150,
+    nullable: true,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  guestCount?: number
+  guestCount?: number;
 
-  @ApiPropertyOptional({ description: 'Budget', example: 10000.00, nullable: true })
+  @ApiPropertyOptional({
+    description: 'Budget',
+    example: 10000.0,
+    nullable: true,
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  budget?: number
+  budget?: number;
 
-  @ApiPropertyOptional({ description: 'Initial message from user', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Initial message from user',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
-  initialMessage?: string
+  initialMessage?: string;
 }
 
 // DTO for vendors creating leads from messaging (vendorProfileId auto-injected)
 export class CreateLeadFromConversationDto {
   @ApiProperty({ description: 'Planner/user ID' })
   @IsUUID()
-  plannerId: string
+  plannerId: string;
 
-  @ApiProperty({ description: 'Lead source', enum: LeadSource, default: LeadSource.DIRECT_MESSAGE })
+  @ApiProperty({
+    description: 'Lead source',
+    enum: LeadSource,
+    default: LeadSource.DIRECT_MESSAGE,
+  })
   @IsEnum(LeadSource)
-  source: LeadSource
+  source: LeadSource;
 
   @ApiPropertyOptional({ description: 'Event date (ISO 8601)', nullable: true })
   @IsOptional()
   @IsDateString()
-  eventDate?: string
+  eventDate?: string;
 
-  @ApiPropertyOptional({ description: 'Event type', example: 'Wedding', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Event type',
+    example: 'Wedding',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
-  eventType?: string
+  eventType?: string;
 
-  @ApiPropertyOptional({ description: 'Guest count', example: 150, nullable: true })
+  @ApiPropertyOptional({
+    description: 'Guest count',
+    example: 150,
+    nullable: true,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  guestCount?: number
+  guestCount?: number;
 
-  @ApiPropertyOptional({ description: 'Budget', example: 10000.00, nullable: true })
+  @ApiPropertyOptional({
+    description: 'Budget',
+    example: 10000.0,
+    nullable: true,
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  budget?: number
+  budget?: number;
 
-  @ApiPropertyOptional({ description: 'Initial message from user', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Initial message from user',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
-  initialMessage?: string
+  initialMessage?: string;
 }
 
 // ============================================================================
@@ -120,29 +166,29 @@ export class UpdateLeadDto {
   @ApiPropertyOptional({ description: 'Lead status', enum: LeadStatus })
   @IsOptional()
   @IsEnum(LeadStatus)
-  status?: LeadStatus
+  status?: LeadStatus;
 
   @ApiPropertyOptional({ description: 'Event date', nullable: true })
   @IsOptional()
   @IsDateString()
-  eventDate?: string
+  eventDate?: string;
 
   @ApiPropertyOptional({ description: 'Event type', nullable: true })
   @IsOptional()
   @IsString()
-  eventType?: string
+  eventType?: string;
 
   @ApiPropertyOptional({ description: 'Guest count', nullable: true })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  guestCount?: number
+  guestCount?: number;
 
   @ApiPropertyOptional({ description: 'Budget', nullable: true })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  budget?: number
+  budget?: number;
 }
 
 // ============================================================================
@@ -153,34 +199,38 @@ export class SearchLeadsDto {
   @ApiPropertyOptional({ description: 'Filter by vendor profile ID' })
   @IsOptional()
   @IsUUID()
-  vendorProfileId?: string
+  vendorProfileId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by planner ID' })
   @IsOptional()
   @IsUUID()
-  plannerId?: string
+  plannerId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by status', enum: LeadStatus })
   @IsOptional()
   @IsEnum(LeadStatus)
-  status?: LeadStatus
+  status?: LeadStatus;
 
   @ApiPropertyOptional({ description: 'Filter by source', enum: LeadSource })
   @IsOptional()
   @IsEnum(LeadSource)
-  source?: LeadSource
+  source?: LeadSource;
 
   @ApiPropertyOptional({ description: 'Page number', example: 1, default: 1 })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  page?: number
+  page?: number;
 
-  @ApiPropertyOptional({ description: 'Items per page', example: 20, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    example: 20,
+    default: 20,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  limit?: number
+  limit?: number;
 }
 
 // ============================================================================
@@ -189,47 +239,47 @@ export class SearchLeadsDto {
 
 export class LeadResponseDto {
   @ApiProperty({ description: 'Lead ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Vendor profile ID' })
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Planner ID' })
-  plannerId: string
+  plannerId: string;
 
   @ApiPropertyOptional({ description: 'Event ID', nullable: true })
-  eventId: string | null
+  eventId: string | null;
 
   @ApiProperty({ description: 'Lead status', enum: LeadStatus })
-  status: LeadStatus
+  status: LeadStatus;
 
   @ApiProperty({ description: 'Lead source', enum: LeadSource })
-  source: LeadSource
+  source: LeadSource;
 
   @ApiPropertyOptional({ description: 'Event date', nullable: true })
-  eventDate: Date | null
+  eventDate: Date | null;
 
   @ApiPropertyOptional({ description: 'Event type', nullable: true })
-  eventType: string | null
+  eventType: string | null;
 
   @ApiPropertyOptional({ description: 'Guest count', nullable: true })
-  guestCount: number | null
+  guestCount: number | null;
 
   @ApiPropertyOptional({ description: 'Budget', nullable: true })
-  budget: number | null
+  budget: number | null;
 
   @ApiPropertyOptional({ description: 'Initial message', nullable: true })
-  initialMessage: string | null
+  initialMessage: string | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Updated at' })
-  updatedAt: Date
+  updatedAt: Date;
 
   @ApiPropertyOptional({ description: 'Responded at', nullable: true })
-  respondedAt: Date | null
+  respondedAt: Date | null;
 
   @ApiPropertyOptional({ description: 'Converted at', nullable: true })
-  convertedAt: Date | null
+  convertedAt: Date | null;
 }

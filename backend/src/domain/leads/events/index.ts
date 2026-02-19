@@ -2,4 +2,4 @@
 // LEADS EVENTS - Barrel Export
 // ============================================================================
 
-export * from './lead.handler'
+export * from './lead.handler';

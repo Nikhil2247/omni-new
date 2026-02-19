@@ -6,23 +6,26 @@
 // Authorized Roles: OPERATIONAL_ADMIN, OPERATIONAL_MANAGER
 // ============================================================================
 
-import { 
-  Controller, 
-  Get, 
-  Post, 
+import {
+  Controller,
+  Get,
+  Post,
   Patch,
-  Body, 
-  Query, 
-  Param, 
-  UseGuards 
-} from '@nestjs/common'
-import { LeadService } from '../../../domain/leads/services/lead.service'
-import { MessageService } from '../../../domain/leads/services/message.service'
-import { SearchLeadsDto, UpdateLeadDto } from '../../../domain/leads/dto/lead.dto'
-import { CreateMessageDto } from '../../../domain/leads/dto/message.dto'
-import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard'
-import { RolesGuard } from '../../../core/auth/guards/roles.guard'
-import { OpsAccess } from '../../../core/auth/decorators/roles.decorator'
+  Body,
+  Query,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
+import { LeadService } from '../../../domain/leads/services/lead.service';
+import { MessageService } from '../../../domain/leads/services/message.service';
+import {
+  SearchLeadsDto,
+  UpdateLeadDto,
+} from '../../../domain/leads/dto/lead.dto';
+import { CreateMessageDto } from '../../../domain/leads/dto/message.dto';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../core/auth/guards/roles.guard';
+import { OpsAccess } from '../../../core/auth/decorators/roles.decorator';
 
 @Controller('leads')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -40,7 +43,7 @@ export class LeadsController {
    */
   @Get()
   searchLeads(@Query() query: SearchLeadsDto) {
-    return this.leadService.search(query)
+    return this.leadService.search(query);
   }
 
   /**
@@ -49,7 +52,7 @@ export class LeadsController {
    */
   @Get(':id')
   getLeadById(@Param('id') id: string) {
-    return this.leadService.findById(id)
+    return this.leadService.findById(id);
   }
 
   /**
@@ -58,7 +61,7 @@ export class LeadsController {
    */
   @Patch(':id')
   updateLead(@Param('id') id: string, @Body() dto: UpdateLeadDto) {
-    return this.leadService.update(id, dto)
+    return this.leadService.update(id, dto);
   }
 
   /**
@@ -70,6 +73,6 @@ export class LeadsController {
     return this.messageService.create({
       ...dto,
       leadId,
-    })
+    });
   }
 }

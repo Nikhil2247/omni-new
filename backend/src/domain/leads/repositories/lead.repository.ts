@@ -2,11 +2,14 @@
 // LEAD REPOSITORY - Leads Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { Prisma, Lead } from '@prisma/client'
-import { BaseRepository, PaginatedResult } from '../../../core/database/repositories/base.repository'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { SearchLeadsDto } from '../dto/lead.dto'
+import { Injectable } from '@nestjs/common';
+import { Prisma, Lead } from '@prisma/client';
+import {
+  BaseRepository,
+  PaginatedResult,
+} from '../../../core/database/repositories/base.repository';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { SearchLeadsDto } from '../dto/lead.dto';
 
 @Injectable()
 export class LeadRepository extends BaseRepository<
@@ -17,17 +20,20 @@ export class LeadRepository extends BaseRepository<
   Prisma.LeadWhereUniqueInput,
   Prisma.LeadOrderByWithRelationInput
 > {
-  protected readonly modelName = 'Lead'
+  protected readonly modelName = 'Lead';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.lead
+    return this.prisma.lead;
   }
 
-  async findByVendorProfile(vendorProfileId: string, status?: string): Promise<Lead[]> {
+  async findByVendorProfile(
+    vendorProfileId: string,
+    status?: string,
+  ): Promise<Lead[]> {
     return this.prisma.lead.findMany({
       where: {
         vendorProfileId,
@@ -44,7 +50,7 @@ export class LeadRepository extends BaseRepository<
           },
         },
       },
-    })
+    });
   }
 
   async findByPlanner(plannerId: string): Promise<Lead[]> {
@@ -60,18 +66,25 @@ export class LeadRepository extends BaseRepository<
           },
         },
       },
-    })
+    });
   }
 
   async search(dto: SearchLeadsDto): Promise<PaginatedResult<Lead>> {
-    const { vendorProfileId, plannerId, status, source, page = 1, limit = 20 } = dto
+    const {
+      vendorProfileId,
+      plannerId,
+      status,
+      source,
+      page = 1,
+      limit = 20,
+    } = dto;
 
     const where: Prisma.LeadWhereInput = {
       ...(vendorProfileId && { vendorProfileId }),
       ...(plannerId && { plannerId }),
       ...(status && { status: status as any }),
       ...(source && { source: source as any }),
-    }
+    };
 
     return this.findManyPaginated(
       { page, limit },
@@ -96,7 +109,7 @@ export class LeadRepository extends BaseRepository<
           },
         },
       },
-    )
+    );
   }
 
   async getUnreadCount(vendorProfileId: string): Promise<number> {
@@ -105,6 +118,6 @@ export class LeadRepository extends BaseRepository<
         vendorProfileId,
         status: 'NEW',
       },
-    })
+    });
   }
 }

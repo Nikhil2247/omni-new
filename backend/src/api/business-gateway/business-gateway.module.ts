@@ -37,20 +37,18 @@ import { AuditService } from 'src/core/audit';
     StorageModule,
   ],
   controllers: [
-    ProfileController, 
-    PortfolioController, 
-    ServicesController, 
-    LeadsController, 
-    AnalyticsController, 
-    CalendarController, 
-    AgreementsController, 
+    ProfileController,
+    PortfolioController,
+    ServicesController,
+    LeadsController,
+    AnalyticsController,
+    CalendarController,
+    AgreementsController,
     TasksController,
     MessagingController,
     VendorReviewsController,
-    MediaTagsController
+    MediaTagsController,
   ],
-  providers: [
-    NotificationService, AuditService
-  ]
+  providers: [NotificationService, AuditService],
 })
 export class BusinessGatewayModule {}

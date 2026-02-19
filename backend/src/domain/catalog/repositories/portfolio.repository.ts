@@ -2,13 +2,10 @@
 // PORTFOLIO REPOSITORY
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import {
-  Portfolio,
-  Prisma,
-} from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { Portfolio, Prisma } from '@prisma/client';
 
 @Injectable()
 export class PortfolioRepository extends BaseRepository<
@@ -19,14 +16,14 @@ export class PortfolioRepository extends BaseRepository<
   Prisma.PortfolioWhereUniqueInput,
   Prisma.PortfolioOrderByWithRelationInput
 > {
-  protected readonly modelName = 'Portfolio'
+  protected readonly modelName = 'Portfolio';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.portfolio
+    return this.prisma.portfolio;
   }
 
   async findByVendorProfile(vendorProfileId: string) {
@@ -39,7 +36,7 @@ export class PortfolioRepository extends BaseRepository<
         },
       },
       orderBy: { sortOrder: 'asc' },
-    })
+    });
   }
 
   async findFeatured(vendorProfileId: string) {
@@ -56,7 +53,7 @@ export class PortfolioRepository extends BaseRepository<
         },
       },
       orderBy: { sortOrder: 'asc' },
-    })
+    });
   }
 
   async findWithMediaCount(vendorProfileId: string) {
@@ -77,8 +74,8 @@ export class PortfolioRepository extends BaseRepository<
         },
       },
       orderBy: { sortOrder: 'asc' },
-    })
+    });
 
-    return portfolios
+    return portfolios;
   }
 }

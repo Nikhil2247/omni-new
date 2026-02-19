@@ -4,11 +4,15 @@
 // Public endpoints for global search functionality
 // ============================================================================
 
-import { Controller, Get, Query } from '@nestjs/common'
-import { Public } from '../../../core/auth/decorators/public.decorator'
-import { GlobalSearchService } from '../services/global-search.service'
-import { GlobalSearchDto, QuickSearchDto, SearchSuggestionsDto } from '../dto/search.dto'
-import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer'
+import { Controller, Get, Query } from '@nestjs/common';
+import { Public } from '../../../core/auth/decorators/public.decorator';
+import { GlobalSearchService } from '../services/global-search.service';
+import {
+  GlobalSearchDto,
+  QuickSearchDto,
+  SearchSuggestionsDto,
+} from '../dto/search.dto';
+import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer';
 
 @Public()
 @Controller('search')
@@ -25,7 +29,7 @@ export class SearchController {
    */
   @Get()
   async search(@Query() dto: GlobalSearchDto) {
-    return this.searchService.search(dto)
+    return this.searchService.search(dto);
   }
 
   /**
@@ -35,7 +39,7 @@ export class SearchController {
    */
   @Get('quick')
   async quickSearch(@Query() dto: QuickSearchDto) {
-    return this.searchService.quickSearch(dto)
+    return this.searchService.quickSearch(dto);
   }
 
   /**
@@ -45,7 +49,7 @@ export class SearchController {
    */
   @Get('suggestions')
   async getSuggestions(@Query() dto: SearchSuggestionsDto) {
-    return this.searchService.getSuggestions(dto)
+    return this.searchService.getSuggestions(dto);
   }
 
   /**
@@ -54,12 +58,13 @@ export class SearchController {
    */
   @Get('stats')
   async getStats() {
-    const stats = await this.vendorIndexer.getIndexStats()
+    const stats = await this.vendorIndexer.getIndexStats();
     return {
       vendors: stats,
-      message: stats.totalDocuments === 0 
-        ? 'No vendors indexed. Please run reindexing from admin panel or ensure vendors exist in database.'
-        : `${stats.totalDocuments} vendors indexed`,
-    }
+      message:
+        stats.totalDocuments === 0
+          ? 'No vendors indexed. Please run reindexing from admin panel or ensure vendors exist in database.'
+          : `${stats.totalDocuments} vendors indexed`,
+    };
   }
 }

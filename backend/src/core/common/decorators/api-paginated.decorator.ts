@@ -4,27 +4,47 @@
 // Decorator for documenting paginated API responses in Swagger
 // ============================================================================
 
-import { applyDecorators, Type } from '@nestjs/common'
-import { ApiOkResponse, ApiQuery, getSchemaPath } from '@nestjs/swagger'
+import { applyDecorators, Type } from '@nestjs/common';
+import { ApiOkResponse, ApiQuery, getSchemaPath } from '@nestjs/swagger';
 
 export interface PaginatedResponseSchema {
-  data: any[]
+  data: any[];
   meta: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-    hasNextPage: boolean
-    hasPreviousPage: boolean
-  }
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export function ApiPaginatedResponse<T extends Type<any>>(model: T) {
   return applyDecorators(
-    ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' }),
-    ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' }),
-    ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Sort field' }),
-    ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], description: 'Sort order' }),
+    ApiQuery({
+      name: 'page',
+      required: false,
+      type: Number,
+      description: 'Page number',
+    }),
+    ApiQuery({
+      name: 'limit',
+      required: false,
+      type: Number,
+      description: 'Items per page',
+    }),
+    ApiQuery({
+      name: 'sortBy',
+      required: false,
+      type: String,
+      description: 'Sort field',
+    }),
+    ApiQuery({
+      name: 'sortOrder',
+      required: false,
+      enum: ['asc', 'desc'],
+      description: 'Sort order',
+    }),
     ApiOkResponse({
       description: 'Paginated response',
       schema: {
@@ -53,13 +73,23 @@ export function ApiPaginatedResponse<T extends Type<any>>(model: T) {
         ],
       },
     }),
-  )
+  );
 }
 
 export function ApiCursorPaginatedResponse<T extends Type<any>>(model: T) {
   return applyDecorators(
-    ApiQuery({ name: 'cursor', required: false, type: String, description: 'Cursor for pagination' }),
-    ApiQuery({ name: 'take', required: false, type: Number, description: 'Number of items to fetch' }),
+    ApiQuery({
+      name: 'cursor',
+      required: false,
+      type: String,
+      description: 'Cursor for pagination',
+    }),
+    ApiQuery({
+      name: 'take',
+      required: false,
+      type: Number,
+      description: 'Number of items to fetch',
+    }),
     ApiOkResponse({
       description: 'Cursor paginated response',
       schema: {
@@ -85,5 +115,5 @@ export function ApiCursorPaginatedResponse<T extends Type<any>>(model: T) {
         ],
       },
     }),
-  )
+  );
 }

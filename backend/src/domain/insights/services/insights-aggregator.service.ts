@@ -4,83 +4,97 @@
 // Provides unified access to all platform insights for admin dashboards
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { UserEngagementService, UserEngagementSummary, EngagementTrend } from './user-engagement.service'
-import { VendorMetricsService, VendorPerformanceSummary } from './vendor-metrics.service'
-import { PlatformMetricsService, PlatformOverview, GrowthMetrics } from './platform-metrics.service'
-import { DragonflyService } from 'src/infrastructure'
-
+import { Injectable, Logger } from '@nestjs/common';
+import {
+  UserEngagementService,
+  UserEngagementSummary,
+  EngagementTrend,
+} from './user-engagement.service';
+import {
+  VendorMetricsService,
+  VendorPerformanceSummary,
+} from './vendor-metrics.service';
+import {
+  PlatformMetricsService,
+  PlatformOverview,
+  GrowthMetrics,
+} from './platform-metrics.service';
+import { DragonflyService } from 'src/infrastructure';
 
 export interface AdminDashboard {
-  overview: PlatformOverview
-  growth: GrowthMetrics
+  overview: PlatformOverview;
+  growth: GrowthMetrics;
   userMetrics: {
-    dau: number
-    wau: number
-    mau: number
-    dauWauRatio: number
-    dauMauRatio: number
-  }
+    dau: number;
+    wau: number;
+    mau: number;
+    dauWauRatio: number;
+    dauMauRatio: number;
+  };
   vendorMetrics: {
-    totalActive: number
-    avgPerformanceScore: number
-    topPerformers: VendorPerformanceSummary[]
-  }
-  engagementTrends: EngagementTrend[]
+    totalActive: number;
+    avgPerformanceScore: number;
+    topPerformers: VendorPerformanceSummary[];
+  };
+  engagementTrends: EngagementTrend[];
   distributions: {
-    userStatus: Array<{ type: string; count: number; percentage: number }>
-    vendorVerification: Array<{ status: string; count: number; percentage: number }>
-    leadStatus: Array<{ status: string; count: number; percentage: number }>
-    eventStatus: Array<{ status: string; count: number; percentage: number }>
-  }
+    userStatus: Array<{ type: string; count: number; percentage: number }>;
+    vendorVerification: Array<{
+      status: string;
+      count: number;
+      percentage: number;
+    }>;
+    leadStatus: Array<{ status: string; count: number; percentage: number }>;
+    eventStatus: Array<{ status: string; count: number; percentage: number }>;
+  };
   searchAnalytics: {
-    totalSearches: number
-    uniqueSearchers: number
-    avgSearchesPerUser: number
-    topSearchTerms: Array<{ term: string; count: number }>
-    zeroResultRate: number
-  }
-  timestamp: Date
+    totalSearches: number;
+    uniqueSearchers: number;
+    avgSearchesPerUser: number;
+    topSearchTerms: Array<{ term: string; count: number }>;
+    zeroResultRate: number;
+  };
+  timestamp: Date;
 }
 
 export interface ExecutiveSummary {
-  period: string
+  period: string;
   highlights: {
-    totalUsers: number
-    userGrowth: number
-    totalVendors: number
-    vendorGrowth: number
-    totalLeads: number
-    leadConversionRate: number
-    platformHealth: number
-  }
+    totalUsers: number;
+    userGrowth: number;
+    totalVendors: number;
+    vendorGrowth: number;
+    totalLeads: number;
+    leadConversionRate: number;
+    platformHealth: number;
+  };
   keyMetrics: {
-    name: string
-    value: number
-    change: number
-    trend: 'up' | 'down' | 'stable'
-  }[]
+    name: string;
+    value: number;
+    change: number;
+    trend: 'up' | 'down' | 'stable';
+  }[];
   alerts: {
-    type: 'warning' | 'info' | 'success'
-    message: string
-  }[]
+    type: 'warning' | 'info' | 'success';
+    message: string;
+  }[];
 }
 
 export interface RealTimeStats {
-  activeUsers: number
-  activeVendors: number
-  ongoingEvents: number
-  pendingLeads: number
-  searchesLastHour: number
-  leadsLastHour: number
-  timestamp: Date
+  activeUsers: number;
+  activeVendors: number;
+  ongoingEvents: number;
+  pendingLeads: number;
+  searchesLastHour: number;
+  leadsLastHour: number;
+  timestamp: Date;
 }
 
 @Injectable()
 export class InsightsAggregatorService {
-  private readonly logger = new Logger(InsightsAggregatorService.name)
-  private readonly CACHE_PREFIX = 'insights:'
-  private readonly CACHE_TTL = 60 // 1 minute for aggregated data
+  private readonly logger = new Logger(InsightsAggregatorService.name);
+  private readonly CACHE_PREFIX = 'insights:';
+  private readonly CACHE_TTL = 60; // 1 minute for aggregated data
 
   constructor(
     private readonly userEngagement: UserEngagementService,
@@ -97,15 +111,15 @@ export class InsightsAggregatorService {
    * Get complete admin dashboard data
    */
   async getAdminDashboard(): Promise<AdminDashboard> {
-    const cacheKey = `${this.CACHE_PREFIX}admin-dashboard`
-    const cached = await this.cache.get<AdminDashboard>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}admin-dashboard`;
+    const cached = await this.cache.get<AdminDashboard>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const [
       overview,
@@ -133,7 +147,7 @@ export class InsightsAggregatorService {
       this.platformMetrics.getLeadStatusDistribution(),
       this.platformMetrics.getEventStatusDistribution(),
       this.platformMetrics.getSearchAnalytics(30),
-    ])
+    ]);
 
     const dashboard: AdminDashboard = {
       overview,
@@ -159,30 +173,32 @@ export class InsightsAggregatorService {
       },
       searchAnalytics,
       timestamp: new Date(),
-    }
+    };
 
-    await this.cache.set(cacheKey, dashboard, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, dashboard, { ttl: this.CACHE_TTL });
 
-    return dashboard
+    return dashboard;
   }
 
   /**
    * Get executive summary for reports
    */
-  async getExecutiveSummary(period: 'day' | 'week' | 'month' = 'month'): Promise<ExecutiveSummary> {
-    const cacheKey = `${this.CACHE_PREFIX}executive-summary:${period}`
-    const cached = await this.cache.get<ExecutiveSummary>(cacheKey)
+  async getExecutiveSummary(
+    period: 'day' | 'week' | 'month' = 'month',
+  ): Promise<ExecutiveSummary> {
+    const cacheKey = `${this.CACHE_PREFIX}executive-summary:${period}`;
+    const cached = await this.cache.get<ExecutiveSummary>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
     const [overview, growth] = await Promise.all([
       this.platformMetrics.getPlatformOverview(),
       this.platformMetrics.getGrowthMetrics(period),
-    ])
+    ]);
 
-    const alerts = this.generateAlerts(overview, growth)
+    const alerts = this.generateAlerts(overview, growth);
 
     const summary: ExecutiveSummary = {
       period,
@@ -228,11 +244,11 @@ export class InsightsAggregatorService {
         },
       ],
       alerts,
-    }
+    };
 
-    await this.cache.set(cacheKey, summary, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, summary, { ttl: this.CACHE_TTL });
 
-    return summary
+    return summary;
   }
 
   /**
@@ -254,7 +270,7 @@ export class InsightsAggregatorService {
       this.platformMetrics.getPendingLeadsCount(),
       this.platformMetrics.getSearchesLastHour(),
       this.platformMetrics.getLeadsLastHour(),
-    ])
+    ]);
 
     return {
       activeUsers: dau,
@@ -264,7 +280,7 @@ export class InsightsAggregatorService {
       searchesLastHour,
       leadsLastHour,
       timestamp: new Date(),
-    }
+    };
   }
 
   // ============================================================================
@@ -275,23 +291,23 @@ export class InsightsAggregatorService {
    * Get detailed user insights
    */
   async getUserInsights(userId: string): Promise<{
-    summary: UserEngagementSummary | null
-    recentActivity: any[]
-    recommendations: string[]
+    summary: UserEngagementSummary | null;
+    recentActivity: any[];
+    recommendations: string[];
   }> {
-    const summary = await this.userEngagement.getUserSummary(userId)
+    const summary = await this.userEngagement.getUserSummary(userId);
 
-    const recommendations: string[] = []
+    const recommendations: string[] = [];
 
     if (summary) {
       if (summary.totalLeadsSent === 0) {
-        recommendations.push('Consider sending leads to vendors to get quotes')
+        recommendations.push('Consider sending leads to vendors to get quotes');
       }
       if (summary.totalSearches < 5) {
-        recommendations.push('Explore more vendors using search')
+        recommendations.push('Explore more vendors using search');
       }
       if (summary.engagementScore < 50) {
-        recommendations.push('Complete your event checklist to stay on track')
+        recommendations.push('Complete your event checklist to stay on track');
       }
     }
 
@@ -299,7 +315,7 @@ export class InsightsAggregatorService {
       summary,
       recentActivity: [], // Would need activity log integration
       recommendations,
-    }
+    };
   }
 
   // ============================================================================
@@ -310,22 +326,22 @@ export class InsightsAggregatorService {
    * Get detailed vendor insights
    */
   async getVendorInsights(vendorProfileId: string): Promise<{
-    summary: VendorPerformanceSummary | null
+    summary: VendorPerformanceSummary | null;
     benchmarkComparison: {
-      metric: string
-      vendorValue: number
-      industryAvg: number
-      percentile: number
-    }[]
-    recommendations: string[]
+      metric: string;
+      vendorValue: number;
+      industryAvg: number;
+      percentile: number;
+    }[];
+    recommendations: string[];
   }> {
     const [summary, benchmarks] = await Promise.all([
       this.vendorMetrics.getVendorSummary(vendorProfileId),
       this.vendorMetrics.getIndustryBenchmarks(30),
-    ])
+    ]);
 
-    const benchmarkComparison: any[] = []
-    const recommendations: string[] = []
+    const benchmarkComparison: any[] = [];
+    const recommendations: string[] = [];
 
     if (summary) {
       benchmarkComparison.push(
@@ -356,20 +372,26 @@ export class InsightsAggregatorService {
             benchmarks.avgConversionRate,
           ),
         },
-      )
+      );
 
       // Generate recommendations
       if (summary.avgResponseRate < 0.8) {
-        recommendations.push('Improve response rate by replying to leads within 24 hours')
+        recommendations.push(
+          'Improve response rate by replying to leads within 24 hours',
+        );
       }
       if (summary.avgResponseTime > benchmarks.avgResponseTime) {
-        recommendations.push('Reduce response time to stay competitive')
+        recommendations.push('Reduce response time to stay competitive');
       }
       if (summary.totalProfileViews < benchmarks.avgProfileViews) {
-        recommendations.push('Optimize your profile with better photos and descriptions')
+        recommendations.push(
+          'Optimize your profile with better photos and descriptions',
+        );
       }
       if (summary.avgConversionRate < benchmarks.avgConversionRate) {
-        recommendations.push('Review your pricing and portfolio to improve conversions')
+        recommendations.push(
+          'Review your pricing and portfolio to improve conversions',
+        );
       }
     }
 
@@ -377,7 +399,7 @@ export class InsightsAggregatorService {
       summary,
       benchmarkComparison,
       recommendations,
-    }
+    };
   }
 
   // ============================================================================
@@ -395,7 +417,7 @@ export class InsightsAggregatorService {
     const [dailyMetrics, engagementTrends] = await Promise.all([
       this.platformMetrics.getDailyMetrics(startDate, endDate),
       this.userEngagement.getEngagementTrends(startDate, endDate),
-    ])
+    ]);
 
     const data = {
       period: {
@@ -405,66 +427,72 @@ export class InsightsAggregatorService {
       platformMetrics: dailyMetrics,
       engagementTrends,
       exportedAt: new Date().toISOString(),
-    }
+    };
 
     if (format === 'csv') {
-      return this.convertToCSV(dailyMetrics)
+      return this.convertToCSV(dailyMetrics);
     }
 
-    return data
+    return data;
   }
 
   // ============================================================================
   // PRIVATE HELPERS
   // ============================================================================
 
-  private calculateAvgPerformanceScore(vendors: VendorPerformanceSummary[]): number {
-    if (vendors.length === 0) return 0
+  private calculateAvgPerformanceScore(
+    vendors: VendorPerformanceSummary[],
+  ): number {
+    if (vendors.length === 0) return 0;
 
-    const total = vendors.reduce((sum, v) => sum + v.performanceScore, 0)
-    return Math.round(total / vendors.length)
+    const total = vendors.reduce((sum, v) => sum + v.performanceScore, 0);
+    return Math.round(total / vendors.length);
   }
 
   private getTrend(change: number): 'up' | 'down' | 'stable' {
-    if (change > 5) return 'up'
-    if (change < -5) return 'down'
-    return 'stable'
+    if (change > 5) return 'up';
+    if (change < -5) return 'down';
+    return 'stable';
   }
 
   private generateAlerts(
     overview: PlatformOverview,
     growth: GrowthMetrics,
   ): Array<{ type: 'warning' | 'info' | 'success'; message: string }> {
-    const alerts: Array<{ type: 'warning' | 'info' | 'success'; message: string }> = []
+    const alerts: Array<{
+      type: 'warning' | 'info' | 'success';
+      message: string;
+    }> = [];
 
     // Success alerts
     if (growth.users.growth > 20) {
       alerts.push({
         type: 'success',
         message: `User growth is up ${growth.users.growth}% this period!`,
-      })
+      });
     }
 
     if (growth.vendors.growth > 15) {
       alerts.push({
         type: 'success',
         message: `Vendor signups increased by ${growth.vendors.growth}%`,
-      })
+      });
     }
 
     // Warning alerts
     if (overview.platformHealth < 50) {
       alerts.push({
         type: 'warning',
-        message: 'Platform health score is below target. Review vendor response times.',
-      })
+        message:
+          'Platform health score is below target. Review vendor response times.',
+      });
     }
 
     if (growth.leads.growth < -10) {
       alerts.push({
         type: 'warning',
         message: `Lead volume decreased by ${Math.abs(growth.leads.growth)}%`,
-      })
+      });
     }
 
     // Info alerts
@@ -472,27 +500,27 @@ export class InsightsAggregatorService {
       alerts.push({
         type: 'info',
         message: `${overview.dailyActiveUsers} users active today`,
-      })
+      });
     }
 
-    return alerts
+    return alerts;
   }
 
   private calculatePercentile(value: number, average: number): number {
-    if (average === 0) return 50
-    const ratio = value / average
+    if (average === 0) return 50;
+    const ratio = value / average;
     // Simple percentile calculation
-    return Math.min(Math.round(ratio * 50), 100)
+    return Math.min(Math.round(ratio * 50), 100);
   }
 
   private convertToCSV(data: any[]): string {
-    if (data.length === 0) return ''
+    if (data.length === 0) return '';
 
-    const headers = Object.keys(data[0])
+    const headers = Object.keys(data[0]);
     const rows = data.map((row) =>
       headers.map((h) => JSON.stringify(row[h] ?? '')).join(','),
-    )
+    );
 
-    return [headers.join(','), ...rows].join('\n')
+    return [headers.join(','), ...rows].join('\n');
   }
 }

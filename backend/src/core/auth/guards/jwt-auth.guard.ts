@@ -4,15 +4,19 @@
 // Protects routes requiring JWT authentication
 // ============================================================================
 
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common'
-import { Reflector } from '@nestjs/core'
-import { AuthGuard } from '@nestjs/passport'
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private readonly reflector: Reflector) {
-    super()
+    super();
   }
 
   canActivate(context: ExecutionContext) {
@@ -20,13 +24,13 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
-    ])
+    ]);
 
     if (isPublic) {
-      return true
+      return true;
     }
 
-    return super.canActivate(context)
+    return super.canActivate(context);
   }
 
   handleRequest<TUser = any>(
@@ -39,22 +43,22 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
-    ])
+    ]);
 
     if (isPublic) {
-      return user
+      return user;
     }
 
     if (err || !user) {
       if (info?.name === 'TokenExpiredError') {
-        throw new UnauthorizedException('Token has expired')
+        throw new UnauthorizedException('Token has expired');
       }
       if (info?.name === 'JsonWebTokenError') {
-        throw new UnauthorizedException('Invalid token')
+        throw new UnauthorizedException('Invalid token');
       }
-      throw err || new UnauthorizedException('Authentication required')
+      throw err || new UnauthorizedException('Authentication required');
     }
 
-    return user
+    return user;
   }
 }

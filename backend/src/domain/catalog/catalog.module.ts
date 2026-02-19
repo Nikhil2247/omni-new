@@ -4,8 +4,8 @@
 // Handles vendor profiles, portfolios, services, and discovery
 // ============================================================================
 
-import { Module } from '@nestjs/common'
-import { DatabaseModule } from '../../core/database/database.module'
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from '../../core/database/database.module';
 
 // Services
 import {
@@ -15,17 +15,17 @@ import {
   VendorReviewService,
   VendorFollowService,
   MediaTagService,
-} from './services'
+} from './services';
 
 // Repositories
 import {
   VendorProfileRepository,
   PortfolioRepository,
   ServiceRepository,
-} from './repositories'
+} from './repositories';
 
 // Event Handlers
-import { VendorProfileEventHandler } from './events'
+import { VendorProfileEventHandler } from './events';
 
 @Module({
   imports: [DatabaseModule],

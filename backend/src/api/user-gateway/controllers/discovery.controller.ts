@@ -4,34 +4,48 @@
 // Vendor discovery and search endpoints for end users
 // ============================================================================
 
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { IsOptional, IsString, IsUUID } from 'class-validator'
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
-import { VendorProfileService } from '../../../domain/catalog/services/vendor-profile.service'
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
+import { VendorProfileService } from '../../../domain/catalog/services/vendor-profile.service';
 import {
   SearchVendorProfileDto,
   VendorProfileResponseDto,
   SearchVendorIndexDto,
   SearchNearbyVendorsDto,
   VendorSuggestionsDto,
-} from '../../../domain/catalog/dto/vendor-profile.dto'
-import { PaginatedResult } from '../../../core/database/repositories/base.repository'
-import { SkipThrottle, Throttle } from '@nestjs/throttler'
-import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard'
-import { RolesGuard } from '../../../core/auth/guards/roles.guard'
-import { UserAccess } from '../../../core/auth/decorators/roles.decorator'
-import { UserId } from '../../../core/auth/decorators/current-user.decorator'
-import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer'
-import { ANALYTICS_EVENTS } from '../../../core/events/event-constants'
+} from '../../../domain/catalog/dto/vendor-profile.dto';
+import { PaginatedResult } from '../../../core/database/repositories/base.repository';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../core/auth/guards/roles.guard';
+import { UserAccess } from '../../../core/auth/decorators/roles.decorator';
+import { UserId } from '../../../core/auth/decorators/current-user.decorator';
+import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer';
+import { ANALYTICS_EVENTS } from '../../../core/events/event-constants';
 
 class VendorClickDto {
   @IsUUID()
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @IsOptional()
   @IsString()
-  query?: string
+  query?: string;
 }
 
 @ApiTags('User - Vendor Discovery')
@@ -57,7 +71,7 @@ export class DiscoveryController {
     @Query() searchDto: SearchVendorProfileDto,
     @UserId() userId: string,
   ): Promise<PaginatedResult<VendorProfileResponseDto>> {
-    const result = await this.vendorProfileService.search(searchDto)
+    const result = await this.vendorProfileService.search(searchDto);
 
     this.eventEmitter.emit(ANALYTICS_EVENTS.SEARCH_PERFORMED, {
       query: searchDto.query || 'all',
@@ -70,15 +84,15 @@ export class DiscoveryController {
       },
       resultCount: result.meta.total,
       hasResults: result.meta.total > 0,
-    })
+    });
 
     result.data.forEach((vendor) => {
       this.eventEmitter.emit('vendor.search.appeared', {
         vendorProfileId: vendor.id,
-      })
-    })
+      });
+    });
 
-    return result
+    return result;
   }
 
   /**
@@ -87,8 +101,14 @@ export class DiscoveryController {
   @Get('search')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Search vendors using full-text index' })
-  @ApiResponse({ status: 200, description: 'Search results retrieved successfully' })
-  async searchVendorsIndexed(@Query() query: SearchVendorIndexDto, @UserId() userId: string) {
+  @ApiResponse({
+    status: 200,
+    description: 'Search results retrieved successfully',
+  })
+  async searchVendorsIndexed(
+    @Query() query: SearchVendorIndexDto,
+    @UserId() userId: string,
+  ) {
     const result = await this.vendorIndexer.searchVendors(query.query || '', {
       page: query.page,
       hitsPerPage: query.limit,
@@ -101,7 +121,7 @@ export class DiscoveryController {
       isVerified: query.isVerified,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
-    })
+    });
 
     this.eventEmitter.emit(ANALYTICS_EVENTS.SEARCH_PERFORMED, {
       query: query.query || 'all',
@@ -119,15 +139,15 @@ export class DiscoveryController {
       },
       resultCount: result.totalHits,
       hasResults: result.totalHits > 0,
-    })
+    });
 
     result.hits.forEach((vendor) => {
       this.eventEmitter.emit('vendor.search.appeared', {
         vendorProfileId: vendor.id,
-      })
-    })
+      });
+    });
 
-    return result
+    return result;
   }
 
   /**
@@ -136,8 +156,14 @@ export class DiscoveryController {
   @Get('nearby')
   @Throttle({ default: { limit: 15, ttl: 60000 } })
   @ApiOperation({ summary: 'Search nearby vendors by geo radius' })
-  @ApiResponse({ status: 200, description: 'Nearby vendors retrieved successfully' })
-  async searchNearbyVendors(@Query() query: SearchNearbyVendorsDto, @UserId() userId: string) {
+  @ApiResponse({
+    status: 200,
+    description: 'Nearby vendors retrieved successfully',
+  })
+  async searchNearbyVendors(
+    @Query() query: SearchNearbyVendorsDto,
+    @UserId() userId: string,
+  ) {
     const result = await this.vendorIndexer.searchNearbyVendors(
       query.query || '',
       query.lat,
@@ -148,7 +174,7 @@ export class DiscoveryController {
         hitsPerPage: query.limit,
         categoryId: query.categoryId,
       },
-    )
+    );
 
     this.eventEmitter.emit(ANALYTICS_EVENTS.SEARCH_PERFORMED, {
       query: query.query || 'all',
@@ -161,15 +187,15 @@ export class DiscoveryController {
       },
       resultCount: result.totalHits,
       hasResults: result.totalHits > 0,
-    })
+    });
 
     result.hits.forEach((vendor) => {
       this.eventEmitter.emit('vendor.search.appeared', {
         vendorProfileId: vendor.id,
-      })
-    })
+      });
+    });
 
-    return result
+    return result;
   }
 
   /**
@@ -178,9 +204,12 @@ export class DiscoveryController {
   @Get('suggestions')
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Get vendor search suggestions' })
-  @ApiResponse({ status: 200, description: 'Suggestions retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Suggestions retrieved successfully',
+  })
   async getVendorSuggestions(@Query() query: VendorSuggestionsDto) {
-    return this.vendorIndexer.getVendorSuggestions(query.query, query.limit)
+    return this.vendorIndexer.getVendorSuggestions(query.query, query.limit);
   }
 
   /**
@@ -196,25 +225,28 @@ export class DiscoveryController {
     @Param('slug') slug: string,
     @UserId() userId: string,
   ): Promise<VendorProfileResponseDto> {
-    const vendor = await this.vendorProfileService.findBySlug(slug)
+    const vendor = await this.vendorProfileService.findBySlug(slug);
 
     this.eventEmitter.emit(ANALYTICS_EVENTS.PROFILE_VIEWED, {
       vendorProfileId: vendor.id,
       viewerId: userId,
       source: 'direct',
-    })
+    });
 
-    return vendor
+    return vendor;
   }
 
   /**
    * Track vendor search click
    */
   @Post('search/click')
-  async trackSearchClick(@Body() dto: VendorClickDto, @UserId() userId: string) {
+  async trackSearchClick(
+    @Body() dto: VendorClickDto,
+    @UserId() userId: string,
+  ) {
     this.eventEmitter.emit('vendor.search.clicked', {
       vendorProfileId: dto.vendorProfileId,
-    })
+    });
 
     if (dto.query) {
       this.eventEmitter.emit(ANALYTICS_EVENTS.SEARCH_PERFORMED, {
@@ -223,10 +255,10 @@ export class DiscoveryController {
         resultCount: 1,
         hasResults: true,
         filters: { clickedVendorId: dto.vendorProfileId },
-      })
+      });
     }
 
-    return { success: true }
+    return { success: true };
   }
 
   /**
@@ -235,11 +267,14 @@ export class DiscoveryController {
   @Get('featured')
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiOperation({ summary: 'Get featured vendors' })
-  @ApiResponse({ status: 200, description: 'Featured vendors retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Featured vendors retrieved successfully',
+  })
   async getFeaturedVendors(
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getFeatured(limit || 10)
+    return this.vendorProfileService.getFeatured(limit || 10);
   }
 
   /**
@@ -254,7 +289,7 @@ export class DiscoveryController {
     @Param('categoryId') categoryId: string,
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getByCategory(categoryId, limit || 20)
+    return this.vendorProfileService.getByCategory(categoryId, limit || 20);
   }
 
   /**
@@ -269,6 +304,6 @@ export class DiscoveryController {
     @Param('cityId') cityId: string,
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getByCity(cityId, limit || 20)
+    return this.vendorProfileService.getByCity(cityId, limit || 20);
   }
 }

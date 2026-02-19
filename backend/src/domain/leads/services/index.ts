@@ -2,5 +2,5 @@
 // LEADS SERVICES - Barrel Export
 // ============================================================================
 
-export * from './lead.service'
-export * from './message.service'
+export * from './lead.service';
+export * from './message.service';

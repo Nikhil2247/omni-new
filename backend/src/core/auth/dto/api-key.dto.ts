@@ -11,8 +11,8 @@ import {
   Min,
   Max,
   MaxLength,
-} from 'class-validator'
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateApiKeyDto {
   @ApiProperty({
@@ -22,7 +22,7 @@ export class CreateApiKeyDto {
   @IsString()
   @IsNotEmpty({ message: 'Name is required' })
   @MaxLength(100)
-  name: string
+  name: string;
 
   @ApiPropertyOptional({
     description: 'Permission scopes for the API key',
@@ -32,7 +32,7 @@ export class CreateApiKeyDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  scopes?: string[]
+  scopes?: string[];
 
   @ApiPropertyOptional({
     description: 'Number of days until the API key expires (null for never)',
@@ -42,76 +42,76 @@ export class CreateApiKeyDto {
   @IsNumber()
   @Min(1)
   @Max(3650) // Max 10 years
-  expiresInDays?: number
+  expiresInDays?: number;
 }
 
 export class CreateApiKeyResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({
     description: 'The API key (only shown once, store securely)',
     example: 'oc_abc123def456...',
   })
-  key: string
+  key: string;
 
   @ApiProperty({
     description: 'Key prefix for identification',
     example: 'oc_abc123',
   })
-  keyPrefix: string
+  keyPrefix: string;
 
   @ApiProperty({ description: 'Response message' })
-  message: string
+  message: string;
 }
 
 export class ApiKeyInfoDto {
   @ApiProperty({ description: 'API key ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'API key name' })
-  name: string
+  name: string;
 
   @ApiProperty({
     description: 'Key prefix for identification',
     example: 'oc_abc123',
   })
-  keyPrefix: string
+  keyPrefix: string;
 
   @ApiProperty({
     description: 'Permission scopes',
     type: [String],
   })
-  scopes: string[]
+  scopes: string[];
 
   @ApiProperty({
     description: 'Last time the key was used',
     nullable: true,
   })
-  lastUsedAt: Date | null
+  lastUsedAt: Date | null;
 
   @ApiProperty({
     description: 'Expiration date',
     nullable: true,
   })
-  expiresAt: Date | null
+  expiresAt: Date | null;
 
   @ApiProperty({ description: 'Whether the key is active' })
-  isActive: boolean
+  isActive: boolean;
 
   @ApiProperty({ description: 'Creation date' })
-  createdAt: Date
+  createdAt: Date;
 }
 
 export class ApiKeyListResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({
     description: 'List of API keys',
     type: [ApiKeyInfoDto],
   })
-  keys: ApiKeyInfoDto[]
+  keys: ApiKeyInfoDto[];
 }
 
 export class RevokeApiKeyDto {
@@ -121,13 +121,13 @@ export class RevokeApiKeyDto {
   })
   @IsString()
   @IsNotEmpty()
-  keyId: string
+  keyId: string;
 }
 
 export class ApiKeyResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({ description: 'Response message' })
-  message: string
+  message: string;
 }

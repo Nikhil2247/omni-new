@@ -4,38 +4,28 @@
 // Exposes login, register, token refresh, password reset, and email verification
 // ============================================================================
 
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common'
-import { Request } from 'express'
-import { AuthService } from './auth.service'
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
+import { AuthService } from './auth.service';
 import {
   LoginDto,
   TwoFactorLoginDto,
   RefreshTokenDto,
   LogoutDto,
   GoogleLoginDto,
-} from './dto/login.dto'
-import { RegisterDto } from './dto/register.dto'
-import {
-  RequestPasswordResetDto,
-  ResetPasswordDto,
-} from './dto/password.dto'
+} from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { RequestPasswordResetDto, ResetPasswordDto } from './dto/password.dto';
 import {
   VerifyEmailDto,
   ResendVerificationDto,
-} from './dto/email-verification.dto'
-import { JwtAuthGuard } from './guards/jwt-auth.guard'
-import { Public } from './decorators/public.decorator'
-import { UserId } from './decorators/current-user.decorator'
-import { EmailVerificationService } from './email-verification.service'
-import { Audited } from '../audit/audit.decorators'
-import { AuditSeverity } from '../audit/audit.types'
+} from './dto/email-verification.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Public } from './decorators/public.decorator';
+import { UserId } from './decorators/current-user.decorator';
+import { EmailVerificationService } from './email-verification.service';
+import { Audited } from '../audit/audit.decorators';
+import { AuditSeverity } from '../audit/audit.types';
 
 @Controller('auth')
 export class AuthController {
@@ -55,15 +45,19 @@ export class AuthController {
     severity: AuditSeverity.INFO,
   })
   async login(@Body() dto: LoginDto, @Req() req: Request) {
-    const context = this.buildContext(req)
-    const result = await this.authService.login(dto.email, dto.password, context)
+    const context = this.buildContext(req);
+    const result = await this.authService.login(
+      dto.email,
+      dto.password,
+      context,
+    );
 
     return {
       success: true,
       requiresTwoFactor: !!result.requiresTwoFactor,
       tokens: result.tokens,
       user: result.user,
-    }
+    };
   }
 
   @Post('google')
@@ -77,19 +71,19 @@ export class AuthController {
     severity: AuditSeverity.INFO,
   })
   async loginWithGoogle(@Body() dto: GoogleLoginDto, @Req() req: Request) {
-    const context = this.buildContext(req)
+    const context = this.buildContext(req);
     const result = await this.authService.loginWithGoogleIdToken(
       dto.idToken,
       context,
       dto.accountType,
-    )
+    );
 
     return {
       success: true,
       requiresTwoFactor: !!result.requiresTwoFactor,
       tokens: result.tokens,
       user: result.user,
-    }
+    };
   }
 
   @Post('2fa/verify')
@@ -103,19 +97,19 @@ export class AuthController {
     severity: AuditSeverity.INFO,
   })
   async verifyTwoFactor(@Body() dto: TwoFactorLoginDto, @Req() req: Request) {
-    const context = this.buildContext(req)
+    const context = this.buildContext(req);
     const result = await this.authService.verifyTwoFactorAndLogin(
       dto.tempToken,
       dto.code,
       context,
-    )
+    );
 
     return {
       success: true,
       requiresTwoFactor: false,
       tokens: result.tokens,
       user: result.user,
-    }
+    };
   }
 
   @Post('register')
@@ -129,14 +123,14 @@ export class AuthController {
     severity: AuditSeverity.INFO,
   })
   async register(@Body() dto: RegisterDto) {
-    const result = await this.authService.register(dto)
+    const result = await this.authService.register(dto);
 
     return {
       success: true,
       message: 'Registration successful. Please verify your email.',
       userId: result.user.id,
       email: result.user.email,
-    }
+    };
   }
 
   @Post('refresh')
@@ -149,17 +143,17 @@ export class AuthController {
     severity: AuditSeverity.DEBUG,
   })
   async refresh(@Body() dto: RefreshTokenDto, @Req() req: Request) {
-    const context = this.buildContext(req)
+    const context = this.buildContext(req);
     const tokens = await this.authService.refreshTokens(
       dto.refreshToken,
       context,
-    )
+    );
 
     return {
       success: true,
       requiresTwoFactor: false,
       tokens,
-    }
+    };
   }
 
   @Post('logout')
@@ -174,12 +168,12 @@ export class AuthController {
   })
   async logout(@Body() dto: LogoutDto, @UserId() userId: string) {
     if (dto?.allDevices) {
-      await this.authService.logoutAllDevices(userId)
+      await this.authService.logoutAllDevices(userId);
     } else {
-      await this.authService.logout(userId, dto?.sessionId)
+      await this.authService.logout(userId, dto?.sessionId);
     }
 
-    return { success: true }
+    return { success: true };
   }
 
   @Post('password/forgot')
@@ -193,11 +187,11 @@ export class AuthController {
     severity: AuditSeverity.WARNING,
   })
   async requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
-    await this.authService.requestPasswordReset(dto.email)
+    await this.authService.requestPasswordReset(dto.email);
     return {
       success: true,
       message: 'If the email exists, a reset link has been sent.',
-    }
+    };
   }
 
   @Post('password/reset')
@@ -210,8 +204,8 @@ export class AuthController {
     severity: AuditSeverity.WARNING,
   })
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    await this.authService.resetPassword(dto.token, dto.newPassword)
-    return { success: true, message: 'Password reset successful.' }
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return { success: true, message: 'Password reset successful.' };
   }
 
   @Post('email/verify')
@@ -224,12 +218,12 @@ export class AuthController {
     severity: AuditSeverity.INFO,
   })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
-    const result = await this.emailVerificationService.verifyEmail(dto.token)
+    const result = await this.emailVerificationService.verifyEmail(dto.token);
     return {
       success: true,
       message: 'Email verified successfully.',
       email: result.email,
-    }
+    };
   }
 
   @Post('email/resend')
@@ -243,28 +237,28 @@ export class AuthController {
     severity: AuditSeverity.INFO,
   })
   async resendVerification(@Body() dto: ResendVerificationDto) {
-    await this.emailVerificationService.resendVerificationEmail(dto.email)
+    await this.emailVerificationService.resendVerificationEmail(dto.email);
     return {
       success: true,
       message: 'If the email exists, a verification link has been sent.',
-    }
+    };
   }
 
   @Get('email/status')
   @UseGuards(JwtAuthGuard)
   async getEmailStatus(@UserId() userId: string) {
-    return this.emailVerificationService.getVerificationStatus(userId)
+    return this.emailVerificationService.getVerificationStatus(userId);
   }
 
   private buildContext(req: Request) {
-    const forwarded = req.headers['x-forwarded-for']
+    const forwarded = req.headers['x-forwarded-for'];
     const ipAddress = Array.isArray(forwarded)
       ? forwarded[0]
-      : forwarded?.split(',')[0]?.trim() || req.ip || 'unknown'
+      : forwarded?.split(',')[0]?.trim() || req.ip || 'unknown';
 
     return {
       ipAddress,
       userAgent: req.headers['user-agent'],
-    }
+    };
   }
 }

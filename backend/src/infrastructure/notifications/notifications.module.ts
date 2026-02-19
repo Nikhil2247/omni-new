@@ -4,10 +4,10 @@
 // Provides email sending and notification management
 // ============================================================================
 
-import { Global, Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
-import { EmailService } from './email.service'
-import { NotificationService } from './notification.service'
+import { Global, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { EmailService } from './email.service';
+import { NotificationService } from './notification.service';
 
 @Global()
 @Module({

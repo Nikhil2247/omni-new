@@ -5,42 +5,62 @@
 // Supports JSON serialization, TTL, and connection pooling
 // ============================================================================
 
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import Redis, { Redis as RedisClient } from 'ioredis'
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Redis, { Redis as RedisClient } from 'ioredis';
 
 export interface CacheOptions {
-  ttl?: number // Time to live in seconds
-  prefix?: string // Key prefix for namespacing
+  ttl?: number; // Time to live in seconds
+  prefix?: string; // Key prefix for namespacing
 }
 
 export interface CacheSetOptions extends CacheOptions {
-  nx?: boolean // Only set if key doesn't exist
-  xx?: boolean // Only set if key exists
+  nx?: boolean; // Only set if key doesn't exist
+  xx?: boolean; // Only set if key exists
 }
 
 @Injectable()
 export class DragonflyService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(DragonflyService.name)
-  private client: RedisClient
-  private subscriber: RedisClient
-  private readonly defaultTtl: number
-  private readonly keyPrefix: string
+  private readonly logger = new Logger(DragonflyService.name);
+  private client: RedisClient;
+  private subscriber: RedisClient;
+  private readonly defaultTtl: number;
+  private readonly keyPrefix: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.defaultTtl = this.configService.get<number>('CACHE_DEFAULT_TTL', 3600)
-    this.keyPrefix = this.configService.get<string>('CACHE_KEY_PREFIX', 'omni:')
+    this.defaultTtl = this.configService.get<number>('CACHE_DEFAULT_TTL', 3600);
+    this.keyPrefix = this.configService.get<string>(
+      'CACHE_KEY_PREFIX',
+      'omni:',
+    );
   }
 
   async onModuleInit(): Promise<void> {
-    const host = this.configService.get<string>('DRAGONFLY_HOST', 'localhost')
-    const port = this.configService.get<number>('DRAGONFLY_PORT', 6379)
-    const password = this.configService.get<string>('DRAGONFLY_PASSWORD')
-    const db = this.configService.get<number>('DRAGONFLY_DB', 0)
-    const connectTimeout = this.configService.get<number>('DRAGONFLY_CONNECT_TIMEOUT', 15000)
-    const maxRetriesPerRequest = this.configService.get<number>('DRAGONFLY_MAX_RETRIES', 10)
-    const retryDelayMs = this.configService.get<number>('DRAGONFLY_RETRY_DELAY_MS', 500)
-    const retryDelayMaxMs = this.configService.get<number>('DRAGONFLY_RETRY_DELAY_MAX_MS', 5000)
+    const host = this.configService.get<string>('DRAGONFLY_HOST', 'localhost');
+    const port = this.configService.get<number>('DRAGONFLY_PORT', 6379);
+    const password = this.configService.get<string>('DRAGONFLY_PASSWORD');
+    const db = this.configService.get<number>('DRAGONFLY_DB', 0);
+    const connectTimeout = this.configService.get<number>(
+      'DRAGONFLY_CONNECT_TIMEOUT',
+      15000,
+    );
+    const maxRetriesPerRequest = this.configService.get<number>(
+      'DRAGONFLY_MAX_RETRIES',
+      10,
+    );
+    const retryDelayMs = this.configService.get<number>(
+      'DRAGONFLY_RETRY_DELAY_MS',
+      500,
+    );
+    const retryDelayMaxMs = this.configService.get<number>(
+      'DRAGONFLY_RETRY_DELAY_MAX_MS',
+      5000,
+    );
 
     const connectionOptions = {
       host,
@@ -52,42 +72,43 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
       connectTimeout,
       enableReadyCheck: true,
       lazyConnect: true,
-      retryStrategy: (times: number) => Math.min(times * retryDelayMs, retryDelayMaxMs),
-    }
+      retryStrategy: (times: number) =>
+        Math.min(times * retryDelayMs, retryDelayMaxMs),
+    };
 
-    this.client = new Redis(connectionOptions)
-    this.subscriber = new Redis(connectionOptions)
+    this.client = new Redis(connectionOptions);
+    this.subscriber = new Redis(connectionOptions);
 
-    this.setupEventListeners()
+    this.setupEventListeners();
 
     try {
-      await this.client.connect()
-      await this.subscriber.connect()
-      this.logger.log(`Connected to Dragonfly at ${host}:${port}`)
+      await this.client.connect();
+      await this.subscriber.connect();
+      this.logger.log(`Connected to Dragonfly at ${host}:${port}`);
     } catch (error) {
-      this.logger.error('Failed to connect to Dragonfly', error)
-      throw error
+      this.logger.error('Failed to connect to Dragonfly', error);
+      throw error;
     }
   }
 
   async onModuleDestroy(): Promise<void> {
-    this.logger.log('Disconnecting from Dragonfly...')
-    await Promise.all([this.client?.quit(), this.subscriber?.quit()])
-    this.logger.log('Disconnected from Dragonfly')
+    this.logger.log('Disconnecting from Dragonfly...');
+    await Promise.all([this.client?.quit(), this.subscriber?.quit()]);
+    this.logger.log('Disconnected from Dragonfly');
   }
 
   private setupEventListeners(): void {
     this.client.on('error', (err) => {
-      this.logger.error('Dragonfly client error', err)
-    })
+      this.logger.error('Dragonfly client error', err);
+    });
 
     this.client.on('reconnecting', () => {
-      this.logger.warn('Dragonfly client reconnecting...')
-    })
+      this.logger.warn('Dragonfly client reconnecting...');
+    });
 
     this.client.on('ready', () => {
-      this.logger.log('Dragonfly client ready')
-    })
+      this.logger.log('Dragonfly client ready');
+    });
   }
 
   // ============================================================================
@@ -95,87 +116,107 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
   // ============================================================================
 
   private buildKey(key: string, prefix?: string): string {
-    return `${prefix || this.keyPrefix}${key}`
+    return `${prefix || this.keyPrefix}${key}`;
   }
 
   async get<T>(key: string, options?: CacheOptions): Promise<T | null> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const value = await this.client.get(fullKey)
+      const fullKey = this.buildKey(key, options?.prefix);
+      const value = await this.client.get(fullKey);
 
-      if (!value) return null
+      if (!value) return null;
 
-      return JSON.parse(value) as T
+      return JSON.parse(value) as T;
     } catch (error) {
-      this.logger.error(`Cache get error for key: ${key}`, error)
-      return null
+      this.logger.error(`Cache get error for key: ${key}`, error);
+      return null;
     }
   }
 
-  async set<T>(key: string, value: T, options?: CacheSetOptions): Promise<boolean> {
+  async set<T>(
+    key: string,
+    value: T,
+    options?: CacheSetOptions,
+  ): Promise<boolean> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const serialized = JSON.stringify(value)
-      const ttl = options?.ttl ?? this.defaultTtl
+      const fullKey = this.buildKey(key, options?.prefix);
+      const serialized = JSON.stringify(value);
+      const ttl = options?.ttl ?? this.defaultTtl;
 
       if (options?.nx) {
-        const result = await this.client.set(fullKey, serialized, 'EX', ttl, 'NX')
-        return result === 'OK'
+        const result = await this.client.set(
+          fullKey,
+          serialized,
+          'EX',
+          ttl,
+          'NX',
+        );
+        return result === 'OK';
       }
 
       if (options?.xx) {
-        const result = await this.client.set(fullKey, serialized, 'EX', ttl, 'XX')
-        return result === 'OK'
+        const result = await this.client.set(
+          fullKey,
+          serialized,
+          'EX',
+          ttl,
+          'XX',
+        );
+        return result === 'OK';
       }
 
-      await this.client.set(fullKey, serialized, 'EX', ttl)
-      return true
+      await this.client.set(fullKey, serialized, 'EX', ttl);
+      return true;
     } catch (error) {
-      this.logger.error(`Cache set error for key: ${key}`, error)
-      return false
+      this.logger.error(`Cache set error for key: ${key}`, error);
+      return false;
     }
   }
 
   async delete(key: string, options?: CacheOptions): Promise<boolean> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const result = await this.client.del(fullKey)
-      return result > 0
+      const fullKey = this.buildKey(key, options?.prefix);
+      const result = await this.client.del(fullKey);
+      return result > 0;
     } catch (error) {
-      this.logger.error(`Cache delete error for key: ${key}`, error)
-      return false
+      this.logger.error(`Cache delete error for key: ${key}`, error);
+      return false;
     }
   }
 
   async exists(key: string, options?: CacheOptions): Promise<boolean> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const result = await this.client.exists(fullKey)
-      return result > 0
+      const fullKey = this.buildKey(key, options?.prefix);
+      const result = await this.client.exists(fullKey);
+      return result > 0;
     } catch (error) {
-      this.logger.error(`Cache exists error for key: ${key}`, error)
-      return false
+      this.logger.error(`Cache exists error for key: ${key}`, error);
+      return false;
     }
   }
 
-  async expire(key: string, ttl: number, options?: CacheOptions): Promise<boolean> {
+  async expire(
+    key: string,
+    ttl: number,
+    options?: CacheOptions,
+  ): Promise<boolean> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const result = await this.client.expire(fullKey, ttl)
-      return result === 1
+      const fullKey = this.buildKey(key, options?.prefix);
+      const result = await this.client.expire(fullKey, ttl);
+      return result === 1;
     } catch (error) {
-      this.logger.error(`Cache expire error for key: ${key}`, error)
-      return false
+      this.logger.error(`Cache expire error for key: ${key}`, error);
+      return false;
     }
   }
 
   async ttl(key: string, options?: CacheOptions): Promise<number> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      return await this.client.ttl(fullKey)
+      const fullKey = this.buildKey(key, options?.prefix);
+      return await this.client.ttl(fullKey);
     } catch (error) {
-      this.logger.error(`Cache TTL error for key: ${key}`, error)
-      return -2 // Key doesn't exist
+      this.logger.error(`Cache TTL error for key: ${key}`, error);
+      return -2; // Key doesn't exist
     }
   }
 
@@ -185,47 +226,56 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
 
   async mget<T>(keys: string[], options?: CacheOptions): Promise<(T | null)[]> {
     try {
-      const fullKeys = keys.map((k) => this.buildKey(k, options?.prefix))
-      const values = await this.client.mget(...fullKeys)
+      const fullKeys = keys.map((k) => this.buildKey(k, options?.prefix));
+      const values = await this.client.mget(...fullKeys);
 
-      return values.map((v) => (v ? (JSON.parse(v) as T) : null))
+      return values.map((v) => (v ? (JSON.parse(v) as T) : null));
     } catch (error) {
-      this.logger.error('Cache mget error', error)
-      return keys.map(() => null)
+      this.logger.error('Cache mget error', error);
+      return keys.map(() => null);
     }
   }
 
-  async mset<T>(entries: Array<{ key: string; value: T }>, options?: CacheSetOptions): Promise<boolean> {
+  async mset<T>(
+    entries: Array<{ key: string; value: T }>,
+    options?: CacheSetOptions,
+  ): Promise<boolean> {
     try {
-      const pipeline = this.client.pipeline()
-      const ttl = options?.ttl ?? this.defaultTtl
+      const pipeline = this.client.pipeline();
+      const ttl = options?.ttl ?? this.defaultTtl;
 
       for (const entry of entries) {
-        const fullKey = this.buildKey(entry.key, options?.prefix)
-        const serialized = JSON.stringify(entry.value)
-        pipeline.set(fullKey, serialized, 'EX', ttl)
+        const fullKey = this.buildKey(entry.key, options?.prefix);
+        const serialized = JSON.stringify(entry.value);
+        pipeline.set(fullKey, serialized, 'EX', ttl);
       }
 
-      await pipeline.exec()
-      return true
+      await pipeline.exec();
+      return true;
     } catch (error) {
-      this.logger.error('Cache mset error', error)
-      return false
+      this.logger.error('Cache mset error', error);
+      return false;
     }
   }
 
-  async deletePattern(pattern: string, options?: CacheOptions): Promise<number> {
+  async deletePattern(
+    pattern: string,
+    options?: CacheOptions,
+  ): Promise<number> {
     try {
-      const fullPattern = this.buildKey(pattern, options?.prefix)
-      const keys = await this.client.keys(fullPattern)
+      const fullPattern = this.buildKey(pattern, options?.prefix);
+      const keys = await this.client.keys(fullPattern);
 
-      if (keys.length === 0) return 0
+      if (keys.length === 0) return 0;
 
-      const result = await this.client.del(...keys)
-      return result
+      const result = await this.client.del(...keys);
+      return result;
     } catch (error) {
-      this.logger.error(`Cache deletePattern error for pattern: ${pattern}`, error)
-      return 0
+      this.logger.error(
+        `Cache deletePattern error for pattern: ${pattern}`,
+        error,
+      );
+      return 0;
     }
   }
 
@@ -233,63 +283,81 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
   // HASH OPERATIONS
   // ============================================================================
 
-  async hget<T>(key: string, field: string, options?: CacheOptions): Promise<T | null> {
+  async hget<T>(
+    key: string,
+    field: string,
+    options?: CacheOptions,
+  ): Promise<T | null> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const value = await this.client.hget(fullKey, field)
+      const fullKey = this.buildKey(key, options?.prefix);
+      const value = await this.client.hget(fullKey, field);
 
-      if (!value) return null
+      if (!value) return null;
 
-      return JSON.parse(value) as T
+      return JSON.parse(value) as T;
     } catch (error) {
-      this.logger.error(`Cache hget error for key: ${key}, field: ${field}`, error)
-      return null
+      this.logger.error(
+        `Cache hget error for key: ${key}, field: ${field}`,
+        error,
+      );
+      return null;
     }
   }
 
-  async hset<T>(key: string, field: string, value: T, options?: CacheOptions): Promise<boolean> {
+  async hset<T>(
+    key: string,
+    field: string,
+    value: T,
+    options?: CacheOptions,
+  ): Promise<boolean> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const serialized = JSON.stringify(value)
-      await this.client.hset(fullKey, field, serialized)
+      const fullKey = this.buildKey(key, options?.prefix);
+      const serialized = JSON.stringify(value);
+      await this.client.hset(fullKey, field, serialized);
 
       if (options?.ttl) {
-        await this.client.expire(fullKey, options.ttl)
+        await this.client.expire(fullKey, options.ttl);
       }
 
-      return true
+      return true;
     } catch (error) {
-      this.logger.error(`Cache hset error for key: ${key}, field: ${field}`, error)
-      return false
+      this.logger.error(
+        `Cache hset error for key: ${key}, field: ${field}`,
+        error,
+      );
+      return false;
     }
   }
 
-  async hgetall<T>(key: string, options?: CacheOptions): Promise<Record<string, T> | null> {
+  async hgetall<T>(
+    key: string,
+    options?: CacheOptions,
+  ): Promise<Record<string, T> | null> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const values = await this.client.hgetall(fullKey)
+      const fullKey = this.buildKey(key, options?.prefix);
+      const values = await this.client.hgetall(fullKey);
 
-      if (!values || Object.keys(values).length === 0) return null
+      if (!values || Object.keys(values).length === 0) return null;
 
-      const result: Record<string, T> = {}
+      const result: Record<string, T> = {};
       for (const [field, value] of Object.entries(values)) {
-        result[field] = JSON.parse(value) as T
+        result[field] = JSON.parse(value) as T;
       }
 
-      return result
+      return result;
     } catch (error) {
-      this.logger.error(`Cache hgetall error for key: ${key}`, error)
-      return null
+      this.logger.error(`Cache hgetall error for key: ${key}`, error);
+      return null;
     }
   }
 
   async hdel(key: string, ...fields: string[]): Promise<number> {
     try {
-      const fullKey = this.buildKey(key)
-      return await this.client.hdel(fullKey, ...fields)
+      const fullKey = this.buildKey(key);
+      return await this.client.hdel(fullKey, ...fields);
     } catch (error) {
-      this.logger.error(`Cache hdel error for key: ${key}`, error)
-      return 0
+      this.logger.error(`Cache hdel error for key: ${key}`, error);
+      return 0;
     }
   }
 
@@ -299,35 +367,40 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
 
   async lpush<T>(key: string, ...values: T[]): Promise<number> {
     try {
-      const fullKey = this.buildKey(key)
-      const serialized = values.map((v) => JSON.stringify(v))
-      return await this.client.lpush(fullKey, ...serialized)
+      const fullKey = this.buildKey(key);
+      const serialized = values.map((v) => JSON.stringify(v));
+      return await this.client.lpush(fullKey, ...serialized);
     } catch (error) {
-      this.logger.error(`Cache lpush error for key: ${key}`, error)
-      return 0
+      this.logger.error(`Cache lpush error for key: ${key}`, error);
+      return 0;
     }
   }
 
   async rpush<T>(key: string, ...values: T[]): Promise<number> {
     try {
-      const fullKey = this.buildKey(key)
-      const serialized = values.map((v) => JSON.stringify(v))
-      return await this.client.rpush(fullKey, ...serialized)
+      const fullKey = this.buildKey(key);
+      const serialized = values.map((v) => JSON.stringify(v));
+      return await this.client.rpush(fullKey, ...serialized);
     } catch (error) {
-      this.logger.error(`Cache rpush error for key: ${key}`, error)
-      return 0
+      this.logger.error(`Cache rpush error for key: ${key}`, error);
+      return 0;
     }
   }
 
-  async lrange<T>(key: string, start: number, stop: number, options?: CacheOptions): Promise<T[]> {
+  async lrange<T>(
+    key: string,
+    start: number,
+    stop: number,
+    options?: CacheOptions,
+  ): Promise<T[]> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const values = await this.client.lrange(fullKey, start, stop)
+      const fullKey = this.buildKey(key, options?.prefix);
+      const values = await this.client.lrange(fullKey, start, stop);
 
-      return values.map((v) => JSON.parse(v) as T)
+      return values.map((v) => JSON.parse(v) as T);
     } catch (error) {
-      this.logger.error(`Cache lrange error for key: ${key}`, error)
-      return []
+      this.logger.error(`Cache lrange error for key: ${key}`, error);
+      return [];
     }
   }
 
@@ -337,36 +410,40 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
 
   async sadd<T>(key: string, ...members: T[]): Promise<number> {
     try {
-      const fullKey = this.buildKey(key)
-      const serialized = members.map((m) => JSON.stringify(m))
-      return await this.client.sadd(fullKey, ...serialized)
+      const fullKey = this.buildKey(key);
+      const serialized = members.map((m) => JSON.stringify(m));
+      return await this.client.sadd(fullKey, ...serialized);
     } catch (error) {
-      this.logger.error(`Cache sadd error for key: ${key}`, error)
-      return 0
+      this.logger.error(`Cache sadd error for key: ${key}`, error);
+      return 0;
     }
   }
 
   async smembers<T>(key: string, options?: CacheOptions): Promise<T[]> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const values = await this.client.smembers(fullKey)
+      const fullKey = this.buildKey(key, options?.prefix);
+      const values = await this.client.smembers(fullKey);
 
-      return values.map((v) => JSON.parse(v) as T)
+      return values.map((v) => JSON.parse(v) as T);
     } catch (error) {
-      this.logger.error(`Cache smembers error for key: ${key}`, error)
-      return []
+      this.logger.error(`Cache smembers error for key: ${key}`, error);
+      return [];
     }
   }
 
-  async sismember<T>(key: string, member: T, options?: CacheOptions): Promise<boolean> {
+  async sismember<T>(
+    key: string,
+    member: T,
+    options?: CacheOptions,
+  ): Promise<boolean> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      const serialized = JSON.stringify(member)
-      const result = await this.client.sismember(fullKey, serialized)
-      return result === 1
+      const fullKey = this.buildKey(key, options?.prefix);
+      const serialized = JSON.stringify(member);
+      const result = await this.client.sismember(fullKey, serialized);
+      return result === 1;
     } catch (error) {
-      this.logger.error(`Cache sismember error for key: ${key}`, error)
-      return false
+      this.logger.error(`Cache sismember error for key: ${key}`, error);
+      return false;
     }
   }
 
@@ -374,23 +451,33 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
   // SORTED SET OPERATIONS
   // ============================================================================
 
-  async zadd(key: string, score: number, member: string, options?: CacheOptions): Promise<number> {
+  async zadd(
+    key: string,
+    score: number,
+    member: string,
+    options?: CacheOptions,
+  ): Promise<number> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      return await this.client.zadd(fullKey, score, member)
+      const fullKey = this.buildKey(key, options?.prefix);
+      return await this.client.zadd(fullKey, score, member);
     } catch (error) {
-      this.logger.error(`Cache zadd error for key: ${key}`, error)
-      return 0
+      this.logger.error(`Cache zadd error for key: ${key}`, error);
+      return 0;
     }
   }
 
-  async zrange(key: string, start: number, stop: number, options?: CacheOptions): Promise<string[]> {
+  async zrange(
+    key: string,
+    start: number,
+    stop: number,
+    options?: CacheOptions,
+  ): Promise<string[]> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      return await this.client.zrange(fullKey, start, stop)
+      const fullKey = this.buildKey(key, options?.prefix);
+      return await this.client.zrange(fullKey, start, stop);
     } catch (error) {
-      this.logger.error(`Cache zrange error for key: ${key}`, error)
-      return []
+      this.logger.error(`Cache zrange error for key: ${key}`, error);
+      return [];
     }
   }
 
@@ -401,11 +488,11 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
     options?: CacheOptions,
   ): Promise<string[]> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      return await this.client.zrangebyscore(fullKey, min, max)
+      const fullKey = this.buildKey(key, options?.prefix);
+      return await this.client.zrangebyscore(fullKey, min, max);
     } catch (error) {
-      this.logger.error(`Cache zrangebyscore error for key: ${key}`, error)
-      return []
+      this.logger.error(`Cache zrangebyscore error for key: ${key}`, error);
+      return [];
     }
   }
 
@@ -415,31 +502,35 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
 
   async incr(key: string, options?: CacheOptions): Promise<number> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      return await this.client.incr(fullKey)
+      const fullKey = this.buildKey(key, options?.prefix);
+      return await this.client.incr(fullKey);
     } catch (error) {
-      this.logger.error(`Cache incr error for key: ${key}`, error)
-      return 0
+      this.logger.error(`Cache incr error for key: ${key}`, error);
+      return 0;
     }
   }
 
-  async incrby(key: string, increment: number, options?: CacheOptions): Promise<number> {
+  async incrby(
+    key: string,
+    increment: number,
+    options?: CacheOptions,
+  ): Promise<number> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      return await this.client.incrby(fullKey, increment)
+      const fullKey = this.buildKey(key, options?.prefix);
+      return await this.client.incrby(fullKey, increment);
     } catch (error) {
-      this.logger.error(`Cache incrby error for key: ${key}`, error)
-      return 0
+      this.logger.error(`Cache incrby error for key: ${key}`, error);
+      return 0;
     }
   }
 
   async decr(key: string, options?: CacheOptions): Promise<number> {
     try {
-      const fullKey = this.buildKey(key, options?.prefix)
-      return await this.client.decr(fullKey)
+      const fullKey = this.buildKey(key, options?.prefix);
+      return await this.client.decr(fullKey);
     } catch (error) {
-      this.logger.error(`Cache decr error for key: ${key}`, error)
-      return 0
+      this.logger.error(`Cache decr error for key: ${key}`, error);
+      return 0;
     }
   }
 
@@ -449,38 +540,44 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
 
   async publish(channel: string, message: unknown): Promise<number> {
     try {
-      const serialized = JSON.stringify(message)
-      return await this.client.publish(channel, serialized)
+      const serialized = JSON.stringify(message);
+      return await this.client.publish(channel, serialized);
     } catch (error) {
-      this.logger.error(`Cache publish error for channel: ${channel}`, error)
-      return 0
+      this.logger.error(`Cache publish error for channel: ${channel}`, error);
+      return 0;
     }
   }
 
-  async subscribe(channel: string, callback: (message: unknown) => void): Promise<void> {
+  async subscribe(
+    channel: string,
+    callback: (message: unknown) => void,
+  ): Promise<void> {
     try {
-      await this.subscriber.subscribe(channel)
+      await this.subscriber.subscribe(channel);
 
       this.subscriber.on('message', (ch, message) => {
         if (ch === channel) {
           try {
-            const parsed = JSON.parse(message)
-            callback(parsed)
+            const parsed = JSON.parse(message);
+            callback(parsed);
           } catch {
-            callback(message)
+            callback(message);
           }
         }
-      })
+      });
     } catch (error) {
-      this.logger.error(`Cache subscribe error for channel: ${channel}`, error)
+      this.logger.error(`Cache subscribe error for channel: ${channel}`, error);
     }
   }
 
   async unsubscribe(channel: string): Promise<void> {
     try {
-      await this.subscriber.unsubscribe(channel)
+      await this.subscriber.unsubscribe(channel);
     } catch (error) {
-      this.logger.error(`Cache unsubscribe error for channel: ${channel}`, error)
+      this.logger.error(
+        `Cache unsubscribe error for channel: ${channel}`,
+        error,
+      );
     }
   }
 
@@ -490,27 +587,27 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
 
   async flush(): Promise<void> {
     if (this.configService.get('NODE_ENV') === 'production') {
-      throw new Error('flush() cannot be used in production environment')
+      throw new Error('flush() cannot be used in production environment');
     }
 
-    await this.client.flushdb()
-    this.logger.warn('Cache database flushed')
+    await this.client.flushdb();
+    this.logger.warn('Cache database flushed');
   }
 
   async ping(): Promise<boolean> {
     try {
-      const result = await this.client.ping()
-      return result === 'PONG'
+      const result = await this.client.ping();
+      return result === 'PONG';
     } catch {
-      return false
+      return false;
     }
   }
 
   async info(): Promise<string> {
-    return await this.client.info()
+    return await this.client.info();
   }
 
   getClient(): RedisClient {
-    return this.client
+    return this.client;
   }
 }

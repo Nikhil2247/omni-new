@@ -2,8 +2,8 @@
 // MESSAGE DTOs - Leads Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsNumber, Min } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsUUID, IsOptional, IsNumber, Min } from 'class-validator';
 
 // ============================================================================
 // CREATE DTOs
@@ -12,15 +12,18 @@ import { IsString, IsUUID, IsOptional, IsNumber, Min } from 'class-validator'
 export class CreateMessageDto {
   @ApiProperty({ description: 'Lead ID' })
   @IsUUID()
-  leadId: string
+  leadId: string;
 
   @ApiProperty({ description: 'Sender user ID' })
   @IsUUID()
-  senderId: string
+  senderId: string;
 
-  @ApiProperty({ description: 'Message content', example: 'Hello, I am interested in your services' })
+  @ApiProperty({
+    description: 'Message content',
+    example: 'Hello, I am interested in your services',
+  })
   @IsString()
-  content: string
+  content: string;
 }
 
 // ============================================================================
@@ -29,22 +32,22 @@ export class CreateMessageDto {
 
 export class MessageResponseDto {
   @ApiProperty({ description: 'Message ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Lead ID' })
-  leadId: string
+  leadId: string;
 
   @ApiProperty({ description: 'Sender ID' })
-  senderId: string
+  senderId: string;
 
   @ApiProperty({ description: 'Message content' })
-  content: string
+  content: string;
 
   @ApiPropertyOptional({ description: 'Read at timestamp', nullable: true })
-  readAt: Date | null
+  readAt: Date | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 }
 
 // ============================================================================
@@ -56,11 +59,15 @@ export class GetMessagesDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
-  page?: number
+  page?: number;
 
-  @ApiPropertyOptional({ description: 'Messages per page', example: 50, default: 50 })
+  @ApiPropertyOptional({
+    description: 'Messages per page',
+    example: 50,
+    default: 50,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  limit?: number
+  limit?: number;
 }

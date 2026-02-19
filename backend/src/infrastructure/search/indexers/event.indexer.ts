@@ -5,32 +5,32 @@
 // Supports geo-search, filtering by category, date, price, etc.
 // ============================================================================
 
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
-import { OnEvent } from '@nestjs/event-emitter'
-import { MeilisearchService, IndexConfig } from '../meilisearch.service'
-import { PrismaService } from '../../../core/database/prisma.service'
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
+import { MeilisearchService, IndexConfig } from '../meilisearch.service';
+import { PrismaService } from '../../../core/database/prisma.service';
 
-export const EVENT_INDEX_NAME = 'events'
+export const EVENT_INDEX_NAME = 'events';
 
 export interface EventSearchDocument extends Record<string, unknown> {
-  id: string
-  name: string
-  description: string
-  status: string
-  date?: number
-  endDate?: number
-  venueName?: string
-  city?: string
-  eventTypeId: string
-  eventTypeName: string
-  guestCount?: number
-  createdAt: number
-  updatedAt: number
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  date?: number;
+  endDate?: number;
+  venueName?: string;
+  city?: string;
+  eventTypeId: string;
+  eventTypeName: string;
+  guestCount?: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 @Injectable()
 export class EventIndexer implements OnModuleInit {
-  private readonly logger = new Logger(EventIndexer.name)
+  private readonly logger = new Logger(EventIndexer.name);
 
   constructor(
     private readonly search: MeilisearchService,
@@ -38,11 +38,11 @@ export class EventIndexer implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    await this.ensureIndexExists()
+    await this.ensureIndexExists();
   }
 
   private async ensureIndexExists(): Promise<void> {
-    const exists = await this.search.indexExists(EVENT_INDEX_NAME)
+    const exists = await this.search.indexExists(EVENT_INDEX_NAME);
 
     if (!exists) {
       const config: IndexConfig = {
@@ -54,16 +54,8 @@ export class EventIndexer implements OnModuleInit {
           'venueName',
           'city',
         ],
-        filterableAttributes: [
-          'status',
-          'eventTypeId',
-          'date',
-          'city',
-        ],
-        sortableAttributes: [
-          'date',
-          'createdAt',
-        ],
+        filterableAttributes: ['status', 'eventTypeId', 'date', 'city'],
+        sortableAttributes: ['date', 'createdAt'],
         rankingRules: [
           'words',
           'typo',
@@ -74,10 +66,10 @@ export class EventIndexer implements OnModuleInit {
           'date:asc',
         ],
         distinctAttribute: 'id',
-      }
+      };
 
-      await this.search.createIndex(EVENT_INDEX_NAME, config)
-      this.logger.log('Events search index created')
+      await this.search.createIndex(EVENT_INDEX_NAME, config);
+      this.logger.log('Events search index created');
     }
   }
 
@@ -86,41 +78,41 @@ export class EventIndexer implements OnModuleInit {
   // ============================================================================
 
   async indexEvent(eventId: string): Promise<void> {
-    const event = await this.fetchEventData(eventId)
+    const event = await this.fetchEventData(eventId);
 
     if (!event) {
-      this.logger.warn(`Event not found for indexing: ${eventId}`)
-      return
+      this.logger.warn(`Event not found for indexing: ${eventId}`);
+      return;
     }
 
-    const document = this.transformToSearchDocument(event)
-    await this.search.addDocumentsAndWait(EVENT_INDEX_NAME, [document])
+    const document = this.transformToSearchDocument(event);
+    await this.search.addDocumentsAndWait(EVENT_INDEX_NAME, [document]);
 
-    this.logger.debug(`Event indexed: ${eventId}`)
+    this.logger.debug(`Event indexed: ${eventId}`);
   }
 
   async indexEvents(eventIds: string[]): Promise<void> {
-    const events = await this.fetchEventsData(eventIds)
-    const documents = events.map((e) => this.transformToSearchDocument(e))
+    const events = await this.fetchEventsData(eventIds);
+    const documents = events.map((e) => this.transformToSearchDocument(e));
 
     if (documents.length > 0) {
-      await this.search.addDocumentsAndWait(EVENT_INDEX_NAME, documents)
-      this.logger.debug(`Indexed ${documents.length} events`)
+      await this.search.addDocumentsAndWait(EVENT_INDEX_NAME, documents);
+      this.logger.debug(`Indexed ${documents.length} events`);
     }
   }
 
   async updateEventIndex(eventId: string): Promise<void> {
-    await this.indexEvent(eventId)
+    await this.indexEvent(eventId);
   }
 
   async removeFromIndex(eventId: string): Promise<void> {
-    await this.search.deleteDocument(EVENT_INDEX_NAME, eventId)
-    this.logger.debug(`Event removed from index: ${eventId}`)
+    await this.search.deleteDocument(EVENT_INDEX_NAME, eventId);
+    this.logger.debug(`Event removed from index: ${eventId}`);
   }
 
   async removeMultipleFromIndex(eventIds: string[]): Promise<void> {
-    await this.search.deleteDocuments(EVENT_INDEX_NAME, eventIds)
-    this.logger.debug(`Removed ${eventIds.length} events from index`)
+    await this.search.deleteDocuments(EVENT_INDEX_NAME, eventIds);
+    this.logger.debug(`Removed ${eventIds.length} events from index`);
   }
 
   // ============================================================================
@@ -128,15 +120,15 @@ export class EventIndexer implements OnModuleInit {
   // ============================================================================
 
   async reindexAll(batchSize: number = 100): Promise<void> {
-    this.logger.log('Starting full event reindex...')
+    this.logger.log('Starting full event reindex...');
 
     // Clear existing index
-    await this.search.deleteAllDocuments(EVENT_INDEX_NAME)
+    await this.search.deleteAllDocuments(EVENT_INDEX_NAME);
 
     // Get total count
-    const totalCount = await this.prisma.event.count()
+    const totalCount = await this.prisma.event.count();
 
-    let processed = 0
+    let processed = 0;
 
     while (processed < totalCount) {
       const events = await this.prisma.event.findMany({
@@ -146,19 +138,19 @@ export class EventIndexer implements OnModuleInit {
           eventType: true,
           address: { include: { city: true } },
         },
-      })
+      });
 
-      const documents = events.map((e) => this.transformToSearchDocument(e))
+      const documents = events.map((e) => this.transformToSearchDocument(e));
 
       if (documents.length > 0) {
-        await this.search.addDocumentsAndWait(EVENT_INDEX_NAME, documents)
+        await this.search.addDocumentsAndWait(EVENT_INDEX_NAME, documents);
       }
 
-      processed += events.length
-      this.logger.log(`Reindex progress: ${processed}/${totalCount}`)
+      processed += events.length;
+      this.logger.log(`Reindex progress: ${processed}/${totalCount}`);
     }
 
-    this.logger.log(`Full event reindex completed: ${totalCount} events`)
+    this.logger.log(`Full event reindex completed: ${totalCount} events`);
   }
 
   // ============================================================================
@@ -167,27 +159,27 @@ export class EventIndexer implements OnModuleInit {
 
   @OnEvent('event.created')
   async handleEventCreated(payload: { eventId: string }): Promise<void> {
-    await this.indexEvent(payload.eventId)
+    await this.indexEvent(payload.eventId);
   }
 
   @OnEvent('event.updated')
   async handleEventUpdated(payload: { eventId: string }): Promise<void> {
-    await this.updateEventIndex(payload.eventId)
+    await this.updateEventIndex(payload.eventId);
   }
 
   @OnEvent('event.deleted')
   async handleEventDeleted(payload: { eventId: string }): Promise<void> {
-    await this.removeFromIndex(payload.eventId)
+    await this.removeFromIndex(payload.eventId);
   }
 
   @OnEvent('event.published')
   async handleEventPublished(payload: { eventId: string }): Promise<void> {
-    await this.indexEvent(payload.eventId)
+    await this.indexEvent(payload.eventId);
   }
 
   @OnEvent('event.unpublished')
   async handleEventUnpublished(payload: { eventId: string }): Promise<void> {
-    await this.removeFromIndex(payload.eventId)
+    await this.removeFromIndex(payload.eventId);
   }
 
   // ============================================================================
@@ -201,7 +193,7 @@ export class EventIndexer implements OnModuleInit {
         eventType: true,
         address: { include: { city: true } },
       },
-    })
+    });
   }
 
   private async fetchEventsData(eventIds: string[]): Promise<unknown[]> {
@@ -211,7 +203,7 @@ export class EventIndexer implements OnModuleInit {
         eventType: true,
         address: { include: { city: true } },
       },
-    })
+    });
   }
 
   // ============================================================================
@@ -233,9 +225,9 @@ export class EventIndexer implements OnModuleInit {
       guestCount: event.guestCount ?? undefined,
       createdAt: new Date(event.createdAt).getTime(),
       updatedAt: new Date(event.updatedAt).getTime(),
-    }
+    };
 
-    return document
+    return document;
   }
 
   // ============================================================================
@@ -245,52 +237,52 @@ export class EventIndexer implements OnModuleInit {
   async searchEvents(
     query: string,
     options?: {
-      page?: number
-      hitsPerPage?: number
-      categoryId?: string
-      startDateFrom?: Date
-      startDateTo?: Date
-      priceMin?: number
-      priceMax?: number
-      isOnline?: boolean
-      city?: string
-      country?: string
-      sortBy?: 'startDate' | 'price' | 'rating' | 'popularity'
-      sortOrder?: 'asc' | 'desc'
+      page?: number;
+      hitsPerPage?: number;
+      categoryId?: string;
+      startDateFrom?: Date;
+      startDateTo?: Date;
+      priceMin?: number;
+      priceMax?: number;
+      isOnline?: boolean;
+      city?: string;
+      country?: string;
+      sortBy?: 'startDate' | 'price' | 'rating' | 'popularity';
+      sortOrder?: 'asc' | 'desc';
     },
   ) {
-    const filters: string[] = ['status = "PUBLISHED"', 'visibility = "PUBLIC"']
+    const filters: string[] = ['status = "PUBLISHED"', 'visibility = "PUBLIC"'];
 
     if (options?.categoryId) {
-      filters.push(`categoryId = "${options.categoryId}"`)
+      filters.push(`categoryId = "${options.categoryId}"`);
     }
 
     if (options?.startDateFrom) {
-      filters.push(`startDate >= ${options.startDateFrom.getTime()}`)
+      filters.push(`startDate >= ${options.startDateFrom.getTime()}`);
     }
 
     if (options?.startDateTo) {
-      filters.push(`startDate <= ${options.startDateTo.getTime()}`)
+      filters.push(`startDate <= ${options.startDateTo.getTime()}`);
     }
 
     if (options?.priceMin !== undefined) {
-      filters.push(`minPrice >= ${options.priceMin}`)
+      filters.push(`minPrice >= ${options.priceMin}`);
     }
 
     if (options?.priceMax !== undefined) {
-      filters.push(`maxPrice <= ${options.priceMax}`)
+      filters.push(`maxPrice <= ${options.priceMax}`);
     }
 
     if (options?.isOnline !== undefined) {
-      filters.push(`isOnline = ${options.isOnline}`)
+      filters.push(`isOnline = ${options.isOnline}`);
     }
 
     if (options?.city) {
-      filters.push(`venueCity = "${options.city}"`)
+      filters.push(`venueCity = "${options.city}"`);
     }
 
     if (options?.country) {
-      filters.push(`venueCountry = "${options.country}"`)
+      filters.push(`venueCountry = "${options.country}"`);
     }
 
     const sortField = {
@@ -298,9 +290,9 @@ export class EventIndexer implements OnModuleInit {
       price: 'minPrice',
       rating: 'averageRating',
       popularity: 'ticketsSold',
-    }[options?.sortBy || 'startDate']
+    }[options?.sortBy || 'startDate'];
 
-    const sortOrder = options?.sortOrder || 'asc'
+    const sortOrder = options?.sortOrder || 'asc';
 
     return this.search.searchWithFilters<EventSearchDocument>(
       EVENT_INDEX_NAME,
@@ -311,7 +303,7 @@ export class EventIndexer implements OnModuleInit {
         hitsPerPage: options?.hitsPerPage,
         sort: [`${sortField}:${sortOrder}`],
       },
-    )
+    );
   }
 
   async searchNearbyEvents(
@@ -320,8 +312,8 @@ export class EventIndexer implements OnModuleInit {
     lng: number,
     radiusInMeters: number = 50000, // 50km default
     options?: {
-      page?: number
-      hitsPerPage?: number
+      page?: number;
+      hitsPerPage?: number;
     },
   ) {
     return this.search.searchGeo<EventSearchDocument>(
@@ -333,6 +325,6 @@ export class EventIndexer implements OnModuleInit {
         hitsPerPage: options?.hitsPerPage,
         filter: 'status = "PUBLISHED" AND visibility = "PUBLIC"',
       },
-    )
+    );
   }
 }

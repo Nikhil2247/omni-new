@@ -1,8 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
-import { AuditService } from '../../../core/audit/audit.service'
-import { AuditCategory, AuditSeverity } from '../../../core/audit/audit.types'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { CreateFeatureFlagDto, UpdateFeatureFlagDto } from '../dto/feature-flag.dto'
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { AuditService } from '../../../core/audit/audit.service';
+import { AuditCategory, AuditSeverity } from '../../../core/audit/audit.types';
+import { PrismaService } from '../../../core/database/prisma.service';
+import {
+  CreateFeatureFlagDto,
+  UpdateFeatureFlagDto,
+} from '../dto/feature-flag.dto';
 
 @Injectable()
 export class FeatureFlagService {
@@ -12,7 +15,7 @@ export class FeatureFlagService {
   ) {}
 
   list() {
-    return this.prisma.featureFlag.findMany({ orderBy: { key: 'asc' } })
+    return this.prisma.featureFlag.findMany({ orderBy: { key: 'asc' } });
   }
 
   async create(dto: CreateFeatureFlagDto) {
@@ -22,7 +25,7 @@ export class FeatureFlagService {
         description: dto.description,
         enabled: dto.enabled ?? false,
       },
-    })
+    });
 
     await this.auditService.log({
       category: AuditCategory.SYSTEM,
@@ -31,15 +34,15 @@ export class FeatureFlagService {
       entityId: created.id,
       newValue: created,
       severity: AuditSeverity.INFO,
-    })
+    });
 
-    return created
+    return created;
   }
 
   async update(id: string, dto: UpdateFeatureFlagDto) {
-    const current = await this.prisma.featureFlag.findUnique({ where: { id } })
+    const current = await this.prisma.featureFlag.findUnique({ where: { id } });
     if (!current) {
-      throw new NotFoundException('Feature flag not found')
+      throw new NotFoundException('Feature flag not found');
     }
 
     const updated = await this.prisma.featureFlag.update({
@@ -48,7 +51,7 @@ export class FeatureFlagService {
         description: dto.description ?? current.description,
         enabled: dto.enabled ?? current.enabled,
       },
-    })
+    });
 
     await this.auditService.log({
       category: AuditCategory.SYSTEM,
@@ -58,8 +61,8 @@ export class FeatureFlagService {
       oldValue: current,
       newValue: updated,
       severity: AuditSeverity.INFO,
-    })
+    });
 
-    return updated
+    return updated;
   }
 }

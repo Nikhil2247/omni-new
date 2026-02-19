@@ -2,4 +2,4 @@
 // INSIGHTS LISTENERS - Barrel Export
 // ============================================================================
 
-export * from './engagement.listener'
+export * from './engagement.listener';

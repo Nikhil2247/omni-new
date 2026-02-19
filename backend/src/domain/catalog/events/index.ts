@@ -2,4 +2,4 @@
 // CATALOG EVENTS - Barrel Export
 // ============================================================================
 
-export * from './vendor-profile.handler'
+export * from './vendor-profile.handler';

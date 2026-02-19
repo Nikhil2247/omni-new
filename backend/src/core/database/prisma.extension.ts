@@ -4,7 +4,7 @@
 // Custom extensions for the Prisma client
 // ============================================================================
 
-import { Prisma, PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client';
 
 /**
  * Soft Delete Extension
@@ -17,28 +17,28 @@ export const softDeleteExtension = Prisma.defineExtension({
         this: T,
         where: Prisma.Args<T, 'update'>['where'],
       ): Promise<Prisma.Result<T, Prisma.Args<T, 'update'>, 'update'>> {
-        const context = Prisma.getExtensionContext(this)
+        const context = Prisma.getExtensionContext(this);
         // @ts-expect-error - Dynamic model access
         return context.update({
           where,
           data: { deletedAt: new Date() },
-        })
+        });
       },
 
       async restore<T>(
         this: T,
         where: Prisma.Args<T, 'update'>['where'],
       ): Promise<Prisma.Result<T, Prisma.Args<T, 'update'>, 'update'>> {
-        const context = Prisma.getExtensionContext(this)
+        const context = Prisma.getExtensionContext(this);
         // @ts-expect-error - Dynamic model access
         return context.update({
           where,
           data: { deletedAt: null },
-        })
+        });
       },
     },
   },
-})
+});
 
 /**
  * Pagination Extension
@@ -50,24 +50,24 @@ export const paginationExtension = Prisma.defineExtension({
       async paginate<T, A>(
         this: T,
         args: Prisma.Exact<A, Prisma.Args<T, 'findMany'>> & {
-          page?: number
-          perPage?: number
+          page?: number;
+          perPage?: number;
         },
       ): Promise<{
-        data: Prisma.Result<T, A, 'findMany'>
+        data: Prisma.Result<T, A, 'findMany'>;
         meta: {
-          total: number
-          page: number
-          perPage: number
-          totalPages: number
-          hasNextPage: boolean
-          hasPrevPage: boolean
-        }
+          total: number;
+          page: number;
+          perPage: number;
+          totalPages: number;
+          hasNextPage: boolean;
+          hasPrevPage: boolean;
+        };
       }> {
-        const context = Prisma.getExtensionContext(this) as any
-        const { page = 1, perPage = 10, ...queryArgs } = args as any
+        const context = Prisma.getExtensionContext(this) as any;
+        const { page = 1, perPage = 10, ...queryArgs } = args as any;
 
-        const skip = (page - 1) * perPage
+        const skip = (page - 1) * perPage;
 
         const [total, data] = await Promise.all([
           context.count({ where: queryArgs.where }),
@@ -76,9 +76,9 @@ export const paginationExtension = Prisma.defineExtension({
             skip,
             take: perPage,
           }),
-        ])
+        ]);
 
-        const totalPages = Math.ceil(total / perPage)
+        const totalPages = Math.ceil(total / perPage);
 
         return {
           data,
@@ -90,21 +90,21 @@ export const paginationExtension = Prisma.defineExtension({
             hasNextPage: page < totalPages,
             hasPrevPage: page > 1,
           },
-        }
+        };
       },
     },
   },
-})
+});
 
 /**
  * Create an extended Prisma client
  */
 export function createExtendedPrismaClient() {
-  const prisma = new PrismaClient()
+  const prisma = new PrismaClient();
 
-  return prisma
-    .$extends(softDeleteExtension)
-    .$extends(paginationExtension)
+  return prisma.$extends(softDeleteExtension).$extends(paginationExtension);
 }
 
-export type ExtendedPrismaClient = ReturnType<typeof createExtendedPrismaClient>
+export type ExtendedPrismaClient = ReturnType<
+  typeof createExtendedPrismaClient
+>;

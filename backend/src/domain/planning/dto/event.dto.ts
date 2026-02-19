@@ -2,9 +2,17 @@
 // EVENT DTOs - Planning Domain
 // ============================================================================
 
-import { IsString, IsOptional, IsEnum, IsUUID, IsDateString, IsInt, Min } from 'class-validator'
-import { Type } from 'class-transformer'
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsDateString,
+  IsInt,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export enum EventStatus {
   PLANNING = 'PLANNING',
@@ -17,121 +25,121 @@ export enum EventStatus {
 export class CreateEventDto {
   @ApiProperty({ description: 'Event name' })
   @IsString()
-  name: string
+  name: string;
 
   @ApiProperty({ description: 'Event type ID' })
   @IsUUID()
-  eventTypeId: string
+  eventTypeId: string;
 
   @ApiProperty({ description: 'Event date' })
   @IsDateString()
-  eventDate: string
+  eventDate: string;
 
   @ApiPropertyOptional({ description: 'Event description' })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiPropertyOptional({ description: 'Venue/location' })
   @IsOptional()
   @IsString()
-  venue?: string
+  venue?: string;
 
   @ApiPropertyOptional({ description: 'Expected guest count' })
   @IsOptional()
   @IsInt()
   @Min(1)
-  expectedGuests?: number
+  expectedGuests?: number;
 
   @ApiPropertyOptional({ description: 'Address ID' })
   @IsOptional()
   @IsUUID()
-  addressId?: string
+  addressId?: string;
 }
 
 export class UpdateEventDto extends PartialType(CreateEventDto) {
   @ApiPropertyOptional({ enum: EventStatus })
   @IsOptional()
   @IsEnum(EventStatus)
-  status?: EventStatus
+  status?: EventStatus;
 }
 
 export class SearchEventDto {
   @ApiPropertyOptional({ enum: EventStatus })
   @IsOptional()
   @IsEnum(EventStatus)
-  status?: EventStatus
+  status?: EventStatus;
 
   @ApiPropertyOptional({ description: 'Event type ID' })
   @IsOptional()
   @IsUUID()
-  eventTypeId?: string
+  eventTypeId?: string;
 
   @ApiPropertyOptional({ description: 'From date' })
   @IsOptional()
   @IsDateString()
-  fromDate?: string
+  fromDate?: string;
 
   @ApiPropertyOptional({ description: 'To date' })
   @IsOptional()
   @IsDateString()
-  toDate?: string
+  toDate?: string;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  page?: number = 1
+  page?: number = 1;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  limit?: number = 20
+  limit?: number = 20;
 }
 
 export class EventResponseDto {
   @ApiProperty()
-  id: string
+  id: string;
 
   @ApiProperty()
-  userId: string
+  userId: string;
 
   @ApiProperty()
-  name: string
+  name: string;
 
   @ApiProperty()
-  eventTypeId: string
+  eventTypeId: string;
 
   @ApiProperty()
-  eventDate: Date
+  eventDate: Date;
 
   @ApiPropertyOptional()
-  description?: string
+  description?: string;
 
   @ApiPropertyOptional()
-  venue?: string
+  venue?: string;
 
   @ApiPropertyOptional()
-  expectedGuests?: number
+  expectedGuests?: number;
 
   @ApiProperty({ enum: EventStatus })
-  status: EventStatus
+  status: EventStatus;
 
   @ApiProperty()
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty()
-  updatedAt: Date
+  updatedAt: Date;
 
   // Relations
-  eventType?: any
-  address?: any
-  checklist?: any
-  budget?: any
-  guestList?: any
-  timeline?: any
-  vendors?: any[]
+  eventType?: any;
+  address?: any;
+  checklist?: any;
+  budget?: any;
+  guestList?: any;
+  timeline?: any;
+  vendors?: any[];
 }

@@ -7,7 +7,10 @@
 import { Controller, Post, Get, Param } from '@nestjs/common';
 import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer';
 import { EventIndexer } from '../../../infrastructure/search/indexers/event.indexer';
-import { AdminOnly, Roles } from '../../../core/auth/decorators/roles.decorator';
+import {
+  AdminOnly,
+  Roles,
+} from '../../../core/auth/decorators/roles.decorator';
 
 @Controller('admin/search')
 @AdminOnly()

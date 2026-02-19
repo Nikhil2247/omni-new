@@ -1,7 +1,7 @@
-import { Controller, Get } from '@nestjs/common'
-import { Public } from '../../../core/auth/decorators/public.decorator'
-import { HealthService } from '../../../infrastructure/health/health.service'
-import { SkipRateLimit } from '../../../infrastructure/rate-limiting/rate-limiting.decorator'
+import { Controller, Get } from '@nestjs/common';
+import { Public } from '../../../core/auth/decorators/public.decorator';
+import { HealthService } from '../../../infrastructure/health/health.service';
+import { SkipRateLimit } from '../../../infrastructure/rate-limiting/rate-limiting.decorator';
 
 @Controller('health')
 @Public()
@@ -15,7 +15,7 @@ export class HealthController {
    */
   @Get()
   check() {
-    return this.healthService.ping()
+    return this.healthService.ping();
   }
 
   /**
@@ -24,7 +24,7 @@ export class HealthController {
    */
   @Get('ready')
   async ready() {
-    return this.healthService.checkReadiness()
+    return this.healthService.checkReadiness();
   }
 
   /**
@@ -32,6 +32,6 @@ export class HealthController {
    */
   @Get('live')
   async live() {
-    return this.healthService.checkLiveness()
+    return this.healthService.checkLiveness();
   }
 }

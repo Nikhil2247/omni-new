@@ -2,14 +2,22 @@
 // WHATSAPP SERVICE - Planning Domain
 // ============================================================================
 
-import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { WhatsAppRepository } from '../repositories/whatsapp.repository'
-import { SendWhatsAppInviteDto, SendWhatsAppBulkDto } from '../dto/whatsapp.dto'
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { WhatsAppRepository } from '../repositories/whatsapp.repository';
+import {
+  SendWhatsAppInviteDto,
+  SendWhatsAppBulkDto,
+} from '../dto/whatsapp.dto';
 
 @Injectable()
 export class WhatsAppService {
-  private readonly logger = new Logger(WhatsAppService.name)
+  private readonly logger = new Logger(WhatsAppService.name);
 
   constructor(
     private readonly whatsappRepository: WhatsAppRepository,
@@ -20,7 +28,7 @@ export class WhatsAppService {
    * Get all message templates
    */
   async getTemplates() {
-    return this.whatsappRepository.findAllTemplates()
+    return this.whatsappRepository.findAllTemplates();
   }
 
   /**
@@ -28,21 +36,23 @@ export class WhatsAppService {
    */
   async sendInvites(dto: SendWhatsAppInviteDto) {
     // Validate guests exist and have phone numbers
-    const guests = await this.whatsappRepository.findGuestsByIds(dto.guestIds)
+    const guests = await this.whatsappRepository.findGuestsByIds(dto.guestIds);
 
     if (guests.length === 0) {
-      throw new NotFoundException('No guests found with the provided IDs')
+      throw new NotFoundException('No guests found with the provided IDs');
     }
 
-    const guestsWithPhone = guests.filter((g) => g.phone)
-    const guestsWithoutPhone = guests.filter((g) => !g.phone)
+    const guestsWithPhone = guests.filter((g) => g.phone);
+    const guestsWithoutPhone = guests.filter((g) => !g.phone);
 
     if (guestsWithPhone.length === 0) {
-      throw new BadRequestException('None of the selected guests have phone numbers')
+      throw new BadRequestException(
+        'None of the selected guests have phone numbers',
+      );
     }
 
     // Get guestlist ID from first guest
-    const guestlistId = guestsWithPhone[0].guestlistId
+    const guestlistId = guestsWithPhone[0].guestlistId;
 
     // Create message records
     const messageData = guestsWithPhone.map((guest) => ({
@@ -51,17 +61,19 @@ export class WhatsAppService {
       messageType: 'INVITE' as const,
       templateId: dto.templateId,
       customMessage: dto.customMessage,
-    }))
+    }));
 
-    const count = await this.whatsappRepository.createManyMessages(messageData)
+    const count = await this.whatsappRepository.createManyMessages(messageData);
 
-    this.logger.log(`Created ${count} WhatsApp messages for guestlist ${guestlistId}`)
+    this.logger.log(
+      `Created ${count} WhatsApp messages for guestlist ${guestlistId}`,
+    );
 
     // Emit event to trigger actual sending (can be processed by a job)
     this.eventEmitter.emit('whatsapp.messages-queued', {
       guestlistId,
       count,
-    })
+    });
 
     return {
       success: true,
@@ -71,7 +83,7 @@ export class WhatsAppService {
         guestId: g.id,
         error: 'No phone number',
       })),
-    }
+    };
   }
 
   /**
@@ -79,7 +91,10 @@ export class WhatsAppService {
    */
   async sendBulkInvites(dto: SendWhatsAppBulkDto) {
     // Get guests matching filter
-    const guests = await this.whatsappRepository.findGuestsWithPhone(dto.guestlistId, dto.filter)
+    const guests = await this.whatsappRepository.findGuestsWithPhone(
+      dto.guestlistId,
+      dto.filter,
+    );
 
     if (guests.length === 0) {
       return {
@@ -87,7 +102,7 @@ export class WhatsAppService {
         sent: 0,
         failed: 0,
         errors: [],
-      }
+      };
     }
 
     // Create message records
@@ -97,31 +112,34 @@ export class WhatsAppService {
       messageType: 'INVITE' as const,
       templateId: dto.templateId,
       customMessage: dto.customMessage,
-    }))
+    }));
 
-    const count = await this.whatsappRepository.createManyMessages(messageData)
+    const count = await this.whatsappRepository.createManyMessages(messageData);
 
-    this.logger.log(`Created ${count} bulk WhatsApp messages for guestlist ${dto.guestlistId}`)
+    this.logger.log(
+      `Created ${count} bulk WhatsApp messages for guestlist ${dto.guestlistId}`,
+    );
 
     // Emit event to trigger actual sending
     this.eventEmitter.emit('whatsapp.messages-queued', {
       guestlistId: dto.guestlistId,
       count,
-    })
+    });
 
     return {
       success: true,
       sent: count,
       failed: 0,
       errors: [],
-    }
+    };
   }
 
   /**
    * Get message history for a guestlist
    */
   async getHistory(guestlistId: string) {
-    const messages = await this.whatsappRepository.findMessagesByGuestlistId(guestlistId)
+    const messages =
+      await this.whatsappRepository.findMessagesByGuestlistId(guestlistId);
 
     return messages.map((msg) => ({
       id: msg.id,
@@ -134,14 +152,14 @@ export class WhatsAppService {
       deliveredAt: msg.deliveredAt,
       readAt: msg.readAt,
       errorMessage: msg.errorMessage,
-    }))
+    }));
   }
 
   /**
    * Get message summary stats for a guestlist
    */
   async getSummary(guestlistId: string) {
-    return this.whatsappRepository.getMessageStats(guestlistId)
+    return this.whatsappRepository.getMessageStats(guestlistId);
   }
 
   /**
@@ -149,7 +167,7 @@ export class WhatsAppService {
    * This is a placeholder - actual implementation would integrate with WhatsApp Business API
    */
   async processPendingMessages() {
-    const messages = await this.whatsappRepository.findPendingMessages(50)
+    const messages = await this.whatsappRepository.findPendingMessages(50);
 
     for (const message of messages) {
       try {
@@ -158,20 +176,24 @@ export class WhatsAppService {
         await this.whatsappRepository.updateMessage(message.id, {
           status: 'SENT',
           sentAt: new Date(),
-        })
+        });
 
-        this.logger.debug(`Processed WhatsApp message ${message.id}`)
+        this.logger.debug(`Processed WhatsApp message ${message.id}`);
       } catch (error) {
         await this.whatsappRepository.updateMessage(message.id, {
           status: 'FAILED',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        })
+          errorMessage:
+            error instanceof Error ? error.message : 'Unknown error',
+        });
 
-        this.logger.error(`Failed to send WhatsApp message ${message.id}`, error)
+        this.logger.error(
+          `Failed to send WhatsApp message ${message.id}`,
+          error,
+        );
       }
     }
 
-    return { processed: messages.length }
+    return { processed: messages.length };
   }
 
   /**
@@ -184,6 +206,8 @@ export class WhatsAppService {
   ) {
     // This would be called by webhook handlers
     // For now, this is a placeholder for the webhook integration
-    this.logger.log(`Received status update for message ${externalId}: ${status}`)
+    this.logger.log(
+      `Received status update for message ${externalId}: ${status}`,
+    );
   }
 }

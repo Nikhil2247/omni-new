@@ -4,77 +4,76 @@
 // Tracks and aggregates vendor performance metrics for analytics dashboard
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service'
-import type { Prisma } from '@prisma/client'
-import { Decimal } from '@prisma/client/runtime/client'
-
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service';
+import type { Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 
 export interface VendorDailyMetrics {
-  vendorProfileId: string
-  date: Date
-  profileViews: number
-  searchAppearances: number
-  searchClicks: number
-  clickThroughRate: number | null
-  leadsReceived: number
-  leadsResponded: number
-  responseRate: number | null
-  avgResponseTime: number | null
-  leadsConverted: number
-  conversionRate: number | null
-  wishlistAdds: number
-  portfolioViews: number
-  totalRevenue: number | null
+  vendorProfileId: string;
+  date: Date;
+  profileViews: number;
+  searchAppearances: number;
+  searchClicks: number;
+  clickThroughRate: number | null;
+  leadsReceived: number;
+  leadsResponded: number;
+  responseRate: number | null;
+  avgResponseTime: number | null;
+  leadsConverted: number;
+  conversionRate: number | null;
+  wishlistAdds: number;
+  portfolioViews: number;
+  totalRevenue: number | null;
 }
 
 export interface VendorPerformanceSummary {
-  vendorProfileId: string
-  vendorName: string
-  businessName?: string
-  categoryName?: string
-  cityName?: string
-  totalProfileViews: number
-  totalSearchAppearances: number
-  totalSearchClicks: number
-  avgClickThroughRate: number
-  totalLeadsReceived: number
-  totalLeadsResponded: number
-  avgResponseRate: number
-  avgResponseTime: number
-  totalLeadsConverted: number
-  avgConversionRate: number
-  totalWishlistAdds: number
-  totalPortfolioViews: number
-  totalRevenue: number
-  performanceScore: number
-  ranking?: number
+  vendorProfileId: string;
+  vendorName: string;
+  businessName?: string;
+  categoryName?: string;
+  cityName?: string;
+  totalProfileViews: number;
+  totalSearchAppearances: number;
+  totalSearchClicks: number;
+  avgClickThroughRate: number;
+  totalLeadsReceived: number;
+  totalLeadsResponded: number;
+  avgResponseRate: number;
+  avgResponseTime: number;
+  totalLeadsConverted: number;
+  avgConversionRate: number;
+  totalWishlistAdds: number;
+  totalPortfolioViews: number;
+  totalRevenue: number;
+  performanceScore: number;
+  ranking?: number;
 }
 
 export interface VendorRanking {
-  vendorProfileId: string
-  rank: number
-  score: number
-  categoryId?: string
-  cityId?: string
+  vendorProfileId: string;
+  rank: number;
+  score: number;
+  categoryId?: string;
+  cityId?: string;
 }
 
 export interface CategoryPerformance {
-  categoryId: string
-  categoryName: string
-  vendorCount: number
-  avgProfileViews: number
-  avgLeadsReceived: number
-  avgConversionRate: number
-  totalRevenue: number
+  categoryId: string;
+  categoryName: string;
+  vendorCount: number;
+  avgProfileViews: number;
+  avgLeadsReceived: number;
+  avgConversionRate: number;
+  totalRevenue: number;
 }
 
 @Injectable()
 export class VendorMetricsService {
-  private readonly logger = new Logger(VendorMetricsService.name)
-  private readonly CACHE_PREFIX = 'vendor-metrics:'
-  private readonly CACHE_TTL = 300 // 5 minutes
+  private readonly logger = new Logger(VendorMetricsService.name);
+  private readonly CACHE_PREFIX = 'vendor-metrics:';
+  private readonly CACHE_TTL = 300; // 5 minutes
 
   constructor(
     private readonly prisma: PrismaService,
@@ -89,29 +88,29 @@ export class VendorMetricsService {
    * Track profile view
    */
   async trackProfileView(vendorProfileId: string): Promise<void> {
-    await this.incrementMetric(vendorProfileId, 'profileViews')
+    await this.incrementMetric(vendorProfileId, 'profileViews');
   }
 
   /**
    * Track search appearance
    */
   async trackSearchAppearance(vendorProfileId: string): Promise<void> {
-    await this.incrementMetric(vendorProfileId, 'searchAppearances')
+    await this.incrementMetric(vendorProfileId, 'searchAppearances');
   }
 
   /**
    * Track search click
    */
   async trackSearchClick(vendorProfileId: string): Promise<void> {
-    await this.incrementMetric(vendorProfileId, 'searchClicks')
-    await this.recalculateCTR(vendorProfileId)
+    await this.incrementMetric(vendorProfileId, 'searchClicks');
+    await this.recalculateCTR(vendorProfileId);
   }
 
   /**
    * Track lead received
    */
   async trackLeadReceived(vendorProfileId: string): Promise<void> {
-    await this.incrementMetric(vendorProfileId, 'leadsReceived')
+    await this.incrementMetric(vendorProfileId, 'leadsReceived');
   }
 
   /**
@@ -121,22 +120,23 @@ export class VendorMetricsService {
     vendorProfileId: string,
     responseTimeMinutes: number,
   ): Promise<void> {
-    const today = this.getToday()
+    const today = this.getToday();
 
     // Get current metrics
     const current = await this.prisma.vendorMetrics.findUnique({
       where: {
         vendorProfileId_date: { vendorProfileId, date: today },
       },
-    })
+    });
 
     if (current) {
       // Calculate new average response time
-      const totalResponded = current.leadsResponded + 1
-      const currentAvg = current.avgResponseTime || 0
+      const totalResponded = current.leadsResponded + 1;
+      const currentAvg = current.avgResponseTime || 0;
       const newAvg = Math.round(
-        (currentAvg * current.leadsResponded + responseTimeMinutes) / totalResponded,
-      )
+        (currentAvg * current.leadsResponded + responseTimeMinutes) /
+          totalResponded,
+      );
 
       await this.prisma.vendorMetrics.update({
         where: {
@@ -147,7 +147,7 @@ export class VendorMetricsService {
           avgResponseTime: newAvg,
           responseRate: new Decimal(totalResponded / current.leadsReceived),
         },
-      })
+      });
     } else {
       await this.prisma.vendorMetrics.create({
         data: {
@@ -156,17 +156,20 @@ export class VendorMetricsService {
           leadsResponded: 1,
           avgResponseTime: responseTimeMinutes,
         },
-      })
+      });
     }
 
-    await this.invalidateCache(vendorProfileId)
+    await this.invalidateCache(vendorProfileId);
   }
 
   /**
    * Track lead conversion
    */
-  async trackLeadConverted(vendorProfileId: string, revenue?: number): Promise<void> {
-    const today = this.getToday()
+  async trackLeadConverted(
+    vendorProfileId: string,
+    revenue?: number,
+  ): Promise<void> {
+    const today = this.getToday();
 
     await this.prisma.vendorMetrics.upsert({
       where: {
@@ -182,24 +185,24 @@ export class VendorMetricsService {
         leadsConverted: { increment: 1 },
         totalRevenue: revenue ? { increment: revenue } : undefined,
       },
-    })
+    });
 
-    await this.recalculateConversionRate(vendorProfileId)
-    await this.invalidateCache(vendorProfileId)
+    await this.recalculateConversionRate(vendorProfileId);
+    await this.invalidateCache(vendorProfileId);
   }
 
   /**
    * Track wishlist add
    */
   async trackWishlistAdd(vendorProfileId: string): Promise<void> {
-    await this.incrementMetric(vendorProfileId, 'wishlistAdds')
+    await this.incrementMetric(vendorProfileId, 'wishlistAdds');
   }
 
   /**
    * Track portfolio view
    */
   async trackPortfolioView(vendorProfileId: string): Promise<void> {
-    await this.incrementMetric(vendorProfileId, 'portfolioViews')
+    await this.incrementMetric(vendorProfileId, 'portfolioViews');
   }
 
   // ============================================================================
@@ -223,7 +226,7 @@ export class VendorMetricsService {
         },
       },
       orderBy: { date: 'asc' },
-    })
+    });
 
     return metrics.map((m) => ({
       vendorProfileId: m.vendorProfileId,
@@ -241,7 +244,7 @@ export class VendorMetricsService {
       wishlistAdds: m.wishlistAdds,
       portfolioViews: m.portfolioViews,
       totalRevenue: m.totalRevenue?.toNumber() ?? null,
-    }))
+    }));
   }
 
   /**
@@ -251,15 +254,15 @@ export class VendorMetricsService {
     vendorProfileId: string,
     days: number = 30,
   ): Promise<VendorPerformanceSummary | null> {
-    const cacheKey = `${this.CACHE_PREFIX}summary:${vendorProfileId}:${days}`
-    const cached = await this.cache.get<VendorPerformanceSummary>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}summary:${vendorProfileId}:${days}`;
+    const cached = await this.cache.get<VendorPerformanceSummary>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     // Fetch vendor profile details
     const vendorProfile = await this.prisma.vendorProfile.findUnique({
@@ -287,7 +290,7 @@ export class VendorMetricsService {
           },
         },
       },
-    })
+    });
 
     const result = await this.prisma.vendorMetrics.aggregate({
       where: {
@@ -312,15 +315,18 @@ export class VendorMetricsService {
         conversionRate: true,
       },
       _count: { id: true },
-    })
+    });
 
     if (!result._count.id) {
-      return null
+      return null;
     }
 
-    const vendorName = vendorProfile?.businessName
-      || (vendorProfile?.user ? `${vendorProfile.user.firstName || ''} ${vendorProfile.user.lastName || ''}`.trim() : '')
-      || 'Unknown Vendor'
+    const vendorName =
+      vendorProfile?.businessName ||
+      (vendorProfile?.user
+        ? `${vendorProfile.user.firstName || ''} ${vendorProfile.user.lastName || ''}`.trim()
+        : '') ||
+      'Unknown Vendor';
 
     const summary: VendorPerformanceSummary = {
       vendorProfileId,
@@ -342,11 +348,11 @@ export class VendorMetricsService {
       totalPortfolioViews: result._sum.portfolioViews || 0,
       totalRevenue: result._sum.totalRevenue?.toNumber() || 0,
       performanceScore: this.calculatePerformanceScore(result),
-    }
+    };
 
-    await this.cache.set(cacheKey, summary, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, summary, { ttl: this.CACHE_TTL });
 
-    return summary
+    return summary;
   }
 
   /**
@@ -357,15 +363,15 @@ export class VendorMetricsService {
     days: number = 30,
     categoryId?: string,
   ): Promise<VendorPerformanceSummary[]> {
-    const cacheKey = `${this.CACHE_PREFIX}top-vendors:${limit}:${days}:${categoryId || 'all'}`
-    const cached = await this.cache.get<VendorPerformanceSummary[]>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}top-vendors:${limit}:${days}:${categoryId || 'all'}`;
+    const cached = await this.cache.get<VendorPerformanceSummary[]>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     // First, try to get vendors with metrics data
     const results = await this.prisma.vendorMetrics.groupBy({
@@ -394,11 +400,11 @@ export class VendorMetricsService {
         _sum: { leadsConverted: 'desc' },
       },
       take: limit,
-    })
+    });
 
     // If we have results from metrics, fetch vendor details and merge
     if (results.length > 0) {
-      const vendorIds = results.map((r) => r.vendorProfileId)
+      const vendorIds = results.map((r) => r.vendorProfileId);
 
       // Fetch vendor profile details (name, category, city via address)
       const vendorProfiles = await this.prisma.vendorProfile.findMany({
@@ -427,21 +433,24 @@ export class VendorMetricsService {
             },
           },
         },
-      })
+      });
 
-      const vendorMap = new Map(vendorProfiles.map((v) => [v.id, v]))
+      const vendorMap = new Map(vendorProfiles.map((v) => [v.id, v]));
 
       const topVendors = results.map((r, index) => {
-        const vendor = vendorMap.get(r.vendorProfileId)
+        const vendor = vendorMap.get(r.vendorProfileId);
         const performanceScore = this.calculatePerformanceScore({
           _sum: r._sum,
           _avg: r._avg,
-        })
+        });
 
         // Build vendor display name
-        const vendorName = vendor?.businessName
-          || (vendor?.user ? `${vendor.user.firstName || ''} ${vendor.user.lastName || ''}`.trim() : '')
-          || `Vendor ${index + 1}`
+        const vendorName =
+          vendor?.businessName ||
+          (vendor?.user
+            ? `${vendor.user.firstName || ''} ${vendor.user.lastName || ''}`.trim()
+            : '') ||
+          `Vendor ${index + 1}`;
 
         return {
           vendorProfileId: r.vendorProfileId,
@@ -464,11 +473,11 @@ export class VendorMetricsService {
           totalRevenue: r._sum.totalRevenue?.toNumber() || 0,
           performanceScore,
           ranking: index + 1,
-        }
-      })
+        };
+      });
 
-      await this.cache.set(cacheKey, topVendors, { ttl: this.CACHE_TTL })
-      return topVendors
+      await this.cache.set(cacheKey, topVendors, { ttl: this.CACHE_TTL });
+      return topVendors;
     }
 
     // Fallback: Get vendors with most leads (using denormalized counts on VendorProfile)
@@ -507,12 +516,15 @@ export class VendorMetricsService {
         leadCount: 'desc',
       },
       take: limit,
-    })
+    });
 
     const topVendors = vendorsWithLeads.map((vendor, index) => {
-      const vendorName = vendor.businessName
-        || (vendor.user ? `${vendor.user.firstName || ''} ${vendor.user.lastName || ''}`.trim() : '')
-        || `Vendor ${index + 1}`
+      const vendorName =
+        vendor.businessName ||
+        (vendor.user
+          ? `${vendor.user.firstName || ''} ${vendor.user.lastName || ''}`.trim()
+          : '') ||
+        `Vendor ${index + 1}`;
 
       return {
         vendorProfileId: vendor.id,
@@ -535,11 +547,11 @@ export class VendorMetricsService {
         totalRevenue: 0,
         performanceScore: vendor.leadCount * 5 + vendor.viewCount,
         ranking: index + 1,
-      }
-    })
+      };
+    });
 
-    await this.cache.set(cacheKey, topVendors, { ttl: this.CACHE_TTL })
-    return topVendors
+    await this.cache.set(cacheKey, topVendors, { ttl: this.CACHE_TTL });
+    return topVendors;
   }
 
   /**
@@ -549,15 +561,15 @@ export class VendorMetricsService {
     days: number = 30,
     limit: number = 100,
   ): Promise<VendorRanking[]> {
-    const cacheKey = `${this.CACHE_PREFIX}rankings:${days}:${limit}`
-    const cached = await this.cache.get<VendorRanking[]>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}rankings:${days}:${limit}`;
+    const cached = await this.cache.get<VendorRanking[]>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     const results = await this.prisma.vendorMetrics.groupBy({
       by: ['vendorProfileId'],
@@ -576,17 +588,17 @@ export class VendorMetricsService {
         _sum: { leadsConverted: 'desc' },
       },
       take: limit,
-    })
+    });
 
     const rankings: VendorRanking[] = results.map((r, index) => ({
       vendorProfileId: r.vendorProfileId,
       rank: index + 1,
       score: this.calculateRankingScore(r),
-    }))
+    }));
 
-    await this.cache.set(cacheKey, rankings, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, rankings, { ttl: this.CACHE_TTL });
 
-    return rankings
+    return rankings;
   }
 
   /**
@@ -596,37 +608,37 @@ export class VendorMetricsService {
     vendorIds: string[],
     days: number = 30,
   ): Promise<Map<string, VendorPerformanceSummary>> {
-    const comparisons = new Map<string, VendorPerformanceSummary>()
+    const comparisons = new Map<string, VendorPerformanceSummary>();
 
     for (const vendorId of vendorIds) {
-      const summary = await this.getVendorSummary(vendorId, days)
+      const summary = await this.getVendorSummary(vendorId, days);
       if (summary) {
-        comparisons.set(vendorId, summary)
+        comparisons.set(vendorId, summary);
       }
     }
 
-    return comparisons
+    return comparisons;
   }
 
   /**
    * Get industry benchmarks
    */
   async getIndustryBenchmarks(days: number = 30): Promise<{
-    avgProfileViews: number
-    avgLeadsReceived: number
-    avgConversionRate: number
-    avgResponseTime: number
-    avgRevenue: number
+    avgProfileViews: number;
+    avgLeadsReceived: number;
+    avgConversionRate: number;
+    avgResponseTime: number;
+    avgRevenue: number;
   }> {
-    const cacheKey = `${this.CACHE_PREFIX}benchmarks:${days}`
-    const cached = await this.cache.get<any>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}benchmarks:${days}`;
+    const cached = await this.cache.get<any>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     const result = await this.prisma.vendorMetrics.aggregate({
       where: {
@@ -639,7 +651,7 @@ export class VendorMetricsService {
         avgResponseTime: true,
         totalRevenue: true,
       },
-    })
+    });
 
     const benchmarks = {
       avgProfileViews: Math.round(result._avg.profileViews || 0),
@@ -647,11 +659,11 @@ export class VendorMetricsService {
       avgConversionRate: result._avg.conversionRate?.toNumber() || 0,
       avgResponseTime: Math.round(result._avg.avgResponseTime || 0),
       avgRevenue: result._avg.totalRevenue?.toNumber() || 0,
-    }
+    };
 
-    await this.cache.set(cacheKey, benchmarks, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, benchmarks, { ttl: this.CACHE_TTL });
 
-    return benchmarks
+    return benchmarks;
   }
 
   // ============================================================================
@@ -662,7 +674,7 @@ export class VendorMetricsService {
     vendorProfileId: string,
     field: string,
   ): Promise<void> {
-    const today = this.getToday()
+    const today = this.getToday();
 
     await this.prisma.vendorMetrics.upsert({
       where: {
@@ -676,22 +688,22 @@ export class VendorMetricsService {
       update: {
         [field]: { increment: 1 },
       },
-    })
+    });
 
-    await this.invalidateCache(vendorProfileId)
+    await this.invalidateCache(vendorProfileId);
   }
 
   private async recalculateCTR(vendorProfileId: string): Promise<void> {
-    const today = this.getToday()
+    const today = this.getToday();
 
     const metrics = await this.prisma.vendorMetrics.findUnique({
       where: {
         vendorProfileId_date: { vendorProfileId, date: today },
       },
-    })
+    });
 
     if (metrics && metrics.searchAppearances > 0) {
-      const ctr = metrics.searchClicks / metrics.searchAppearances
+      const ctr = metrics.searchClicks / metrics.searchAppearances;
 
       await this.prisma.vendorMetrics.update({
         where: {
@@ -700,21 +712,23 @@ export class VendorMetricsService {
         data: {
           clickThroughRate: new Decimal(ctr),
         },
-      })
+      });
     }
   }
 
-  private async recalculateConversionRate(vendorProfileId: string): Promise<void> {
-    const today = this.getToday()
+  private async recalculateConversionRate(
+    vendorProfileId: string,
+  ): Promise<void> {
+    const today = this.getToday();
 
     const metrics = await this.prisma.vendorMetrics.findUnique({
       where: {
         vendorProfileId_date: { vendorProfileId, date: today },
       },
-    })
+    });
 
     if (metrics && metrics.leadsReceived > 0) {
-      const rate = metrics.leadsConverted / metrics.leadsReceived
+      const rate = metrics.leadsConverted / metrics.leadsReceived;
 
       await this.prisma.vendorMetrics.update({
         where: {
@@ -723,7 +737,7 @@ export class VendorMetricsService {
         data: {
           conversionRate: new Decimal(rate),
         },
-      })
+      });
     }
   }
 
@@ -734,40 +748,45 @@ export class VendorMetricsService {
       leadsConverted: 20,
       conversionRate: 100,
       responseRate: 50,
-    }
+    };
 
-    let score = 0
-    score += (metrics._sum?.profileViews || 0) * weights.profileViews
-    score += (metrics._sum?.leadsReceived || 0) * weights.leadsReceived
-    score += (metrics._sum?.leadsConverted || 0) * weights.leadsConverted
-    score += (metrics._avg?.conversionRate?.toNumber() || 0) * weights.conversionRate
-    score += (metrics._avg?.responseRate?.toNumber() || 0) * weights.responseRate
+    let score = 0;
+    score += (metrics._sum?.profileViews || 0) * weights.profileViews;
+    score += (metrics._sum?.leadsReceived || 0) * weights.leadsReceived;
+    score += (metrics._sum?.leadsConverted || 0) * weights.leadsConverted;
+    score +=
+      (metrics._avg?.conversionRate?.toNumber() || 0) * weights.conversionRate;
+    score +=
+      (metrics._avg?.responseRate?.toNumber() || 0) * weights.responseRate;
 
-    return Math.round(score)
+    return Math.round(score);
   }
 
   private calculateRankingScore(metrics: any): number {
-    const leadsConverted = metrics._sum?.leadsConverted || 0
-    const conversionRate = metrics._avg?.conversionRate?.toNumber() || 0
-    const profileViews = metrics._sum?.profileViews || 0
+    const leadsConverted = metrics._sum?.leadsConverted || 0;
+    const conversionRate = metrics._avg?.conversionRate?.toNumber() || 0;
+    const profileViews = metrics._sum?.profileViews || 0;
 
-    return Math.round(leadsConverted * 100 + conversionRate * 1000 + profileViews)
+    return Math.round(
+      leadsConverted * 100 + conversionRate * 1000 + profileViews,
+    );
   }
 
   private getToday(): Date {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
   }
 
   private async invalidateCache(vendorProfileId: string): Promise<void> {
     // Use deletePattern which supports glob patterns
     await Promise.all([
-      this.cache.deletePattern(`${this.CACHE_PREFIX}summary:${vendorProfileId}:*`),
+      this.cache.deletePattern(
+        `${this.CACHE_PREFIX}summary:${vendorProfileId}:*`,
+      ),
       this.cache.deletePattern(`${this.CACHE_PREFIX}top-vendors:*`),
       this.cache.deletePattern(`${this.CACHE_PREFIX}rankings:*`),
       this.cache.deletePattern(`${this.CACHE_PREFIX}benchmarks:*`),
-    ])
+    ]);
   }
 }
-

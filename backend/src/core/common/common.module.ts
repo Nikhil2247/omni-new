@@ -4,20 +4,23 @@
 // Provides filters, interceptors, pipes, and utilities globally
 // ============================================================================
 
-import { Module, Global } from '@nestjs/common'
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core'
-import { HttpExceptionFilter, AllExceptionsFilter } from './filters/http-exception.filter'
+import { Module, Global } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import {
+  HttpExceptionFilter,
+  AllExceptionsFilter,
+} from './filters/http-exception.filter';
 import {
   PrismaExceptionFilter,
   PrismaValidationExceptionFilter,
   PrismaInitializationExceptionFilter,
-} from './filters/prisma-exception.filter'
-import { LoggingInterceptor } from './interceptors/logging.interceptor'
-import { TransformInterceptor } from './interceptors/transform.interceptor'
-import { MaintenanceModeInterceptor } from './interceptors/maintenance-mode.interceptor'
-import { CacheInterceptor } from './interceptors/cache.interceptor'
-import { CustomValidationPipe } from './pipes/validation.pipe'
-import { IdempotencyGuard } from './decorators/idempotent.decorator'
+} from './filters/prisma-exception.filter';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { TransformInterceptor } from './interceptors/transform.interceptor';
+import { MaintenanceModeInterceptor } from './interceptors/maintenance-mode.interceptor';
+import { CacheInterceptor } from './interceptors/cache.interceptor';
+import { CustomValidationPipe } from './pipes/validation.pipe';
+import { IdempotencyGuard } from './decorators/idempotent.decorator';
 
 @Global()
 @Module({
@@ -59,22 +62,20 @@ import { IdempotencyGuard } from './decorators/idempotent.decorator'
     // Global validation pipe
     {
       provide: APP_PIPE,
-      useFactory: () => new CustomValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-        disableErrorMessages: false,
-        skipMissingProperties: false,
-      }),
+      useFactory: () =>
+        new CustomValidationPipe({
+          whitelist: true,
+          forbidNonWhitelisted: true,
+          transform: true,
+          disableErrorMessages: false,
+          skipMissingProperties: false,
+        }),
     },
     // Guards
     IdempotencyGuard,
     // Interceptors as providers (for manual injection)
     CacheInterceptor,
   ],
-  exports: [
-    IdempotencyGuard,
-    CacheInterceptor,
-  ],
+  exports: [IdempotencyGuard, CacheInterceptor],
 })
 export class CommonModule {}

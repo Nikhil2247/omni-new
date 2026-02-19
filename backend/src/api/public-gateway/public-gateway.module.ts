@@ -22,7 +22,14 @@ import { ChatbotService } from './services/chatbot.service';
 import { GlobalSearchService } from './services/global-search.service';
 
 @Module({
-  imports: [CatalogModule, PlanningModule, ContentModule, StorageModule, HealthModule, SearchModule],
+  imports: [
+    CatalogModule,
+    PlanningModule,
+    ContentModule,
+    StorageModule,
+    HealthModule,
+    SearchModule,
+  ],
   controllers: [
     WebhooksController,
     DiscoveryController,

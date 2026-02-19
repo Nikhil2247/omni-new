@@ -2,4 +2,4 @@
 // SUBSCRIPTION DECORATORS - Barrel Export
 // ============================================================================
 
-export * from './subscription.decorators'
+export * from './subscription.decorators';

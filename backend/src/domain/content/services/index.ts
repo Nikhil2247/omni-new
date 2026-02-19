@@ -2,4 +2,4 @@
 // CONTENT SERVICES - Barrel Export
 // ============================================================================
 
-export * from './blog.service'
+export * from './blog.service';

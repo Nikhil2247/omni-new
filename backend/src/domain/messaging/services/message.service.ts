@@ -2,18 +2,18 @@
 // MESSAGE SERVICE - Messaging Domain
 // ============================================================================
 
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { Message } from '@prisma/client'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { ConversationService } from './conversation.service'
-import { MessagingMessageRepository } from '../repositories/message.repository'
-import { PaginatedResult } from '../../../core/database/repositories/base.repository'
-import { SendMessageDto } from '../dto/message.dto'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Message } from '@prisma/client';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { ConversationService } from './conversation.service';
+import { MessagingMessageRepository } from '../repositories/message.repository';
+import { PaginatedResult } from '../../../core/database/repositories/base.repository';
+import { SendMessageDto } from '../dto/message.dto';
 
 @Injectable()
 export class MessagingMessageService {
-  private readonly logger = new Logger(MessagingMessageService.name)
+  private readonly logger = new Logger(MessagingMessageService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -24,12 +24,15 @@ export class MessagingMessageService {
 
   async sendMessage(senderId: string, dto: SendMessageDto): Promise<Message> {
     if (!dto.conversationId) {
-      throw new NotFoundException('Conversation ID is required')
+      throw new NotFoundException('Conversation ID is required');
     }
 
-    await this.conversationService.ensureParticipant(dto.conversationId, senderId)
+    await this.conversationService.ensureParticipant(
+      dto.conversationId,
+      senderId,
+    );
 
-    const createdAt = new Date()
+    const createdAt = new Date();
 
     const message = await this.prisma.$transaction(async (tx) => {
       const created = await tx.message.create({
@@ -70,39 +73,51 @@ export class MessagingMessageService {
             },
           },
         },
-      })
+      });
 
       await tx.conversation.update({
         where: { id: dto.conversationId },
         data: { lastMessageAt: createdAt },
-      })
+      });
 
-      return created
-    })
+      return created;
+    });
 
-    this.eventEmitter.emit('message.created', { message })
+    this.eventEmitter.emit('message.created', { message });
 
-    return message
+    return message;
   }
 
-  async getMessages(userId: string, conversationId: string, page = 1, limit = 50): Promise<PaginatedResult<Message>> {
-    await this.conversationService.ensureParticipant(conversationId, userId)
-    return this.messageRepository.findByConversationId(conversationId, page, limit)
+  async getMessages(
+    userId: string,
+    conversationId: string,
+    page = 1,
+    limit = 50,
+  ): Promise<PaginatedResult<Message>> {
+    await this.conversationService.ensureParticipant(conversationId, userId);
+    return this.messageRepository.findByConversationId(
+      conversationId,
+      page,
+      limit,
+    );
   }
 
   async markRead(userId: string, messageId: string): Promise<void> {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
       select: { conversationId: true },
-    })
+    });
 
     if (!message || !message.conversationId) {
-      throw new NotFoundException('Message not found')
+      throw new NotFoundException('Message not found');
     }
 
-    await this.conversationService.ensureParticipant(message.conversationId, userId)
+    await this.conversationService.ensureParticipant(
+      message.conversationId,
+      userId,
+    );
 
-    const readAt = new Date()
+    const readAt = new Date();
 
     await this.prisma.$transaction(async (tx) => {
       await tx.messageReceipt.upsert({
@@ -114,7 +129,7 @@ export class MessagingMessageService {
         },
         update: { readAt },
         create: { messageId, userId, readAt },
-      })
+      });
 
       await tx.conversationParticipant.update({
         where: {
@@ -124,28 +139,35 @@ export class MessagingMessageService {
           },
         },
         data: { lastReadAt: readAt },
-      })
-    })
+      });
+    });
 
     this.eventEmitter.emit('message.read', {
       messageId,
       conversationId: message.conversationId,
       userId,
       readAt,
-    })
+    });
   }
 
-  async addReaction(userId: string, messageId: string, emoji: string): Promise<void> {
+  async addReaction(
+    userId: string,
+    messageId: string,
+    emoji: string,
+  ): Promise<void> {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
       select: { conversationId: true },
-    })
+    });
 
     if (!message || !message.conversationId) {
-      throw new NotFoundException('Message not found')
+      throw new NotFoundException('Message not found');
     }
 
-    await this.conversationService.ensureParticipant(message.conversationId, userId)
+    await this.conversationService.ensureParticipant(
+      message.conversationId,
+      userId,
+    );
 
     await this.prisma.messageReaction.upsert({
       where: {
@@ -161,27 +183,30 @@ export class MessagingMessageService {
         userId,
         emoji,
       },
-    })
+    });
 
     this.eventEmitter.emit('message.reaction', {
       messageId,
       conversationId: message.conversationId,
       userId,
       emoji,
-    })
+    });
   }
 
   async deleteForUser(userId: string, messageId: string): Promise<void> {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
       select: { conversationId: true },
-    })
+    });
 
     if (!message || !message.conversationId) {
-      throw new NotFoundException('Message not found')
+      throw new NotFoundException('Message not found');
     }
 
-    await this.conversationService.ensureParticipant(message.conversationId, userId)
+    await this.conversationService.ensureParticipant(
+      message.conversationId,
+      userId,
+    );
 
     await this.prisma.messageDeletion.upsert({
       where: {
@@ -195,12 +220,12 @@ export class MessagingMessageService {
         messageId,
         userId,
       },
-    })
+    });
 
     this.eventEmitter.emit('message.deleted', {
       messageId,
       conversationId: message.conversationId,
       userId,
-    })
+    });
   }
 }

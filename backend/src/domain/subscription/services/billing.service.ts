@@ -2,17 +2,27 @@
 // BILLING SERVICE - Subscription Domain
 // ============================================================================
 
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { InvoiceRepository } from '../repositories/invoice.repository'
-import { PaymentRepository } from '../repositories/payment.repository'
-import { PaymentMethodRepository } from '../repositories/payment-method.repository'
-import { SubscriptionService } from './subscription.service'
-import { CreatePaymentMethodDto, CreatePaymentDto, InvoiceStatus, PaymentStatus } from '../dto/payment.dto'
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { InvoiceRepository } from '../repositories/invoice.repository';
+import { PaymentRepository } from '../repositories/payment.repository';
+import { PaymentMethodRepository } from '../repositories/payment-method.repository';
+import { SubscriptionService } from './subscription.service';
+import {
+  CreatePaymentMethodDto,
+  CreatePaymentDto,
+  InvoiceStatus,
+  PaymentStatus,
+} from '../dto/payment.dto';
 
 @Injectable()
 export class BillingService {
-  private readonly logger = new Logger(BillingService.name)
+  private readonly logger = new Logger(BillingService.name);
 
   constructor(
     private readonly invoiceRepository: InvoiceRepository,
@@ -27,11 +37,13 @@ export class BillingService {
   // ============================================================================
 
   async addPaymentMethod(dto: CreatePaymentMethodDto) {
-    this.logger.log(`Adding payment method for subscription: ${dto.subscriptionId}`)
+    this.logger.log(
+      `Adding payment method for subscription: ${dto.subscriptionId}`,
+    );
 
     // If setting as default, unset other defaults
     if (dto.isDefault) {
-      await this.paymentMethodRepository.unsetDefaults(dto.subscriptionId)
+      await this.paymentMethodRepository.unsetDefaults(dto.subscriptionId);
     }
 
     const paymentMethod = await this.paymentMethodRepository.create({
@@ -42,33 +54,39 @@ export class BillingService {
       cardExpMonth: dto.cardExpMonth,
       cardExpYear: dto.cardExpYear,
       isDefault: dto.isDefault ?? false,
-    })
+    });
 
     this.eventEmitter.emit('payment-method.added', {
       paymentMethodId: paymentMethod.id,
       subscriptionId: dto.subscriptionId,
-    })
+    });
 
-    return paymentMethod
+    return paymentMethod;
   }
 
   async getPaymentMethods(subscriptionId: string) {
-    return this.paymentMethodRepository.findBySubscription(subscriptionId)
+    return this.paymentMethodRepository.findBySubscription(subscriptionId);
   }
 
-  async setDefaultPaymentMethod(paymentMethodId: string, subscriptionId: string) {
-    await this.paymentMethodRepository.unsetDefaults(subscriptionId)
-    return this.paymentMethodRepository.update(paymentMethodId, { isDefault: true })
+  async setDefaultPaymentMethod(
+    paymentMethodId: string,
+    subscriptionId: string,
+  ) {
+    await this.paymentMethodRepository.unsetDefaults(subscriptionId);
+    return this.paymentMethodRepository.update(paymentMethodId, {
+      isDefault: true,
+    });
   }
 
   async removePaymentMethod(paymentMethodId: string) {
-    const paymentMethod = await this.paymentMethodRepository.findById(paymentMethodId)
+    const paymentMethod =
+      await this.paymentMethodRepository.findById(paymentMethodId);
     if (!paymentMethod) {
-      throw new NotFoundException('Payment method not found')
+      throw new NotFoundException('Payment method not found');
     }
 
-    await this.paymentMethodRepository.delete(paymentMethodId)
-    this.eventEmitter.emit('payment-method.removed', { paymentMethodId })
+    await this.paymentMethodRepository.delete(paymentMethodId);
+    this.eventEmitter.emit('payment-method.removed', { paymentMethodId });
   }
 
   // ============================================================================
@@ -76,18 +94,20 @@ export class BillingService {
   // ============================================================================
 
   async createInvoice(subscriptionId: string) {
-    this.logger.log(`Creating invoice for subscription: ${subscriptionId}`)
+    this.logger.log(`Creating invoice for subscription: ${subscriptionId}`);
 
-    const subscription = await this.subscriptionService.findById(subscriptionId) as any
-    const plan = subscription.plan
-    const price = subscription.price
+    const subscription = (await this.subscriptionService.findById(
+      subscriptionId,
+    )) as any;
+    const plan = subscription.plan;
+    const price = subscription.price;
 
     if (!price) {
-      throw new BadRequestException('No price found for subscription')
+      throw new BadRequestException('No price found for subscription');
     }
 
     // Generate invoice number
-    const invoiceNumber = await this.generateInvoiceNumber()
+    const invoiceNumber = await this.generateInvoiceNumber();
 
     const invoice = await this.invoiceRepository.create({
       subscription: { connect: { id: subscriptionId } },
@@ -102,22 +122,24 @@ export class BillingService {
       periodEnd: subscription.currentPeriodEnd,
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       lineItems: {
-        create: [{
-          description: `${plan.name} - ${price.billingCycle}`,
-          quantity: 1,
-          unitPrice: price.amount,
-          amount: price.amount,
-        }],
+        create: [
+          {
+            description: `${plan.name} - ${price.billingCycle}`,
+            quantity: 1,
+            unitPrice: price.amount,
+            amount: price.amount,
+          },
+        ],
       },
-    })
+    });
 
     this.eventEmitter.emit('invoice.created', {
       invoiceId: invoice.id,
       subscriptionId,
       amount: invoice.totalAmount,
-    })
+    });
 
-    return invoice
+    return invoice;
   }
 
   async getInvoice(invoiceId: string) {
@@ -125,30 +147,30 @@ export class BillingService {
       subscription: true,
       lineItems: true,
       payments: true,
-    })
+    });
 
     if (!invoice) {
-      throw new NotFoundException('Invoice not found')
+      throw new NotFoundException('Invoice not found');
     }
 
-    return invoice
+    return invoice;
   }
 
   async getInvoicesBySubscription(subscriptionId: string) {
-    return this.invoiceRepository.findBySubscription(subscriptionId)
+    return this.invoiceRepository.findBySubscription(subscriptionId);
   }
 
   async getInvoicesByVendorProfile(vendorProfileId: string) {
-    return this.invoiceRepository.findByVendorProfile(vendorProfileId)
+    return this.invoiceRepository.findByVendorProfile(vendorProfileId);
   }
 
   async voidInvoice(invoiceId: string) {
-    const invoice = await this.getInvoice(invoiceId)
+    const invoice = await this.getInvoice(invoiceId);
     if (invoice.status === 'PAID') {
-      throw new BadRequestException('Cannot void a paid invoice')
+      throw new BadRequestException('Cannot void a paid invoice');
     }
 
-    return this.invoiceRepository.update(invoiceId, { status: 'VOIDED' })
+    return this.invoiceRepository.update(invoiceId, { status: 'VOIDED' });
   }
 
   // ============================================================================
@@ -156,16 +178,18 @@ export class BillingService {
   // ============================================================================
 
   async processPayment(dto: CreatePaymentDto) {
-    this.logger.log(`Processing payment for invoice: ${dto.invoiceId}`)
+    this.logger.log(`Processing payment for invoice: ${dto.invoiceId}`);
 
-    const invoice = await this.getInvoice(dto.invoiceId)
+    const invoice = await this.getInvoice(dto.invoiceId);
     if (invoice.status === 'PAID') {
-      throw new BadRequestException('Invoice is already paid')
+      throw new BadRequestException('Invoice is already paid');
     }
 
-    const paymentMethod = await this.paymentMethodRepository.findById(dto.paymentMethodId)
+    const paymentMethod = await this.paymentMethodRepository.findById(
+      dto.paymentMethodId,
+    );
     if (!paymentMethod) {
-      throw new NotFoundException('Payment method not found')
+      throw new NotFoundException('Payment method not found');
     }
 
     // Create payment record
@@ -175,7 +199,7 @@ export class BillingService {
       amount: dto.amount,
       currency: dto.currency,
       status: 'PROCESSING',
-    })
+    });
 
     try {
       // TODO: Integrate with payment gateway (Stripe/Razorpay)
@@ -189,39 +213,39 @@ export class BillingService {
       await this.paymentRepository.update(payment.id, {
         status: 'SUCCEEDED',
         processedAt: new Date(),
-      })
+      });
 
       // Mark invoice as paid
       await this.invoiceRepository.update(dto.invoiceId, {
         status: 'PAID',
         paidAt: new Date(),
-      })
+      });
 
       this.eventEmitter.emit('payment.succeeded', {
         paymentId: payment.id,
         invoiceId: dto.invoiceId,
         amount: dto.amount,
-      })
+      });
 
-      return payment
+      return payment;
     } catch (error) {
       await this.paymentRepository.update(payment.id, {
         status: 'FAILED',
         failureMessage: error.message,
-      })
+      });
 
       this.eventEmitter.emit('payment.failed', {
         paymentId: payment.id,
         invoiceId: dto.invoiceId,
         error: error.message,
-      })
+      });
 
-      throw error
+      throw error;
     }
   }
 
   async getPaymentHistory(vendorProfileId: string) {
-    return this.paymentRepository.findByVendorProfile(vendorProfileId)
+    return this.paymentRepository.findByVendorProfile(vendorProfileId);
   }
 
   // ============================================================================
@@ -229,10 +253,10 @@ export class BillingService {
   // ============================================================================
 
   private async generateInvoiceNumber(): Promise<string> {
-    const date = new Date()
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase()
-    return `INV-${year}${month}-${random}`
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `INV-${year}${month}-${random}`;
   }
 }

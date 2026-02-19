@@ -12,89 +12,94 @@ import {
   ForbiddenException,
   ServiceUnavailableException,
   Logger,
-} from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { ConfigService } from '@nestjs/config'
-import { LoginMethod } from '@prisma/client'
-import * as bcrypt from 'bcryptjs'
-import * as crypto from 'crypto'
-import { PrismaService } from '../database/prisma.service'
-import { TokenService, TokenPayload, TokenPair } from './token.service'
-import { TwoFactorService } from './two-factor.service'
-import { LoginActivityService, DeviceInfo, GeoLocation } from './login-activity.service'
-import { EmailVerificationService } from './email-verification.service'
-import { RoleLookupService, ROLE_NAMES } from '../lookup/role-lookup.service'
+} from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
+import { LoginMethod } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
+import { PrismaService } from '../database/prisma.service';
+import { TokenService, TokenPayload, TokenPair } from './token.service';
+import { TwoFactorService } from './two-factor.service';
+import {
+  LoginActivityService,
+  DeviceInfo,
+  GeoLocation,
+} from './login-activity.service';
+import { EmailVerificationService } from './email-verification.service';
+import { RoleLookupService, ROLE_NAMES } from '../lookup/role-lookup.service';
 
 export interface AuthUser {
-  id: string
-  email: string
-  firstName: string | null
-  lastName: string | null
-  status: string
-  roles: string[]
-  tenantId?: string
-  emailVerified: boolean
-  twoFactorEnabled: boolean
-  hasCompletedOnboarding: boolean
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  status: string;
+  roles: string[];
+  tenantId?: string;
+  emailVerified: boolean;
+  twoFactorEnabled: boolean;
+  hasCompletedOnboarding: boolean;
 }
 
 export interface LoginResult {
-  user: AuthUser
-  tokens: TokenPair
-  requiresTwoFactor?: boolean
+  user: AuthUser;
+  tokens: TokenPair;
+  requiresTwoFactor?: boolean;
 }
 
 export interface LoginContext {
-  ipAddress: string
-  userAgent?: string
-  deviceInfo?: DeviceInfo
-  geoLocation?: GeoLocation
+  ipAddress: string;
+  userAgent?: string;
+  deviceInfo?: DeviceInfo;
+  geoLocation?: GeoLocation;
 }
 
 export interface TwoFactorLoginResult {
-  user: AuthUser
-  tokens: TokenPair
+  user: AuthUser;
+  tokens: TokenPair;
 }
 
 export interface RegisterUserInput {
-  email: string
-  password: string
-  firstName?: string
-  lastName?: string
-  accountType?: 'USER' | 'VENDOR'
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  accountType?: 'USER' | 'VENDOR';
 }
 
 export interface RegisterResult {
-  user: AuthUser
-  verificationToken: string
+  user: AuthUser;
+  verificationToken: string;
 }
 
 interface GoogleTokenInfo {
-  aud?: string
-  azp?: string
-  email?: string
-  email_verified?: 'true' | 'false'
-  given_name?: string
-  family_name?: string
-  name?: string
-  picture?: string
-  sub?: string
+  aud?: string;
+  azp?: string;
+  email?: string;
+  email_verified?: 'true' | 'false';
+  given_name?: string;
+  family_name?: string;
+  name?: string;
+  picture?: string;
+  sub?: string;
 }
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name)
-  private readonly SALT_ROUNDS = 12
-  private readonly MAX_LOGIN_ATTEMPTS = 5
-  private readonly LOCKOUT_DURATION_MS = 15 * 60 * 1000 // 15 minutes
-  private readonly maintenanceCacheTtlMs = 10_000
-  private maintenanceCache: { enabled: boolean; expiresAt: number } | null = null
+  private readonly logger = new Logger(AuthService.name);
+  private readonly SALT_ROUNDS = 12;
+  private readonly MAX_LOGIN_ATTEMPTS = 5;
+  private readonly LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+  private readonly maintenanceCacheTtlMs = 10_000;
+  private maintenanceCache: { enabled: boolean; expiresAt: number } | null =
+    null;
 
   // Temporary store for pending 2FA verification (use Redis in production)
   private readonly pending2FALogins = new Map<
     string,
     { userId: string; expiresAt: number; context: LoginContext }
-  >()
+  >();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -111,31 +116,36 @@ export class AuthService {
    * Register a new user
    */
   async register(input: RegisterUserInput): Promise<RegisterResult> {
-    await this.enforceMaintenanceAccess()
-    const normalizedEmail = input.email.toLowerCase().trim()
+    await this.enforceMaintenanceAccess();
+    const normalizedEmail = input.email.toLowerCase().trim();
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
-    })
+    });
 
     if (existingUser) {
-      throw new BadRequestException('Email is already registered')
+      throw new BadRequestException('Email is already registered');
     }
 
     // Validate password strength
-    this.validatePasswordStrength(input.password)
+    this.validatePasswordStrength(input.password);
 
     // Hash password
-    const passwordHash = await this.hashPassword(input.password)
+    const passwordHash = await this.hashPassword(input.password);
 
-    const accountType = input.accountType === 'VENDOR' ? 'VENDOR' : 'USER'
-    const roleName = accountType === 'VENDOR' ? ROLE_NAMES.BUSINESS_ADMIN : ROLE_NAMES.USER
-    const roleId = this.roleLookupService.getRoleIdByName(roleName)
+    const accountType = input.accountType === 'VENDOR' ? 'VENDOR' : 'USER';
+    const roleName =
+      accountType === 'VENDOR' ? ROLE_NAMES.BUSINESS_ADMIN : ROLE_NAMES.USER;
+    const roleId = this.roleLookupService.getRoleIdByName(roleName);
 
     if (!roleId) {
-      this.logger.error(`Role lookup failed for registration role: ${roleName}`)
-      throw new ServiceUnavailableException('Registration is temporarily unavailable')
+      this.logger.error(
+        `Role lookup failed for registration role: ${roleName}`,
+      );
+      throw new ServiceUnavailableException(
+        'Registration is temporarily unavailable',
+      );
     }
 
     // Create user with role assignment
@@ -157,20 +167,20 @@ export class AuthService {
           include: { role: true },
         },
       },
-    })
+    });
 
     // Generate email verification token
     const verificationToken =
-      await this.emailVerificationService.generateVerificationToken(user.id)
+      await this.emailVerificationService.generateVerificationToken(user.id);
 
     // Emit registration event
     this.eventEmitter.emit('user.registered', {
       userId: user.id,
       email: user.email,
       timestamp: new Date(),
-    })
+    });
 
-    this.logger.log(`New user registered: ${user.email}`)
+    this.logger.log(`New user registered: ${user.email}`);
 
     return {
       user: {
@@ -185,7 +195,7 @@ export class AuthService {
         hasCompletedOnboarding: user.hasCompletedOnboarding,
       },
       verificationToken,
-    }
+    };
   }
 
   /**
@@ -196,17 +206,22 @@ export class AuthService {
     password: string,
     context: LoginContext,
   ): Promise<AuthUser> {
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = email.toLowerCase().trim();
 
     // Check if IP is blocked due to too many failed attempts
     const isIPBlocked = await this.loginActivityService.isIPBlocked(
       context.ipAddress,
-    )
+    );
     if (isIPBlocked) {
-      await this.recordFailedLogin(normalizedEmail, null, 'ip_blocked', context)
+      await this.recordFailedLogin(
+        normalizedEmail,
+        null,
+        'ip_blocked',
+        context,
+      );
       throw new UnauthorizedException(
         'Too many failed attempts. Please try again later.',
-      )
+      );
     }
 
     const user = await this.prisma.user.findUnique({
@@ -219,7 +234,7 @@ export class AuthService {
           select: { id: true },
         },
       },
-    })
+    });
 
     if (!user) {
       await this.recordFailedLogin(
@@ -227,24 +242,24 @@ export class AuthService {
         null,
         'user_not_found',
         context,
-      )
-      throw new UnauthorizedException('Invalid credentials')
+      );
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     // Check if account is locked
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       const remainingMinutes = Math.ceil(
         (user.lockedUntil.getTime() - Date.now()) / 60000,
-      )
+      );
       await this.recordFailedLogin(
         normalizedEmail,
         user.id,
         'account_locked',
         context,
-      )
+      );
       throw new UnauthorizedException(
         `Account temporarily locked. Try again in ${remainingMinutes} minutes`,
-      )
+      );
     }
 
     // Check account status
@@ -254,8 +269,8 @@ export class AuthService {
         user.id,
         'account_suspended',
         context,
-      )
-      throw new UnauthorizedException('Account is suspended')
+      );
+      throw new UnauthorizedException('Account is suspended');
     }
 
     if (user.status === 'DELETED') {
@@ -264,16 +279,16 @@ export class AuthService {
         user.id,
         'account_deleted',
         context,
-      )
-      throw new UnauthorizedException('Account not found')
+      );
+      throw new UnauthorizedException('Account not found');
     }
 
     // Validate password
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      await this.handleFailedLogin(user.id, normalizedEmail, context)
-      throw new UnauthorizedException('Invalid credentials')
+      await this.handleFailedLogin(user.id, normalizedEmail, context);
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     // Reset failed attempts on successful password validation
@@ -283,7 +298,7 @@ export class AuthService {
         failedLoginAttempts: 0,
         lockedUntil: null,
       },
-    })
+    });
 
     return {
       id: user.id,
@@ -296,7 +311,7 @@ export class AuthService {
       emailVerified: user.emailVerified,
       twoFactorEnabled: user.twoFactorEnabled,
       hasCompletedOnboarding: user.hasCompletedOnboarding,
-    }
+    };
   }
 
   /**
@@ -307,28 +322,28 @@ export class AuthService {
     password: string,
     context: LoginContext,
   ): Promise<LoginResult> {
-    const user = await this.validateUser(email, password, context)
+    const user = await this.validateUser(email, password, context);
 
-    await this.enforceMaintenanceAccess(user.roles)
+    await this.enforceMaintenanceAccess(user.roles);
 
     // Check if email is verified (optional - can be configurable)
     if (!user.emailVerified && user.status === 'PENDING') {
       throw new ForbiddenException(
         'Please verify your email address before logging in',
-      )
+      );
     }
 
     // Check if 2FA is enabled
     if (user.twoFactorEnabled) {
       // Generate temporary token for 2FA verification
-      const tempToken = this.generateTemporary2FAToken()
+      const tempToken = this.generateTemporary2FAToken();
 
       // Store pending 2FA login (expires in 5 minutes)
       this.pending2FALogins.set(tempToken, {
         userId: user.id,
         expiresAt: Date.now() + 5 * 60 * 1000,
         context,
-      })
+      });
 
       return {
         user,
@@ -338,11 +353,11 @@ export class AuthService {
           expiresIn: 300, // 5 minutes to complete 2FA
         },
         requiresTwoFactor: true,
-      }
+      };
     }
 
     // No 2FA - complete login
-    return this.completeLogin(user, context)
+    return this.completeLogin(user, context);
   }
 
   async loginWithGoogleIdToken(
@@ -350,9 +365,9 @@ export class AuthService {
     context: LoginContext,
     accountType: 'USER' | 'VENDOR' = 'USER',
   ): Promise<LoginResult> {
-    await this.enforceMaintenanceAccess()
+    await this.enforceMaintenanceAccess();
 
-    const tokenInfo = await this.verifyGoogleIdToken(idToken)
+    const tokenInfo = await this.verifyGoogleIdToken(idToken);
 
     if (!tokenInfo.email || tokenInfo.email_verified !== 'true') {
       await this.recordFailedLogin(
@@ -361,11 +376,11 @@ export class AuthService {
         'google_email_not_verified',
         context,
         LoginMethod.SOCIAL_GOOGLE,
-      )
-      throw new UnauthorizedException('Google account email is not verified')
+      );
+      throw new UnauthorizedException('Google account email is not verified');
     }
 
-    const normalizedEmail = tokenInfo.email.toLowerCase().trim()
+    const normalizedEmail = tokenInfo.email.toLowerCase().trim();
 
     let user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -377,26 +392,31 @@ export class AuthService {
           select: { id: true },
         },
       },
-    })
+    });
 
     if (!user) {
-      const normalizedAccountType = accountType === 'VENDOR' ? 'VENDOR' : 'USER'
+      const normalizedAccountType =
+        accountType === 'VENDOR' ? 'VENDOR' : 'USER';
       const roleName =
         normalizedAccountType === 'VENDOR'
           ? ROLE_NAMES.BUSINESS_ADMIN
-          : ROLE_NAMES.USER
-      const roleId = this.roleLookupService.getRoleIdByName(roleName)
+          : ROLE_NAMES.USER;
+      const roleId = this.roleLookupService.getRoleIdByName(roleName);
 
       if (!roleId) {
-        this.logger.error(`Role lookup failed for Google login role: ${roleName}`)
-        throw new ServiceUnavailableException('Login is temporarily unavailable')
+        this.logger.error(
+          `Role lookup failed for Google login role: ${roleName}`,
+        );
+        throw new ServiceUnavailableException(
+          'Login is temporarily unavailable',
+        );
       }
 
-      const fallbackName = tokenInfo.name?.trim() || ''
-      const [fallbackFirstName, ...fallbackLastParts] = fallbackName.split(' ')
-      const fallbackLastName = fallbackLastParts.join(' ') || null
+      const fallbackName = tokenInfo.name?.trim() || '';
+      const [fallbackFirstName, ...fallbackLastParts] = fallbackName.split(' ');
+      const fallbackLastName = fallbackLastParts.join(' ') || null;
 
-      const passwordHash = await this.hashPassword(this.generateSecureToken())
+      const passwordHash = await this.hashPassword(this.generateSecureToken());
 
       user = await this.prisma.user.create({
         data: {
@@ -421,29 +441,29 @@ export class AuthService {
             select: { id: true },
           },
         },
-      })
+      });
 
       this.eventEmitter.emit('user.registered', {
         userId: user.id,
         email: user.email,
         timestamp: new Date(),
-      })
+      });
     }
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
       const remainingMinutes = Math.ceil(
         (user.lockedUntil.getTime() - Date.now()) / 60000,
-      )
+      );
       await this.recordFailedLogin(
         normalizedEmail,
         user.id,
         'account_locked',
         context,
         LoginMethod.SOCIAL_GOOGLE,
-      )
+      );
       throw new UnauthorizedException(
         `Account temporarily locked. Try again in ${remainingMinutes} minutes`,
-      )
+      );
     }
 
     if (user.status === 'SUSPENDED') {
@@ -453,8 +473,8 @@ export class AuthService {
         'account_suspended',
         context,
         LoginMethod.SOCIAL_GOOGLE,
-      )
-      throw new UnauthorizedException('Account is suspended')
+      );
+      throw new UnauthorizedException('Account is suspended');
     }
 
     if (user.status === 'DELETED') {
@@ -464,8 +484,8 @@ export class AuthService {
         'account_deleted',
         context,
         LoginMethod.SOCIAL_GOOGLE,
-      )
-      throw new UnauthorizedException('Account not found')
+      );
+      throw new UnauthorizedException('Account not found');
     }
 
     if (!user.emailVerified || user.status === 'PENDING') {
@@ -486,7 +506,7 @@ export class AuthService {
             select: { id: true },
           },
         },
-      })
+      });
     }
 
     const authUser: AuthUser = {
@@ -500,18 +520,18 @@ export class AuthService {
       emailVerified: user.emailVerified,
       twoFactorEnabled: user.twoFactorEnabled,
       hasCompletedOnboarding: user.hasCompletedOnboarding,
-    }
+    };
 
-    await this.enforceMaintenanceAccess(authUser.roles)
+    await this.enforceMaintenanceAccess(authUser.roles);
 
     if (authUser.twoFactorEnabled) {
-      const tempToken = this.generateTemporary2FAToken()
+      const tempToken = this.generateTemporary2FAToken();
 
       this.pending2FALogins.set(tempToken, {
         userId: authUser.id,
         expiresAt: Date.now() + 5 * 60 * 1000,
         context,
-      })
+      });
 
       return {
         user: authUser,
@@ -521,10 +541,15 @@ export class AuthService {
           expiresIn: 300,
         },
         requiresTwoFactor: true,
-      }
+      };
     }
 
-    return this.completeLogin(authUser, context, undefined, LoginMethod.SOCIAL_GOOGLE)
+    return this.completeLogin(
+      authUser,
+      context,
+      undefined,
+      LoginMethod.SOCIAL_GOOGLE,
+    );
   }
 
   /**
@@ -535,18 +560,18 @@ export class AuthService {
     code: string,
     context: LoginContext,
   ): Promise<TwoFactorLoginResult> {
-    const pending = this.pending2FALogins.get(tempToken)
+    const pending = this.pending2FALogins.get(tempToken);
 
     if (!pending || pending.expiresAt < Date.now()) {
-      this.pending2FALogins.delete(tempToken)
-      throw new UnauthorizedException('Two-factor session expired')
+      this.pending2FALogins.delete(tempToken);
+      throw new UnauthorizedException('Two-factor session expired');
     }
 
     // Verify 2FA code
     const result = await this.twoFactorService.verifyTwoFactorCode(
       pending.userId,
       code,
-    )
+    );
 
     if (!result.success) {
       await this.recordFailedLogin(
@@ -555,31 +580,31 @@ export class AuthService {
         '2fa_failed',
         context,
         LoginMethod.TWO_FACTOR,
-      )
-      throw new UnauthorizedException('Invalid two-factor code')
+      );
+      throw new UnauthorizedException('Invalid two-factor code');
     }
 
     // Clean up pending login
-    this.pending2FALogins.delete(tempToken)
+    this.pending2FALogins.delete(tempToken);
 
     // Get user for token generation
-    const user = await this.getUserById(pending.userId)
+    const user = await this.getUserById(pending.userId);
     if (!user) {
-      throw new UnauthorizedException('User not found')
+      throw new UnauthorizedException('User not found');
     }
 
-    await this.enforceMaintenanceAccess(user.roles)
+    await this.enforceMaintenanceAccess(user.roles);
 
     // Complete login with 2FA context
     const loginResult = await this.completeLogin(user, context, {
       twoFactorUsed: true,
       twoFactorMethod: result.usedBackupCode ? 'backup_code' : 'totp',
-    })
+    });
 
     return {
       user: loginResult.user,
       tokens: loginResult.tokens,
-    }
+    };
   }
 
   /**
@@ -596,18 +621,18 @@ export class AuthService {
       email: user.email,
       roles: user.roles,
       tenantId: user.tenantId,
-    }
+    };
 
     const tokens = await this.tokenService.generateTokenPair(
       tokenPayload,
       context,
-    )
+    );
 
     // Update last login
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
-    })
+    });
 
     // Record successful login
     await this.loginActivityService.recordLoginAttempt(
@@ -625,7 +650,7 @@ export class AuthService {
       },
       context.deviceInfo,
       context.geoLocation,
-    )
+    );
 
     // Emit login event
     this.eventEmitter.emit('user.loggedIn', {
@@ -633,33 +658,39 @@ export class AuthService {
       email: user.email,
       ipAddress: context.ipAddress,
       timestamp: new Date(),
-    })
+    });
 
     if (tokens.sessionId) {
       this.eventEmitter.emit('user.session.started', {
         userId: user.id,
         sessionId: tokens.sessionId,
         timestamp: new Date(),
-      })
+      });
     }
 
-    return { user, tokens }
+    return { user, tokens };
   }
 
   /**
    * Refresh tokens
    */
-  async refreshTokens(refreshToken: string, context: LoginContext): Promise<TokenPair> {
-    const payload = await this.tokenService.verifyRefreshToken(refreshToken)
-    const user = await this.getUserById(payload.sub)
+  async refreshTokens(
+    refreshToken: string,
+    context: LoginContext,
+  ): Promise<TokenPair> {
+    const payload = await this.tokenService.verifyRefreshToken(refreshToken);
+    const user = await this.getUserById(payload.sub);
 
     if (!user) {
-      throw new UnauthorizedException('User not found')
+      throw new UnauthorizedException('User not found');
     }
 
-    await this.enforceMaintenanceAccess(user.roles)
+    await this.enforceMaintenanceAccess(user.roles);
 
-    const tokens = await this.tokenService.rotateRefreshToken(refreshToken, context)
+    const tokens = await this.tokenService.rotateRefreshToken(
+      refreshToken,
+      context,
+    );
 
     // Record token refresh
     await this.loginActivityService.recordLoginAttempt(
@@ -672,42 +703,42 @@ export class AuthService {
       },
       context.deviceInfo,
       context.geoLocation,
-    )
+    );
 
-    return tokens
+    return tokens;
   }
 
   private async enforceMaintenanceAccess(roles?: string[]) {
-    const isMaintenance = await this.isMaintenanceModeEnabled()
+    const isMaintenance = await this.isMaintenanceModeEnabled();
 
     if (!isMaintenance) {
-      return
+      return;
     }
 
     if (roles && roles.includes('ADMIN_SYSTEM')) {
-      return
+      return;
     }
 
-    throw new ServiceUnavailableException('System is in maintenance mode')
+    throw new ServiceUnavailableException('System is in maintenance mode');
   }
 
   private async isMaintenanceModeEnabled(): Promise<boolean> {
-    const now = Date.now()
+    const now = Date.now();
     if (this.maintenanceCache && now < this.maintenanceCache.expiresAt) {
-      return this.maintenanceCache.enabled
+      return this.maintenanceCache.enabled;
     }
 
     const config = await this.prisma.systemConfig.findFirst({
       select: { maintenanceMode: true },
-    })
+    });
 
-    const enabled = config?.maintenanceMode ?? false
+    const enabled = config?.maintenanceMode ?? false;
     this.maintenanceCache = {
       enabled,
       expiresAt: now + this.maintenanceCacheTtlMs,
-    }
+    };
 
-    return enabled
+    return enabled;
   }
 
   /**
@@ -715,26 +746,26 @@ export class AuthService {
    */
   async logout(userId: string, sessionId?: string): Promise<void> {
     if (sessionId) {
-      await this.emitSessionEnded(userId, sessionId)
+      await this.emitSessionEnded(userId, sessionId);
     } else {
       const sessions = await this.prisma.userSession.findMany({
         where: { userId, isRevoked: false },
-      })
+      });
       for (const session of sessions) {
-        await this.emitSessionEnded(userId, session.id, session.createdAt)
+        await this.emitSessionEnded(userId, session.id, session.createdAt);
       }
     }
 
     if (sessionId) {
-      await this.tokenService.invalidateSession(sessionId)
+      await this.tokenService.invalidateSession(sessionId);
     } else {
-      await this.tokenService.invalidateAllUserSessions(userId)
+      await this.tokenService.invalidateAllUserSessions(userId);
     }
 
     this.eventEmitter.emit('user.loggedOut', {
       userId,
       timestamp: new Date(),
-    })
+    });
   }
 
   /**
@@ -743,86 +774,90 @@ export class AuthService {
   async logoutAllDevices(userId: string): Promise<void> {
     const sessions = await this.prisma.userSession.findMany({
       where: { userId, isRevoked: false },
-    })
+    });
     for (const session of sessions) {
-      await this.emitSessionEnded(userId, session.id, session.createdAt)
+      await this.emitSessionEnded(userId, session.id, session.createdAt);
     }
 
-    await this.tokenService.invalidateAllUserSessions(userId)
+    await this.tokenService.invalidateAllUserSessions(userId);
 
     this.eventEmitter.emit('user.loggedOutAllDevices', {
       userId,
       timestamp: new Date(),
-    })
+    });
   }
 
-  private async emitSessionEnded(userId: string, sessionId: string, startedAt?: Date): Promise<void> {
+  private async emitSessionEnded(
+    userId: string,
+    sessionId: string,
+    startedAt?: Date,
+  ): Promise<void> {
     const session = startedAt
       ? { createdAt: startedAt }
       : await this.prisma.userSession.findUnique({
           where: { id: sessionId },
           select: { createdAt: true },
-        })
+        });
 
-    if (!session) return
+    if (!session) return;
 
     const durationSeconds = Math.max(
       0,
       Math.round((Date.now() - session.createdAt.getTime()) / 1000),
-    )
+    );
 
     this.eventEmitter.emit('user.session.ended', {
       userId,
       sessionId,
       durationSeconds,
       timestamp: new Date(),
-    })
+    });
   }
 
   /**
    * Hash password
    */
   async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, this.SALT_ROUNDS)
+    return bcrypt.hash(password, this.SALT_ROUNDS);
   }
 
   /**
    * Compare passwords
    */
   async comparePasswords(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash)
+    return bcrypt.compare(password, hash);
   }
 
   /**
    * Validate password strength
    */
   private validatePasswordStrength(password: string): void {
-    const minLength = 8
-    const hasUppercase = /[A-Z]/.test(password)
-    const hasLowercase = /[a-z]/.test(password)
-    const hasNumber = /[0-9]/.test(password)
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    const minLength = 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-    const errors: string[] = []
+    const errors: string[] = [];
 
     if (password.length < minLength) {
-      errors.push(`Password must be at least ${minLength} characters`)
+      errors.push(`Password must be at least ${minLength} characters`);
     }
     if (!hasUppercase) {
-      errors.push('Password must contain at least one uppercase letter')
+      errors.push('Password must contain at least one uppercase letter');
     }
     if (!hasLowercase) {
-      errors.push('Password must contain at least one lowercase letter')
+      errors.push('Password must contain at least one lowercase letter');
     }
     if (!hasNumber) {
-      errors.push('Password must contain at least one number')
+      errors.push('Password must contain at least one number');
     }
     if (!hasSpecial) {
-      errors.push('Password must contain at least one special character')
+      errors.push('Password must contain at least one special character');
     }
 
     if (errors.length > 0) {
-      throw new BadRequestException(errors)
+      throw new BadRequestException(errors);
     }
   }
 
@@ -836,33 +871,33 @@ export class AuthService {
   ): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-    })
+    });
 
     if (!user) {
-      throw new BadRequestException('User not found')
+      throw new BadRequestException('User not found');
     }
 
     const isCurrentPasswordValid = await bcrypt.compare(
       currentPassword,
       user.passwordHash,
-    )
+    );
 
     if (!isCurrentPasswordValid) {
-      throw new BadRequestException('Current password is incorrect')
+      throw new BadRequestException('Current password is incorrect');
     }
 
     // Validate new password is different
-    const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash)
+    const isSamePassword = await bcrypt.compare(newPassword, user.passwordHash);
     if (isSamePassword) {
       throw new BadRequestException(
         'New password must be different from current password',
-      )
+      );
     }
 
     // Validate password strength
-    this.validatePasswordStrength(newPassword)
+    this.validatePasswordStrength(newPassword);
 
-    const newPasswordHash = await this.hashPassword(newPassword)
+    const newPasswordHash = await this.hashPassword(newPassword);
 
     await this.prisma.user.update({
       where: { id: userId },
@@ -870,39 +905,39 @@ export class AuthService {
         passwordHash: newPasswordHash,
         passwordChangedAt: new Date(),
       },
-    })
+    });
 
     // Invalidate all sessions to force re-login
-    await this.tokenService.invalidateAllUserSessions(userId)
+    await this.tokenService.invalidateAllUserSessions(userId);
 
     this.eventEmitter.emit('user.passwordChanged', {
       userId,
       timestamp: new Date(),
-    })
+    });
   }
 
   /**
    * Request password reset
    */
   async requestPasswordReset(email: string): Promise<void> {
-    await this.enforceMaintenanceAccess()
-    const normalizedEmail = email.toLowerCase().trim()
+    await this.enforceMaintenanceAccess();
+    const normalizedEmail = email.toLowerCase().trim();
 
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
-    })
+    });
 
     // Always return success to prevent email enumeration
     if (!user) {
       this.logger.debug(
         `Password reset requested for non-existent email: ${normalizedEmail}`,
-      )
-      return
+      );
+      return;
     }
 
     // Generate reset token
-    const resetToken = this.generateSecureToken()
-    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+    const resetToken = this.generateSecureToken();
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -910,23 +945,23 @@ export class AuthService {
         passwordResetToken: await bcrypt.hash(resetToken, 10),
         passwordResetExpires: resetTokenExpiry,
       },
-    })
+    });
 
     this.eventEmitter.emit('user.passwordResetRequested', {
       userId: user.id,
       email: user.email,
       token: resetToken, // Plain token to be sent via email
       expiresAt: resetTokenExpiry,
-    })
+    });
   }
 
   /**
    * Reset password with token
    */
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    await this.enforceMaintenanceAccess()
+    await this.enforceMaintenanceAccess();
     // Validate password strength
-    this.validatePasswordStrength(newPassword)
+    this.validatePasswordStrength(newPassword);
 
     // Find users with non-expired reset tokens
     const users = await this.prisma.user.findMany({
@@ -934,26 +969,26 @@ export class AuthService {
         passwordResetExpires: { gt: new Date() },
         passwordResetToken: { not: null },
       },
-    })
+    });
 
     // Find user whose reset token matches
-    let matchedUser: typeof users[0] | null = null
+    let matchedUser: (typeof users)[0] | null = null;
     for (const user of users) {
       const isValidToken = await bcrypt.compare(
         token,
         user.passwordResetToken || '',
-      )
+      );
       if (isValidToken) {
-        matchedUser = user
-        break
+        matchedUser = user;
+        break;
       }
     }
 
     if (!matchedUser) {
-      throw new BadRequestException('Invalid or expired reset token')
+      throw new BadRequestException('Invalid or expired reset token');
     }
 
-    const newPasswordHash = await this.hashPassword(newPassword)
+    const newPasswordHash = await this.hashPassword(newPassword);
 
     await this.prisma.user.update({
       where: { id: matchedUser.id },
@@ -965,15 +1000,15 @@ export class AuthService {
         failedLoginAttempts: 0,
         lockedUntil: null,
       },
-    })
+    });
 
     // Invalidate all sessions
-    await this.tokenService.invalidateAllUserSessions(matchedUser.id)
+    await this.tokenService.invalidateAllUserSessions(matchedUser.id);
 
     this.eventEmitter.emit('user.passwordReset', {
       userId: matchedUser.id,
       timestamp: new Date(),
-    })
+    });
   }
 
   /**
@@ -981,7 +1016,7 @@ export class AuthService {
    */
   async validateApiKey(apiKey: string): Promise<AuthUser | null> {
     // Hash the API key to compare with stored hash
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
+    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
 
     const key = await this.prisma.apiKey.findFirst({
       where: {
@@ -998,17 +1033,17 @@ export class AuthService {
           },
         },
       },
-    })
+    });
 
     if (!key) {
-      return null
+      return null;
     }
 
     // Update last used timestamp
     await this.prisma.apiKey.update({
       where: { id: key.id },
       data: { lastUsedAt: new Date() },
-    })
+    });
 
     return {
       id: key.user.id,
@@ -1020,7 +1055,7 @@ export class AuthService {
       emailVerified: key.user.emailVerified,
       twoFactorEnabled: key.user.twoFactorEnabled,
       hasCompletedOnboarding: key.user.hasCompletedOnboarding,
-    }
+    };
   }
 
   /**
@@ -1033,13 +1068,13 @@ export class AuthService {
     expiresInDays?: number,
   ): Promise<{ key: string; keyPrefix: string }> {
     // Generate API key
-    const rawKey = `oc_${crypto.randomBytes(32).toString('hex')}`
-    const keyPrefix = rawKey.substring(0, 10)
-    const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex')
+    const rawKey = `oc_${crypto.randomBytes(32).toString('hex')}`;
+    const keyPrefix = rawKey.substring(0, 10);
+    const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
 
     const expiresAt = expiresInDays
       ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
-      : null
+      : null;
 
     await this.prisma.apiKey.create({
       data: {
@@ -1050,11 +1085,11 @@ export class AuthService {
         scopes,
         expiresAt,
       },
-    })
+    });
 
-    this.logger.log(`API key created for user: ${userId}`)
+    this.logger.log(`API key created for user: ${userId}`);
 
-    return { key: rawKey, keyPrefix }
+    return { key: rawKey, keyPrefix };
   }
 
   /**
@@ -1064,9 +1099,9 @@ export class AuthService {
     await this.prisma.apiKey.updateMany({
       where: { id: keyId, userId },
       data: { isActive: false, revokedAt: new Date() },
-    })
+    });
 
-    this.logger.log(`API key revoked: ${keyId}`)
+    this.logger.log(`API key revoked: ${keyId}`);
   }
 
   /**
@@ -1074,14 +1109,14 @@ export class AuthService {
    */
   async getUserApiKeys(userId: string): Promise<
     {
-      id: string
-      name: string
-      keyPrefix: string
-      scopes: string[]
-      lastUsedAt: Date | null
-      expiresAt: Date | null
-      isActive: boolean
-      createdAt: Date
+      id: string;
+      name: string;
+      keyPrefix: string;
+      scopes: string[];
+      lastUsedAt: Date | null;
+      expiresAt: Date | null;
+      isActive: boolean;
+      createdAt: Date;
     }[]
   > {
     return this.prisma.apiKey.findMany({
@@ -1097,7 +1132,7 @@ export class AuthService {
         createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   /**
@@ -1114,10 +1149,10 @@ export class AuthService {
           select: { id: true },
         },
       },
-    })
+    });
 
     if (!user) {
-      return null
+      return null;
     }
 
     return {
@@ -1131,7 +1166,7 @@ export class AuthService {
       emailVerified: user.emailVerified,
       twoFactorEnabled: user.twoFactorEnabled,
       hasCompletedOnboarding: user.hasCompletedOnboarding,
-    }
+    };
   }
 
   // ============================================================================
@@ -1149,25 +1184,25 @@ export class AuthService {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: { failedLoginAttempts: { increment: 1 } },
-    })
+    });
 
-    await this.recordFailedLogin(email, userId, 'invalid_password', context)
+    await this.recordFailedLogin(email, userId, 'invalid_password', context);
 
     if (user.failedLoginAttempts >= this.MAX_LOGIN_ATTEMPTS) {
       await this.prisma.user.update({
         where: { id: userId },
         data: { lockedUntil: new Date(Date.now() + this.LOCKOUT_DURATION_MS) },
-      })
+      });
 
       this.eventEmitter.emit('user.accountLocked', {
         userId,
         reason: 'Too many failed login attempts',
         timestamp: new Date(),
-      })
+      });
 
       this.logger.warn(
         `Account locked due to too many failed attempts: ${userId}`,
-      )
+      );
     }
   }
 
@@ -1193,48 +1228,50 @@ export class AuthService {
       },
       context.deviceInfo,
       context.geoLocation,
-    )
+    );
   }
 
   /**
    * Generate secure random token
    */
   private generateSecureToken(): string {
-    return crypto.randomBytes(32).toString('hex')
+    return crypto.randomBytes(32).toString('hex');
   }
 
   /**
    * Generate temporary token for 2FA verification
    */
   private generateTemporary2FAToken(): string {
-    return `2fa_${crypto.randomBytes(32).toString('hex')}`
+    return `2fa_${crypto.randomBytes(32).toString('hex')}`;
   }
 
   private async verifyGoogleIdToken(idToken: string): Promise<GoogleTokenInfo> {
-    const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID')?.trim()
+    const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID')?.trim();
     const clientSecret = this.configService
       .get<string>('GOOGLE_CLIENT_SECRET')
-      ?.trim()
+      ?.trim();
 
     if (!clientId || !clientSecret) {
-      this.logger.error('Google OAuth is not configured (GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET missing)')
-      throw new ServiceUnavailableException('Google login is not configured')
+      this.logger.error(
+        'Google OAuth is not configured (GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET missing)',
+      );
+      throw new ServiceUnavailableException('Google login is not configured');
     }
 
     const response = await fetch(
       `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
-    )
+    );
 
     if (!response.ok) {
-      throw new UnauthorizedException('Invalid Google token')
+      throw new UnauthorizedException('Invalid Google token');
     }
 
-    const tokenInfo = (await response.json()) as GoogleTokenInfo
+    const tokenInfo = (await response.json()) as GoogleTokenInfo;
 
     if (tokenInfo.aud !== clientId && tokenInfo.azp !== clientId) {
-      throw new UnauthorizedException('Google token audience mismatch')
+      throw new UnauthorizedException('Google token audience mismatch');
     }
 
-    return tokenInfo
+    return tokenInfo;
   }
 }

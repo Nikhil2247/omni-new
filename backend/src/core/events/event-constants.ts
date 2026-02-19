@@ -20,7 +20,7 @@ export const USER_EVENTS = {
   EMAIL_VERIFIED: 'user.emailVerified',
   ROLE_ASSIGNED: 'user.roleAssigned',
   ROLE_REMOVED: 'user.roleRemoved',
-} as const
+} as const;
 
 // Vendor Profile Events
 export const VENDOR_EVENTS = {
@@ -36,21 +36,21 @@ export const VENDOR_EVENTS = {
   REACTIVATED: 'vendor.reactivated',
   FEATURED: 'vendor.featured',
   UNFEATURED: 'vendor.unfeatured',
-} as const
+} as const;
 
 // Portfolio & Media Events
 export const PORTFOLIO_EVENTS = {
   CREATED: 'portfolio.created',
   UPDATED: 'portfolio.updated',
   DELETED: 'portfolio.deleted',
-} as const
+} as const;
 
 export const MEDIA_EVENTS = {
   UPLOADED: 'media.uploaded',
   DELETED: 'media.deleted',
   PROCESSED: 'media.processed',
   THUMBNAIL_GENERATED: 'media.thumbnailGenerated',
-} as const
+} as const;
 
 // Lead Events
 export const LEAD_EVENTS = {
@@ -62,7 +62,7 @@ export const LEAD_EVENTS = {
   LOST: 'lead.lost',
   MESSAGE_SENT: 'lead.messageSent',
   MESSAGE_READ: 'lead.messageRead',
-} as const
+} as const;
 
 // Event Planning Events
 export const EVENT_EVENTS = {
@@ -74,7 +74,7 @@ export const EVENT_EVENTS = {
   VENDOR_REMOVED: 'event.vendorRemoved',
   TASK_CREATED: 'event.taskCreated',
   TASK_COMPLETED: 'event.taskCompleted',
-} as const
+} as const;
 
 // Review Events
 export const REVIEW_EVENTS = {
@@ -84,21 +84,21 @@ export const REVIEW_EVENTS = {
   APPROVED: 'review.approved',
   REJECTED: 'review.rejected',
   RESPONSE_ADDED: 'review.responseAdded',
-} as const
+} as const;
 
 // Category Events
 export const CATEGORY_EVENTS = {
   CREATED: 'category.created',
   UPDATED: 'category.updated',
   DELETED: 'category.deleted',
-} as const
+} as const;
 
 // Service Events
 export const SERVICE_EVENTS = {
   CREATED: 'service.created',
   UPDATED: 'service.updated',
   DELETED: 'service.deleted',
-} as const
+} as const;
 
 // KYC/KYB Events
 export const KYC_EVENTS = {
@@ -107,7 +107,7 @@ export const KYC_EVENTS = {
   REJECTED: 'kyc.rejected',
   DOCUMENT_UPLOADED: 'kyc.documentUploaded',
   DOCUMENT_VERIFIED: 'kyc.documentVerified',
-} as const
+} as const;
 
 // Analytics Events
 export const ANALYTICS_EVENTS = {
@@ -116,28 +116,28 @@ export const ANALYTICS_EVENTS = {
   PROFILE_SAVED: 'analytics.profileSaved',
   SEARCH_PERFORMED: 'analytics.searchPerformed',
   LEAD_INTERACTION: 'analytics.leadInteraction',
-} as const
+} as const;
 
 // Notification Events
 export const NOTIFICATION_EVENTS = {
   CREATED: 'notification.created',
   READ: 'notification.read',
   DELETED: 'notification.deleted',
-} as const
+} as const;
 
 // Cache Events
 export const CACHE_EVENTS = {
   INVALIDATE: 'cache.invalidate',
   INVALIDATE_PATTERN: 'cache.invalidatePattern',
   WARM_UP: 'cache.warmUp',
-} as const
+} as const;
 
 // Search Index Events
 export const SEARCH_EVENTS = {
   INDEX_VENDOR: 'search.indexVendor',
   REMOVE_VENDOR: 'search.removeVendor',
   REINDEX_ALL: 'search.reindexAll',
-} as const
+} as const;
 
 // All events combined for type safety
 export const ALL_EVENTS = {
@@ -155,46 +155,46 @@ export const ALL_EVENTS = {
   ...NOTIFICATION_EVENTS,
   ...CACHE_EVENTS,
   ...SEARCH_EVENTS,
-} as const
+} as const;
 
-export type EventName = typeof ALL_EVENTS[keyof typeof ALL_EVENTS]
+export type EventName = (typeof ALL_EVENTS)[keyof typeof ALL_EVENTS];
 
 // Event payload types
 export interface BaseEventPayload {
-  timestamp: Date
+  timestamp: Date;
 }
 
 export interface UserEventPayload extends BaseEventPayload {
-  userId: string
-  email?: string
+  userId: string;
+  email?: string;
 }
 
 export interface VendorEventPayload extends BaseEventPayload {
-  vendorProfileId: string
-  userId?: string
+  vendorProfileId: string;
+  userId?: string;
 }
 
 export interface LeadEventPayload extends BaseEventPayload {
-  leadId: string
-  vendorProfileId: string
-  plannerId?: string
+  leadId: string;
+  vendorProfileId: string;
+  plannerId?: string;
 }
 
 export interface MediaEventPayload extends BaseEventPayload {
-  mediaItems: { id: string; url: string }[]
-  vendorProfileId: string
-  portfolioId: string
+  mediaItems: { id: string; url: string }[];
+  vendorProfileId: string;
+  portfolioId: string;
 }
 
 export interface CacheInvalidationPayload extends BaseEventPayload {
-  keys?: string[]
-  pattern?: string
-  entityType?: string
-  entityId?: string
+  keys?: string[];
+  pattern?: string;
+  entityType?: string;
+  entityId?: string;
 }
 
 export interface SearchIndexPayload extends BaseEventPayload {
-  entityType: 'vendor' | 'category' | 'service'
-  entityId: string
-  action: 'index' | 'remove' | 'update'
+  entityType: 'vendor' | 'category' | 'service';
+  entityId: string;
+  action: 'index' | 'remove' | 'update';
 }

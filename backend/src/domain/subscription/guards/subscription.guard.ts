@@ -2,11 +2,19 @@
 // SUBSCRIPTION GUARD - Feature Access Control
 // ============================================================================
 
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common'
-import { Reflector } from '@nestjs/core'
-import { UsageService } from '../services/usage.service'
-import { FeatureLimitType } from '../dto/subscription-plan.dto'
-import { REQUIRED_FEATURE_KEY, REQUIRED_PLAN_KEY } from '../decorators/subscription.decorators'
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { UsageService } from '../services/usage.service';
+import { FeatureLimitType } from '../dto/subscription-plan.dto';
+import {
+  REQUIRED_FEATURE_KEY,
+  REQUIRED_PLAN_KEY,
+} from '../decorators/subscription.decorators';
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
@@ -19,29 +27,35 @@ export class SubscriptionGuard implements CanActivate {
     const requiredFeature = this.reflector.get<FeatureLimitType>(
       REQUIRED_FEATURE_KEY,
       context.getHandler(),
-    )
+    );
 
     const requiredPlan = this.reflector.get<string[]>(
       REQUIRED_PLAN_KEY,
       context.getHandler(),
-    )
+    );
 
     if (!requiredFeature && !requiredPlan) {
-      return true
+      return true;
     }
 
-    const request = context.switchToHttp().getRequest()
-    const vendorProfileId = request.user?.vendorProfileId || request.params?.vendorProfileId
+    const request = context.switchToHttp().getRequest();
+    const vendorProfileId =
+      request.user?.vendorProfileId || request.params?.vendorProfileId;
 
     if (!vendorProfileId) {
-      throw new ForbiddenException('Vendor profile ID required')
+      throw new ForbiddenException('Vendor profile ID required');
     }
 
     // Check feature limit
     if (requiredFeature) {
-      const canUse = await this.usageService.canUseFeature(vendorProfileId, requiredFeature)
+      const canUse = await this.usageService.canUseFeature(
+        vendorProfileId,
+        requiredFeature,
+      );
       if (!canUse) {
-        throw new ForbiddenException(`Feature limit exceeded: ${requiredFeature}. Please upgrade your plan.`)
+        throw new ForbiddenException(
+          `Feature limit exceeded: ${requiredFeature}. Please upgrade your plan.`,
+        );
       }
     }
 
@@ -54,7 +68,7 @@ export class SubscriptionGuard implements CanActivate {
       // }
     }
 
-    return true
+    return true;
   }
 }
 
@@ -63,19 +77,20 @@ export class ActiveSubscriptionGuard implements CanActivate {
   constructor(private readonly usageService: UsageService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest()
-    const vendorProfileId = request.user?.vendorProfileId || request.params?.vendorProfileId
+    const request = context.switchToHttp().getRequest();
+    const vendorProfileId =
+      request.user?.vendorProfileId || request.params?.vendorProfileId;
 
     if (!vendorProfileId) {
-      return true // Allow if not a vendor request
+      return true; // Allow if not a vendor request
     }
 
     try {
       // Check if vendor has any feature access (indicates active subscription)
-      await this.usageService.getAllFeatureLimits(vendorProfileId)
-      return true
+      await this.usageService.getAllFeatureLimits(vendorProfileId);
+      return true;
     } catch {
-      throw new ForbiddenException('Active subscription required')
+      throw new ForbiddenException('Active subscription required');
     }
   }
 }

@@ -1,1 +1,1 @@
-export { UpdateGuestDto } from './guestlist.dto'
+export { UpdateGuestDto } from './guestlist.dto';

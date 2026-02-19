@@ -5,14 +5,14 @@
 // Provides: Cache, Storage, Search, Jobs, Resilience, Notifications, WebSockets
 // ============================================================================
 
-import { Module } from '@nestjs/common'
-import { CacheModule } from './cache/cache.module'
-import { StorageModule } from './storage/storage.module'
-import { SearchModule } from './search/search.module'
-import { JobsModule } from './jobs/jobs.module'
-import { ResilienceModule } from './resilience/resilience.module'
-import { NotificationsModule } from './notifications/notifications.module'
-import { WebsocketsModule } from './websockets/websockets.module'
+import { Module } from '@nestjs/common';
+import { CacheModule } from './cache/cache.module';
+import { StorageModule } from './storage/storage.module';
+import { SearchModule } from './search/search.module';
+import { JobsModule } from './jobs/jobs.module';
+import { ResilienceModule } from './resilience/resilience.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { WebsocketsModule } from './websockets/websockets.module';
 
 @Module({
   imports: [

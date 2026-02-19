@@ -6,25 +6,25 @@
 // ============================================================================
 
 // Catalog Domain - Vendor profiles, portfolios, services
-export * from './catalog'
+export * from './catalog';
 
 // Leads Domain - Lead management and messaging
-export * from './leads'
+export * from './leads';
 
 // Messaging Domain - Standalone conversations and messages
-export * from './messaging'
+export * from './messaging';
 
 // Planning Domain - Event planning, checklists, budgets, guests
-export * from './planning'
+export * from './planning';
 
 // Operations Domain - Active events, KYC, billing, disputes
-export * from './operations'
+export * from './operations';
 
 // Content Domain - Blog posts, content management
-export * from './content'
+export * from './content';
 
 // Insights Domain - Analytics, metrics, engagement tracking
-export * from './insights'
+export * from './insights';
 
 // Subscription Domain - Plans, billing, feature gating
 // Note: Subscription exports may conflict with Operations (BillingService)

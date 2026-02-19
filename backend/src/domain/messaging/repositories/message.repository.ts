@@ -2,10 +2,13 @@
 // MESSAGE REPOSITORY - Messaging Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { Prisma, Message } from '@prisma/client'
-import { BaseRepository, PaginatedResult } from '../../../core/database/repositories/base.repository'
-import { PrismaService } from '../../../core/database/prisma.service'
+import { Injectable } from '@nestjs/common';
+import { Prisma, Message } from '@prisma/client';
+import {
+  BaseRepository,
+  PaginatedResult,
+} from '../../../core/database/repositories/base.repository';
+import { PrismaService } from '../../../core/database/prisma.service';
 
 @Injectable()
 export class MessagingMessageRepository extends BaseRepository<
@@ -16,17 +19,21 @@ export class MessagingMessageRepository extends BaseRepository<
   Prisma.MessageWhereUniqueInput,
   Prisma.MessageOrderByWithRelationInput
 > {
-  protected readonly modelName = 'Message'
+  protected readonly modelName = 'Message';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.message
+    return this.prisma.message;
   }
 
-  async findByConversationId(conversationId: string, page: number = 1, limit: number = 50): Promise<PaginatedResult<Message>> {
+  async findByConversationId(
+    conversationId: string,
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<PaginatedResult<Message>> {
     return this.findManyPaginated(
       { page, limit },
       {
@@ -54,6 +61,6 @@ export class MessagingMessageRepository extends BaseRepository<
           },
         },
       },
-    )
+    );
   }
 }

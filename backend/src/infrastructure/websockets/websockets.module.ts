@@ -5,10 +5,10 @@
 // Integrates with Socket.IO for real-time bidirectional communication
 // ============================================================================
 
-import { Global, Module } from '@nestjs/common'
-import { NotificationGateway } from './notification.gateway'
-import { MessagingGateway } from './messaging.gateway'
-import { MessagingModule } from '../../domain/messaging/messaging.module'
+import { Global, Module } from '@nestjs/common';
+import { NotificationGateway } from './notification.gateway';
+import { MessagingGateway } from './messaging.gateway';
+import { MessagingModule } from '../../domain/messaging/messaging.module';
 
 @Global()
 @Module({

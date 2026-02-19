@@ -35,43 +35,43 @@ export const SubscriptionEvents = {
   USAGE_LIMIT_REACHED: 'usage.limit-reached',
   USAGE_LIMIT_APPROACHING: 'usage.limit-approaching',
   USAGE_PERIOD_RESET: 'usage.period-reset',
-} as const
+} as const;
 
 // Event payload interfaces
 export interface SubscriptionCreatedPayload {
-  subscriptionId: string
-  vendorProfileId: string
-  planId: string
+  subscriptionId: string;
+  vendorProfileId: string;
+  planId: string;
 }
 
 export interface SubscriptionCancelledPayload {
-  subscriptionId: string
-  vendorProfileId: string
-  immediate: boolean
-  reason?: string
+  subscriptionId: string;
+  vendorProfileId: string;
+  immediate: boolean;
+  reason?: string;
 }
 
 export interface PaymentSucceededPayload {
-  paymentId: string
-  invoiceId: string
-  amount: number
+  paymentId: string;
+  invoiceId: string;
+  amount: number;
 }
 
 export interface PaymentFailedPayload {
-  paymentId: string
-  invoiceId: string
-  error: string
+  paymentId: string;
+  invoiceId: string;
+  error: string;
 }
 
 export interface UsageLimitReachedPayload {
-  vendorProfileId: string
-  featureType: string
-  subscriptionId: string
+  vendorProfileId: string;
+  featureType: string;
+  subscriptionId: string;
 }
 
 export interface UsageLimitApproachingPayload {
-  vendorProfileId: string
-  featureType: string
-  remaining: number
-  limit: number
+  vendorProfileId: string;
+  featureType: string;
+  remaining: number;
+  limit: number;
 }

@@ -2,13 +2,10 @@
 // EVENT MEMORY REPOSITORY
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import {
-  EventMemory,
-  Prisma,
-} from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { EventMemory, Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventMemoryRepository extends BaseRepository<
@@ -19,19 +16,19 @@ export class EventMemoryRepository extends BaseRepository<
   Prisma.EventMemoryWhereUniqueInput,
   Prisma.EventMemoryOrderByWithRelationInput
 > {
-  protected readonly modelName = 'EventMemory'
+  protected readonly modelName = 'EventMemory';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.eventMemory
+    return this.prisma.eventMemory;
   }
 
   async findByEvent(eventId: string) {
     return this.model.findUnique({
       where: { eventId },
-    })
+    });
   }
 }

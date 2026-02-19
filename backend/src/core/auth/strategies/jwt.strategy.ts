@@ -4,12 +4,12 @@
 // Validates JWT access tokens and attaches user to request
 // ============================================================================
 
-import { Injectable, UnauthorizedException } from '@nestjs/common'
-import { PassportStrategy } from '@nestjs/passport'
-import { ExtractJwt, Strategy } from 'passport-jwt'
-import { ConfigService } from '@nestjs/config'
-import { AuthService } from '../auth.service'
-import { TokenPayload } from '../token.service'
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import { AuthService } from '../auth.service';
+import { TokenPayload } from '../token.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -21,19 +21,19 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET') || 'default-secret',
-    })
+    });
   }
 
   async validate(payload: TokenPayload) {
     // Verify user still exists and is active
-    const user = await this.authService.getUserById(payload.sub)
+    const user = await this.authService.getUserById(payload.sub);
 
     if (!user) {
-      throw new UnauthorizedException('User not found')
+      throw new UnauthorizedException('User not found');
     }
 
     if (user.status !== 'ACTIVE') {
-      throw new UnauthorizedException('Account is not active')
+      throw new UnauthorizedException('Account is not active');
     }
 
     // Return user data to be attached to request
@@ -42,6 +42,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       email: payload.email,
       roles: payload.roles,
       tenantId: payload.tenantId,
-    }
+    };
   }
 }

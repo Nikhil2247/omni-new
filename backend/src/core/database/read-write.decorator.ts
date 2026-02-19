@@ -4,11 +4,11 @@
 // Use these decorators to explicitly route queries
 // ============================================================================
 
-import { SetMetadata } from '@nestjs/common'
+import { SetMetadata } from '@nestjs/common';
 
-export const DATABASE_MODE_KEY = 'databaseMode'
+export const DATABASE_MODE_KEY = 'databaseMode';
 
-export type DatabaseMode = 'read' | 'write'
+export type DatabaseMode = 'read' | 'write';
 
 /**
  * Mark a method as read-only (will use replica if available)
@@ -22,8 +22,8 @@ export type DatabaseMode = 'read' | 'write'
  * ```
  */
 export const ReadOnly = (): MethodDecorator => {
-  return SetMetadata(DATABASE_MODE_KEY, 'read')
-}
+  return SetMetadata(DATABASE_MODE_KEY, 'read');
+};
 
 /**
  * Mark a method as write operation (will use primary)
@@ -37,5 +37,5 @@ export const ReadOnly = (): MethodDecorator => {
  * ```
  */
 export const WriteOperation = (): MethodDecorator => {
-  return SetMetadata(DATABASE_MODE_KEY, 'write')
-}
+  return SetMetadata(DATABASE_MODE_KEY, 'write');
+};

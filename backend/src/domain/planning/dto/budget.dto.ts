@@ -2,9 +2,17 @@
 // BUDGET DTOs - Planning Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsNumber, IsBoolean, ValidateNested, Min } from 'class-validator'
-import { Type } from 'class-transformer'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  ValidateNested,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 // ============================================================================
 // CREATE DTOs
@@ -13,50 +21,61 @@ import { Type } from 'class-transformer'
 export class CreateBudgetItemDto {
   @ApiProperty({ description: 'Category', example: 'Venue' })
   @IsString()
-  category: string
+  category: string;
 
   @ApiProperty({ description: 'Item name', example: 'Venue rental fee' })
   @IsString()
-  name: string
+  name: string;
 
-  @ApiPropertyOptional({ description: 'Estimated cost', example: 5000.00, nullable: true })
+  @ApiPropertyOptional({
+    description: 'Estimated cost',
+    example: 5000.0,
+    nullable: true,
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  estimatedCost?: number
+  estimatedCost?: number;
 
-  @ApiPropertyOptional({ description: 'Actual cost', example: 4800.00, nullable: true })
+  @ApiPropertyOptional({
+    description: 'Actual cost',
+    example: 4800.0,
+    nullable: true,
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  actualCost?: number
+  actualCost?: number;
 
   @ApiPropertyOptional({ description: 'Payment status', default: false })
   @IsOptional()
   @IsBoolean()
-  isPaid?: boolean
+  isPaid?: boolean;
 
   @ApiPropertyOptional({ description: 'Notes', nullable: true })
   @IsOptional()
   @IsString()
-  notes?: string
+  notes?: string;
 }
 
 export class CreateBudgetDto {
   @ApiProperty({ description: 'Event ID' })
   @IsUUID()
-  eventId: string
+  eventId: string;
 
-  @ApiProperty({ description: 'Total budget amount', example: 50000.00 })
+  @ApiProperty({ description: 'Total budget amount', example: 50000.0 })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  totalBudget: number
+  totalBudget: number;
 
-  @ApiPropertyOptional({ description: 'Initial budget items', type: [CreateBudgetItemDto] })
+  @ApiPropertyOptional({
+    description: 'Initial budget items',
+    type: [CreateBudgetItemDto],
+  })
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => CreateBudgetItemDto)
-  items?: CreateBudgetItemDto[]
+  items?: CreateBudgetItemDto[];
 }
 
 // ============================================================================
@@ -67,34 +86,34 @@ export class UpdateBudgetItemDto {
   @ApiPropertyOptional({ description: 'Category' })
   @IsOptional()
   @IsString()
-  category?: string
+  category?: string;
 
   @ApiPropertyOptional({ description: 'Item name' })
   @IsOptional()
   @IsString()
-  name?: string
+  name?: string;
 
   @ApiPropertyOptional({ description: 'Estimated cost', nullable: true })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  estimatedCost?: number
+  estimatedCost?: number;
 
   @ApiPropertyOptional({ description: 'Actual cost', nullable: true })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  actualCost?: number
+  actualCost?: number;
 
   @ApiPropertyOptional({ description: 'Payment status' })
   @IsOptional()
   @IsBoolean()
-  isPaid?: boolean
+  isPaid?: boolean;
 
   @ApiPropertyOptional({ description: 'Notes', nullable: true })
   @IsOptional()
   @IsString()
-  notes?: string
+  notes?: string;
 }
 
 export class UpdateBudgetDto {
@@ -102,7 +121,7 @@ export class UpdateBudgetDto {
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  totalBudget?: number
+  totalBudget?: number;
 }
 
 // ============================================================================
@@ -111,55 +130,58 @@ export class UpdateBudgetDto {
 
 export class BudgetItemResponseDto {
   @ApiProperty({ description: 'Item ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Budget ID' })
-  budgetId: string
+  budgetId: string;
 
   @ApiProperty({ description: 'Category' })
-  category: string
+  category: string;
 
   @ApiProperty({ description: 'Item name' })
-  name: string
+  name: string;
 
   @ApiPropertyOptional({ description: 'Estimated cost', nullable: true })
-  estimatedCost: number | null
+  estimatedCost: number | null;
 
   @ApiPropertyOptional({ description: 'Actual cost', nullable: true })
-  actualCost: number | null
+  actualCost: number | null;
 
   @ApiProperty({ description: 'Payment status' })
-  isPaid: boolean
+  isPaid: boolean;
 
   @ApiPropertyOptional({ description: 'Notes', nullable: true })
-  notes: string | null
+  notes: string | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 }
 
 export class BudgetResponseDto {
   @ApiProperty({ description: 'Budget ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Event ID' })
-  eventId: string
+  eventId: string;
 
   @ApiProperty({ description: 'Total budget' })
-  totalBudget: number
+  totalBudget: number;
 
   @ApiProperty({ description: 'Total spent' })
-  totalSpent: number
+  totalSpent: number;
 
   @ApiProperty({ description: 'Remaining budget' })
-  remaining: number
+  remaining: number;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Last updated' })
-  updatedAt: Date
+  updatedAt: Date;
 
-  @ApiPropertyOptional({ description: 'Budget items', type: [BudgetItemResponseDto] })
-  items?: BudgetItemResponseDto[]
-} 
+  @ApiPropertyOptional({
+    description: 'Budget items',
+    type: [BudgetItemResponseDto],
+  })
+  items?: BudgetItemResponseDto[];
+}

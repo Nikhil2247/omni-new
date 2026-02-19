@@ -5,11 +5,11 @@
 // Supports templates, bulk sending, and scheduling
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { InjectQueue } from '@nestjs/bullmq'
-import { Queue, JobsOptions } from 'bullmq'
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue, JobsOptions } from 'bullmq';
 
-export const EMAIL_QUEUE_NAME = 'email'
+export const EMAIL_QUEUE_NAME = 'email';
 
 export enum EmailJobType {
   SEND_SINGLE = 'send-single',
@@ -26,39 +26,39 @@ export enum EmailJobType {
 }
 
 export interface EmailJobData {
-  type: EmailJobType
-  to: string | string[]
-  subject?: string
-  template?: string
-  context?: Record<string, unknown>
-  html?: string
-  text?: string
+  type: EmailJobType;
+  to: string | string[];
+  subject?: string;
+  template?: string;
+  context?: Record<string, unknown>;
+  html?: string;
+  text?: string;
   attachments?: Array<{
-    filename: string
-    path?: string
-    content?: string | Buffer
-    contentType?: string
-  }>
-  cc?: string[]
-  bcc?: string[]
-  replyTo?: string
-  priority?: 'high' | 'normal' | 'low'
-  metadata?: Record<string, unknown>
+    filename: string;
+    path?: string;
+    content?: string | Buffer;
+    contentType?: string;
+  }>;
+  cc?: string[];
+  bcc?: string[];
+  replyTo?: string;
+  priority?: 'high' | 'normal' | 'low';
+  metadata?: Record<string, unknown>;
 }
 
 export interface BulkEmailJobData {
   recipients: Array<{
-    email: string
-    context?: Record<string, unknown>
-  }>
-  template: string
-  subject: string
-  metadata?: Record<string, unknown>
+    email: string;
+    context?: Record<string, unknown>;
+  }>;
+  template: string;
+  subject: string;
+  metadata?: Record<string, unknown>;
 }
 
 @Injectable()
 export class EmailQueue {
-  private readonly logger = new Logger(EmailQueue.name)
+  private readonly logger = new Logger(EmailQueue.name);
 
   constructor(@InjectQueue(EMAIL_QUEUE_NAME) private readonly queue: Queue) {}
 
@@ -67,34 +67,44 @@ export class EmailQueue {
   // ============================================================================
 
   async sendEmail(data: EmailJobData, options?: JobsOptions): Promise<string> {
-    const job = await this.queue.add(data.type || EmailJobType.SEND_SINGLE, data, {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 1000,
+    const job = await this.queue.add(
+      data.type || EmailJobType.SEND_SINGLE,
+      data,
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+        removeOnComplete: 100,
+        removeOnFail: 500,
+        ...options,
       },
-      removeOnComplete: 100,
-      removeOnFail: 500,
-      ...options,
-    })
+    );
 
-    this.logger.debug(`Email job queued: ${job.id} to ${data.to}`)
+    this.logger.debug(`Email job queued: ${job.id} to ${data.to}`);
 
-    return job.id as string
+    return job.id as string;
   }
 
-  async sendEmailWithDelay(data: EmailJobData, delayMs: number): Promise<string> {
-    return this.sendEmail(data, { delay: delayMs })
+  async sendEmailWithDelay(
+    data: EmailJobData,
+    delayMs: number,
+  ): Promise<string> {
+    return this.sendEmail(data, { delay: delayMs });
   }
 
-  async scheduleEmail(data: EmailJobData, scheduledTime: Date): Promise<string> {
-    const delay = scheduledTime.getTime() - Date.now()
+  async scheduleEmail(
+    data: EmailJobData,
+    scheduledTime: Date,
+  ): Promise<string> {
+    const delay = scheduledTime.getTime() - Date.now();
 
     if (delay <= 0) {
-      return this.sendEmail(data)
+      return this.sendEmail(data);
     }
 
-    return this.sendEmail(data, { delay })
+    return this.sendEmail(data, { delay });
   }
 
   // ============================================================================
@@ -110,7 +120,7 @@ export class EmailQueue {
       to: email,
       template: 'welcome',
       context,
-    })
+    });
   }
 
   async sendVerificationEmail(
@@ -125,7 +135,7 @@ export class EmailQueue {
         context,
       },
       { priority: 1 },
-    )
+    );
   }
 
   async sendPasswordResetEmail(
@@ -140,18 +150,18 @@ export class EmailQueue {
         context,
       },
       { priority: 1 },
-    )
+    );
   }
 
   async sendEventConfirmationEmail(
     email: string,
     context: {
-      name: string
-      eventName: string
-      eventDate: string
-      eventLocation: string
-      ticketCount: number
-      orderNumber: string
+      name: string;
+      eventName: string;
+      eventDate: string;
+      eventLocation: string;
+      ticketCount: number;
+      orderNumber: string;
     },
   ): Promise<string> {
     return this.sendEmail({
@@ -159,22 +169,22 @@ export class EmailQueue {
       to: email,
       template: 'event-confirmation',
       context,
-    })
+    });
   }
 
   async sendTicketConfirmationEmail(
     email: string,
     context: {
-      name: string
+      name: string;
       ticketDetails: Array<{
-        ticketType: string
-        quantity: number
-        price: string
-      }>
-      eventName: string
-      eventDate: string
-      qrCodeUrl: string
-      ticketDownloadUrl: string
+        ticketType: string;
+        quantity: number;
+        price: string;
+      }>;
+      eventName: string;
+      eventDate: string;
+      qrCodeUrl: string;
+      ticketDownloadUrl: string;
     },
   ): Promise<string> {
     return this.sendEmail({
@@ -182,23 +192,23 @@ export class EmailQueue {
       to: email,
       template: 'ticket-confirmation',
       context,
-    })
+    });
   }
 
   async sendPaymentReceiptEmail(
     email: string,
     context: {
-      name: string
-      orderNumber: string
-      amount: string
-      currency: string
-      paymentMethod: string
+      name: string;
+      orderNumber: string;
+      amount: string;
+      currency: string;
+      paymentMethod: string;
       items: Array<{
-        description: string
-        quantity: number
-        price: string
-      }>
-      receiptUrl: string
+        description: string;
+        quantity: number;
+        price: string;
+      }>;
+      receiptUrl: string;
     },
   ): Promise<string> {
     return this.sendEmail({
@@ -206,17 +216,17 @@ export class EmailQueue {
       to: email,
       template: 'payment-receipt',
       context,
-    })
+    });
   }
 
   async sendReminderEmail(
     email: string,
     context: {
-      name: string
-      eventName: string
-      eventDate: string
-      eventLocation: string
-      reminderType: 'day-before' | 'hour-before' | 'week-before'
+      name: string;
+      eventName: string;
+      eventDate: string;
+      eventLocation: string;
+      reminderType: 'day-before' | 'hour-before' | 'week-before';
     },
     sendAt?: Date,
   ): Promise<string> {
@@ -225,13 +235,13 @@ export class EmailQueue {
       to: email,
       template: `reminder-${context.reminderType}`,
       context,
-    }
+    };
 
     if (sendAt) {
-      return this.scheduleEmail(jobData, sendAt)
+      return this.scheduleEmail(jobData, sendAt);
     }
 
-    return this.sendEmail(jobData)
+    return this.sendEmail(jobData);
   }
 
   // ============================================================================
@@ -247,11 +257,13 @@ export class EmailQueue {
       },
       removeOnComplete: 50,
       removeOnFail: 100,
-    })
+    });
 
-    this.logger.debug(`Bulk email job queued: ${job.id} for ${data.recipients.length} recipients`)
+    this.logger.debug(
+      `Bulk email job queued: ${job.id} for ${data.recipients.length} recipients`,
+    );
 
-    return job.id as string
+    return job.id as string;
   }
 
   async sendNewsletterBatch(
@@ -268,7 +280,7 @@ export class EmailQueue {
       template: 'newsletter',
       subject,
       metadata: { newsletterId, content },
-    })
+    });
   }
 
   // ============================================================================
@@ -276,18 +288,18 @@ export class EmailQueue {
   // ============================================================================
 
   async getJobStatus(jobId: string): Promise<{
-    id: string
-    status: string
-    progress: number
-    data: EmailJobData
-    failedReason?: string
-    finishedOn?: number
+    id: string;
+    status: string;
+    progress: number;
+    data: EmailJobData;
+    failedReason?: string;
+    finishedOn?: number;
   } | null> {
-    const job = await this.queue.getJob(jobId)
+    const job = await this.queue.getJob(jobId);
 
-    if (!job) return null
+    if (!job) return null;
 
-    const state = await job.getState()
+    const state = await job.getState();
 
     return {
       id: job.id as string,
@@ -296,31 +308,31 @@ export class EmailQueue {
       data: job.data as EmailJobData,
       failedReason: job.failedReason,
       finishedOn: job.finishedOn,
-    }
+    };
   }
 
   async cancelJob(jobId: string): Promise<boolean> {
-    const job = await this.queue.getJob(jobId)
+    const job = await this.queue.getJob(jobId);
 
-    if (!job) return false
+    if (!job) return false;
 
-    const state = await job.getState()
+    const state = await job.getState();
 
     if (state === 'waiting' || state === 'delayed') {
-      await job.remove()
-      this.logger.debug(`Email job cancelled: ${jobId}`)
-      return true
+      await job.remove();
+      this.logger.debug(`Email job cancelled: ${jobId}`);
+      return true;
     }
 
-    return false
+    return false;
   }
 
   async getQueueStats(): Promise<{
-    waiting: number
-    active: number
-    completed: number
-    failed: number
-    delayed: number
+    waiting: number;
+    active: number;
+    completed: number;
+    failed: number;
+    delayed: number;
   }> {
     const [waiting, active, completed, failed, delayed] = await Promise.all([
       this.queue.getWaitingCount(),
@@ -328,23 +340,23 @@ export class EmailQueue {
       this.queue.getCompletedCount(),
       this.queue.getFailedCount(),
       this.queue.getDelayedCount(),
-    ])
+    ]);
 
-    return { waiting, active, completed, failed, delayed }
+    return { waiting, active, completed, failed, delayed };
   }
 
   async pauseQueue(): Promise<void> {
-    await this.queue.pause()
-    this.logger.warn('Email queue paused')
+    await this.queue.pause();
+    this.logger.warn('Email queue paused');
   }
 
   async resumeQueue(): Promise<void> {
-    await this.queue.resume()
-    this.logger.log('Email queue resumed')
+    await this.queue.resume();
+    this.logger.log('Email queue resumed');
   }
 
   async drainQueue(): Promise<void> {
-    await this.queue.drain()
-    this.logger.warn('Email queue drained')
+    await this.queue.drain();
+    this.logger.warn('Email queue drained');
   }
 }

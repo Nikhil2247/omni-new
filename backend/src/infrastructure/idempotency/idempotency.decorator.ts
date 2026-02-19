@@ -5,10 +5,10 @@
 // automatic request deduplication
 // ============================================================================
 
-import { SetMetadata } from '@nestjs/common'
-import { IdempotencyOptions } from './idempotency.service'
+import { SetMetadata } from '@nestjs/common';
+import { IdempotencyOptions } from './idempotency.service';
 
-export const IDEMPOTENT_KEY = 'idempotent'
+export const IDEMPOTENT_KEY = 'idempotent';
 
 /**
  * Mark an endpoint as idempotent.
@@ -25,10 +25,12 @@ export const IDEMPOTENT_KEY = 'idempotent'
  * }
  * ```
  */
-export const Idempotent = (options: IdempotencyOptions = {}): MethodDecorator => {
+export const Idempotent = (
+  options: IdempotencyOptions = {},
+): MethodDecorator => {
   return SetMetadata(IDEMPOTENT_KEY, {
     ttl: options.ttl ?? 86400,
     prefix: options.prefix ?? 'idempotency',
     lockTtl: options.lockTtl ?? 60,
-  })
-}
+  });
+};

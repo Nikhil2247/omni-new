@@ -1,24 +1,24 @@
-import { ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsEmail, IsOptional } from 'class-validator'
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsEmail, IsOptional } from 'class-validator';
 
 export class UpdateSystemConfigDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
-  maintenanceMode?: boolean
+  maintenanceMode?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
-  registrationEnabled?: boolean
+  registrationEnabled?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
-  allowVendorOnboarding?: boolean
+  allowVendorOnboarding?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsEmail()
-  supportEmail?: string
+  supportEmail?: string;
 }

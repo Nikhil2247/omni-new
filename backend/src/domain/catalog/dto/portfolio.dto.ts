@@ -2,9 +2,19 @@
 // PORTFOLIO DTOs - Catalog Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsBoolean, IsInt, Min, ValidateNested, IsEnum, IsNumber } from 'class-validator'
-import { Type } from 'class-transformer'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  Min,
+  ValidateNested,
+  IsEnum,
+  IsNumber,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum CatalogMediaType {
   IMAGE = 'IMAGE',
@@ -14,243 +24,248 @@ export enum CatalogMediaType {
 export class CreateMediaItemDto {
   @ApiProperty({ description: 'Media type', enum: CatalogMediaType })
   @IsEnum(CatalogMediaType)
-  type: CatalogMediaType
+  type: CatalogMediaType;
 
   @ApiProperty({ description: 'Media URL' })
   @IsString()
-  url: string
+  url: string;
 
   @ApiPropertyOptional({ description: 'Thumbnail URL', nullable: true })
   @IsOptional()
   @IsString()
-  thumbnailUrl?: string
+  thumbnailUrl?: string;
 
   @ApiPropertyOptional({ description: 'CDN URL', nullable: true })
   @IsOptional()
   @IsString()
-  cdnUrl?: string
+  cdnUrl?: string;
 
   @ApiPropertyOptional({ description: 'Alt text', nullable: true })
   @IsOptional()
   @IsString()
-  altText?: string
+  altText?: string;
 
   @ApiPropertyOptional({ description: 'Caption/description', nullable: true })
   @IsOptional()
   @IsString()
-  caption?: string
+  caption?: string;
 
   @ApiPropertyOptional({ description: 'Width', nullable: true })
   @IsOptional()
   @IsInt()
   @Min(0)
-  width?: number
+  width?: number;
 
   @ApiPropertyOptional({ description: 'Height', nullable: true })
   @IsOptional()
   @IsInt()
   @Min(0)
-  height?: number
+  height?: number;
 
   @ApiPropertyOptional({ description: 'Duration (seconds)', nullable: true })
   @IsOptional()
   @IsInt()
   @Min(0)
-  duration?: number
+  duration?: number;
 
   @ApiProperty({ description: 'Size in bytes' })
   @IsInt()
   @Min(0)
-  size: number
+  size: number;
 
   @ApiProperty({ description: 'MIME type' })
   @IsString()
-  mimeType: string
+  mimeType: string;
 
   @ApiPropertyOptional({ description: 'Sort order', default: 0 })
   @IsOptional()
   @IsInt()
-  sortOrder?: number
+  sortOrder?: number;
 
   @ApiPropertyOptional({ description: 'Is approved', default: true })
   @IsOptional()
   @IsBoolean()
-  isApproved?: boolean
+  isApproved?: boolean;
 }
 
 export class CreatePortfolioDto {
   @ApiProperty({ description: 'Vendor profile ID' })
   @IsUUID()
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Title' })
   @IsString()
-  title: string
+  title: string;
 
   @ApiPropertyOptional({ description: 'Description', nullable: true })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiPropertyOptional({ description: 'Sort order', default: 0 })
   @IsOptional()
   @IsInt()
-  sortOrder?: number
+  sortOrder?: number;
 
   @ApiPropertyOptional({ description: 'Is featured', default: false })
   @IsOptional()
   @IsBoolean()
-  isFeatured?: boolean
+  isFeatured?: boolean;
 
-  @ApiPropertyOptional({ description: 'Media items', type: [CreateMediaItemDto] })
+  @ApiPropertyOptional({
+    description: 'Media items',
+    type: [CreateMediaItemDto],
+  })
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => CreateMediaItemDto)
-  mediaItems?: CreateMediaItemDto[]
+  mediaItems?: CreateMediaItemDto[];
 }
 
 export class UpdatePortfolioDto {
   @ApiPropertyOptional({ description: 'Title' })
   @IsOptional()
   @IsString()
-  title?: string
+  title?: string;
 
   @ApiPropertyOptional({ description: 'Description', nullable: true })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiPropertyOptional({ description: 'Sort order' })
   @IsOptional()
   @IsInt()
-  sortOrder?: number
+  sortOrder?: number;
 
   @ApiPropertyOptional({ description: 'Is featured' })
   @IsOptional()
   @IsBoolean()
-  isFeatured?: boolean
+  isFeatured?: boolean;
 }
 
 export class UpdateMediaItemDto {
   @ApiPropertyOptional({ description: 'Alt text', nullable: true })
   @IsOptional()
   @IsString()
-  altText?: string
+  altText?: string;
 
   @ApiPropertyOptional({ description: 'Caption/description', nullable: true })
   @IsOptional()
   @IsString()
-  caption?: string
+  caption?: string;
 }
 
 export class PortfolioResponseDto {
   @ApiProperty({ description: 'Portfolio ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Vendor profile ID' })
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Title' })
-  title: string
+  title: string;
 
   @ApiPropertyOptional({ description: 'Description', nullable: true })
-  description: string | null
+  description: string | null;
 
   @ApiProperty({ description: 'Sort order' })
-  sortOrder: number
+  sortOrder: number;
 
   @ApiProperty({ description: 'Is featured' })
-  isFeatured: boolean
+  isFeatured: boolean;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Updated at' })
-  updatedAt: Date
+  updatedAt: Date;
 }
 
 export class SearchPortfolioMediaDto {
-  @ApiPropertyOptional({ description: 'Search query (vendor name or description)' })
+  @ApiPropertyOptional({
+    description: 'Search query (vendor name or description)',
+  })
   @IsOptional()
   @IsString()
-  query?: string
+  query?: string;
 
   @ApiPropertyOptional({ description: 'Filter by category ID' })
   @IsOptional()
   @IsUUID()
-  categoryId?: string
+  categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by city ID' })
   @IsOptional()
   @IsUUID()
-  cityId?: string
+  cityId?: string;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  page?: number = 1
+  page?: number = 1;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 24 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  limit?: number = 24
+  limit?: number = 24;
 }
 
 export class PortfolioMediaVendorDto {
   @ApiProperty({ description: 'Vendor profile ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Vendor slug' })
-  slug: string
+  slug: string;
 
   @ApiProperty({ description: 'Business name' })
-  businessName: string
+  businessName: string;
 
   @ApiProperty({ description: 'Category ID' })
-  categoryId: string
+  categoryId: string;
 
   @ApiPropertyOptional({ description: 'Category name', nullable: true })
-  categoryName?: string | null
+  categoryName?: string | null;
 }
 
 export class PortfolioMediaItemResponseDto {
   @ApiProperty({ description: 'Media item ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Portfolio ID' })
-  portfolioId: string
+  portfolioId: string;
 
   @ApiProperty({ description: 'Media type', enum: CatalogMediaType })
-  type: CatalogMediaType
+  type: CatalogMediaType;
 
   @ApiProperty({ description: 'Media URL' })
-  url: string
+  url: string;
 
   @ApiPropertyOptional({ description: 'Thumbnail URL', nullable: true })
-  thumbnailUrl?: string | null
+  thumbnailUrl?: string | null;
 
   @ApiPropertyOptional({ description: 'CDN URL', nullable: true })
-  cdnUrl?: string | null
+  cdnUrl?: string | null;
 
   @ApiPropertyOptional({ description: 'Alt text', nullable: true })
-  altText?: string | null
+  altText?: string | null;
 
   @ApiPropertyOptional({ description: 'Caption/description', nullable: true })
-  caption?: string | null
+  caption?: string | null;
 
   @ApiPropertyOptional({ description: 'Width', nullable: true })
-  width?: number | null
+  width?: number | null;
 
   @ApiPropertyOptional({ description: 'Height', nullable: true })
-  height?: number | null
+  height?: number | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Vendor info' })
-  vendor: PortfolioMediaVendorDto
+  vendor: PortfolioMediaVendorDto;
 }

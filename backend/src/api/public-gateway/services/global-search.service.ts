@@ -4,48 +4,53 @@
 // Provides unified search across vendors, events, and content
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer'
-import { EventIndexer } from '../../../infrastructure/search/indexers/event.indexer'
-import { MeilisearchService } from '../../../infrastructure/search/meilisearch.service'
-import { GlobalSearchDto, SearchType, QuickSearchDto, SearchSuggestionsDto } from '../dto/search.dto'
+import { Injectable, Logger } from '@nestjs/common';
+import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer';
+import { EventIndexer } from '../../../infrastructure/search/indexers/event.indexer';
+import { MeilisearchService } from '../../../infrastructure/search/meilisearch.service';
+import {
+  GlobalSearchDto,
+  SearchType,
+  QuickSearchDto,
+  SearchSuggestionsDto,
+} from '../dto/search.dto';
 
 export interface SearchResultItem {
-  id: string
-  type: 'vendor' | 'event' | 'content'
-  title: string
-  description?: string
-  slug?: string
-  imageUrl?: string
-  category?: string
-  location?: string
-  price?: number
-  rating?: number
-  isVerified?: boolean
-  _matchScore?: number
+  id: string;
+  type: 'vendor' | 'event' | 'content';
+  title: string;
+  description?: string;
+  slug?: string;
+  imageUrl?: string;
+  category?: string;
+  location?: string;
+  price?: number;
+  rating?: number;
+  isVerified?: boolean;
+  _matchScore?: number;
 }
 
 export interface GlobalSearchResponse {
-  results: SearchResultItem[]
+  results: SearchResultItem[];
   meta: {
-    query: string
-    totalResults: number
-    page: number
-    limit: number
-    totalPages: number
-    processingTimeMs: number
-    type: SearchType
-  }
+    query: string;
+    totalResults: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    processingTimeMs: number;
+    type: SearchType;
+  };
   facets?: {
-    categories?: Record<string, number>
-    locations?: Record<string, number>
-    priceRanges?: Record<string, number>
-  }
+    categories?: Record<string, number>;
+    locations?: Record<string, number>;
+    priceRanges?: Record<string, number>;
+  };
 }
 
 @Injectable()
 export class GlobalSearchService {
-  private readonly logger = new Logger(GlobalSearchService.name)
+  private readonly logger = new Logger(GlobalSearchService.name);
 
   constructor(
     private readonly vendorIndexer: VendorIndexer,
@@ -57,26 +62,26 @@ export class GlobalSearchService {
    * Global search across all types or specific type
    */
   async search(dto: GlobalSearchDto): Promise<GlobalSearchResponse> {
-    const startTime = Date.now()
+    const startTime = Date.now();
 
     try {
       if (dto.type === SearchType.VENDORS) {
-        return await this.searchVendors(dto, startTime)
+        return await this.searchVendors(dto, startTime);
       }
 
       if (dto.type === SearchType.EVENTS) {
-        return await this.searchEvents(dto, startTime)
+        return await this.searchEvents(dto, startTime);
       }
 
       if (dto.type === SearchType.CONTENT) {
-        return await this.searchContent(dto, startTime)
+        return await this.searchContent(dto, startTime);
       }
 
       // Search all types
-      return await this.searchAll(dto, startTime)
+      return await this.searchAll(dto, startTime);
     } catch (error) {
-      this.logger.error('Global search failed', error)
-      throw error
+      this.logger.error('Global search failed', error);
+      throw error;
     }
   }
 
@@ -85,12 +90,12 @@ export class GlobalSearchService {
    */
   async quickSearch(dto: QuickSearchDto): Promise<SearchResultItem[]> {
     try {
-      const limit = dto.limit ?? 5
+      const limit = dto.limit ?? 5;
       const vendors = await this.vendorIndexer.searchVendors(dto.q, {
         hitsPerPage: limit,
-      })
+      });
 
-      const results: SearchResultItem[] = []
+      const results: SearchResultItem[] = [];
 
       // Add vendors
       if (vendors?.hits && Array.isArray(vendors.hits)) {
@@ -107,13 +112,13 @@ export class GlobalSearchService {
             isVerified: hit.isVerified,
             _matchScore: hit._matchScore,
           })),
-        )
+        );
       }
 
-      return results.slice(0, limit)
+      return results.slice(0, limit);
     } catch (error) {
-      this.logger.error('Quick search failed', error)
-      return []
+      this.logger.error('Quick search failed', error);
+      return [];
     }
   }
 
@@ -122,27 +127,41 @@ export class GlobalSearchService {
    */
   async getSuggestions(dto: SearchSuggestionsDto): Promise<string[]> {
     try {
-      const limit = dto.limit ?? 8
-      const suggestions = await this.vendorIndexer.getVendorSuggestions(dto.q, limit)
-      
+      const limit = dto.limit ?? 8;
+      const suggestions = await this.vendorIndexer.getVendorSuggestions(
+        dto.q,
+        limit,
+      );
+
       if (!suggestions || !Array.isArray(suggestions)) {
-        return []
+        return [];
       }
 
-      return suggestions.slice(0, limit)
+      return suggestions.slice(0, limit);
     } catch (error) {
-      this.logger.error('Get suggestions failed', error)
-      return []
+      this.logger.error('Get suggestions failed', error);
+      return [];
     }
   }
 
   /**
    * Search vendors only
    */
-  private async searchVendors(dto: GlobalSearchDto, startTime: number): Promise<GlobalSearchResponse> {
-    const sortBy = dto.sortBy === 'relevance' || dto.sortBy === 'recent' || dto.sortBy === 'popular' 
-      ? undefined 
-      : dto.sortBy as 'createdAt' | 'viewCount' | 'leadCount' | 'minPrice' | undefined
+  private async searchVendors(
+    dto: GlobalSearchDto,
+    startTime: number,
+  ): Promise<GlobalSearchResponse> {
+    const sortBy =
+      dto.sortBy === 'relevance' ||
+      dto.sortBy === 'recent' ||
+      dto.sortBy === 'popular'
+        ? undefined
+        : (dto.sortBy as
+            | 'createdAt'
+            | 'viewCount'
+            | 'leadCount'
+            | 'minPrice'
+            | undefined);
 
     const result = await this.vendorIndexer.searchVendors(dto.q, {
       page: dto.page,
@@ -154,9 +173,9 @@ export class GlobalSearchService {
       priceMax: dto.priceMax,
       isVerified: dto.isVerified,
       sortBy,
-    })
+    });
 
-    const processingTimeMs = Date.now() - startTime
+    const processingTimeMs = Date.now() - startTime;
 
     return {
       results: result.hits.map((hit: any) => ({
@@ -182,15 +201,18 @@ export class GlobalSearchService {
         type: SearchType.VENDORS,
       },
       facets: result.facetDistribution,
-    }
+    };
   }
 
   /**
    * Search events only
    */
-  private async searchEvents(dto: GlobalSearchDto, startTime: number): Promise<GlobalSearchResponse> {
+  private async searchEvents(
+    dto: GlobalSearchDto,
+    startTime: number,
+  ): Promise<GlobalSearchResponse> {
     // Placeholder for event search - implement when needed
-    const processingTimeMs = Date.now() - startTime
+    const processingTimeMs = Date.now() - startTime;
 
     return {
       results: [],
@@ -203,15 +225,18 @@ export class GlobalSearchService {
         processingTimeMs,
         type: SearchType.EVENTS,
       },
-    }
+    };
   }
 
   /**
    * Search content only (blogs, articles, etc.)
    */
-  private async searchContent(dto: GlobalSearchDto, startTime: number): Promise<GlobalSearchResponse> {
+  private async searchContent(
+    dto: GlobalSearchDto,
+    startTime: number,
+  ): Promise<GlobalSearchResponse> {
     // Placeholder for content search - implement when needed
-    const processingTimeMs = Date.now() - startTime
+    const processingTimeMs = Date.now() - startTime;
 
     return {
       results: [],
@@ -224,18 +249,21 @@ export class GlobalSearchService {
         processingTimeMs,
         type: SearchType.CONTENT,
       },
-    }
+    };
   }
 
   /**
    * Search all types
    */
-  private async searchAll(dto: GlobalSearchDto, startTime: number): Promise<GlobalSearchResponse> {
+  private async searchAll(
+    dto: GlobalSearchDto,
+    startTime: number,
+  ): Promise<GlobalSearchResponse> {
     // Search vendors (primary results for now)
     const vendorResults = await this.searchVendors(
       { ...dto, limit: dto.limit || 20 },
       startTime,
-    )
+    );
 
     // You can extend this to include events and content
     // const [vendorResults, eventResults, contentResults] = await Promise.all([...])
@@ -246,6 +274,6 @@ export class GlobalSearchService {
         ...vendorResults.meta,
         type: SearchType.ALL,
       },
-    }
+    };
   }
 }

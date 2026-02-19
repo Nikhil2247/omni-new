@@ -2,13 +2,10 @@
 // BUDGET ITEM REPOSITORY
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import {
-  BudgetItem,
-  Prisma,
-} from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { BudgetItem, Prisma } from '@prisma/client';
 
 @Injectable()
 export class BudgetItemRepository extends BaseRepository<
@@ -19,21 +16,21 @@ export class BudgetItemRepository extends BaseRepository<
   Prisma.BudgetItemWhereUniqueInput,
   Prisma.BudgetItemOrderByWithRelationInput
 > {
-  protected readonly modelName = 'BudgetItem'
+  protected readonly modelName = 'BudgetItem';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.budgetItem
+    return this.prisma.budgetItem;
   }
 
   async findByBudget(budgetId: string) {
     return this.model.findMany({
       where: { budgetId },
       orderBy: { createdAt: 'asc' },
-    })
+    });
   }
 
   async findByCategory(budgetId: string, category: string) {
@@ -43,33 +40,39 @@ export class BudgetItemRepository extends BaseRepository<
         category,
       },
       orderBy: { createdAt: 'asc' },
-    })
+    });
   }
 
   async getCategoryBreakdown(budgetId: string) {
     const items = await this.model.findMany({
       where: { budgetId },
-    })
+    });
 
-    const breakdown = items.reduce((acc, item) => {
-      const category = item.category
-      if (!acc[category]) {
-        acc[category] = {
-          category,
-          estimated: 0,
-          actual: 0,
-          count: 0,
+    const breakdown = items.reduce(
+      (acc, item) => {
+        const category = item.category;
+        if (!acc[category]) {
+          acc[category] = {
+            category,
+            estimated: 0,
+            actual: 0,
+            count: 0,
+          };
         }
-      }
 
-      acc[category].estimated += Number(item.estimatedCost)
-      acc[category].actual += Number(item.actualCost || 0)
-      acc[category].count += 1
+        acc[category].estimated += Number(item.estimatedCost);
+        acc[category].actual += Number(item.actualCost || 0);
+        acc[category].count += 1;
 
-      return acc
-    }, {} as Record<string, { category: string; estimated: number; actual: number; count: number }>)
+        return acc;
+      },
+      {} as Record<
+        string,
+        { category: string; estimated: number; actual: number; count: number }
+      >,
+    );
 
-    return Object.values(breakdown)
+    return Object.values(breakdown);
   }
 
   async getTotals(budgetId: string) {
@@ -79,11 +82,11 @@ export class BudgetItemRepository extends BaseRepository<
         estimatedCost: true,
         actualCost: true,
       },
-    })
+    });
 
     return {
       totalEstimated: Number(result._sum.estimatedCost || 0),
       totalActual: Number(result._sum.actualCost || 0),
-    }
+    };
   }
 }

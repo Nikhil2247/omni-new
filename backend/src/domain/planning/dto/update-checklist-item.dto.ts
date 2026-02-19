@@ -1,1 +1,1 @@
-export { UpdateChecklistItemDto } from './checklist.dto'
+export { UpdateChecklistItemDto } from './checklist.dto';

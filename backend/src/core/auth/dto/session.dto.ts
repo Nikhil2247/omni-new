@@ -2,74 +2,74 @@
 // SESSION DTOs - Session Management Request/Response
 // ============================================================================
 
-import { IsString, IsNotEmpty } from 'class-validator'
-import { ApiProperty } from '@nestjs/swagger'
+import { IsString, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class SessionInfoDto {
   @ApiProperty({ description: 'Session ID' })
-  id: string
+  id: string;
 
   @ApiProperty({
     description: 'Device type (mobile, desktop, tablet)',
     nullable: true,
   })
-  deviceType: string | null
+  deviceType: string | null;
 
   @ApiProperty({
     description: 'Device name (e.g., "Chrome on Windows")',
     nullable: true,
   })
-  deviceName: string | null
+  deviceName: string | null;
 
   @ApiProperty({
     description: 'Browser name',
     nullable: true,
   })
-  browser: string | null
+  browser: string | null;
 
   @ApiProperty({
     description: 'Operating system',
     nullable: true,
   })
-  os: string | null
+  os: string | null;
 
   @ApiProperty({
     description: 'Location (city, country)',
     nullable: true,
   })
-  location: string | null
+  location: string | null;
 
   @ApiProperty({
     description: 'IP address',
     nullable: true,
   })
-  ipAddress: string | null
+  ipAddress: string | null;
 
   @ApiProperty({ description: 'Last activity timestamp' })
-  lastActiveAt: Date
+  lastActiveAt: Date;
 
   @ApiProperty({ description: 'Session creation timestamp' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Session expiration timestamp' })
-  expiresAt: Date
+  expiresAt: Date;
 
   @ApiProperty({ description: 'Whether this is the current session' })
-  isCurrent: boolean
+  isCurrent: boolean;
 }
 
 export class SessionListResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({
     description: 'List of active sessions',
     type: [SessionInfoDto],
   })
-  sessions: SessionInfoDto[]
+  sessions: SessionInfoDto[];
 
   @ApiProperty({ description: 'Total number of active sessions' })
-  totalSessions: number
+  totalSessions: number;
 }
 
 export class RevokeSessionDto {
@@ -79,71 +79,71 @@ export class RevokeSessionDto {
   })
   @IsString()
   @IsNotEmpty()
-  sessionId: string
+  sessionId: string;
 }
 
 export class SessionResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({ description: 'Response message' })
-  message: string
+  message: string;
 }
 
 export class LoginActivityDto {
   @ApiProperty({ description: 'Activity ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Whether login was successful' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({ description: 'Login method used' })
-  loginMethod: string
+  loginMethod: string;
 
   @ApiProperty({ description: 'IP address' })
-  ipAddress: string
+  ipAddress: string;
 
   @ApiProperty({
     description: 'Device type',
     nullable: true,
   })
-  deviceType: string | null
+  deviceType: string | null;
 
   @ApiProperty({
     description: 'Country',
     nullable: true,
   })
-  country: string | null
+  country: string | null;
 
   @ApiProperty({ description: 'Timestamp' })
-  createdAt: Date
+  createdAt: Date;
 }
 
 export class LoginActivitySummaryResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({ description: 'Total login attempts' })
-  totalAttempts: number
+  totalAttempts: number;
 
   @ApiProperty({ description: 'Successful login attempts' })
-  successfulAttempts: number
+  successfulAttempts: number;
 
   @ApiProperty({ description: 'Failed login attempts' })
-  failedAttempts: number
+  failedAttempts: number;
 
   @ApiProperty({ description: 'Number of unique IPs' })
-  uniqueIPs: number
+  uniqueIPs: number;
 
   @ApiProperty({ description: 'Number of unique devices' })
-  uniqueDevices: number
+  uniqueDevices: number;
 
   @ApiProperty({ description: 'Number of suspicious attempts' })
-  suspiciousAttempts: number
+  suspiciousAttempts: number;
 
   @ApiProperty({
     description: 'Recent login activities',
     type: [LoginActivityDto],
   })
-  recentActivities: LoginActivityDto[]
+  recentActivities: LoginActivityDto[];
 }

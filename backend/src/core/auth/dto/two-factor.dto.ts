@@ -2,31 +2,32 @@
 // TWO-FACTOR DTOs - 2FA Management Request/Response
 // ============================================================================
 
-import { IsString, IsNotEmpty, Length, Matches } from 'class-validator'
-import { ApiProperty } from '@nestjs/swagger'
+import { IsString, IsNotEmpty, Length, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class SetupTwoFactorResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({
     description: 'Base32-encoded secret for TOTP',
     example: 'JBSWY3DPEHPK3PXP',
   })
-  secret: string
+  secret: string;
 
   @ApiProperty({
     description: 'otpauth URL for QR code generation',
-    example: 'otpauth://totp/Omnicassion:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Omnicassion',
+    example:
+      'otpauth://totp/Omnicassion:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Omnicassion',
   })
-  qrCodeUrl: string
+  qrCodeUrl: string;
 
   @ApiProperty({
     description: 'Backup codes for account recovery',
     example: ['ABCD-1234', 'EFGH-5678'],
     type: [String],
   })
-  backupCodes: string[]
+  backupCodes: string[];
 }
 
 export class VerifyTwoFactorDto {
@@ -37,7 +38,7 @@ export class VerifyTwoFactorDto {
   @IsString()
   @IsNotEmpty({ message: 'Verification code is required' })
   @Matches(/^[0-9]{6}$/, { message: 'Code must be exactly 6 digits' })
-  code: string
+  code: string;
 }
 
 export class DisableTwoFactorDto {
@@ -47,7 +48,7 @@ export class DisableTwoFactorDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'Verification code is required' })
-  code: string
+  code: string;
 }
 
 export class RegenerateBackupCodesDto {
@@ -57,42 +58,42 @@ export class RegenerateBackupCodesDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'Verification code is required' })
-  code: string
+  code: string;
 }
 
 export class TwoFactorStatusResponseDto {
   @ApiProperty({ description: 'Whether 2FA is enabled' })
-  enabled: boolean
+  enabled: boolean;
 
   @ApiProperty({ description: 'Number of remaining backup codes' })
-  backupCodesRemaining: number
+  backupCodesRemaining: number;
 
   @ApiProperty({
     description: 'Date when 2FA was enabled',
     nullable: true,
   })
-  enabledAt: Date | null
+  enabledAt: Date | null;
 }
 
 export class TwoFactorResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({ description: 'Response message' })
-  message: string
+  message: string;
 }
 
 export class BackupCodesResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({
     description: 'New backup codes',
     example: ['ABCD-1234', 'EFGH-5678'],
     type: [String],
   })
-  backupCodes: string[]
+  backupCodes: string[];
 
   @ApiProperty({ description: 'Response message' })
-  message: string
+  message: string;
 }

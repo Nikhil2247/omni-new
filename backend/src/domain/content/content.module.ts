@@ -2,17 +2,17 @@
 // CONTENT MODULE - Content Domain
 // ============================================================================
 
-import { Module } from '@nestjs/common'
-import { DatabaseModule } from '../../core/database/database.module'
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from '../../core/database/database.module';
 
 // Services
-import { BlogService } from './services'
+import { BlogService } from './services';
 
 // Repositories
-import { BlogPostRepository } from './repositories'
+import { BlogPostRepository } from './repositories';
 
 // Event Handlers
-import { BlogPostEventHandler } from './events'
+import { BlogPostEventHandler } from './events';
 
 @Module({
   imports: [DatabaseModule],
@@ -26,8 +26,6 @@ import { BlogPostEventHandler } from './events'
     // Event Handlers
     BlogPostEventHandler,
   ],
-  exports: [
-    BlogService,
-  ],
+  exports: [BlogService],
 })
 export class ContentModule {}

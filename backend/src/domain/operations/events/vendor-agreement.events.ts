@@ -12,4 +12,4 @@ export class VendorAgreementUpdatedEvent {
 
 export class VendorAgreementSignedEvent {
   constructor(public readonly agreementId: string) {}
-} 
+}

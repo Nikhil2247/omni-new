@@ -2,9 +2,19 @@
 // BLOG POST DTOs - Content Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { Transform } from 'class-transformer'
-import { IsString, IsUUID, IsOptional, IsEnum, IsArray, IsInt, Min, Max, MaxLength } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsEnum,
+  IsArray,
+  IsInt,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 
 export enum BlogStatus {
   DRAFT = 'DRAFT',
@@ -17,92 +27,113 @@ export enum BlogStatus {
 // ============================================================================
 
 export class CreateBlogPostDto {
-  @ApiProperty({ description: 'Post title', example: 'Top 10 Wedding Photographers in Mumbai' })
+  @ApiProperty({
+    description: 'Post title',
+    example: 'Top 10 Wedding Photographers in Mumbai',
+  })
   @IsString()
   @MaxLength(200)
-  title: string
+  title: string;
 
-  @ApiPropertyOptional({ description: 'URL slug (auto-generated if not provided)', example: 'top-10-wedding-photographers-mumbai' })
+  @ApiPropertyOptional({
+    description: 'URL slug (auto-generated if not provided)',
+    example: 'top-10-wedding-photographers-mumbai',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(250)
-  slug?: string
+  slug?: string;
 
-  @ApiPropertyOptional({ description: 'Short excerpt', example: 'Discover the best wedding photographers...', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Short excerpt',
+    example: 'Discover the best wedding photographers...',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(300)
-  excerpt?: string
+  excerpt?: string;
 
   @ApiProperty({ description: 'Full content (Markdown/HTML)' })
   @IsString()
-  content: string
+  content: string;
 
   @ApiPropertyOptional({ description: 'Meta title for SEO', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(70)
-  metaTitle?: string
+  metaTitle?: string;
 
-  @ApiPropertyOptional({ description: 'Meta description for SEO', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Meta description for SEO',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(160)
-  metaDescription?: string
+  metaDescription?: string;
 
   @ApiPropertyOptional({ description: 'Focus keyword', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  focusKeyword?: string
+  focusKeyword?: string;
 
   @ApiPropertyOptional({ description: 'Keywords array', type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  keywords?: string[]
+  keywords?: string[];
 
   @ApiPropertyOptional({ description: 'Open Graph image URL', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  ogImage?: string
+  ogImage?: string;
 
   @ApiPropertyOptional({ description: 'Featured image URL', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  featuredImage?: string
+  featuredImage?: string;
 
-  @ApiPropertyOptional({ description: 'Featured image alt text', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Featured image alt text',
+    nullable: true,
+  })
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().slice(0, 125) : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().slice(0, 125) : value,
+  )
   @IsString()
   @MaxLength(125)
-  featuredImageAlt?: string
+  featuredImageAlt?: string;
 
   @ApiPropertyOptional({ description: 'Category ID', nullable: true })
   @IsOptional()
   @IsUUID()
-  categoryId?: string
+  categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Tag IDs', type: [String] })
   @IsOptional()
   @IsArray()
   @IsUUID(undefined, { each: true })
-  tagIds?: string[]
+  tagIds?: string[];
 
-  @ApiPropertyOptional({ description: 'Vendor ID (for vendor spotlight)', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Vendor ID (for vendor spotlight)',
+    nullable: true,
+  })
   @IsOptional()
   @IsUUID()
-  vendorId?: string
+  vendorId?: string;
 
   @ApiPropertyOptional({ description: 'Reading time in minutes', example: 5 })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(60)
-  readingTime?: number
+  readingTime?: number;
 }
 
 // ============================================================================
@@ -114,93 +145,98 @@ export class UpdateBlogPostDto {
   @IsOptional()
   @IsString()
   @MaxLength(200)
-  title?: string
+  title?: string;
 
   @ApiPropertyOptional({ description: 'URL slug' })
   @IsOptional()
   @IsString()
   @MaxLength(250)
-  slug?: string
+  slug?: string;
 
   @ApiPropertyOptional({ description: 'Short excerpt', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(300)
-  excerpt?: string
+  excerpt?: string;
 
   @ApiPropertyOptional({ description: 'Full content' })
   @IsOptional()
   @IsString()
-  content?: string
+  content?: string;
 
   @ApiPropertyOptional({ description: 'Meta title', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(70)
-  metaTitle?: string
+  metaTitle?: string;
 
   @ApiPropertyOptional({ description: 'Meta description', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(160)
-  metaDescription?: string
+  metaDescription?: string;
 
   @ApiPropertyOptional({ description: 'Focus keyword', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  focusKeyword?: string
+  focusKeyword?: string;
 
   @ApiPropertyOptional({ description: 'Keywords array' })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  keywords?: string[]
+  keywords?: string[];
 
   @ApiPropertyOptional({ description: 'Open Graph image URL', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  ogImage?: string
+  ogImage?: string;
 
   @ApiPropertyOptional({ description: 'Featured image URL', nullable: true })
   @IsOptional()
   @IsString()
-  featuredImage?: string
+  featuredImage?: string;
 
-  @ApiPropertyOptional({ description: 'Featured image alt text', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Featured image alt text',
+    nullable: true,
+  })
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().slice(0, 125) : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().slice(0, 125) : value,
+  )
   @IsString()
   @MaxLength(125)
-  featuredImageAlt?: string
+  featuredImageAlt?: string;
 
   @ApiPropertyOptional({ description: 'Status', enum: BlogStatus })
   @IsOptional()
   @IsEnum(BlogStatus)
-  status?: BlogStatus
+  status?: BlogStatus;
 
   @ApiPropertyOptional({ description: 'Category ID', nullable: true })
   @IsOptional()
   @IsUUID()
-  categoryId?: string
+  categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Tag IDs' })
   @IsOptional()
   @IsArray()
   @IsUUID(undefined, { each: true })
-  tagIds?: string[]
+  tagIds?: string[];
 
   @ApiPropertyOptional({ description: 'Vendor ID', nullable: true })
   @IsOptional()
   @IsUUID()
-  vendorId?: string
+  vendorId?: string;
 
   @ApiPropertyOptional({ description: 'Reading time' })
   @IsOptional()
   @IsInt()
   @Min(1)
-  readingTime?: number
+  readingTime?: number;
 }
 
 // ============================================================================
@@ -211,39 +247,43 @@ export class SearchBlogPostsDto {
   @ApiPropertyOptional({ description: 'Filter by author ID' })
   @IsOptional()
   @IsUUID()
-  authorId?: string
+  authorId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by status', enum: BlogStatus })
   @IsOptional()
   @IsEnum(BlogStatus)
-  status?: BlogStatus
+  status?: BlogStatus;
 
   @ApiPropertyOptional({ description: 'Filter by category ID' })
   @IsOptional()
   @IsUUID()
-  categoryId?: string
+  categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by tag ID' })
   @IsOptional()
   @IsUUID()
-  tagId?: string
+  tagId?: string;
 
   @ApiPropertyOptional({ description: 'Search by keyword' })
   @IsOptional()
   @IsString()
-  keyword?: string
+  keyword?: string;
 
   @ApiPropertyOptional({ description: 'Page number', example: 1, default: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
-  page?: number
+  page?: number;
 
-  @ApiPropertyOptional({ description: 'Items per page', example: 20, default: 20 })
+  @ApiPropertyOptional({
+    description: 'Items per page',
+    example: 20,
+    default: 20,
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
-  limit?: number
+  limit?: number;
 }
 
 // ============================================================================
@@ -252,62 +292,62 @@ export class SearchBlogPostsDto {
 
 export class BlogPostResponseDto {
   @ApiProperty({ description: 'Post ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Title' })
-  title: string
+  title: string;
 
   @ApiProperty({ description: 'URL slug' })
-  slug: string
+  slug: string;
 
   @ApiPropertyOptional({ description: 'Excerpt', nullable: true })
-  excerpt: string | null
+  excerpt: string | null;
 
   @ApiProperty({ description: 'Content' })
-  content: string
+  content: string;
 
   @ApiPropertyOptional({ description: 'Meta title', nullable: true })
-  metaTitle: string | null
+  metaTitle: string | null;
 
   @ApiPropertyOptional({ description: 'Meta description', nullable: true })
-  metaDescription: string | null
+  metaDescription: string | null;
 
   @ApiPropertyOptional({ description: 'Focus keyword', nullable: true })
-  focusKeyword: string | null
+  focusKeyword: string | null;
 
   @ApiProperty({ description: 'Keywords', type: [String] })
-  keywords: string[]
+  keywords: string[];
 
   @ApiPropertyOptional({ description: 'Featured image', nullable: true })
-  featuredImage: string | null
+  featuredImage: string | null;
 
   @ApiPropertyOptional({ description: 'Featured image alt', nullable: true })
-  featuredImageAlt: string | null
+  featuredImageAlt: string | null;
 
   @ApiProperty({ description: 'Status', enum: BlogStatus })
-  status: BlogStatus
+  status: BlogStatus;
 
   @ApiPropertyOptional({ description: 'Published at', nullable: true })
-  publishedAt: Date | null
+  publishedAt: Date | null;
 
   @ApiProperty({ description: 'Author ID' })
-  authorId: string
+  authorId: string;
 
   @ApiPropertyOptional({ description: 'Category ID', nullable: true })
-  categoryId: string | null
+  categoryId: string | null;
 
   @ApiProperty({ description: 'View count' })
-  viewCount: number
+  viewCount: number;
 
   @ApiProperty({ description: 'Reading time (minutes)' })
-  readingTime: number
+  readingTime: number;
 
   @ApiPropertyOptional({ description: 'Vendor ID', nullable: true })
-  vendorId: string | null
+  vendorId: string | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Updated at' })
-  updatedAt: Date
+  updatedAt: Date;
 }

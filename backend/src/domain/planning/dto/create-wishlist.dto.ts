@@ -1,1 +1,1 @@
-export { CreateWishlistDto } from './wishlist.dto'
+export { CreateWishlistDto } from './wishlist.dto';

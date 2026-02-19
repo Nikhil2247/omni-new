@@ -4,12 +4,12 @@
 // Provides event handlers for domain events
 // ============================================================================
 
-import { Module, Global } from '@nestjs/common'
-import { EventEmitterModule } from '@nestjs/event-emitter'
-import { CacheInvalidationHandler } from './handlers/cache-invalidation.handler'
-import { SearchIndexHandler } from './handlers/search-index.handler'
-import { EmailEventHandler } from './handlers/email.handler'
-import { NotificationsModule } from '../../infrastructure/notifications/notifications.module'
+import { Module, Global } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CacheInvalidationHandler } from './handlers/cache-invalidation.handler';
+import { SearchIndexHandler } from './handlers/search-index.handler';
+import { EmailEventHandler } from './handlers/email.handler';
+import { NotificationsModule } from '../../infrastructure/notifications/notifications.module';
 
 @Global()
 @Module({
@@ -31,13 +31,7 @@ import { NotificationsModule } from '../../infrastructure/notifications/notifica
     }),
     NotificationsModule,
   ],
-  providers: [
-    CacheInvalidationHandler,
-    SearchIndexHandler,
-    EmailEventHandler,
-  ],
-  exports: [
-    EventEmitterModule,
-  ],
+  providers: [CacheInvalidationHandler, SearchIndexHandler, EmailEventHandler],
+  exports: [EventEmitterModule],
 })
 export class EventsModule {}

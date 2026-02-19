@@ -4,55 +4,55 @@
 // Handles persistence, retrieval, and real-time delivery events
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { Prisma, NotificationChannel, NotificationType } from '@prisma/client'
-import { PrismaService } from '../../core/database/prisma.service'
+import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Prisma, NotificationChannel, NotificationType } from '@prisma/client';
+import { PrismaService } from '../../core/database/prisma.service';
 
 export interface CreateNotificationInput {
-  userId: string
-  type: NotificationType
-  title: string
-  message: string
-  data?: Prisma.InputJsonValue
-  channel?: NotificationChannel
-  actionUrl?: string
-  imageUrl?: string
-  expiresAt?: Date
-  priority?: 'low' | 'normal' | 'high' | 'urgent'
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: Prisma.InputJsonValue;
+  channel?: NotificationChannel;
+  actionUrl?: string;
+  imageUrl?: string;
+  expiresAt?: Date;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
 }
 
 export interface NotificationListParams {
-  page?: number
-  limit?: number
-  unreadOnly?: boolean
-  includeDismissed?: boolean
-  types?: NotificationType[]
+  page?: number;
+  limit?: number;
+  unreadOnly?: boolean;
+  includeDismissed?: boolean;
+  types?: NotificationType[];
 }
 
 export interface NotificationListResult {
   items: Array<{
-    id: string
-    type: NotificationType
-    title: string
-    message: string
-    data?: Prisma.JsonValue | null
-    actionUrl?: string | null
-    imageUrl?: string | null
-    isRead: boolean
-    createdAt: Date
-  }>
+    id: string;
+    type: NotificationType;
+    title: string;
+    message: string;
+    data?: Prisma.JsonValue | null;
+    actionUrl?: string | null;
+    imageUrl?: string | null;
+    isRead: boolean;
+    createdAt: Date;
+  }>;
   meta: {
-    page: number
-    limit: number
-    total: number
-    unreadCount: number
-  }
+    page: number;
+    limit: number;
+    total: number;
+    unreadCount: number;
+  };
 }
 
 @Injectable()
 export class NotificationService {
-  private readonly logger = new Logger(NotificationService.name)
+  private readonly logger = new Logger(NotificationService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -72,7 +72,7 @@ export class NotificationService {
         imageUrl: input.imageUrl,
         expiresAt: input.expiresAt,
       },
-    })
+    });
 
     this.eventEmitter.emit('notification.send', {
       userId: input.userId,
@@ -88,22 +88,25 @@ export class NotificationService {
         imageUrl: notification.imageUrl ?? undefined,
         priority: input.priority ?? 'normal',
       },
-    })
+    });
 
-    return notification
+    return notification;
   }
 
-  async getNotifications(userId: string, params: NotificationListParams = {}): Promise<NotificationListResult> {
-    const page = Math.max(1, params.page ?? 1)
-    const limit = Math.min(Math.max(params.limit ?? 20, 1), 50)
-    const skip = (page - 1) * limit
+  async getNotifications(
+    userId: string,
+    params: NotificationListParams = {},
+  ): Promise<NotificationListResult> {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(Math.max(params.limit ?? 20, 1), 50);
+    const skip = (page - 1) * limit;
 
     const where: Prisma.NotificationWhereInput = {
       userId,
       ...(params.unreadOnly ? { isRead: false } : {}),
       ...(params.includeDismissed ? {} : { isDismissed: false }),
       ...(params.types?.length ? { type: { in: params.types } } : {}),
-    }
+    };
 
     const [items, total, unreadCount] = await Promise.all([
       this.prisma.notification.findMany({
@@ -131,7 +134,7 @@ export class NotificationService {
           isDismissed: false,
         },
       }),
-    ])
+    ]);
 
     return {
       items,
@@ -141,7 +144,7 @@ export class NotificationService {
         total,
         unreadCount,
       },
-    }
+    };
   }
 
   async getUnreadCount(userId: string): Promise<number> {
@@ -151,11 +154,11 @@ export class NotificationService {
         isRead: false,
         isDismissed: false,
       },
-    })
+    });
   }
 
   async markRead(userId: string, notificationIds: string[]): Promise<number> {
-    if (!notificationIds.length) return 0
+    if (!notificationIds.length) return 0;
 
     const { count } = await this.prisma.notification.updateMany({
       where: {
@@ -166,9 +169,9 @@ export class NotificationService {
         isRead: true,
         readAt: new Date(),
       },
-    })
+    });
 
-    return count
+    return count;
   }
 
   async markAllRead(userId: string): Promise<number> {
@@ -181,17 +184,19 @@ export class NotificationService {
         isRead: true,
         readAt: new Date(),
       },
-    })
+    });
 
-    return count
+    return count;
   }
 
   async dismiss(userId: string, notificationId: string): Promise<void> {
     await this.prisma.notification.update({
       where: { id: notificationId },
       data: { isDismissed: true },
-    })
+    });
 
-    this.logger.debug(`Notification ${notificationId} dismissed by user ${userId}`)
+    this.logger.debug(
+      `Notification ${notificationId} dismissed by user ${userId}`,
+    );
   }
 }

@@ -4,46 +4,46 @@
 // Persists raw analytics events for reporting and aggregation
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { Prisma } from '@prisma/client'
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { Prisma } from '@prisma/client';
 
 export interface ProfileViewPayload {
-  vendorProfileId: string
-  viewerId?: string
-  sessionId?: string
-  source?: string
-  referrer?: string
-  utmSource?: string
-  utmMedium?: string
-  utmCampaign?: string
-  deviceType?: string
-  browser?: string
-  os?: string
-  duration?: number
-  scrollDepth?: number
-  country?: string
-  city?: string
+  vendorProfileId: string;
+  viewerId?: string;
+  sessionId?: string;
+  source?: string;
+  referrer?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  deviceType?: string;
+  browser?: string;
+  os?: string;
+  duration?: number;
+  scrollDepth?: number;
+  country?: string;
+  city?: string;
 }
 
 export interface SearchQueryPayload {
-  query: string
-  userId?: string
-  sessionId?: string
-  categoryId?: string
-  cityId?: string
-  filters?: Record<string, unknown>
-  resultCount: number
-  hasResults: boolean
-  clickedResults?: string[]
-  deviceType?: string
-  country?: string
-  city?: string
+  query: string;
+  userId?: string;
+  sessionId?: string;
+  categoryId?: string;
+  cityId?: string;
+  filters?: Record<string, unknown>;
+  resultCount: number;
+  hasResults: boolean;
+  clickedResults?: string[];
+  deviceType?: string;
+  country?: string;
+  city?: string;
 }
 
 @Injectable()
 export class AnalyticsTrackingService {
-  private readonly logger = new Logger(AnalyticsTrackingService.name)
+  private readonly logger = new Logger(AnalyticsTrackingService.name);
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -67,15 +67,15 @@ export class AnalyticsTrackingService {
           country: payload.country ?? undefined,
           city: payload.city ?? undefined,
         },
-      })
+      });
     } catch (error) {
-      this.logger.error('Failed to track profile view', error)
+      this.logger.error('Failed to track profile view', error);
     }
   }
 
   async trackSearchQuery(payload: SearchQueryPayload): Promise<void> {
-    const query = payload.query?.trim() || 'all'
-    const queryNormalized = query.toLowerCase()
+    const query = payload.query?.trim() || 'all';
+    const queryNormalized = query.toLowerCase();
 
     try {
       await this.prisma.searchQuery.create({
@@ -86,7 +86,9 @@ export class AnalyticsTrackingService {
           queryNormalized,
           categoryId: payload.categoryId ?? undefined,
           cityId: payload.cityId ?? undefined,
-          filters: payload.filters ? (payload.filters as Prisma.InputJsonValue) : undefined,
+          filters: payload.filters
+            ? (payload.filters as Prisma.InputJsonValue)
+            : undefined,
           resultCount: payload.resultCount,
           hasResults: payload.hasResults,
           clickedResults: payload.clickedResults ?? [],
@@ -94,9 +96,9 @@ export class AnalyticsTrackingService {
           country: payload.country ?? undefined,
           city: payload.city ?? undefined,
         },
-      })
+      });
     } catch (error) {
-      this.logger.error('Failed to track search query', error)
+      this.logger.error('Failed to track search query', error);
     }
   }
 }

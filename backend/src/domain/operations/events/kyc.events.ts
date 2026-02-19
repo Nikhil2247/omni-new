@@ -10,70 +10,70 @@ export const KYC_EVENTS = {
   KYC_DOCUMENT_UPLOADED: 'kyc.document.uploaded',
   KYC_DOCUMENT_VERIFIED: 'kyc.document.verified',
   KYC_DOCUMENT_REJECTED: 'kyc.document.rejected',
-} as const
+} as const;
 
 // ============================================================================
 // EVENT PAYLOADS
 // ============================================================================
 
 export interface KYCSubmittedEvent {
-  kycId: string
-  vendorProfileId: string
-  vendorUserId: string
-  legalName: string
-  businessType: string
-  submittedAt: Date
+  kycId: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  legalName: string;
+  businessType: string;
+  submittedAt: Date;
 }
 
 export interface KYCApprovedEvent {
-  kycId: string
-  vendorProfileId: string
-  vendorUserId: string
-  legalName: string
-  approvedAt: Date
-  approvedBy?: string
+  kycId: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  legalName: string;
+  approvedAt: Date;
+  approvedBy?: string;
 }
 
 export interface KYCRejectedEvent {
-  kycId: string
-  vendorProfileId: string
-  vendorUserId: string
-  legalName: string
-  rejectedAt: Date
-  rejectedBy?: string
-  rejectionReason: string
+  kycId: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  legalName: string;
+  rejectedAt: Date;
+  rejectedBy?: string;
+  rejectionReason: string;
 }
 
 export interface KYCExpiredEvent {
-  kycId: string
-  vendorProfileId: string
-  vendorUserId: string
-  expiredAt: Date
+  kycId: string;
+  vendorProfileId: string;
+  vendorUserId: string;
+  expiredAt: Date;
 }
 
 export interface KYCDocumentUploadedEvent {
-  documentId: string
-  kycId: string
-  vendorProfileId: string
-  documentType: string
-  uploadedAt: Date
+  documentId: string;
+  kycId: string;
+  vendorProfileId: string;
+  documentType: string;
+  uploadedAt: Date;
 }
 
 export interface KYCDocumentVerifiedEvent {
-  documentId: string
-  kycId: string
-  vendorProfileId: string
-  documentType: string
-  verifiedAt: Date
-  verifiedBy?: string
+  documentId: string;
+  kycId: string;
+  vendorProfileId: string;
+  documentType: string;
+  verifiedAt: Date;
+  verifiedBy?: string;
 }
 
 export interface KYCDocumentRejectedEvent {
-  documentId: string
-  kycId: string
-  vendorProfileId: string
-  documentType: string
-  rejectedAt: Date
-  rejectedBy?: string
-  rejectionReason?: string
+  documentId: string;
+  kycId: string;
+  vendorProfileId: string;
+  documentType: string;
+  rejectedAt: Date;
+  rejectedBy?: string;
+  rejectionReason?: string;
 }

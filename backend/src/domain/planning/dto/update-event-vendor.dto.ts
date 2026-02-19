@@ -1,1 +1,1 @@
-export { UpdateEventVendorDto } from './event-vendor.dto'
+export { UpdateEventVendorDto } from './event-vendor.dto';

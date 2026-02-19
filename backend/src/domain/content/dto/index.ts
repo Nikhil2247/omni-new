@@ -2,4 +2,4 @@
 // CONTENT DTOs - Barrel Export
 // ============================================================================
 
-export * from './blog-post.dto'
+export * from './blog-post.dto';

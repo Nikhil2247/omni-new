@@ -1,5 +1,5 @@
-import { Controller, Get, Param } from '@nestjs/common'
-import { VendorReviewService } from '../../../domain/catalog/services/vendor-review.service'
+import { Controller, Get, Param } from '@nestjs/common';
+import { VendorReviewService } from '../../../domain/catalog/services/vendor-review.service';
 
 @Controller('vendor-reviews')
 export class VendorReviewsController {
@@ -7,6 +7,6 @@ export class VendorReviewsController {
 
   @Get(':vendorProfileId')
   list(@Param('vendorProfileId') vendorProfileId: string) {
-    return this.vendorReviewService.listForVendor(vendorProfileId, true)
+    return this.vendorReviewService.listForVendor(vendorProfileId, true);
   }
 }

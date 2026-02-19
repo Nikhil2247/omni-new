@@ -1,1 +1,1 @@
-export { CreateEventDto } from './event.dto'
+export { CreateEventDto } from './event.dto';

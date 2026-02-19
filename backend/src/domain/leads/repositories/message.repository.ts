@@ -2,10 +2,13 @@
 // MESSAGE REPOSITORY - Leads Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { Prisma, Message } from '@prisma/client'
-import { BaseRepository, PaginatedResult } from '../../../core/database/repositories/base.repository'
-import { PrismaService } from '../../../core/database/prisma.service'
+import { Injectable } from '@nestjs/common';
+import { Prisma, Message } from '@prisma/client';
+import {
+  BaseRepository,
+  PaginatedResult,
+} from '../../../core/database/repositories/base.repository';
+import { PrismaService } from '../../../core/database/prisma.service';
 
 @Injectable()
 export class MessageRepository extends BaseRepository<
@@ -16,24 +19,28 @@ export class MessageRepository extends BaseRepository<
   Prisma.MessageWhereUniqueInput,
   Prisma.MessageOrderByWithRelationInput
 > {
-  protected readonly modelName = 'Message'
+  protected readonly modelName = 'Message';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.message
+    return this.prisma.message;
   }
 
-  async findByLeadId(leadId: string, page: number = 1, limit: number = 50): Promise<PaginatedResult<Message>> {
+  async findByLeadId(
+    leadId: string,
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<PaginatedResult<Message>> {
     return this.findManyPaginated(
       { page, limit },
       {
         where: { leadId },
         orderBy: { createdAt: 'asc' },
       },
-    )
+    );
   }
 
   async getUnreadCount(leadId: string, userId: string): Promise<number> {
@@ -43,7 +50,7 @@ export class MessageRepository extends BaseRepository<
         senderId: { not: userId },
         readAt: null,
       },
-    })
+    });
   }
 
   async markAsRead(messageIds: string[]): Promise<void> {
@@ -55,13 +62,13 @@ export class MessageRepository extends BaseRepository<
       data: {
         readAt: new Date(),
       },
-    })
+    });
   }
 
   async getLatestMessage(leadId: string): Promise<Message | null> {
     return this.prisma.message.findFirst({
       where: { leadId },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 }

@@ -2,11 +2,13 @@
 // WEDDING IDENTITY REPOSITORY - Planning Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { Prisma, WeddingIdentity, WeddingPartner } from '@prisma/client'
-import { PrismaService } from '../../../core/database/prisma.service'
+import { Injectable } from '@nestjs/common';
+import { Prisma, WeddingIdentity, WeddingPartner } from '@prisma/client';
+import { PrismaService } from '../../../core/database/prisma.service';
 
-type WeddingIdentityWithPartners = WeddingIdentity & { partners: WeddingPartner[] }
+type WeddingIdentityWithPartners = WeddingIdentity & {
+  partners: WeddingPartner[];
+};
 
 @Injectable()
 export class WeddingIdentityRepository {
@@ -16,7 +18,9 @@ export class WeddingIdentityRepository {
   // WEDDING IDENTITY
   // ============================================================================
 
-  async findByUserId(userId: string): Promise<WeddingIdentityWithPartners | null> {
+  async findByUserId(
+    userId: string,
+  ): Promise<WeddingIdentityWithPartners | null> {
     // Find wedding identity where user is a partner (owner or accepted)
     const partner = await this.prisma.weddingPartner.findFirst({
       where: {
@@ -32,9 +36,9 @@ export class WeddingIdentityRepository {
           },
         },
       },
-    })
+    });
 
-    return partner?.weddingIdentity || null
+    return partner?.weddingIdentity || null;
   }
 
   async findById(id: string): Promise<WeddingIdentityWithPartners | null> {
@@ -45,16 +49,16 @@ export class WeddingIdentityRepository {
           orderBy: { isOwner: 'desc' },
         },
       },
-    })
+    });
   }
 
   async create(data: {
-    displayName: string
-    eventDate?: Date
-    eventType?: 'WEDDING' | 'ENGAGEMENT' | 'OTHER'
-    ownerUserId: string
-    ownerName: string
-    partnerName: string
+    displayName: string;
+    eventDate?: Date;
+    eventType?: 'WEDDING' | 'ENGAGEMENT' | 'OTHER';
+    ownerUserId: string;
+    ownerName: string;
+    partnerName: string;
   }): Promise<WeddingIdentityWithPartners> {
     return this.prisma.weddingIdentity.create({
       data: {
@@ -83,10 +87,13 @@ export class WeddingIdentityRepository {
           orderBy: { isOwner: 'desc' },
         },
       },
-    })
+    });
   }
 
-  async update(id: string, data: Prisma.WeddingIdentityUpdateInput): Promise<WeddingIdentityWithPartners> {
+  async update(
+    id: string,
+    data: Prisma.WeddingIdentityUpdateInput,
+  ): Promise<WeddingIdentityWithPartners> {
     return this.prisma.weddingIdentity.update({
       where: { id },
       data,
@@ -95,35 +102,43 @@ export class WeddingIdentityRepository {
           orderBy: { isOwner: 'desc' },
         },
       },
-    })
+    });
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.weddingIdentity.delete({ where: { id } })
+    await this.prisma.weddingIdentity.delete({ where: { id } });
   }
 
   // ============================================================================
   // PARTNERS
   // ============================================================================
 
-  async findPartnerByInviteToken(token: string): Promise<(WeddingPartner & { weddingIdentity: WeddingIdentity }) | null> {
+  async findPartnerByInviteToken(
+    token: string,
+  ): Promise<(WeddingPartner & { weddingIdentity: WeddingIdentity }) | null> {
     return this.prisma.weddingPartner.findUnique({
       where: { inviteToken: token },
       include: { weddingIdentity: true },
-    })
+    });
   }
 
-  async findPartnerByUserId(weddingIdentityId: string, userId: string): Promise<WeddingPartner | null> {
+  async findPartnerByUserId(
+    weddingIdentityId: string,
+    userId: string,
+  ): Promise<WeddingPartner | null> {
     return this.prisma.weddingPartner.findFirst({
       where: { weddingIdentityId, userId },
-    })
+    });
   }
 
-  async updatePartner(id: string, data: Prisma.WeddingPartnerUpdateInput): Promise<WeddingPartner> {
+  async updatePartner(
+    id: string,
+    data: Prisma.WeddingPartnerUpdateInput,
+  ): Promise<WeddingPartner> {
     return this.prisma.weddingPartner.update({
       where: { id },
       data,
-    })
+    });
   }
 
   async createPartnerInvite(
@@ -136,7 +151,7 @@ export class WeddingIdentityRepository {
         weddingIdentityId,
         isOwner: false,
       },
-    })
+    });
 
     if (existingPartner) {
       // Update existing partner with new invite details
@@ -152,7 +167,7 @@ export class WeddingIdentityRepository {
           userId: null,
           acceptedAt: null,
         },
-      })
+      });
     }
 
     // Create new partner
@@ -167,10 +182,13 @@ export class WeddingIdentityRepository {
         inviteStatus: 'PENDING',
         invitedAt: new Date(),
       },
-    })
+    });
   }
 
-  async acceptInvite(partnerId: string, userId: string): Promise<WeddingPartner> {
+  async acceptInvite(
+    partnerId: string,
+    userId: string,
+  ): Promise<WeddingPartner> {
     return this.prisma.weddingPartner.update({
       where: { id: partnerId },
       data: {
@@ -179,6 +197,6 @@ export class WeddingIdentityRepository {
         acceptedAt: new Date(),
         inviteToken: null, // Clear the token after acceptance
       },
-    })
+    });
   }
 }

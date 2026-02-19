@@ -4,100 +4,100 @@
 // Aggregates and provides platform-wide metrics for admin dashboards
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service'
-import { Prisma } from '@prisma/client'
-const { Decimal } = Prisma
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service';
+import { Prisma } from '@prisma/client';
+const { Decimal } = Prisma;
 
 export interface DailyPlatformMetrics {
-  date: Date
-  totalUsers: number
-  newUsers: number
-  activeUsers: number
-  returningUsers: number
-  totalVendors: number
-  newVendors: number
-  activeVendors: number
-  verifiedVendors: number
-  totalLeads: number
-  leadsConverted: number
-  avgLeadValue: number | null
-  totalSessions: number
-  totalPageViews: number
-  avgSessionDuration: number | null
-  bounceRate: number | null
-  totalSearches: number
-  zeroResultSearches: number
-  eventsCreated: number
-  eventsCompleted: number
+  date: Date;
+  totalUsers: number;
+  newUsers: number;
+  activeUsers: number;
+  returningUsers: number;
+  totalVendors: number;
+  newVendors: number;
+  activeVendors: number;
+  verifiedVendors: number;
+  totalLeads: number;
+  leadsConverted: number;
+  avgLeadValue: number | null;
+  totalSessions: number;
+  totalPageViews: number;
+  avgSessionDuration: number | null;
+  bounceRate: number | null;
+  totalSearches: number;
+  zeroResultSearches: number;
+  eventsCreated: number;
+  eventsCompleted: number;
 }
 
 export interface PlatformOverview {
   // Current totals
-  totalUsers: number
-  totalVendors: number
-  totalEvents: number
-  totalLeads: number
+  totalUsers: number;
+  totalVendors: number;
+  totalEvents: number;
+  totalLeads: number;
 
   // Growth metrics (vs previous period)
-  userGrowth: number
-  vendorGrowth: number
-  eventGrowth: number
-  leadGrowth: number
+  userGrowth: number;
+  vendorGrowth: number;
+  eventGrowth: number;
+  leadGrowth: number;
 
   // Activity metrics
-  dailyActiveUsers: number
-  weeklyActiveUsers: number
-  monthlyActiveUsers: number
+  dailyActiveUsers: number;
+  weeklyActiveUsers: number;
+  monthlyActiveUsers: number;
 
   // Health metrics
-  avgConversionRate: number
-  avgResponseTime: number
-  platformHealth: number
+  avgConversionRate: number;
+  avgResponseTime: number;
+  platformHealth: number;
 
   // Revenue metrics
-  totalRevenue: number
-  revenueGrowth: number
+  totalRevenue: number;
+  revenueGrowth: number;
 }
 
 export interface GrowthMetrics {
-  period: string
-  users: { current: number; previous: number; growth: number }
-  vendors: { current: number; previous: number; growth: number }
-  leads: { current: number; previous: number; growth: number }
-  events: { current: number; previous: number; growth: number }
-  revenue: { current: number; previous: number; growth: number }
+  period: string;
+  users: { current: number; previous: number; growth: number };
+  vendors: { current: number; previous: number; growth: number };
+  leads: { current: number; previous: number; growth: number };
+  events: { current: number; previous: number; growth: number };
+  revenue: { current: number; previous: number; growth: number };
 }
 
 export interface GeographicDistribution {
-  countryCode: string
-  countryName: string
-  userCount: number
-  vendorCount: number
-  eventCount: number
-  percentage: number
+  countryCode: string;
+  countryName: string;
+  userCount: number;
+  vendorCount: number;
+  eventCount: number;
+  percentage: number;
 }
 
 export interface CategoryDistribution {
-  categoryId: string
-  categoryName: string
-  vendorCount: number
-  leadCount: number
-  avgRating: number
-  percentage: number
+  categoryId: string;
+  categoryName: string;
+  vendorCount: number;
+  leadCount: number;
+  avgRating: number;
+  percentage: number;
 }
 
 export interface TimeSeriesData {
-  date: Date
-  value: number
+  date: Date;
+  value: number;
 }
 
 @Injectable()
 export class PlatformMetricsService {
-  private readonly logger = new Logger(PlatformMetricsService.name)
-  private readonly CACHE_PREFIX = 'platform-metrics:'
-  private readonly CACHE_TTL = 300 // 5 minutes
+  private readonly logger = new Logger(PlatformMetricsService.name);
+  private readonly CACHE_PREFIX = 'platform-metrics:';
+  private readonly CACHE_TTL = 300; // 5 minutes
 
   constructor(
     private readonly prisma: PrismaService,
@@ -112,44 +112,47 @@ export class PlatformMetricsService {
    * Get platform overview for admin dashboard
    */
   async getPlatformOverview(): Promise<PlatformOverview> {
-    const cacheKey = `${this.CACHE_PREFIX}overview`
-    const cached = await this.cache.get<PlatformOverview>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}overview`;
+    const cached = await this.cache.get<PlatformOverview>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
-    const today = new Date()
-    const thirtyDaysAgo = new Date(today)
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    const sixtyDaysAgo = new Date(today)
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sixtyDaysAgo = new Date(today);
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
     // Get current totals
-    const [totalUsers, totalVendors, totalEvents, totalLeads] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.vendorProfile.count(),
-      this.prisma.event.count(),
-      this.prisma.lead.count(),
-    ])
+    const [totalUsers, totalVendors, totalEvents, totalLeads] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.vendorProfile.count(),
+        this.prisma.event.count(),
+        this.prisma.lead.count(),
+      ]);
 
     // Get previous period totals for growth calculation
     const [prevUsers, prevVendors, prevEvents, prevLeads] = await Promise.all([
       this.prisma.user.count({ where: { createdAt: { lte: thirtyDaysAgo } } }),
-      this.prisma.vendorProfile.count({ where: { createdAt: { lte: thirtyDaysAgo } } }),
+      this.prisma.vendorProfile.count({
+        where: { createdAt: { lte: thirtyDaysAgo } },
+      }),
       this.prisma.event.count({ where: { createdAt: { lte: thirtyDaysAgo } } }),
       this.prisma.lead.count({ where: { createdAt: { lte: thirtyDaysAgo } } }),
-    ])
+    ]);
 
     // Get active user counts
     const [dau, wau, mau] = await Promise.all([
       this.getDailyActiveUsers(),
       this.getWeeklyActiveUsers(),
       this.getMonthlyActiveUsers(),
-    ])
+    ]);
 
     // Get health metrics
-    const healthMetrics = await this.getHealthMetrics()
+    const healthMetrics = await this.getHealthMetrics();
 
     // Get revenue metrics from vendor metrics
     const [currentRevenue, previousRevenue] = await Promise.all([
@@ -161,10 +164,10 @@ export class PlatformMetricsService {
         where: { date: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
         _sum: { totalRevenue: true },
       }),
-    ])
+    ]);
 
-    const totalRevenue = currentRevenue._sum.totalRevenue?.toNumber() || 0
-    const prevRevenue = previousRevenue._sum.totalRevenue?.toNumber() || 0
+    const totalRevenue = currentRevenue._sum.totalRevenue?.toNumber() || 0;
+    const prevRevenue = previousRevenue._sum.totalRevenue?.toNumber() || 0;
 
     const overview: PlatformOverview = {
       totalUsers,
@@ -183,11 +186,11 @@ export class PlatformMetricsService {
       platformHealth: healthMetrics.healthScore,
       totalRevenue,
       revenueGrowth: this.calculateGrowth(totalRevenue, prevRevenue),
-    }
+    };
 
-    await this.cache.set(cacheKey, overview, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, overview, { ttl: this.CACHE_TTL });
 
-    return overview
+    return overview;
   }
 
   /**
@@ -205,7 +208,7 @@ export class PlatformMetricsService {
         },
       },
       orderBy: { date: 'asc' },
-    })
+    });
 
     return metrics.map((m) => ({
       date: m.date,
@@ -228,7 +231,7 @@ export class PlatformMetricsService {
       zeroResultSearches: m.zeroResultSearches,
       eventsCreated: m.eventsCreated,
       eventsCompleted: m.eventsCompleted,
-    }))
+    }));
   }
 
   // ============================================================================
@@ -241,33 +244,33 @@ export class PlatformMetricsService {
   async getGrowthMetrics(
     period: 'day' | 'week' | 'month' = 'month',
   ): Promise<GrowthMetrics> {
-    const cacheKey = `${this.CACHE_PREFIX}growth:${period}`
-    const cached = await this.cache.get<GrowthMetrics>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}growth:${period}`;
+    const cached = await this.cache.get<GrowthMetrics>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
-    const today = new Date()
-    let periodDays: number
+    const today = new Date();
+    let periodDays: number;
 
     switch (period) {
       case 'day':
-        periodDays = 1
-        break
+        periodDays = 1;
+        break;
       case 'week':
-        periodDays = 7
-        break
+        periodDays = 7;
+        break;
       case 'month':
       default:
-        periodDays = 30
+        periodDays = 30;
     }
 
-    const currentStart = new Date(today)
-    currentStart.setDate(currentStart.getDate() - periodDays)
+    const currentStart = new Date(today);
+    currentStart.setDate(currentStart.getDate() - periodDays);
 
-    const previousStart = new Date(currentStart)
-    previousStart.setDate(previousStart.getDate() - periodDays)
+    const previousStart = new Date(currentStart);
+    previousStart.setDate(previousStart.getDate() - periodDays);
 
     // Current period counts
     const [currentUsers, currentVendors, currentLeads, currentEvents] =
@@ -284,7 +287,7 @@ export class PlatformMetricsService {
         this.prisma.event.count({
           where: { createdAt: { gte: currentStart, lte: today } },
         }),
-      ])
+      ]);
 
     // Previous period counts
     const [prevUsers, prevVendors, prevLeads, prevEvents] = await Promise.all([
@@ -300,7 +303,7 @@ export class PlatformMetricsService {
       this.prisma.event.count({
         where: { createdAt: { gte: previousStart, lt: currentStart } },
       }),
-    ])
+    ]);
 
     const growth: GrowthMetrics = {
       period,
@@ -329,11 +332,11 @@ export class PlatformMetricsService {
         previous: 0,
         growth: 0,
       },
-    }
+    };
 
-    await this.cache.set(cacheKey, growth, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, growth, { ttl: this.CACHE_TTL });
 
-    return growth
+    return growth;
   }
 
   // ============================================================================
@@ -344,11 +347,11 @@ export class PlatformMetricsService {
    * Get daily active users
    */
   async getDailyActiveUsers(date?: Date): Promise<number> {
-    const targetDate = date || new Date()
-    const startOfDay = new Date(targetDate)
-    startOfDay.setHours(0, 0, 0, 0)
-    const endOfDay = new Date(targetDate)
-    endOfDay.setHours(23, 59, 59, 999)
+    const targetDate = date || new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
     const result = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
@@ -358,18 +361,18 @@ export class PlatformMetricsService {
           lte: endOfDay,
         },
       },
-    })
+    });
 
-    return result.length
+    return result.length;
   }
 
   /**
    * Get weekly active users
    */
   async getWeeklyActiveUsers(endDate?: Date): Promise<number> {
-    const end = endDate || new Date()
-    const start = new Date(end)
-    start.setDate(start.getDate() - 7)
+    const end = endDate || new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - 7);
 
     const result = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
@@ -379,18 +382,18 @@ export class PlatformMetricsService {
           lte: end,
         },
       },
-    })
+    });
 
-    return result.length
+    return result.length;
   }
 
   /**
    * Get monthly active users
    */
   async getMonthlyActiveUsers(endDate?: Date): Promise<number> {
-    const end = endDate || new Date()
-    const start = new Date(end)
-    start.setDate(start.getDate() - 30)
+    const end = endDate || new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - 30);
 
     const result = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
@@ -400,9 +403,9 @@ export class PlatformMetricsService {
           lte: end,
         },
       },
-    })
+    });
 
-    return result.length
+    return result.length;
   }
 
   /**
@@ -422,12 +425,12 @@ export class PlatformMetricsService {
       },
       _count: { userId: true },
       orderBy: { date: 'asc' },
-    })
+    });
 
     return results.map((r) => ({
       date: r.date,
       value: r._count.userId,
-    }))
+    }));
   }
 
   // ============================================================================
@@ -440,29 +443,29 @@ export class PlatformMetricsService {
   async getUserTypeDistribution(): Promise<
     Array<{ type: string; count: number; percentage: number }>
   > {
-    const cacheKey = `${this.CACHE_PREFIX}user-distribution`
-    const cached = await this.cache.get<any[]>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}user-distribution`;
+    const cached = await this.cache.get<any[]>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
     const results = await this.prisma.user.groupBy({
       by: ['status'],
       _count: { id: true },
-    })
+    });
 
-    const total = results.reduce((sum, r) => sum + r._count.id, 0)
+    const total = results.reduce((sum, r) => sum + r._count.id, 0);
 
     const distribution = results.map((r) => ({
       type: r.status,
       count: r._count.id,
       percentage: total > 0 ? Math.round((r._count.id / total) * 100) : 0,
-    }))
+    }));
 
-    await this.cache.set(cacheKey, distribution, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, distribution, { ttl: this.CACHE_TTL });
 
-    return distribution
+    return distribution;
   }
 
   /**
@@ -471,29 +474,29 @@ export class PlatformMetricsService {
   async getVendorVerificationDistribution(): Promise<
     Array<{ status: string; count: number; percentage: number }>
   > {
-    const cacheKey = `${this.CACHE_PREFIX}vendor-verification-distribution`
-    const cached = await this.cache.get<any[]>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}vendor-verification-distribution`;
+    const cached = await this.cache.get<any[]>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
     const results = await this.prisma.vendorProfile.groupBy({
       by: ['status'] as any,
       _count: { id: true },
-    })
+    });
 
-    const total = results.reduce((sum, r) => sum + r._count.id, 0)
+    const total = results.reduce((sum, r) => sum + r._count.id, 0);
 
     const distribution = results.map((r) => ({
       status: r.status,
       count: r._count.id,
       percentage: total > 0 ? Math.round((r._count.id / total) * 100) : 0,
-    }))
+    }));
 
-    await this.cache.set(cacheKey, distribution, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, distribution, { ttl: this.CACHE_TTL });
 
-    return distribution
+    return distribution;
   }
 
   /**
@@ -505,15 +508,15 @@ export class PlatformMetricsService {
     const results = await this.prisma.lead.groupBy({
       by: ['status'],
       _count: { id: true },
-    })
+    });
 
-    const total = results.reduce((sum, r) => sum + r._count.id, 0)
+    const total = results.reduce((sum, r) => sum + r._count.id, 0);
 
     return results.map((r) => ({
       status: r.status,
       count: r._count.id,
       percentage: total > 0 ? Math.round((r._count.id / total) * 100) : 0,
-    }))
+    }));
   }
 
   /**
@@ -525,15 +528,15 @@ export class PlatformMetricsService {
     const results = await this.prisma.event.groupBy({
       by: ['status'],
       _count: { id: true },
-    })
+    });
 
-    const total = results.reduce((sum, r) => sum + r._count.id, 0)
+    const total = results.reduce((sum, r) => sum + r._count.id, 0);
 
     return results.map((r) => ({
       status: r.status,
       count: r._count.id,
       percentage: total > 0 ? Math.round((r._count.id / total) * 100) : 0,
-    }))
+    }));
   }
 
   // ============================================================================
@@ -548,24 +551,24 @@ export class PlatformMetricsService {
    * Get searches in the last hour
    */
   async getSearchesLastHour(): Promise<number> {
-    const oneHourAgo = new Date()
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1)
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
     return this.prisma.searchQuery.count({
       where: { createdAt: { gte: oneHourAgo } },
-    })
+    });
   }
 
   /**
    * Get leads created in the last hour
    */
   async getLeadsLastHour(): Promise<number> {
-    const oneHourAgo = new Date()
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1)
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
     return this.prisma.lead.count({
       where: { createdAt: { gte: oneHourAgo } },
-    })
+    });
   }
 
   /**
@@ -574,7 +577,7 @@ export class PlatformMetricsService {
   async getPendingLeadsCount(): Promise<number> {
     return this.prisma.lead.count({
       where: { status: 'NEW' },
-    })
+    });
   }
 
   /**
@@ -585,7 +588,7 @@ export class PlatformMetricsService {
       where: {
         status: 'IN_PROGRESS',
       },
-    })
+    });
   }
 
   /**
@@ -596,28 +599,28 @@ export class PlatformMetricsService {
       where: {
         status: { in: ['PLANNING', 'CONFIRMED'] },
       },
-    })
+    });
   }
 
   /**
    * Get search analytics
    */
   async getSearchAnalytics(days: number = 30): Promise<{
-    totalSearches: number
-    uniqueSearchers: number
-    avgSearchesPerUser: number
-    topSearchTerms: Array<{ term: string; count: number }>
-    zeroResultRate: number
+    totalSearches: number;
+    uniqueSearchers: number;
+    avgSearchesPerUser: number;
+    topSearchTerms: Array<{ term: string; count: number }>;
+    zeroResultRate: number;
   }> {
-    const cacheKey = `${this.CACHE_PREFIX}search-analytics:${days}`
-    const cached = await this.cache.get<any>(cacheKey)
+    const cacheKey = `${this.CACHE_PREFIX}search-analytics:${days}`;
+    const cached = await this.cache.get<any>(cacheKey);
 
     if (cached) {
-      return cached
+      return cached;
     }
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     const [totalSearches, uniqueSearchers, topTerms, zeroResults] =
       await Promise.all([
@@ -641,7 +644,7 @@ export class PlatformMetricsService {
             hasResults: false,
           },
         }),
-      ])
+      ]);
 
     const analytics = {
       totalSearches,
@@ -656,11 +659,11 @@ export class PlatformMetricsService {
       })),
       zeroResultRate:
         totalSearches > 0 ? Math.round((zeroResults / totalSearches) * 100) : 0,
-    }
+    };
 
-    await this.cache.set(cacheKey, analytics, { ttl: this.CACHE_TTL })
+    await this.cache.set(cacheKey, analytics, { ttl: this.CACHE_TTL });
 
-    return analytics
+    return analytics;
   }
 
   // ============================================================================
@@ -671,15 +674,15 @@ export class PlatformMetricsService {
    * Aggregate and store daily platform metrics
    */
   async aggregateDailyMetrics(date?: Date): Promise<void> {
-    const targetDate = date || new Date()
-    targetDate.setHours(0, 0, 0, 0)
+    const targetDate = date || new Date();
+    targetDate.setHours(0, 0, 0, 0);
 
-    const startOfDay = new Date(targetDate)
-    const endOfDay = new Date(targetDate)
-    endOfDay.setHours(23, 59, 59, 999)
+    const startOfDay = new Date(targetDate);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
-    const previousDay = new Date(targetDate)
-    previousDay.setDate(previousDay.getDate() - 1)
+    const previousDay = new Date(targetDate);
+    previousDay.setDate(previousDay.getDate() - 1);
 
     // Calculate all metrics
     const [
@@ -701,7 +704,9 @@ export class PlatformMetricsService {
         where: { createdAt: { gte: startOfDay, lte: endOfDay } },
       }),
       this.getDailyActiveUsers(targetDate),
-      this.prisma.vendorProfile.count({ where: { createdAt: { lte: endOfDay } } }),
+      this.prisma.vendorProfile.count({
+        where: { createdAt: { lte: endOfDay } },
+      }),
       this.prisma.vendorProfile.count({
         where: { createdAt: { gte: startOfDay, lte: endOfDay } },
       }),
@@ -737,23 +742,23 @@ export class PlatformMetricsService {
         where: { createdAt: { gte: startOfDay, lte: endOfDay } },
         _count: { id: true },
       }),
-    ])
+    ]);
 
     // Calculate returning users
     const previousDayUsers = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
       where: { date: previousDay },
-    })
+    });
 
     const todayUsers = await this.prisma.userEngagement.groupBy({
       by: ['userId'],
       where: { date: targetDate },
-    })
+    });
 
-    const previousUserIds = new Set(previousDayUsers.map((u) => u.userId))
+    const previousUserIds = new Set(previousDayUsers.map((u) => u.userId));
     const returningUsers = todayUsers.filter((u) =>
       previousUserIds.has(u.userId),
-    ).length
+    ).length;
 
     // Calculate search zero results
     const zeroResultSearches = await this.prisma.searchQuery.count({
@@ -761,7 +766,7 @@ export class PlatformMetricsService {
         createdAt: { gte: startOfDay, lte: endOfDay },
         hasResults: false,
       },
-    })
+    });
 
     // Upsert daily metrics
     await this.prisma.platformMetrics.upsert({
@@ -794,7 +799,8 @@ export class PlatformMetricsService {
         totalSearches: searchMetrics._count.id,
         zeroResultSearches,
         eventsCreated:
-          eventMetrics.find((e) => e.status === 'UPCOMING' as any)?._count.id || 0,
+          eventMetrics.find((e) => e.status === ('UPCOMING' as any))?._count
+            .id || 0,
         eventsCompleted:
           eventMetrics.find((e) => e.status === 'COMPLETED')?._count.id || 0,
       },
@@ -823,13 +829,14 @@ export class PlatformMetricsService {
         totalSearches: searchMetrics._count.id,
         zeroResultSearches,
         eventsCreated:
-          eventMetrics.find((e) => e.status === 'UPCOMING' as any)?._count.id || 0,
+          eventMetrics.find((e) => e.status === ('UPCOMING' as any))?._count
+            .id || 0,
         eventsCompleted:
           eventMetrics.find((e) => e.status === 'COMPLETED')?._count.id || 0,
       },
-    })
+    });
 
-    this.logger.log(`Daily metrics aggregated for ${targetDate.toISOString()}`)
+    this.logger.log(`Daily metrics aggregated for ${targetDate.toISOString()}`);
   }
 
   // ============================================================================
@@ -838,18 +845,18 @@ export class PlatformMetricsService {
 
   private calculateGrowth(current: number, previous: number): number {
     if (previous === 0) {
-      return current > 0 ? 100 : 0
+      return current > 0 ? 100 : 0;
     }
-    return Math.round(((current - previous) / previous) * 100)
+    return Math.round(((current - previous) / previous) * 100);
   }
 
   private async getHealthMetrics(): Promise<{
-    avgConversionRate: number
-    avgResponseTime: number
-    healthScore: number
+    avgConversionRate: number;
+    avgResponseTime: number;
+    healthScore: number;
   }> {
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const vendorMetrics = await this.prisma.vendorMetrics.aggregate({
       where: { date: { gte: thirtyDaysAgo } },
@@ -857,29 +864,29 @@ export class PlatformMetricsService {
         conversionRate: true,
         avgResponseTime: true,
       },
-    })
+    });
 
-    const avgConversionRate = vendorMetrics._avg.conversionRate?.toNumber() || 0
-    const avgResponseTime = vendorMetrics._avg.avgResponseTime || 0
+    const avgConversionRate =
+      vendorMetrics._avg.conversionRate?.toNumber() || 0;
+    const avgResponseTime = vendorMetrics._avg.avgResponseTime || 0;
 
     // Calculate health score (0-100)
-    let healthScore = 50 // Base score
+    let healthScore = 50; // Base score
 
     // Add points for conversion rate (max 25)
-    healthScore += Math.min(avgConversionRate * 100, 25)
+    healthScore += Math.min(avgConversionRate * 100, 25);
 
     // Add points for response time (max 25) - lower is better
     if (avgResponseTime > 0) {
-      healthScore += Math.max(25 - avgResponseTime / 60, 0) // Penalize for slow responses
+      healthScore += Math.max(25 - avgResponseTime / 60, 0); // Penalize for slow responses
     } else {
-      healthScore += 25
+      healthScore += 25;
     }
 
     return {
       avgConversionRate: Math.round(avgConversionRate * 100) / 100,
       avgResponseTime: Math.round(avgResponseTime),
       healthScore: Math.min(Math.round(healthScore), 100),
-    }
+    };
   }
 }
-

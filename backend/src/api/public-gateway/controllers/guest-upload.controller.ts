@@ -11,13 +11,22 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
-} from '@nestjs/common'
-import { FileInterceptor } from '@nestjs/platform-express'
-import { ApiTags, ApiOperation, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger'
-import { Public } from '../../../core/auth/decorators/public.decorator'
-import { GuestUploadService } from '../../../domain/planning/services/guest-upload.service'
-import { UploadService, FileCategory } from '../../../infrastructure/storage/upload.service'
-import { CreateGuestUploadDto } from '../../../domain/planning/dto/guest-upload.dto'
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
+import { Public } from '../../../core/auth/decorators/public.decorator';
+import { GuestUploadService } from '../../../domain/planning/services/guest-upload.service';
+import {
+  UploadService,
+  FileCategory,
+} from '../../../infrastructure/storage/upload.service';
+import { CreateGuestUploadDto } from '../../../domain/planning/dto/guest-upload.dto';
 
 @Controller('guest-upload')
 @ApiTags('Guest Upload (Public)')
@@ -32,7 +41,7 @@ export class GuestUploadController {
   @ApiOperation({ summary: 'Get event memory settings by QR code' })
   @ApiParam({ name: 'eventCode', description: 'Event QR code / event code' })
   async getMemorySettings(@Param('eventCode') eventCode: string) {
-    const memory = await this.guestUploadService.getMemoryByCode(eventCode)
+    const memory = await this.guestUploadService.getMemoryByCode(eventCode);
 
     // Only return public-safe information
     return {
@@ -49,11 +58,13 @@ export class GuestUploadController {
             date: memory.event.date,
           }
         : null,
-    }
+    };
   }
 
   @Post(':eventCode/upload')
-  @ApiOperation({ summary: 'Upload a photo/video to event memory (no auth required)' })
+  @ApiOperation({
+    summary: 'Upload a photo/video to event memory (no auth required)',
+  })
   @ApiParam({ name: 'eventCode', description: 'Event QR code / event code' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -74,41 +85,52 @@ export class GuestUploadController {
     @Body() dto: CreateGuestUploadDto,
   ) {
     if (!file) {
-      throw new BadRequestException('No file uploaded')
+      throw new BadRequestException('No file uploaded');
     }
 
     // Get memory by code to validate and get ID
-    const memory = await this.guestUploadService.getMemoryByCode(eventCode)
+    const memory = await this.guestUploadService.getMemoryByCode(eventCode);
 
     // Validate memory is active and accepts uploads
     if (!memory.isActive) {
-      throw new BadRequestException('This event memory is not active')
+      throw new BadRequestException('This event memory is not active');
     }
 
     if (!memory.allowUploads) {
-      throw new BadRequestException('Uploads are not allowed for this event')
+      throw new BadRequestException('Uploads are not allowed for this event');
     }
 
     if (memory.expiresAt && new Date(memory.expiresAt) < new Date()) {
-      throw new BadRequestException('This event memory has expired')
+      throw new BadRequestException('This event memory has expired');
     }
 
     // Determine media type
-    const isVideo = file.mimetype.startsWith('video/')
-    const mediaType = isVideo ? 'VIDEO' : 'IMAGE'
+    const isVideo = file.mimetype.startsWith('video/');
+    const mediaType = isVideo ? 'VIDEO' : 'IMAGE';
 
     // Upload file to MinIO with WebP conversion for images
     const uploaded = isVideo
-      ? await this.uploadService.uploadFile(file.buffer, file.originalname, FileCategory.EVENT_GALLERY, file.mimetype)
-      : await this.uploadService.uploadImage(file.buffer, file.originalname, FileCategory.EVENT_GALLERY, file.mimetype, {
-          imageProcessing: {
-            convertToWebP: true,
-            quality: 80,
-            generateThumbnail: true,
-            thumbnailWidth: 400,
-            thumbnailHeight: 400,
+      ? await this.uploadService.uploadFile(
+          file.buffer,
+          file.originalname,
+          FileCategory.EVENT_GALLERY,
+          file.mimetype,
+        )
+      : await this.uploadService.uploadImage(
+          file.buffer,
+          file.originalname,
+          FileCategory.EVENT_GALLERY,
+          file.mimetype,
+          {
+            imageProcessing: {
+              convertToWebP: true,
+              quality: 80,
+              generateThumbnail: true,
+              thumbnailWidth: 400,
+              thumbnailHeight: 400,
+            },
           },
-        })
+        );
 
     // Create guest upload record
     const guestUpload = await this.guestUploadService.create({
@@ -120,7 +142,7 @@ export class GuestUploadController {
       mediaType,
       fileSize: uploaded.size,
       caption: dto.caption,
-    })
+    });
 
     return {
       id: guestUpload.id,
@@ -131,14 +153,14 @@ export class GuestUploadController {
         guestUpload.status === 'PENDING'
           ? 'Your photo has been submitted and is awaiting approval'
           : 'Your photo has been uploaded successfully',
-    }
+    };
   }
 
   @Get(':eventCode/gallery')
   @ApiOperation({ summary: 'Get approved uploads for public gallery view' })
   @ApiParam({ name: 'eventCode', description: 'Event QR code / event code' })
   async getPublicGallery(@Param('eventCode') eventCode: string) {
-    const uploads = await this.guestUploadService.findByEventCode(eventCode)
+    const uploads = await this.guestUploadService.findByEventCode(eventCode);
 
     return {
       count: uploads.length,
@@ -151,6 +173,6 @@ export class GuestUploadController {
         caption: upload.caption,
         createdAt: upload.createdAt,
       })),
-    }
+    };
   }
 }

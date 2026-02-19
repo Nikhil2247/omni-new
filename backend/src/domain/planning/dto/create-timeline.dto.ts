@@ -1,1 +1,1 @@
-export { CreateTimelineDto } from './timeline.dto'
+export { CreateTimelineDto } from './timeline.dto';

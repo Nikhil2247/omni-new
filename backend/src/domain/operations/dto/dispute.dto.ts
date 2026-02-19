@@ -2,7 +2,7 @@
 // DISPUTE DTOs - Operations Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsUUID,
@@ -11,7 +11,7 @@ import {
   IsNumber,
   Min,
   MaxLength,
-} from 'class-validator'
+} from 'class-validator';
 
 export enum DisputeType {
   SERVICE_QUALITY = 'SERVICE_QUALITY',
@@ -37,20 +37,23 @@ export enum DisputeStatus {
 export class CreateDisputeDto {
   @ApiProperty({ description: 'Vendor profile ID being disputed' })
   @IsUUID()
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Reporter user ID (who filed the dispute)' })
   @IsUUID()
-  reporterId: string
+  reporterId: string;
 
   @ApiProperty({ description: 'Dispute type', enum: DisputeType })
   @IsEnum(DisputeType)
-  type: DisputeType
+  type: DisputeType;
 
-  @ApiProperty({ description: 'Dispute description', example: 'Vendor did not show up for the event' })
+  @ApiProperty({
+    description: 'Dispute description',
+    example: 'Vendor did not show up for the event',
+  })
   @IsString()
   @MaxLength(2000)
-  description: string
+  description: string;
 }
 
 // ============================================================================
@@ -61,52 +64,55 @@ export class UpdateDisputeDto {
   @ApiPropertyOptional({ description: 'Dispute type', enum: DisputeType })
   @IsOptional()
   @IsEnum(DisputeType)
-  type?: DisputeType
+  type?: DisputeType;
 
   @ApiPropertyOptional({ description: 'Dispute description' })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
-  description?: string
+  description?: string;
 }
 
 export class UpdateDisputeStatusDto {
   @ApiProperty({ description: 'New dispute status', enum: DisputeStatus })
   @IsEnum(DisputeStatus)
-  status: DisputeStatus
+  status: DisputeStatus;
 
-  @ApiPropertyOptional({ description: 'Status change reason/notes', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Status change reason/notes',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  notes?: string
+  notes?: string;
 }
 
 export class ResolveDisputeDto {
   @ApiProperty({ description: 'Dispute ID' })
   @IsUUID()
-  disputeId: string
+  disputeId: string;
 
   @ApiProperty({ description: 'Resolution description' })
   @IsString()
   @MaxLength(2000)
-  resolution: string
+  resolution: string;
 
   @ApiPropertyOptional({ description: 'Resolved by user ID', nullable: true })
   @IsOptional()
   @IsUUID()
-  resolvedBy?: string
+  resolvedBy?: string;
 }
 
 export class EscalateDisputeDto {
   @ApiProperty({ description: 'Dispute ID' })
   @IsUUID()
-  disputeId: string
+  disputeId: string;
 
   @ApiProperty({ description: 'Escalation reason' })
   @IsString()
   @MaxLength(500)
-  reason: string
+  reason: string;
 }
 
 // ============================================================================
@@ -117,34 +123,34 @@ export class SearchDisputesDto {
   @ApiPropertyOptional({ description: 'Filter by status', enum: DisputeStatus })
   @IsOptional()
   @IsEnum(DisputeStatus)
-  status?: DisputeStatus
+  status?: DisputeStatus;
 
   @ApiPropertyOptional({ description: 'Filter by type', enum: DisputeType })
   @IsOptional()
   @IsEnum(DisputeType)
-  type?: DisputeType
+  type?: DisputeType;
 
   @ApiPropertyOptional({ description: 'Filter by vendor profile ID' })
   @IsOptional()
   @IsUUID()
-  vendorProfileId?: string
+  vendorProfileId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by reporter ID' })
   @IsOptional()
   @IsUUID()
-  reporterId?: string
+  reporterId?: string;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  page?: number
+  page?: number;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 20 })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  limit?: number
+  limit?: number;
 }
 
 // ============================================================================
@@ -153,35 +159,35 @@ export class SearchDisputesDto {
 
 export class DisputeResponseDto {
   @ApiProperty({ description: 'Dispute ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Vendor profile ID' })
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Reporter user ID' })
-  reporterId: string
+  reporterId: string;
 
   @ApiProperty({ description: 'Dispute type', enum: DisputeType })
-  type: DisputeType
+  type: DisputeType;
 
   @ApiProperty({ description: 'Dispute status', enum: DisputeStatus })
-  status: DisputeStatus
+  status: DisputeStatus;
 
   @ApiProperty({ description: 'Dispute description' })
-  description: string
+  description: string;
 
   @ApiPropertyOptional({ description: 'Resolution', nullable: true })
-  resolution: string | null
+  resolution: string | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Updated at' })
-  updatedAt: Date
+  updatedAt: Date;
 
   @ApiPropertyOptional({ description: 'Resolved at', nullable: true })
-  resolvedAt: Date | null
+  resolvedAt: Date | null;
 
   @ApiPropertyOptional({ description: 'Resolved by user ID', nullable: true })
-  resolvedBy: string | null
+  resolvedBy: string | null;
 }

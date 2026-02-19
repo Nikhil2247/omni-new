@@ -2,4 +2,4 @@
 // CONTENT REPOSITORIES - Barrel Export
 // ============================================================================
 
-export * from './blog-post.repository'
+export * from './blog-post.repository';

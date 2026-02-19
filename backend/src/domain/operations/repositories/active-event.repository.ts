@@ -2,11 +2,14 @@
 // ACTIVE EVENT REPOSITORY - Operations Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { Prisma, ActiveEvent } from '@prisma/client'
-import { BaseRepository, PaginatedResult } from '../../../core/database/repositories/base.repository'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { SearchActiveEventsDto } from '../dto/active-event.dto'
+import { Injectable } from '@nestjs/common';
+import { Prisma, ActiveEvent } from '@prisma/client';
+import {
+  BaseRepository,
+  PaginatedResult,
+} from '../../../core/database/repositories/base.repository';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { SearchActiveEventsDto } from '../dto/active-event.dto';
 
 @Injectable()
 export class ActiveEventRepository extends BaseRepository<
@@ -17,32 +20,41 @@ export class ActiveEventRepository extends BaseRepository<
   Prisma.ActiveEventWhereUniqueInput,
   Prisma.ActiveEventOrderByWithRelationInput
 > {
-  protected readonly modelName = 'ActiveEvent'
+  protected readonly modelName = 'ActiveEvent';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.activeEvent
+    return this.prisma.activeEvent;
   }
 
   async findByOpsManager(opsManagerId: string): Promise<ActiveEvent[]> {
     return this.prisma.activeEvent.findMany({
       where: { opsManagerId },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async findByStatus(status: string): Promise<ActiveEvent[]> {
     return this.prisma.activeEvent.findMany({
       where: { status: status as any },
       orderBy: { eventDate: 'asc' },
-    })
+    });
   }
 
-  async search(dto: SearchActiveEventsDto): Promise<PaginatedResult<ActiveEvent>> {
-    const { status, origin, opsManagerId, clientName, page = 1, limit = 20 } = dto
+  async search(
+    dto: SearchActiveEventsDto,
+  ): Promise<PaginatedResult<ActiveEvent>> {
+    const {
+      status,
+      origin,
+      opsManagerId,
+      clientName,
+      page = 1,
+      limit = 20,
+    } = dto;
 
     const where: Prisma.ActiveEventWhereInput = {
       ...(status && { status: status as any }),
@@ -54,7 +66,7 @@ export class ActiveEventRepository extends BaseRepository<
           mode: 'insensitive',
         },
       }),
-    }
+    };
 
     return this.findManyPaginated(
       { page, limit },
@@ -62,7 +74,7 @@ export class ActiveEventRepository extends BaseRepository<
         where,
         orderBy: { createdAt: 'desc' },
       },
-    )
+    );
   }
 
   async findUpcoming(limit: number = 10): Promise<ActiveEvent[]> {
@@ -77,12 +89,12 @@ export class ActiveEventRepository extends BaseRepository<
       },
       orderBy: { eventDate: 'asc' },
       take: limit,
-    })
+    });
   }
 
   async findByLeadId(leadId: string): Promise<ActiveEvent | null> {
     return this.prisma.activeEvent.findUnique({
       where: { convertedFromLeadId: leadId },
-    })
+    });
   }
-} 
+}

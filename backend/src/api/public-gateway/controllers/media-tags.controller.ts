@@ -1,5 +1,5 @@
-import { Controller, Get, Query, Param } from '@nestjs/common'
-import { MediaTagService } from '../../../domain/catalog/services/media-tag.service'
+import { Controller, Get, Query, Param } from '@nestjs/common';
+import { MediaTagService } from '../../../domain/catalog/services/media-tag.service';
 
 @Controller('media-tags')
 export class MediaTagsController {
@@ -7,11 +7,11 @@ export class MediaTagsController {
 
   @Get('list')
   list(@Query('query') query?: string) {
-    return this.mediaTagService.listTags(query)
+    return this.mediaTagService.listTags(query);
   }
 
   @Get('media/:mediaItemId')
   listMediaTags(@Param('mediaItemId') mediaItemId: string) {
-    return this.mediaTagService.listMediaTags(mediaItemId)
+    return this.mediaTagService.listMediaTags(mediaItemId);
   }
 }

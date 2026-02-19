@@ -2,8 +2,8 @@
 // EMAIL VERIFICATION DTOs - Email Verification Request/Response
 // ============================================================================
 
-import { IsEmail, IsString, IsNotEmpty } from 'class-validator'
-import { ApiProperty } from '@nestjs/swagger'
+import { IsEmail, IsString, IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyEmailDto {
   @ApiProperty({
@@ -12,7 +12,7 @@ export class VerifyEmailDto {
   })
   @IsString()
   @IsNotEmpty({ message: 'Verification token is required' })
-  token: string
+  token: string;
 }
 
 export class ResendVerificationDto {
@@ -21,7 +21,7 @@ export class ResendVerificationDto {
     example: 'user@example.com',
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
-  email: string
+  email: string;
 }
 
 export class UpdateEmailDto {
@@ -30,33 +30,33 @@ export class UpdateEmailDto {
     example: 'newemail@example.com',
   })
   @IsEmail({}, { message: 'Please provide a valid email address' })
-  newEmail: string
+  newEmail: string;
 }
 
 export class EmailVerificationStatusDto {
   @ApiProperty({ description: 'Whether email is verified' })
-  emailVerified: boolean
+  emailVerified: boolean;
 
   @ApiProperty({
     description: 'Date when email was verified',
     nullable: true,
   })
-  emailVerifiedAt: Date | null
+  emailVerifiedAt: Date | null;
 
   @ApiProperty({ description: 'Whether a new verification email can be sent' })
-  canResend: boolean
+  canResend: boolean;
 }
 
 export class EmailVerificationResponseDto {
   @ApiProperty({ description: 'Operation success status' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({ description: 'Response message' })
-  message: string
+  message: string;
 
   @ApiProperty({
     description: 'Verified email address',
     nullable: true,
   })
-  email?: string
+  email?: string;
 }

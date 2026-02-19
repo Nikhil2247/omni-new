@@ -2,5 +2,5 @@
 // EXPORT MODULE - Barrel Export
 // ============================================================================
 
-export * from './export.service'
-export * from './export.module'
+export * from './export.service';
+export * from './export.module';

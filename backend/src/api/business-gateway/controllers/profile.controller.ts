@@ -19,20 +19,31 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
-} from '@nestjs/common'
-import { FileInterceptor } from '@nestjs/platform-express'
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger'
-import { VendorProfileService } from '../../../domain/catalog/services/vendor-profile.service'
-import { 
-  CreateVendorProfileDto, 
-  UpdateVendorProfileDto, 
-  VendorProfileResponseDto 
-} from '../../../domain/catalog/dto/vendor-profile.dto'
-import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard'
-import { RolesGuard } from '../../../core/auth/guards/roles.guard'
-import { Roles } from '../../../core/auth/decorators/roles.decorator'
-import { AuditCreate, Audited, AuditSensitive } from '../../../core/audit/audit.decorators'
-import { AuditSeverity } from '../../../core/audit/audit.types'
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
+import { VendorProfileService } from '../../../domain/catalog/services/vendor-profile.service';
+import {
+  CreateVendorProfileDto,
+  UpdateVendorProfileDto,
+  VendorProfileResponseDto,
+} from '../../../domain/catalog/dto/vendor-profile.dto';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../core/auth/guards/roles.guard';
+import { Roles } from '../../../core/auth/decorators/roles.decorator';
+import {
+  AuditCreate,
+  Audited,
+  AuditSensitive,
+} from '../../../core/audit/audit.decorators';
+import { AuditSeverity } from '../../../core/audit/audit.types';
 
 @ApiTags('Business - Profile Management')
 @ApiBearerAuth()
@@ -55,8 +66,8 @@ export class ProfileController {
     @Request() req: any,
   ): Promise<VendorProfileResponseDto> {
     // Override userId with authenticated user
-    dto.userId = req.user.id
-    return this.vendorProfileService.create(dto)
+    dto.userId = req.user.id;
+    return this.vendorProfileService.create(dto);
   }
 
   /**
@@ -68,7 +79,7 @@ export class ProfileController {
   @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Profile not found' })
   async getMyProfile(@Request() req: any): Promise<VendorProfileResponseDto> {
-    return this.vendorProfileService.findByUserId(req.user.id)
+    return this.vendorProfileService.findByUserId(req.user.id);
   }
 
   /**
@@ -91,8 +102,8 @@ export class ProfileController {
     @Body() dto: UpdateVendorProfileDto,
     @Request() req: any,
   ): Promise<VendorProfileResponseDto> {
-    const profile = await this.vendorProfileService.findByUserId(req.user.id)
-    return this.vendorProfileService.update(profile.id, dto)
+    const profile = await this.vendorProfileService.findByUserId(req.user.id);
+    return this.vendorProfileService.update(profile.id, dto);
   }
 
   /**
@@ -113,8 +124,8 @@ export class ProfileController {
   @ApiResponse({ status: 204, description: 'Profile deleted successfully' })
   @ApiResponse({ status: 404, description: 'Profile not found' })
   async deleteMyProfile(@Request() req: any): Promise<void> {
-    const profile = await this.vendorProfileService.findByUserId(req.user.id)
-    await this.vendorProfileService.delete(profile.id)
+    const profile = await this.vendorProfileService.findByUserId(req.user.id);
+    await this.vendorProfileService.delete(profile.id);
   }
 
   /**
@@ -124,11 +135,16 @@ export class ProfileController {
   @Roles('BUSINESS_ADMIN')
   @AuditSensitive('SUBMIT_VERIFICATION', 'VendorProfile')
   @ApiOperation({ summary: 'Submit profile for verification' })
-  @ApiResponse({ status: 200, description: 'Profile submitted for verification' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile submitted for verification',
+  })
   @ApiResponse({ status: 400, description: 'Profile cannot be submitted' })
-  async submitForVerification(@Request() req: any): Promise<VendorProfileResponseDto> {
-    const profile = await this.vendorProfileService.findByUserId(req.user.id)
-    return this.vendorProfileService.submitForVerification(profile.id)
+  async submitForVerification(
+    @Request() req: any,
+  ): Promise<VendorProfileResponseDto> {
+    const profile = await this.vendorProfileService.findByUserId(req.user.id);
+    return this.vendorProfileService.submitForVerification(profile.id);
   }
 
   /**
@@ -138,9 +154,11 @@ export class ProfileController {
   @Roles('BUSINESS_ADMIN')
   @ApiOperation({ summary: 'Generate unique slug from business name' })
   @ApiResponse({ status: 200, description: 'Slug generated successfully' })
-  async generateSlug(@Body('businessName') businessName: string): Promise<{ slug: string }> {
-    const slug = await this.vendorProfileService.generateSlug(businessName)
-    return { slug }
+  async generateSlug(
+    @Body('businessName') businessName: string,
+  ): Promise<{ slug: string }> {
+    const slug = await this.vendorProfileService.generateSlug(businessName);
+    return { slug };
   }
 
   /**
@@ -178,16 +196,16 @@ export class ProfileController {
     @Request() req: any,
   ): Promise<VendorProfileResponseDto> {
     if (!file) {
-      throw new BadRequestException('No file uploaded')
+      throw new BadRequestException('No file uploaded');
     }
 
-    const profile = await this.vendorProfileService.findByUserId(req.user.id)
+    const profile = await this.vendorProfileService.findByUserId(req.user.id);
     return this.vendorProfileService.uploadProfilePhoto(
       profile.id,
       file.buffer,
       file.originalname,
       file.mimetype,
-    )
+    );
   }
 
   /**
@@ -205,8 +223,10 @@ export class ProfileController {
   })
   @ApiOperation({ summary: 'Delete profile photo' })
   @ApiResponse({ status: 200, description: 'Photo deleted successfully' })
-  async deleteProfilePhoto(@Request() req: any): Promise<VendorProfileResponseDto> {
-    const profile = await this.vendorProfileService.findByUserId(req.user.id)
-    return this.vendorProfileService.deleteProfilePhoto(profile.id)
+  async deleteProfilePhoto(
+    @Request() req: any,
+  ): Promise<VendorProfileResponseDto> {
+    const profile = await this.vendorProfileService.findByUserId(req.user.id);
+    return this.vendorProfileService.deleteProfilePhoto(profile.id);
   }
 }

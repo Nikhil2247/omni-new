@@ -5,22 +5,31 @@
 // Uses Dragonfly (Redis-compatible) as the queue backend
 // ============================================================================
 
-import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
-import { BullModule } from '@nestjs/bullmq'
-import { InsightsModule } from '../../domain/insights/insights.module'
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
+import { InsightsModule } from '../../domain/insights/insights.module';
 
 // Queues
-import { EmailQueue, EMAIL_QUEUE_NAME } from './queues/email.queue'
-import { MediaQueue, MEDIA_QUEUE_NAME } from './queues/media.queue'
-import { MetricsQueue } from './queues/metrics.queue'
+import { EmailQueue, EMAIL_QUEUE_NAME } from './queues/email.queue';
+import { MediaQueue, MEDIA_QUEUE_NAME } from './queues/media.queue';
+import { MetricsQueue } from './queues/metrics.queue';
 
 // Processors
-import { EmailProcessor } from './processors/email.processor'
-import { MediaProcessingProcessor } from './processors/media-processing.processor'
-import { NotificationProcessor, NOTIFICATION_QUEUE_NAME } from './processors/notification.processor'
-import { SearchSyncProcessor, SEARCH_SYNC_QUEUE_NAME } from './processors/search-sync.processor'
-import { MetricsAggregationProcessor, METRICS_QUEUE } from './processors/metrics-aggregation.processor'
+import { EmailProcessor } from './processors/email.processor';
+import { MediaProcessingProcessor } from './processors/media-processing.processor';
+import {
+  NotificationProcessor,
+  NOTIFICATION_QUEUE_NAME,
+} from './processors/notification.processor';
+import {
+  SearchSyncProcessor,
+  SEARCH_SYNC_QUEUE_NAME,
+} from './processors/search-sync.processor';
+import {
+  MetricsAggregationProcessor,
+  METRICS_QUEUE,
+} from './processors/metrics-aggregation.processor';
 
 @Module({
   imports: [
@@ -72,11 +81,6 @@ import { MetricsAggregationProcessor, METRICS_QUEUE } from './processors/metrics
     SearchSyncProcessor,
     MetricsAggregationProcessor,
   ],
-  exports: [
-    BullModule,
-    EmailQueue,
-    MediaQueue,
-    MetricsQueue,
-  ],
+  exports: [BullModule, EmailQueue, MediaQueue, MetricsQueue],
 })
 export class JobsModule {}

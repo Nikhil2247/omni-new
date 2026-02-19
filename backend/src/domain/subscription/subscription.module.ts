@@ -4,8 +4,8 @@
 // Handles subscription plans, billing, payments, and feature gating
 // ============================================================================
 
-import { Module } from '@nestjs/common'
-import { DatabaseModule } from '../../core/database/database.module'
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from '../../core/database/database.module';
 
 // Services
 import {
@@ -13,7 +13,7 @@ import {
   SubscriptionService,
   UsageService,
   BillingService,
-} from './services'
+} from './services';
 
 // Repositories
 import {
@@ -23,13 +23,13 @@ import {
   InvoiceRepository,
   PaymentRepository,
   PaymentMethodRepository,
-} from './repositories'
+} from './repositories';
 
 // Event Listeners
-import { SubscriptionEventListener } from './events'
+import { SubscriptionEventListener } from './events';
 
 // Guards
-import { SubscriptionGuard, ActiveSubscriptionGuard } from './guards'
+import { SubscriptionGuard, ActiveSubscriptionGuard } from './guards';
 
 @Module({
   imports: [DatabaseModule],

@@ -5,17 +5,22 @@
 // Handles single emails, bulk emails, and template rendering
 // ============================================================================
 
-import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq'
-import { Logger } from '@nestjs/common'
-import { Job } from 'bullmq'
-import { EMAIL_QUEUE_NAME, EmailJobData, EmailJobType, BulkEmailJobData } from '../queues/email.queue'
+import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
+import { Logger } from '@nestjs/common';
+import { Job } from 'bullmq';
+import {
+  EMAIL_QUEUE_NAME,
+  EmailJobData,
+  EmailJobType,
+  BulkEmailJobData,
+} from '../queues/email.queue';
 
 @Processor(EMAIL_QUEUE_NAME)
 export class EmailProcessor extends WorkerHost {
-  private readonly logger = new Logger(EmailProcessor.name)
+  private readonly logger = new Logger(EmailProcessor.name);
 
   async process(job: Job<EmailJobData | BulkEmailJobData>): Promise<unknown> {
-    this.logger.debug(`Processing email job: ${job.id} (${job.name})`)
+    this.logger.debug(`Processing email job: ${job.id} (${job.name})`);
 
     try {
       switch (job.name) {
@@ -28,40 +33,53 @@ export class EmailProcessor extends WorkerHost {
         case EmailJobType.TICKET_CONFIRMATION:
         case EmailJobType.PAYMENT_RECEIPT:
         case EmailJobType.REMINDER:
-          return await this.processSingleEmail(job as Job<EmailJobData>)
+          return await this.processSingleEmail(job as Job<EmailJobData>);
 
         case EmailJobType.SEND_BULK:
         case EmailJobType.NEWSLETTER:
-          return await this.processBulkEmail(job as Job<BulkEmailJobData>)
+          return await this.processBulkEmail(job as Job<BulkEmailJobData>);
 
         default:
-          return await this.processSingleEmail(job as Job<EmailJobData>)
+          return await this.processSingleEmail(job as Job<EmailJobData>);
       }
     } catch (error) {
-      this.logger.error(`Email job failed: ${job.id}`, error)
-      throw error
+      this.logger.error(`Email job failed: ${job.id}`, error);
+      throw error;
     }
   }
 
-  private async processSingleEmail(job: Job<EmailJobData>): Promise<{ messageId: string }> {
-    const { to, subject, template, context, html, text, attachments, cc, bcc, replyTo } = job.data
+  private async processSingleEmail(
+    job: Job<EmailJobData>,
+  ): Promise<{ messageId: string }> {
+    const {
+      to,
+      subject,
+      template,
+      context,
+      html,
+      text,
+      attachments,
+      cc,
+      bcc,
+      replyTo,
+    } = job.data;
 
     // Update progress
-    await job.updateProgress(10)
+    await job.updateProgress(10);
 
     // Render template if specified
-    let emailHtml = html
-    let emailText = text
-    let emailSubject = subject
+    let emailHtml = html;
+    let emailText = text;
+    let emailSubject = subject;
 
     if (template) {
-      const rendered = await this.renderTemplate(template, context || {})
-      emailHtml = rendered.html
-      emailText = rendered.text
-      emailSubject = emailSubject || rendered.subject
+      const rendered = await this.renderTemplate(template, context || {});
+      emailHtml = rendered.html;
+      emailText = rendered.text;
+      emailSubject = emailSubject || rendered.subject;
     }
 
-    await job.updateProgress(50)
+    await job.updateProgress(50);
 
     // Send email (placeholder - would integrate with actual email service)
     const messageId = await this.sendEmail({
@@ -73,26 +91,28 @@ export class EmailProcessor extends WorkerHost {
       cc,
       bcc,
       replyTo,
-    })
+    });
 
-    await job.updateProgress(100)
+    await job.updateProgress(100);
 
-    this.logger.log(`Email sent: ${job.id} to ${to}`)
+    this.logger.log(`Email sent: ${job.id} to ${to}`);
 
-    return { messageId }
+    return { messageId };
   }
 
-  private async processBulkEmail(job: Job<BulkEmailJobData>): Promise<{ sent: number; failed: number }> {
-    const { recipients, template, subject, metadata } = job.data
+  private async processBulkEmail(
+    job: Job<BulkEmailJobData>,
+  ): Promise<{ sent: number; failed: number }> {
+    const { recipients, template, subject, metadata } = job.data;
 
-    let sent = 0
-    let failed = 0
+    let sent = 0;
+    let failed = 0;
 
-    const totalRecipients = recipients.length
-    const batchSize = 10
+    const totalRecipients = recipients.length;
+    const batchSize = 10;
 
     for (let i = 0; i < totalRecipients; i += batchSize) {
-      const batch = recipients.slice(i, i + batchSize)
+      const batch = recipients.slice(i, i + batchSize);
 
       await Promise.all(
         batch.map(async (recipient) => {
@@ -100,36 +120,38 @@ export class EmailProcessor extends WorkerHost {
             const rendered = await this.renderTemplate(template, {
               ...recipient.context,
               ...metadata,
-            })
+            });
 
             await this.sendEmail({
               to: [recipient.email],
               subject,
               html: rendered.html,
               text: rendered.text,
-            })
+            });
 
-            sent++
+            sent++;
           } catch (error) {
-            this.logger.error(`Failed to send to ${recipient.email}`, error)
-            failed++
+            this.logger.error(`Failed to send to ${recipient.email}`, error);
+            failed++;
           }
         }),
-      )
+      );
 
       // Update progress
-      const progress = Math.round(((i + batch.length) / totalRecipients) * 100)
-      await job.updateProgress(progress)
+      const progress = Math.round(((i + batch.length) / totalRecipients) * 100);
+      await job.updateProgress(progress);
 
       // Rate limiting - wait between batches
       if (i + batchSize < totalRecipients) {
-        await this.sleep(1000)
+        await this.sleep(1000);
       }
     }
 
-    this.logger.log(`Bulk email completed: ${job.id} - sent: ${sent}, failed: ${failed}`)
+    this.logger.log(
+      `Bulk email completed: ${job.id} - sent: ${sent}, failed: ${failed}`,
+    );
 
-    return { sent, failed }
+    return { sent, failed };
   }
 
   private async renderTemplate(
@@ -150,7 +172,7 @@ export class EmailProcessor extends WorkerHost {
       'reminder-hour-before': 'Event Reminder: Starting Soon!',
       'reminder-week-before': 'Event Reminder: Coming Up Next Week',
       newsletter: 'Omnicassion Newsletter',
-    }
+    };
 
     const html = `
       <!DOCTYPE html>
@@ -167,41 +189,41 @@ export class EmailProcessor extends WorkerHost {
         </div>
       </body>
       </html>
-    `
+    `;
 
-    const text = `Omnicassion - ${template}\n\n${JSON.stringify(context, null, 2)}`
+    const text = `Omnicassion - ${template}\n\n${JSON.stringify(context, null, 2)}`;
 
     return {
       html,
       text,
       subject: subjectMap[template],
-    }
+    };
   }
 
   private async sendEmail(options: {
-    to: string[]
-    subject: string
-    html?: string
-    text?: string
-    attachments?: unknown[]
-    cc?: string[]
-    bcc?: string[]
-    replyTo?: string
+    to: string[];
+    subject: string;
+    html?: string;
+    text?: string;
+    attachments?: unknown[];
+    cc?: string[];
+    bcc?: string[];
+    replyTo?: string;
   }): Promise<string> {
     // Placeholder - would integrate with actual email provider (SendGrid, SES, etc.)
     // For now, simulate sending
 
-    this.logger.debug(`Sending email to: ${options.to.join(', ')}`)
+    this.logger.debug(`Sending email to: ${options.to.join(', ')}`);
 
     // Simulate network delay
-    await this.sleep(100)
+    await this.sleep(100);
 
     // Return fake message ID
-    return `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    return `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // ============================================================================
@@ -210,16 +232,16 @@ export class EmailProcessor extends WorkerHost {
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job<EmailJobData>): void {
-    this.logger.debug(`Email job completed: ${job.id}`)
+    this.logger.debug(`Email job completed: ${job.id}`);
   }
 
   @OnWorkerEvent('failed')
   onFailed(job: Job<EmailJobData>, error: Error): void {
-    this.logger.error(`Email job failed: ${job.id}`, error.message)
+    this.logger.error(`Email job failed: ${job.id}`, error.message);
   }
 
   @OnWorkerEvent('progress')
   onProgress(job: Job<EmailJobData>, progress: number): void {
-    this.logger.debug(`Email job progress: ${job.id} - ${progress}%`)
+    this.logger.debug(`Email job progress: ${job.id} - ${progress}%`);
   }
 }

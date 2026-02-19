@@ -4,56 +4,69 @@
 // Configures security, validation, documentation, and starts the server
 // ============================================================================
 
-import { NestFactory, Reflector } from '@nestjs/core'
-import { ValidationPipe, Logger, VersioningType } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
-import { NestExpressApplication } from '@nestjs/platform-express'
-import helmet from 'helmet'
-import * as compression from 'compression'
-import { AppModule } from './app.module'
-import { createRedisIoAdapter } from './infrastructure/websockets/redis-io.adapter'
-import { IdempotencyInterceptor } from './infrastructure/idempotency/idempotency.interceptor'
-import { IdempotencyService } from './infrastructure/idempotency/idempotency.service'
-import { EmailService } from './infrastructure/notifications/email.service'
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ValidationPipe, Logger, VersioningType } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
+import * as compression from 'compression';
+import { AppModule } from './app.module';
+import { createRedisIoAdapter } from './infrastructure/websockets/redis-io.adapter';
+import { IdempotencyInterceptor } from './infrastructure/idempotency/idempotency.interceptor';
+import { IdempotencyService } from './infrastructure/idempotency/idempotency.service';
+import { EmailService } from './infrastructure/notifications/email.service';
 
 if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
-  process.env.PRISMA_CLIENT_ENGINE_TYPE = 'binary'
+  process.env.PRISMA_CLIENT_ENGINE_TYPE = 'binary';
 }
 
 if (!process.env.PRISMA_QUERY_ENGINE_TYPE) {
-  process.env.PRISMA_QUERY_ENGINE_TYPE = 'binary'
+  process.env.PRISMA_QUERY_ENGINE_TYPE = 'binary';
 }
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap')
+  const logger = new Logger('Bootstrap');
 
-  const parseBoolean = (value: string | boolean | undefined, defaultValue: boolean): boolean => {
-    if (value === undefined || value === null) return defaultValue
-    if (typeof value === 'boolean') return value
+  const parseBoolean = (
+    value: string | boolean | undefined,
+    defaultValue: boolean,
+  ): boolean => {
+    if (value === undefined || value === null) return defaultValue;
+    if (typeof value === 'boolean') return value;
 
-    const normalized = value.toString().trim().toLowerCase()
-    return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on'
-  }
+    const normalized = value.toString().trim().toLowerCase();
+    return (
+      normalized === 'true' ||
+      normalized === '1' ||
+      normalized === 'yes' ||
+      normalized === 'on'
+    );
+  };
 
   // Create application with Express platform
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
-  })
+  });
 
-  const configService = app.get(ConfigService)
+  const configService = app.get(ConfigService);
 
   // ===========================================================================
   // WEBSOCKET REDIS ADAPTER (for horizontal scaling)
   // ===========================================================================
-  const enableWebSocketRedis = configService.get<boolean>('WEBSOCKET_REDIS_ADAPTER', false)
+  const enableWebSocketRedis = configService.get<boolean>(
+    'WEBSOCKET_REDIS_ADAPTER',
+    false,
+  );
   if (enableWebSocketRedis) {
     try {
-      const redisIoAdapter = await createRedisIoAdapter(app)
-      app.useWebSocketAdapter(redisIoAdapter)
-      logger.log('WebSocket Redis adapter enabled for horizontal scaling')
+      const redisIoAdapter = await createRedisIoAdapter(app);
+      app.useWebSocketAdapter(redisIoAdapter);
+      logger.log('WebSocket Redis adapter enabled for horizontal scaling');
     } catch (error) {
-      logger.warn('Failed to initialize WebSocket Redis adapter, using default adapter')
+      logger.warn(
+        'Failed to initialize WebSocket Redis adapter, using default adapter',
+      );
     }
   }
 
@@ -61,9 +74,11 @@ async function bootstrap() {
   // GLOBAL INTERCEPTORS
   // ===========================================================================
   // Idempotency interceptor - prevents duplicate processing of mutations
-  const idempotencyService = app.get(IdempotencyService)
-  const reflector = app.get(Reflector)
-  app.useGlobalInterceptors(new IdempotencyInterceptor(idempotencyService, reflector))
+  const idempotencyService = app.get(IdempotencyService);
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(
+    new IdempotencyInterceptor(idempotencyService, reflector),
+  );
 
   // ===========================================================================
   // SECURITY CONFIGURATION (ADR-011)
@@ -82,27 +97,29 @@ async function bootstrap() {
       },
       crossOriginEmbedderPolicy: false, // Allow embedding for Swagger UI
     }),
-  )
+  );
 
   // CORS - Strict origin whitelist
-  const allowedOrigins = configService.get<string>('CORS_ORIGINS')?.split(',') || [
+  const allowedOrigins = configService
+    .get<string>('CORS_ORIGINS')
+    ?.split(',') || [
     'http://localhost:3000',
     'http://localhost:3001',
     'https://omnicassion.com',
     'https://www.omnicassion.com',
     'https://backend.omnicassion.com',
-  ]
+  ];
 
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true)
+      if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
-        callback(null, true)
+        callback(null, true);
       } else {
-        logger.warn(`CORS blocked origin: ${origin}`)
-        callback(new Error('Not allowed by CORS'))
+        logger.warn(`CORS blocked origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,
@@ -114,23 +131,29 @@ async function bootstrap() {
       'X-Request-ID',
       'X-Idempotency-Key',
     ],
-    exposedHeaders: ['X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset', 'Retry-After'],
+    exposedHeaders: [
+      'X-Request-ID',
+      'X-RateLimit-Limit',
+      'X-RateLimit-Remaining',
+      'X-RateLimit-Reset',
+      'Retry-After',
+    ],
     maxAge: 86400, // 24 hours
-  })
+  });
 
   // ===========================================================================
   // PERFORMANCE CONFIGURATION
   // ===========================================================================
 
   // Compression
-  app.use(compression())
+  app.use(compression());
 
   // Request size limits
-  app.useBodyParser('json', { limit: '10mb' })
-  app.useBodyParser('urlencoded', { limit: '10mb', extended: true })
+  app.useBodyParser('json', { limit: '10mb' });
+  app.useBodyParser('urlencoded', { limit: '10mb', extended: true });
 
   // Trust proxy (for rate limiting behind load balancer)
-  app.set('trust proxy', 1)
+  app.set('trust proxy', 1);
 
   // ===========================================================================
   // VALIDATION CONFIGURATION (ADR-011)
@@ -146,7 +169,7 @@ async function bootstrap() {
       },
       disableErrorMessages: configService.get('NODE_ENV') === 'production',
     }),
-  )
+  );
 
   // ===========================================================================
   // API VERSIONING
@@ -161,7 +184,7 @@ async function bootstrap() {
   // Global prefix for all routes
   app.setGlobalPrefix('api', {
     exclude: ['health', 'ready'],
-  })
+  });
 
   // ===========================================================================
   // SWAGGER/OPENAPI DOCUMENTATION
@@ -202,9 +225,9 @@ async function bootstrap() {
       .addTag('Public', 'Public API endpoints')
       .addTag('Auth', 'Authentication endpoints')
       .addTag('Health', 'Health check endpoints')
-      .build()
+      .build();
 
-    const document = SwaggerModule.createDocument(app, mainConfig)
+    const document = SwaggerModule.createDocument(app, mainConfig);
     SwaggerModule.setup('docs', app, document, {
       swaggerOptions: {
         persistAuthorization: true,
@@ -212,73 +235,80 @@ async function bootstrap() {
         filter: true,
         showRequestDuration: true,
       },
-    })
+    });
 
-    logger.log('Swagger documentation available at /docs')
+    logger.log('Swagger documentation available at /docs');
   }
 
   // ===========================================================================
   // GRACEFUL SHUTDOWN
   // ===========================================================================
 
-  app.enableShutdownHooks()
+  app.enableShutdownHooks();
 
   process.on('SIGTERM', async () => {
-    logger.log('SIGTERM received, shutting down gracefully...')
-    await app.close()
-    process.exit(0)
-  })
+    logger.log('SIGTERM received, shutting down gracefully...');
+    await app.close();
+    process.exit(0);
+  });
 
   process.on('SIGINT', async () => {
-    logger.log('SIGINT received, shutting down gracefully...')
-    await app.close()
-    process.exit(0)
-  })
+    logger.log('SIGINT received, shutting down gracefully...');
+    await app.close();
+    process.exit(0);
+  });
 
   // ===========================================================================
   // START SERVER
   // ===========================================================================
 
-  const port = configService.get<number>('PORT') || 3001
-  const host = configService.get<string>('HOST') || '0.0.0.0'
+  const port = configService.get<number>('PORT') || 3001;
+  const host = configService.get<string>('HOST') || '0.0.0.0';
 
   // ===========================================================================
   // EMAIL SERVER CONNECTIVITY
   // ===========================================================================
 
-  const emailService = app.get(EmailService)
-  const emailProvider = configService.get<string>('EMAIL_PROVIDER', 'smtp')
-  const smtpHost = configService.get<string>('SMTP_HOST', 'localhost')
-  const smtpPortRaw = configService.get<string | number>('SMTP_PORT', 587)
-  const smtpPort = typeof smtpPortRaw === 'number' ? smtpPortRaw : Number(smtpPortRaw) || 587
-  const nodeEnv = configService.get<string>('NODE_ENV', 'development')
+  const emailService = app.get(EmailService);
+  const emailProvider = configService.get<string>('EMAIL_PROVIDER', 'smtp');
+  const smtpHost = configService.get<string>('SMTP_HOST', 'localhost');
+  const smtpPortRaw = configService.get<string | number>('SMTP_PORT', 587);
+  const smtpPort =
+    typeof smtpPortRaw === 'number' ? smtpPortRaw : Number(smtpPortRaw) || 587;
+  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   const shouldVerifyEmailOnStartup = parseBoolean(
     configService.get<string | boolean>('EMAIL_VERIFY_ON_STARTUP'),
     nodeEnv === 'production',
-  )
+  );
 
   if (!shouldVerifyEmailOnStartup) {
-    logger.log(`📧 Email server startup check skipped (${emailProvider}: ${smtpHost}:${smtpPort})`)
+    logger.log(
+      `📧 Email server startup check skipped (${emailProvider}: ${smtpHost}:${smtpPort})`,
+    );
   } else {
-    const emailStatus = await emailService.verifyConnectionWithDetails()
+    const emailStatus = await emailService.verifyConnectionWithDetails();
 
     if (emailStatus.connected) {
-      logger.log(`📧 Email server connected (${emailProvider}: ${smtpHost}:${smtpPort})`)
+      logger.log(
+        `📧 Email server connected (${emailProvider}: ${smtpHost}:${smtpPort})`,
+      );
     } else {
-      const emailError = emailStatus.error ? ` - ${emailStatus.error}` : ''
-      logger.warn(`📧 Email server connection failed (${emailProvider}: ${smtpHost}:${smtpPort})${emailError}`)
+      const emailError = emailStatus.error ? ` - ${emailStatus.error}` : '';
+      logger.warn(
+        `📧 Email server connection failed (${emailProvider}: ${smtpHost}:${smtpPort})${emailError}`,
+      );
     }
   }
 
-  await app.listen(port, host)
+  await app.listen(port, host);
 
-  logger.log(`🚀 Application running on: http://${host}:${port}`)
-  logger.log(`📚 API Documentation: http://${host}:${port}/docs`)
-  logger.log(`🏥 Health Check: http://${host}:${port}/health`)
-  logger.log(`Environment: ${configService.get('NODE_ENV') || 'development'}`)
+  logger.log(`🚀 Application running on: http://${host}:${port}`);
+  logger.log(`📚 API Documentation: http://${host}:${port}/docs`);
+  logger.log(`🏥 Health Check: http://${host}:${port}/health`);
+  logger.log(`Environment: ${configService.get('NODE_ENV') || 'development'}`);
 }
 
 bootstrap().catch((error) => {
-  console.error('Failed to start application:', error)
-  process.exit(1)
-})
+  console.error('Failed to start application:', error);
+  process.exit(1);
+});

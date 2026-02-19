@@ -2,9 +2,18 @@
 // MESSAGE DTOs - Messaging Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsNumber, Min, IsArray, ValidateNested, IsEnum } from 'class-validator'
-import { Type } from 'class-transformer'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsArray,
+  ValidateNested,
+  IsEnum,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum MessageAttachmentTypeDto {
   IMAGE = 'IMAGE',
@@ -14,44 +23,52 @@ export enum MessageAttachmentTypeDto {
 }
 
 export class MessageAttachmentInputDto {
-  @ApiProperty({ description: 'Attachment type', enum: MessageAttachmentTypeDto })
+  @ApiProperty({
+    description: 'Attachment type',
+    enum: MessageAttachmentTypeDto,
+  })
   @IsEnum(MessageAttachmentTypeDto)
-  type: MessageAttachmentTypeDto
+  type: MessageAttachmentTypeDto;
 
   @ApiProperty({ description: 'File URL' })
   @IsString()
-  url: string
+  url: string;
 
   @ApiProperty({ description: 'File name' })
   @IsString()
-  fileName: string
+  fileName: string;
 
   @ApiProperty({ description: 'File size (bytes)' })
   @IsNumber()
   @Min(1)
-  fileSize: number
+  fileSize: number;
 
   @ApiProperty({ description: 'Mime type' })
   @IsString()
-  mimeType: string
+  mimeType: string;
 }
 
 export class SendMessageDto {
-  @ApiPropertyOptional({ description: 'Conversation ID (optional if provided by route)' })
+  @ApiPropertyOptional({
+    description: 'Conversation ID (optional if provided by route)',
+  })
   @IsOptional()
   @IsUUID()
-  conversationId?: string
+  conversationId?: string;
 
   @ApiProperty({ description: 'Message content' })
   @IsString()
-  content: string
+  content: string;
 
-  @ApiPropertyOptional({ description: 'Attachments', type: [MessageAttachmentInputDto] })
+  @ApiPropertyOptional({
+    description: 'Attachments',
+    type: [MessageAttachmentInputDto],
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => MessageAttachmentInputDto)
-  attachments?: MessageAttachmentInputDto[]
+  attachments?: MessageAttachmentInputDto[];
 }
 
 export class GetConversationMessagesDto {
@@ -59,34 +76,38 @@ export class GetConversationMessagesDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
-  page?: number
+  page?: number;
 
-  @ApiPropertyOptional({ description: 'Messages per page', example: 50, default: 50 })
+  @ApiPropertyOptional({
+    description: 'Messages per page',
+    example: 50,
+    default: 50,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
-  limit?: number
+  limit?: number;
 }
 
 export class MarkReadDto {
   @ApiProperty({ description: 'Message ID' })
   @IsUUID()
-  messageId: string
+  messageId: string;
 }
 
 export class AddReactionDto {
   @ApiPropertyOptional({ description: 'Message ID (provided via route param)' })
   @IsOptional()
   @IsUUID()
-  messageId?: string
+  messageId?: string;
 
   @ApiProperty({ description: 'Emoji or reaction code' })
   @IsString()
-  emoji: string
+  emoji: string;
 }
 
 export class DeleteMessageDto {
   @ApiProperty({ description: 'Message ID' })
   @IsUUID()
-  messageId: string
+  messageId: string;
 }

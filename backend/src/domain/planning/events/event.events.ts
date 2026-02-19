@@ -12,4 +12,4 @@ export class EventUpdatedEvent {
 
 export class EventDeletedEvent {
   constructor(public readonly eventId: string) {}
-} 
+}

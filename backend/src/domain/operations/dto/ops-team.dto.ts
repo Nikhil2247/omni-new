@@ -1,11 +1,11 @@
-import { IsOptional, IsString } from 'class-validator'
+import { IsOptional, IsString } from 'class-validator';
 
 export class GetTeamMembersDto {
   @IsOptional()
   @IsString()
-  role?: 'OPERATIONAL_MANAGER' | 'OPERATIONAL_ASSISTANT'
+  role?: 'OPERATIONAL_MANAGER' | 'OPERATIONAL_ASSISTANT';
 
   @IsOptional()
   @IsString()
-  status?: string
+  status?: string;
 }

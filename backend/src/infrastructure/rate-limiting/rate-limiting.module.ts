@@ -5,9 +5,9 @@
 // Supports sliding window algorithm for accurate rate limiting
 // ============================================================================
 
-import { Module, Global } from '@nestjs/common'
-import { RateLimitingService } from './rate-limiting.service'
-import { RateLimitingGuard } from './rate-limiting.guard'
+import { Module, Global } from '@nestjs/common';
+import { RateLimitingService } from './rate-limiting.service';
+import { RateLimitingGuard } from './rate-limiting.guard';
 
 @Global()
 @Module({

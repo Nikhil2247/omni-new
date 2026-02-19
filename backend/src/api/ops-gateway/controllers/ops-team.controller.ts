@@ -7,11 +7,11 @@
 // Authorized Roles: OPERATIONAL_ADMIN
 // ============================================================================
 
-import { Controller, Get, UseGuards } from '@nestjs/common'
-import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard'
-import { RolesGuard } from '../../../core/auth/guards/roles.guard'
-import { OpsAdminOnly } from '../../../core/auth/decorators/roles.decorator'
-import { OpsTeamService } from '../../../domain/operations/services/ops-team.service'
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../core/auth/guards/roles.guard';
+import { OpsAdminOnly } from '../../../core/auth/decorators/roles.decorator';
+import { OpsTeamService } from '../../../domain/operations/services/ops-team.service';
 
 @Controller('team')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,7 +25,7 @@ export class OpsTeamController {
    */
   @Get('managers')
   async getManagers() {
-    return this.opsTeamService.getManagers()
+    return this.opsTeamService.getManagers();
   }
 
   /**
@@ -34,7 +34,7 @@ export class OpsTeamController {
    */
   @Get('assistants')
   async getAssistants() {
-    return this.opsTeamService.getAssistants()
+    return this.opsTeamService.getAssistants();
   }
 
   /**
@@ -43,6 +43,6 @@ export class OpsTeamController {
    */
   @Get('overview')
   async getTeamOverview() {
-    return this.opsTeamService.getTeamOverview()
+    return this.opsTeamService.getTeamOverview();
   }
 }

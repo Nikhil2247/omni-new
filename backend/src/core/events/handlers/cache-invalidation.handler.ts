@@ -5,8 +5,8 @@
 // Comprehensive coverage for all domain entities
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
-import { OnEvent } from '@nestjs/event-emitter'
+import { Injectable, Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import {
   VENDOR_EVENTS,
   CATEGORY_EVENTS,
@@ -19,12 +19,12 @@ import {
   REVIEW_EVENTS,
   KYC_EVENTS,
   CacheInvalidationPayload,
-} from '../event-constants'
-import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service'
+} from '../event-constants';
+import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service';
 
 @Injectable()
 export class CacheInvalidationHandler {
-  private readonly logger = new Logger(CacheInvalidationHandler.name)
+  private readonly logger = new Logger(CacheInvalidationHandler.name);
 
   constructor(private readonly cache: DragonflyService) {}
 
@@ -42,8 +42,13 @@ export class CacheInvalidationHandler {
   @OnEvent(VENDOR_EVENTS.REACTIVATED)
   @OnEvent(VENDOR_EVENTS.FEATURED)
   @OnEvent(VENDOR_EVENTS.UNFEATURED)
-  async handleVendorChange(payload: { vendorProfileId: string; categoryId?: string }) {
-    this.logger.debug(`Invalidating cache for vendor: ${payload.vendorProfileId}`)
+  async handleVendorChange(payload: {
+    vendorProfileId: string;
+    categoryId?: string;
+  }) {
+    this.logger.debug(
+      `Invalidating cache for vendor: ${payload.vendorProfileId}`,
+    );
 
     await this.invalidateKeys([
       `vendor:${payload.vendorProfileId}`,
@@ -52,16 +57,16 @@ export class CacheInvalidationHandler {
       `vendor:${payload.vendorProfileId}:portfolio`,
       `vendor:${payload.vendorProfileId}:reviews`,
       `vendor:${payload.vendorProfileId}:stats`,
-    ])
+    ]);
 
     // Invalidate list and discovery caches
-    await this.invalidatePattern('vendors:list:*')
-    await this.invalidatePattern('discovery:*')
-    await this.invalidatePattern('search:vendors:*')
+    await this.invalidatePattern('vendors:list:*');
+    await this.invalidatePattern('discovery:*');
+    await this.invalidatePattern('search:vendors:*');
 
     // If category is known, invalidate category-specific caches
     if (payload.categoryId) {
-      await this.invalidatePattern(`category:${payload.categoryId}:vendors:*`)
+      await this.invalidatePattern(`category:${payload.categoryId}:vendors:*`);
     }
   }
 
@@ -73,7 +78,7 @@ export class CacheInvalidationHandler {
   @OnEvent(CATEGORY_EVENTS.UPDATED)
   @OnEvent(CATEGORY_EVENTS.DELETED)
   async handleCategoryChange(payload: { categoryId: string }) {
-    this.logger.debug(`Invalidating cache for category: ${payload.categoryId}`)
+    this.logger.debug(`Invalidating cache for category: ${payload.categoryId}`);
 
     await this.invalidateKeys([
       `category:${payload.categoryId}`,
@@ -82,11 +87,11 @@ export class CacheInvalidationHandler {
       'categories:all',
       'categories:tree',
       'categories:active',
-    ])
+    ]);
 
     // Invalidate vendor lists that might be filtered by category
-    await this.invalidatePattern('vendors:list:*')
-    await this.invalidatePattern('discovery:*')
+    await this.invalidatePattern('vendors:list:*');
+    await this.invalidatePattern('discovery:*');
   }
 
   // ============================================================================
@@ -96,16 +101,19 @@ export class CacheInvalidationHandler {
   @OnEvent(SERVICE_EVENTS.CREATED)
   @OnEvent(SERVICE_EVENTS.UPDATED)
   @OnEvent(SERVICE_EVENTS.DELETED)
-  async handleServiceChange(payload: { serviceId: string; vendorProfileId: string }) {
-    this.logger.debug(`Invalidating cache for service: ${payload.serviceId}`)
+  async handleServiceChange(payload: {
+    serviceId: string;
+    vendorProfileId: string;
+  }) {
+    this.logger.debug(`Invalidating cache for service: ${payload.serviceId}`);
 
     await this.invalidateKeys([
       `service:${payload.serviceId}`,
       `vendor:${payload.vendorProfileId}:services`,
-    ])
+    ]);
 
     // Invalidate search caches
-    await this.invalidatePattern('search:services:*')
+    await this.invalidatePattern('search:services:*');
   }
 
   // ============================================================================
@@ -116,7 +124,7 @@ export class CacheInvalidationHandler {
   @OnEvent(USER_EVENTS.ROLE_ASSIGNED)
   @OnEvent(USER_EVENTS.ROLE_REMOVED)
   async handleUserChange(payload: { userId: string }) {
-    this.logger.debug(`Invalidating cache for user: ${payload.userId}`)
+    this.logger.debug(`Invalidating cache for user: ${payload.userId}`);
 
     await this.invalidateKeys([
       `user:${payload.userId}`,
@@ -124,16 +132,16 @@ export class CacheInvalidationHandler {
       `user:${payload.userId}:roles`,
       `user:${payload.userId}:permissions`,
       `user:${payload.userId}:sessions`,
-    ])
+    ]);
   }
 
   @OnEvent(USER_EVENTS.LOGGED_OUT)
   @OnEvent(USER_EVENTS.LOGGED_OUT_ALL_DEVICES)
   async handleUserLogout(payload: { userId: string }) {
-    this.logger.debug(`Invalidating session cache for user: ${payload.userId}`)
+    this.logger.debug(`Invalidating session cache for user: ${payload.userId}`);
 
-    await this.invalidatePattern(`session:${payload.userId}:*`)
-    await this.invalidateKeys([`user:${payload.userId}:sessions`])
+    await this.invalidatePattern(`session:${payload.userId}:*`);
+    await this.invalidateKeys([`user:${payload.userId}:sessions`]);
   }
 
   // ============================================================================
@@ -145,30 +153,35 @@ export class CacheInvalidationHandler {
   @OnEvent(LEAD_EVENTS.STATUS_CHANGED)
   @OnEvent(LEAD_EVENTS.CONVERTED)
   @OnEvent(LEAD_EVENTS.LOST)
-  async handleLeadChange(payload: { leadId: string; vendorProfileId: string; plannerId?: string }) {
-    this.logger.debug(`Invalidating cache for lead: ${payload.leadId}`)
+  async handleLeadChange(payload: {
+    leadId: string;
+    vendorProfileId: string;
+    plannerId?: string;
+  }) {
+    this.logger.debug(`Invalidating cache for lead: ${payload.leadId}`);
 
     await this.invalidateKeys([
       `lead:${payload.leadId}`,
       `vendor:${payload.vendorProfileId}:leads`,
       `vendor:${payload.vendorProfileId}:leads:stats`,
       `vendor:${payload.vendorProfileId}:leads:unread`,
-    ])
+    ]);
 
     if (payload.plannerId) {
-      await this.invalidateKeys([
-        `user:${payload.plannerId}:leads`,
-      ])
+      await this.invalidateKeys([`user:${payload.plannerId}:leads`]);
     }
   }
 
   @OnEvent(LEAD_EVENTS.MESSAGE_SENT)
   @OnEvent(LEAD_EVENTS.MESSAGE_READ)
-  async handleLeadMessage(payload: { leadId: string; vendorProfileId: string }) {
+  async handleLeadMessage(payload: {
+    leadId: string;
+    vendorProfileId: string;
+  }) {
     await this.invalidateKeys([
       `lead:${payload.leadId}:messages`,
       `vendor:${payload.vendorProfileId}:leads:unread`,
-    ])
+    ]);
   }
 
   // ============================================================================
@@ -180,7 +193,7 @@ export class CacheInvalidationHandler {
   @OnEvent(EVENT_EVENTS.DELETED)
   @OnEvent(EVENT_EVENTS.STATUS_CHANGED)
   async handleEventChange(payload: { eventId: string; userId: string }) {
-    this.logger.debug(`Invalidating cache for event: ${payload.eventId}`)
+    this.logger.debug(`Invalidating cache for event: ${payload.eventId}`);
 
     await this.invalidateKeys([
       `event:${payload.eventId}`,
@@ -190,16 +203,19 @@ export class CacheInvalidationHandler {
       `event:${payload.eventId}:budget`,
       `event:${payload.eventId}:timeline`,
       `user:${payload.userId}:events`,
-    ])
+    ]);
   }
 
   @OnEvent(EVENT_EVENTS.VENDOR_ADDED)
   @OnEvent(EVENT_EVENTS.VENDOR_REMOVED)
-  async handleEventVendorChange(payload: { eventId: string; vendorProfileId: string }) {
+  async handleEventVendorChange(payload: {
+    eventId: string;
+    vendorProfileId: string;
+  }) {
     await this.invalidateKeys([
       `event:${payload.eventId}:vendors`,
       `vendor:${payload.vendorProfileId}:events`,
-    ])
+    ]);
   }
 
   @OnEvent(EVENT_EVENTS.TASK_CREATED)
@@ -208,7 +224,7 @@ export class CacheInvalidationHandler {
     await this.invalidateKeys([
       `event:${payload.eventId}:checklist`,
       `event:${payload.eventId}:tasks:stats`,
-    ])
+    ]);
   }
 
   // ============================================================================
@@ -218,14 +234,19 @@ export class CacheInvalidationHandler {
   @OnEvent(PORTFOLIO_EVENTS.CREATED)
   @OnEvent(PORTFOLIO_EVENTS.UPDATED)
   @OnEvent(PORTFOLIO_EVENTS.DELETED)
-  async handlePortfolioChange(payload: { portfolioId: string; vendorProfileId: string }) {
-    this.logger.debug(`Invalidating cache for portfolio: ${payload.portfolioId}`)
+  async handlePortfolioChange(payload: {
+    portfolioId: string;
+    vendorProfileId: string;
+  }) {
+    this.logger.debug(
+      `Invalidating cache for portfolio: ${payload.portfolioId}`,
+    );
 
     await this.invalidateKeys([
       `portfolio:${payload.portfolioId}`,
       `vendor:${payload.vendorProfileId}:portfolio`,
       `vendor:${payload.vendorProfileId}:portfolio:featured`,
-    ])
+    ]);
   }
 
   // ============================================================================
@@ -236,15 +257,18 @@ export class CacheInvalidationHandler {
   @OnEvent(REVIEW_EVENTS.UPDATED)
   @OnEvent(REVIEW_EVENTS.DELETED)
   @OnEvent(REVIEW_EVENTS.APPROVED)
-  async handleReviewChange(payload: { reviewId: string; vendorProfileId: string }) {
-    this.logger.debug(`Invalidating cache for review: ${payload.reviewId}`)
+  async handleReviewChange(payload: {
+    reviewId: string;
+    vendorProfileId: string;
+  }) {
+    this.logger.debug(`Invalidating cache for review: ${payload.reviewId}`);
 
     await this.invalidateKeys([
       `review:${payload.reviewId}`,
       `vendor:${payload.vendorProfileId}:reviews`,
       `vendor:${payload.vendorProfileId}:reviews:stats`,
       `vendor:${payload.vendorProfileId}:rating`,
-    ])
+    ]);
   }
 
   // ============================================================================
@@ -255,12 +279,14 @@ export class CacheInvalidationHandler {
   @OnEvent(KYC_EVENTS.APPROVED)
   @OnEvent(KYC_EVENTS.REJECTED)
   async handleKYCChange(payload: { vendorProfileId: string }) {
-    this.logger.debug(`Invalidating KYC cache for vendor: ${payload.vendorProfileId}`)
+    this.logger.debug(
+      `Invalidating KYC cache for vendor: ${payload.vendorProfileId}`,
+    );
 
     await this.invalidateKeys([
       `vendor:${payload.vendorProfileId}:kyc`,
       `vendor:${payload.vendorProfileId}:verification`,
-    ])
+    ]);
   }
 
   // ============================================================================
@@ -270,25 +296,30 @@ export class CacheInvalidationHandler {
   @OnEvent(CACHE_EVENTS.INVALIDATE)
   async handleCacheInvalidate(payload: CacheInvalidationPayload) {
     if (payload.keys) {
-      await this.invalidateKeys(payload.keys)
+      await this.invalidateKeys(payload.keys);
     }
 
     if (payload.entityType && payload.entityId) {
-      await this.invalidateKeys([`${payload.entityType}:${payload.entityId}`])
-      await this.invalidatePattern(`${payload.entityType}:${payload.entityId}:*`)
+      await this.invalidateKeys([`${payload.entityType}:${payload.entityId}`]);
+      await this.invalidatePattern(
+        `${payload.entityType}:${payload.entityId}:*`,
+      );
     }
   }
 
   @OnEvent(CACHE_EVENTS.INVALIDATE_PATTERN)
   async handleCacheInvalidatePattern(payload: CacheInvalidationPayload) {
     if (payload.pattern) {
-      await this.invalidatePattern(payload.pattern)
+      await this.invalidatePattern(payload.pattern);
     }
   }
 
   @OnEvent(CACHE_EVENTS.WARM_UP)
-  async handleCacheWarmUp(payload: { entityType: string; entityIds?: string[] }) {
-    this.logger.log(`Cache warm-up requested for: ${payload.entityType}`)
+  async handleCacheWarmUp(payload: {
+    entityType: string;
+    entityIds?: string[];
+  }) {
+    this.logger.log(`Cache warm-up requested for: ${payload.entityType}`);
     // Emit event for warm-up processors to handle
     // This allows domain-specific warm-up logic
   }
@@ -300,31 +331,33 @@ export class CacheInvalidationHandler {
   private async invalidateKeys(keys: string[]): Promise<void> {
     try {
       if (keys.length > 0) {
-        const pipeline = this.cache.getClient().pipeline()
+        const pipeline = this.cache.getClient().pipeline();
         for (const key of keys) {
-          pipeline.del(this.buildFullKey(key))
+          pipeline.del(this.buildFullKey(key));
         }
-        await pipeline.exec()
-        this.logger.debug(`Invalidated cache keys: ${keys.join(', ')}`)
+        await pipeline.exec();
+        this.logger.debug(`Invalidated cache keys: ${keys.join(', ')}`);
       }
     } catch (error) {
-      this.logger.error(`Failed to invalidate cache keys: ${error}`)
+      this.logger.error(`Failed to invalidate cache keys: ${error}`);
     }
   }
 
   private async invalidatePattern(pattern: string): Promise<void> {
     try {
-      const deleted = await this.cache.deletePattern(pattern)
+      const deleted = await this.cache.deletePattern(pattern);
       if (deleted > 0) {
-        this.logger.debug(`Invalidated ${deleted} keys matching pattern: ${pattern}`)
+        this.logger.debug(
+          `Invalidated ${deleted} keys matching pattern: ${pattern}`,
+        );
       }
     } catch (error) {
-      this.logger.error(`Failed to invalidate pattern ${pattern}: ${error}`)
+      this.logger.error(`Failed to invalidate pattern ${pattern}: ${error}`);
     }
   }
 
   private buildFullKey(key: string): string {
     // The cache service already adds prefix, so just return the key
-    return key
+    return key;
   }
 }

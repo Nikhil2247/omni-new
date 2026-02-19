@@ -2,13 +2,10 @@
 // EVENT NOTE REPOSITORY
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import {
-  EventNote,
-  Prisma,
-} from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { EventNote, Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventNoteRepository extends BaseRepository<
@@ -19,30 +16,33 @@ export class EventNoteRepository extends BaseRepository<
   Prisma.EventNoteWhereUniqueInput,
   Prisma.EventNoteOrderByWithRelationInput
 > {
-  protected readonly modelName = 'EventNote'
+  protected readonly modelName = 'EventNote';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.eventNote
+    return this.prisma.eventNote;
   }
 
   async findByActiveEvent(activeEventId: string) {
     return this.model.findMany({
       where: { activeEventId },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
-  async findByAuthor(authorId: string, options?: { skip?: number; take?: number }) {
+  async findByAuthor(
+    authorId: string,
+    options?: { skip?: number; take?: number },
+  ) {
     return this.model.findMany({
       where: { authorId },
       orderBy: { createdAt: 'desc' },
       skip: options?.skip,
       take: options?.take,
-    })
+    });
   }
 
   async findInternalNotes(activeEventId: string) {
@@ -52,7 +52,7 @@ export class EventNoteRepository extends BaseRepository<
         isInternal: true,
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async findPublicNotes(activeEventId: string) {
@@ -62,6 +62,6 @@ export class EventNoteRepository extends BaseRepository<
         isInternal: false,
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 }

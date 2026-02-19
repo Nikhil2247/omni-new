@@ -2,8 +2,8 @@
 // SUBSCRIPTION DTOs - Subscription Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsBoolean } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsUUID, IsOptional, IsBoolean } from 'class-validator';
 
 export enum SubscriptionStatus {
   PENDING = 'PENDING',
@@ -22,54 +22,57 @@ export enum SubscriptionStatus {
 export class CreateSubscriptionDto {
   @ApiProperty({ description: 'Vendor profile ID' })
   @IsUUID()
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Subscription plan ID' })
   @IsUUID()
-  planId: string
+  planId: string;
 
   @ApiProperty({ description: 'Plan price ID' })
   @IsUUID()
-  priceId: string
+  priceId: string;
 
   @ApiPropertyOptional({ description: 'Coupon code to apply' })
   @IsOptional()
   @IsString()
-  couponCode?: string
+  couponCode?: string;
 
   @ApiPropertyOptional({ description: 'Payment method ID' })
   @IsOptional()
   @IsUUID()
-  paymentMethodId?: string
+  paymentMethodId?: string;
 }
 
 export class UpdateSubscriptionDto {
   @ApiPropertyOptional({ description: 'New plan ID (for upgrades/downgrades)' })
   @IsOptional()
   @IsUUID()
-  planId?: string
+  planId?: string;
 
   @ApiPropertyOptional({ description: 'New plan price ID' })
   @IsOptional()
   @IsUUID()
-  priceId?: string
+  priceId?: string;
 
   @ApiPropertyOptional({ description: 'Cancel at period end' })
   @IsOptional()
   @IsBoolean()
-  cancelAtPeriodEnd?: boolean
+  cancelAtPeriodEnd?: boolean;
 }
 
 export class CancelSubscriptionDto {
   @ApiPropertyOptional({ description: 'Cancellation reason' })
   @IsOptional()
   @IsString()
-  reason?: string
+  reason?: string;
 
-  @ApiPropertyOptional({ description: 'Cancel immediately or at period end', default: false })
+  @ApiPropertyOptional({
+    description: 'Cancel immediately or at period end',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
-  immediate?: boolean
+  immediate?: boolean;
 }
 
 // ============================================================================
@@ -78,44 +81,44 @@ export class CancelSubscriptionDto {
 
 export class SubscriptionResponseDto {
   @ApiProperty()
-  id: string
+  id: string;
 
   @ApiProperty()
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty()
-  planId: string
+  planId: string;
 
   @ApiProperty()
-  priceId: string
+  priceId: string;
 
   @ApiProperty({ enum: SubscriptionStatus })
-  status: SubscriptionStatus
+  status: SubscriptionStatus;
 
   @ApiProperty()
-  currentPeriodStart: Date
+  currentPeriodStart: Date;
 
   @ApiProperty()
-  currentPeriodEnd: Date
+  currentPeriodEnd: Date;
 
   @ApiPropertyOptional()
-  cancelledAt?: Date
+  cancelledAt?: Date;
 
   @ApiPropertyOptional()
-  cancelAtPeriodEnd?: boolean
+  cancelAtPeriodEnd?: boolean;
 
   @ApiPropertyOptional()
-  trialEnd?: Date
+  trialEnd?: Date;
 
   @ApiProperty()
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty()
-  updatedAt: Date
+  updatedAt: Date;
 
-  plan?: any
-  price?: any
-  paymentMethods?: any
+  plan?: any;
+  price?: any;
+  paymentMethods?: any;
 }
 
 // ============================================================================
@@ -125,31 +128,31 @@ export class SubscriptionResponseDto {
 export class UsageRecordDto {
   @ApiProperty({ description: 'Feature type being tracked' })
   @IsString()
-  featureKey: string
+  featureKey: string;
 
   @ApiProperty({ description: 'Usage quantity' })
-  quantity: number
+  quantity: number;
 }
 
 export class CheckFeatureLimitDto {
   @ApiProperty({ description: 'Feature type to check' })
   @IsString()
-  featureKey: string
+  featureKey: string;
 }
 
 export class FeatureLimitResponseDto {
   @ApiProperty()
-  featureKey: string
+  featureKey: string;
 
   @ApiProperty()
-  limit: number
+  limit: number;
 
   @ApiProperty()
-  used: number
+  used: number;
 
   @ApiProperty()
-  remaining: number
+  remaining: number;
 
   @ApiProperty()
-  isUnlimited: boolean
+  isUnlimited: boolean;
 }

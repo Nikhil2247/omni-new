@@ -4,12 +4,12 @@
 // Provides MinIO storage, upload handling, and CDN integration
 // ============================================================================
 
-import { Global, Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
-import { MinioService } from './minio.service'
-import { UploadService } from './upload.service'
-import { CdnService } from './cdn.service'
-import { CacheModule } from '../cache/cache.module'
+import { Global, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { MinioService } from './minio.service';
+import { UploadService } from './upload.service';
+import { CdnService } from './cdn.service';
+import { CacheModule } from '../cache/cache.module';
 
 @Global()
 @Module({

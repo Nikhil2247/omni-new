@@ -2,18 +2,18 @@
 // LEADS MODULE - Leads Domain
 // ============================================================================
 
-import { Module } from '@nestjs/common'
-import { DatabaseModule } from '../../core/database/database.module'
-import { MessagingModule } from '../messaging/messaging.module'
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from '../../core/database/database.module';
+import { MessagingModule } from '../messaging/messaging.module';
 
 // Services
-import { LeadService, MessageService } from './services'
+import { LeadService, MessageService } from './services';
 
 // Repositories
-import { LeadRepository, MessageRepository } from './repositories'
+import { LeadRepository, MessageRepository } from './repositories';
 
 // Event Handlers
-import { LeadEventHandler } from './events'
+import { LeadEventHandler } from './events';
 
 @Module({
   imports: [DatabaseModule, MessagingModule],
@@ -29,9 +29,6 @@ import { LeadEventHandler } from './events'
     // Event Handlers
     LeadEventHandler,
   ],
-  exports: [
-    LeadService,
-    MessageService,
-  ],
+  exports: [LeadService, MessageService],
 })
 export class LeadsModule {}

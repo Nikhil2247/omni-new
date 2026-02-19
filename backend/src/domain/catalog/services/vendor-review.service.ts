@@ -2,9 +2,17 @@
 // VENDOR REVIEW SERVICE - Catalog Domain
 // ============================================================================
 
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import type { CreateVendorReviewDto, UpdateVendorReviewDto, RespondVendorReviewDto } from '../dto/vendor-review.dto'
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import type {
+  CreateVendorReviewDto,
+  UpdateVendorReviewDto,
+  RespondVendorReviewDto,
+} from '../dto/vendor-review.dto';
 
 @Injectable()
 export class VendorReviewService {
@@ -33,7 +41,7 @@ export class VendorReviewService {
           : undefined,
       },
       include: { media: true },
-    })
+    });
   }
 
   async listForVendor(vendorProfileId: string, approvedOnly = false) {
@@ -44,23 +52,30 @@ export class VendorReviewService {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        reviewer: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        reviewer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
         media: true,
       },
-    })
+    });
   }
 
   async listForVendorUser(vendorUserId: string) {
     const vendorProfile = await this.prisma.vendorProfile.findUnique({
       where: { userId: vendorUserId },
       select: { id: true },
-    })
+    });
 
     if (!vendorProfile) {
-      return []
+      return [];
     }
 
-    return this.listForVendor(vendorProfile.id)
+    return this.listForVendor(vendorProfile.id);
   }
 
   async listByReviewer(userId: string) {
@@ -71,13 +86,16 @@ export class VendorReviewService {
         vendor: { select: { id: true, businessName: true, slug: true } },
         media: true,
       },
-    })
+    });
   }
 
   async update(userId: string, reviewId: string, dto: UpdateVendorReviewDto) {
-    const review = await this.prisma.vendorReview.findUnique({ where: { id: reviewId } })
-    if (!review) throw new NotFoundException('Review not found')
-    if (review.reviewerId !== userId) throw new ForbiddenException('Not allowed')
+    const review = await this.prisma.vendorReview.findUnique({
+      where: { id: reviewId },
+    });
+    if (!review) throw new NotFoundException('Review not found');
+    if (review.reviewerId !== userId)
+      throw new ForbiddenException('Not allowed');
 
     return this.prisma.vendorReview.update({
       where: { id: reviewId },
@@ -86,22 +104,29 @@ export class VendorReviewService {
         title: dto.title ?? review.title,
         body: dto.body ?? review.body,
       },
-    })
+    });
   }
 
-  async respond(vendorUserId: string, reviewId: string, dto: RespondVendorReviewDto) {
+  async respond(
+    vendorUserId: string,
+    reviewId: string,
+    dto: RespondVendorReviewDto,
+  ) {
     const vendorProfile = await this.prisma.vendorProfile.findUnique({
       where: { userId: vendorUserId },
       select: { id: true },
-    })
+    });
 
     if (!vendorProfile) {
-      throw new ForbiddenException('Vendor profile required')
+      throw new ForbiddenException('Vendor profile required');
     }
 
-    const review = await this.prisma.vendorReview.findUnique({ where: { id: reviewId } })
-    if (!review) throw new NotFoundException('Review not found')
-    if (review.vendorProfileId !== vendorProfile.id) throw new ForbiddenException('Not allowed')
+    const review = await this.prisma.vendorReview.findUnique({
+      where: { id: reviewId },
+    });
+    if (!review) throw new NotFoundException('Review not found');
+    if (review.vendorProfileId !== vendorProfile.id)
+      throw new ForbiddenException('Not allowed');
 
     return this.prisma.vendorReview.update({
       where: { id: reviewId },
@@ -111,6 +136,6 @@ export class VendorReviewService {
         reviewedBy: vendorUserId,
         status: 'APPROVED',
       },
-    })
+    });
   }
 }

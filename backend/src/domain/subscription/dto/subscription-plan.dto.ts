@@ -2,9 +2,17 @@
 // SUBSCRIPTION PLAN DTOs - Subscription Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsEnum, IsNumber, IsOptional, IsBoolean, ValidateNested, Min } from 'class-validator'
-import { Type } from 'class-transformer'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  ValidateNested,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum PlanTier {
   FREE = 'FREE',
@@ -35,60 +43,63 @@ export enum FeatureLimitType {
 export class CreatePlanFeatureDto {
   @ApiProperty({ description: 'Feature key (unique)' })
   @IsString()
-  featureKey: string
+  featureKey: string;
 
   @ApiProperty({ description: 'Feature name (display)' })
   @IsString()
-  featureName: string
+  featureName: string;
 
   @ApiPropertyOptional({ description: 'Feature description' })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiProperty({ description: 'Limit type', enum: FeatureLimitType })
   @IsEnum(FeatureLimitType)
-  limitType: FeatureLimitType
+  limitType: FeatureLimitType;
 
   @ApiPropertyOptional({ description: 'Limit value (null for unlimited)' })
   @IsOptional()
   @IsNumber()
-  limitValue?: number
+  limitValue?: number;
 
-  @ApiPropertyOptional({ description: 'Highlight this feature', default: false })
+  @ApiPropertyOptional({
+    description: 'Highlight this feature',
+    default: false,
+  })
   @IsOptional()
   @IsBoolean()
-  isHighlighted?: boolean
+  isHighlighted?: boolean;
 
   @ApiPropertyOptional({ description: 'Sort order', default: 0 })
   @IsOptional()
   @IsNumber()
-  sortOrder?: number
+  sortOrder?: number;
 }
 
 export class CreatePlanPriceDto {
   @ApiProperty({ description: 'Billing cycle', enum: BillingCycle })
   @IsEnum(BillingCycle)
-  billingCycle: BillingCycle
+  billingCycle: BillingCycle;
 
   @ApiProperty({ description: 'Price amount' })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  amount: number
+  amount: number;
 
   @ApiProperty({ description: 'Currency code', default: 'INR' })
   @IsString()
-  currency: string
+  currency: string;
 
   @ApiPropertyOptional({ description: 'Stripe price ID' })
   @IsOptional()
   @IsString()
-  stripePriceId?: string
+  stripePriceId?: string;
 
   @ApiPropertyOptional({ description: 'Razorpay plan ID' })
   @IsOptional()
   @IsString()
-  razorpayPlanId?: string
+  razorpayPlanId?: string;
 }
 
 // ============================================================================
@@ -98,112 +109,112 @@ export class CreatePlanPriceDto {
 export class CreateSubscriptionPlanDto {
   @ApiProperty({ description: 'Plan name' })
   @IsString()
-  name: string
+  name: string;
 
   @ApiProperty({ description: 'Plan tier', enum: PlanTier })
   @IsEnum(PlanTier)
-  tier: PlanTier
+  tier: PlanTier;
 
   @ApiPropertyOptional({ description: 'Plan description' })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiProperty({ description: 'Plan features', type: [CreatePlanFeatureDto] })
   @ValidateNested({ each: true })
   @Type(() => CreatePlanFeatureDto)
-  features: CreatePlanFeatureDto[]
+  features: CreatePlanFeatureDto[];
 
   @ApiProperty({ description: 'Plan prices', type: [CreatePlanPriceDto] })
   @ValidateNested({ each: true })
   @Type(() => CreatePlanPriceDto)
-  prices: CreatePlanPriceDto[]
+  prices: CreatePlanPriceDto[];
 
   @ApiPropertyOptional({ description: 'Display order', default: 0 })
   @IsOptional()
   @IsNumber()
-  displayOrder?: number
+  displayOrder?: number;
 
   @ApiPropertyOptional({ description: 'Is plan popular', default: false })
   @IsOptional()
   @IsBoolean()
-  isPopular?: boolean
+  isPopular?: boolean;
 
   @ApiPropertyOptional({ description: 'Trial days', default: 0 })
   @IsOptional()
   @IsNumber()
-  trialDays?: number
+  trialDays?: number;
 
   @ApiPropertyOptional({ description: 'Is plan active', default: true })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean
+  isActive?: boolean;
 
   @ApiPropertyOptional({ description: 'Is plan public', default: true })
   @IsOptional()
   @IsBoolean()
-  isPublic?: boolean
+  isPublic?: boolean;
 }
 
 export class UpdateSubscriptionPlanDto {
   @ApiPropertyOptional({ description: 'Plan name' })
   @IsOptional()
   @IsString()
-  name?: string
+  name?: string;
 
   @ApiPropertyOptional({ description: 'Plan description' })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiPropertyOptional({ description: 'Display order' })
   @IsOptional()
   @IsNumber()
-  displayOrder?: number
+  displayOrder?: number;
 
   @ApiPropertyOptional({ description: 'Is plan popular' })
   @IsOptional()
   @IsBoolean()
-  isPopular?: boolean
+  isPopular?: boolean;
 
   @ApiPropertyOptional({ description: 'Trial days' })
   @IsOptional()
   @IsNumber()
-  trialDays?: number
+  trialDays?: number;
 
   @ApiPropertyOptional({ description: 'Is plan active' })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean
+  isActive?: boolean;
 
   @ApiPropertyOptional({ description: 'Is plan public' })
   @IsOptional()
   @IsBoolean()
-  isPublic?: boolean
+  isPublic?: boolean;
 }
 
 export class SubscriptionPlanResponseDto {
   @ApiProperty()
-  id: string
+  id: string;
 
   @ApiProperty()
-  name: string
+  name: string;
 
   @ApiProperty({ enum: PlanTier })
-  tier: PlanTier
+  tier: PlanTier;
 
   @ApiPropertyOptional()
-  description?: string
+  description?: string;
 
   @ApiProperty()
-  isActive: boolean
+  isActive: boolean;
 
   @ApiProperty()
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty()
-  updatedAt: Date
+  updatedAt: Date;
 
-  features?: any[]
-  prices?: any[]
+  features?: any[];
+  prices?: any[];
 }

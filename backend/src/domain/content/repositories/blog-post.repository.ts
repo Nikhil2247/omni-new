@@ -2,11 +2,14 @@
 // BLOG POST REPOSITORY - Content Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { Prisma, BlogPost } from '@prisma/client'
-import { BaseRepository, PaginatedResult } from '../../../core/database/repositories/base.repository'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { SearchBlogPostsDto } from '../dto/blog-post.dto'
+import { Injectable } from '@nestjs/common';
+import { Prisma, BlogPost } from '@prisma/client';
+import {
+  BaseRepository,
+  PaginatedResult,
+} from '../../../core/database/repositories/base.repository';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { SearchBlogPostsDto } from '../dto/blog-post.dto';
 
 @Injectable()
 export class BlogPostRepository extends BaseRepository<
@@ -17,14 +20,14 @@ export class BlogPostRepository extends BaseRepository<
   Prisma.BlogPostWhereUniqueInput,
   Prisma.BlogPostOrderByWithRelationInput
 > {
-  protected readonly modelName = 'BlogPost'
+  protected readonly modelName = 'BlogPost';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.blogPost
+    return this.prisma.blogPost;
   }
 
   async findBySlug(slug: string): Promise<BlogPost | null> {
@@ -38,11 +41,19 @@ export class BlogPostRepository extends BaseRepository<
           },
         },
       },
-    })
+    });
   }
 
   async search(dto: SearchBlogPostsDto): Promise<PaginatedResult<BlogPost>> {
-    const { authorId, status, categoryId, tagId, keyword, page = 1, limit = 20 } = dto
+    const {
+      authorId,
+      status,
+      categoryId,
+      tagId,
+      keyword,
+      page = 1,
+      limit = 20,
+    } = dto;
 
     const where: Prisma.BlogPostWhereInput = {
       ...(authorId && { authorId }),
@@ -63,7 +74,7 @@ export class BlogPostRepository extends BaseRepository<
           { keywords: { has: keyword } },
         ],
       }),
-    }
+    };
 
     return this.findManyPaginated(
       { page, limit },
@@ -74,7 +85,7 @@ export class BlogPostRepository extends BaseRepository<
           category: true,
         },
       },
-    )
+    );
   }
 
   async findPublished(limit: number = 10): Promise<BlogPost[]> {
@@ -90,7 +101,7 @@ export class BlogPostRepository extends BaseRepository<
       include: {
         category: true,
       },
-    })
+    });
   }
 
   async incrementViewCount(id: string): Promise<void> {
@@ -101,10 +112,13 @@ export class BlogPostRepository extends BaseRepository<
           increment: 1,
         },
       },
-    })
+    });
   }
 
-  async findByCategory(categoryId: string, limit: number = 10): Promise<BlogPost[]> {
+  async findByCategory(
+    categoryId: string,
+    limit: number = 10,
+  ): Promise<BlogPost[]> {
     return this.prisma.blogPost.findMany({
       where: {
         categoryId,
@@ -112,11 +126,15 @@ export class BlogPostRepository extends BaseRepository<
       },
       orderBy: { publishedAt: 'desc' },
       take: limit,
-    })
+    });
   }
 
-  async findRelated(postId: string, categoryId: string | null, limit: number = 3): Promise<BlogPost[]> {
-    if (!categoryId) return []
+  async findRelated(
+    postId: string,
+    categoryId: string | null,
+    limit: number = 3,
+  ): Promise<BlogPost[]> {
+    if (!categoryId) return [];
 
     return this.prisma.blogPost.findMany({
       where: {
@@ -126,6 +144,6 @@ export class BlogPostRepository extends BaseRepository<
       },
       orderBy: { publishedAt: 'desc' },
       take: limit,
-    })
+    });
   }
 }

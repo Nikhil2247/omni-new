@@ -1,1 +1,1 @@
-export { CreateChecklistDto } from './checklist.dto'
+export { CreateChecklistDto } from './checklist.dto';

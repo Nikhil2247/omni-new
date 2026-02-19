@@ -2,9 +2,20 @@
 // SERVICE DTOs - Catalog Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsEnum, IsNumber, Min, ValidateNested, IsInt, IsBoolean, IsArray } from 'class-validator'
-import { Type } from 'class-transformer'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  Min,
+  ValidateNested,
+  IsInt,
+  IsBoolean,
+  IsArray,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum PricingType {
   FIXED = 'FIXED',
@@ -24,254 +35,282 @@ export enum DurationUnit {
 export class CreatePricingTierDto {
   @ApiProperty({ description: 'Tier name' })
   @IsString()
-  name: string
+  name: string;
 
   @ApiPropertyOptional({ description: 'Description', nullable: true })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiProperty({ description: 'Price' })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  price: number
+  price: number;
 
   @ApiProperty({ description: 'Unit', example: 'per event' })
   @IsString()
-  unit: string
+  unit: string;
 
   @ApiPropertyOptional({ description: 'Min quantity', nullable: true })
   @IsOptional()
   @IsInt()
   @Min(0)
-  minQuantity?: number
+  minQuantity?: number;
 
   @ApiPropertyOptional({ description: 'Max quantity', nullable: true })
   @IsOptional()
   @IsInt()
   @Min(0)
-  maxQuantity?: number
+  maxQuantity?: number;
 
   @ApiPropertyOptional({ description: 'Sort order', default: 0 })
   @IsOptional()
   @IsInt()
-  sortOrder?: number
+  sortOrder?: number;
 }
 
 export class CreateServiceDto {
   @ApiProperty({ description: 'Vendor profile ID' })
   @IsUUID()
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiPropertyOptional({ description: 'Service type ID', nullable: true })
   @IsOptional()
   @IsUUID()
-  serviceTypeId?: string
+  serviceTypeId?: string;
 
   @ApiProperty({ description: 'Service name' })
   @IsString()
-  name: string
+  name: string;
 
   @ApiPropertyOptional({ description: 'Description', nullable: true })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiPropertyOptional({ description: 'Pricing type', enum: PricingType })
   @IsOptional()
   @IsEnum(PricingType)
-  pricingType?: PricingType
+  pricingType?: PricingType;
 
-  @ApiPropertyOptional({ description: 'Legacy field: base price (maps to startingPrice)' })
+  @ApiPropertyOptional({
+    description: 'Legacy field: base price (maps to startingPrice)',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  basePrice?: number
+  basePrice?: number;
 
   @ApiPropertyOptional({ description: 'Legacy field: pricing unit label' })
   @IsOptional()
   @IsString()
-  priceUnit?: string
+  priceUnit?: string;
 
   @ApiPropertyOptional({ description: 'Legacy field: duration in minutes' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  duration?: number
+  duration?: number;
 
-  @ApiPropertyOptional({ description: 'New format: duration numeric value (paired with durationUnit)' })
+  @ApiPropertyOptional({
+    description:
+      'New format: duration numeric value (paired with durationUnit)',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  durationValue?: number
+  durationValue?: number;
 
-  @ApiPropertyOptional({ description: 'New format: duration unit', enum: DurationUnit })
+  @ApiPropertyOptional({
+    description: 'New format: duration unit',
+    enum: DurationUnit,
+  })
   @IsOptional()
   @IsEnum(DurationUnit)
-  durationUnit?: DurationUnit
+  durationUnit?: DurationUnit;
 
-  @ApiPropertyOptional({ description: 'Legacy field: active flag', default: true })
+  @ApiPropertyOptional({
+    description: 'Legacy field: active flag',
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean
+  isActive?: boolean;
 
-  @ApiPropertyOptional({ description: 'Legacy field: feature list', type: [String] })
+  @ApiPropertyOptional({
+    description: 'Legacy field: feature list',
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  features?: string[]
+  features?: string[];
 
   @ApiPropertyOptional({ description: 'Currency', default: 'USD' })
   @IsOptional()
   @IsString()
-  currency?: string
+  currency?: string;
 
   @ApiPropertyOptional({ description: 'Starting price', nullable: true })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  startingPrice?: number
+  startingPrice?: number;
 
   @ApiPropertyOptional({ description: 'Max price', nullable: true })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  maxPrice?: number
+  maxPrice?: number;
 
   @ApiPropertyOptional({ description: 'Sort order', default: 0 })
   @IsOptional()
   @IsInt()
-  sortOrder?: number
+  sortOrder?: number;
 
-  @ApiPropertyOptional({ description: 'Pricing tiers', type: [CreatePricingTierDto] })
+  @ApiPropertyOptional({
+    description: 'Pricing tiers',
+    type: [CreatePricingTierDto],
+  })
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => CreatePricingTierDto)
-  pricingTiers?: CreatePricingTierDto[]
+  pricingTiers?: CreatePricingTierDto[];
 }
 
 export class UpdateServiceDto {
   @ApiPropertyOptional({ description: 'Service name' })
   @IsOptional()
   @IsString()
-  name?: string
+  name?: string;
 
   @ApiPropertyOptional({ description: 'Description', nullable: true })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiPropertyOptional({ description: 'Pricing type', enum: PricingType })
   @IsOptional()
   @IsEnum(PricingType)
-  pricingType?: PricingType
+  pricingType?: PricingType;
 
   @ApiPropertyOptional({ description: 'Currency', default: 'USD' })
   @IsOptional()
   @IsString()
-  currency?: string
+  currency?: string;
 
   @ApiPropertyOptional({ description: 'Starting price', nullable: true })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  startingPrice?: number
+  startingPrice?: number;
 
   @ApiPropertyOptional({ description: 'Max price', nullable: true })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  maxPrice?: number
+  maxPrice?: number;
 
-  @ApiPropertyOptional({ description: 'Legacy field: base price (maps to startingPrice)' })
+  @ApiPropertyOptional({
+    description: 'Legacy field: base price (maps to startingPrice)',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  basePrice?: number
+  basePrice?: number;
 
   @ApiPropertyOptional({ description: 'Legacy field: pricing unit label' })
   @IsOptional()
   @IsString()
-  priceUnit?: string
+  priceUnit?: string;
 
   @ApiPropertyOptional({ description: 'Legacy field: duration in minutes' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  duration?: number
+  duration?: number;
 
-  @ApiPropertyOptional({ description: 'New format: duration numeric value (paired with durationUnit)' })
+  @ApiPropertyOptional({
+    description:
+      'New format: duration numeric value (paired with durationUnit)',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  durationValue?: number
+  durationValue?: number;
 
-  @ApiPropertyOptional({ description: 'New format: duration unit', enum: DurationUnit })
+  @ApiPropertyOptional({
+    description: 'New format: duration unit',
+    enum: DurationUnit,
+  })
   @IsOptional()
   @IsEnum(DurationUnit)
-  durationUnit?: DurationUnit
+  durationUnit?: DurationUnit;
 
-  @ApiPropertyOptional({ description: 'Legacy field: feature list', type: [String] })
+  @ApiPropertyOptional({
+    description: 'Legacy field: feature list',
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  features?: string[]
+  features?: string[];
 
   @ApiPropertyOptional({ description: 'Active' })
   @IsOptional()
-  isActive?: boolean
+  isActive?: boolean;
 
   @ApiPropertyOptional({ description: 'Sort order' })
   @IsOptional()
   @IsInt()
-  sortOrder?: number
+  sortOrder?: number;
 }
 
 export class ServiceResponseDto {
   @ApiProperty({ description: 'Service ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Vendor profile ID' })
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiPropertyOptional({ description: 'Service type ID', nullable: true })
-  serviceTypeId: string | null
+  serviceTypeId: string | null;
 
   @ApiProperty({ description: 'Service name' })
-  name: string
+  name: string;
 
   @ApiPropertyOptional({ description: 'Description', nullable: true })
-  description: string | null
+  description: string | null;
 
   @ApiProperty({ description: 'Pricing type', enum: PricingType })
-  pricingType: PricingType
+  pricingType: PricingType;
 
   @ApiProperty({ description: 'Currency' })
-  currency: string
+  currency: string;
 
   @ApiPropertyOptional({ description: 'Starting price', nullable: true })
-  startingPrice: number | null
+  startingPrice: number | null;
 
   @ApiPropertyOptional({ description: 'Max price', nullable: true })
-  maxPrice: number | null
+  maxPrice: number | null;
 
   @ApiProperty({ description: 'Active' })
-  isActive: boolean
+  isActive: boolean;
 
   @ApiProperty({ description: 'Sort order' })
-  sortOrder: number
+  sortOrder: number;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Updated at' })
-  updatedAt: Date
+  updatedAt: Date;
 }

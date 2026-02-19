@@ -2,7 +2,7 @@
 // ONBOARDING DTOs - Planning Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsUUID,
@@ -15,11 +15,11 @@ import {
   ArrayMaxSize,
   MinLength,
   ValidateIf,
-} from 'class-validator'
-import { WeddingEventType, PartnerInviteStatus } from '@prisma/client'
+} from 'class-validator';
+import { WeddingEventType, PartnerInviteStatus } from '@prisma/client';
 
 // Re-export Prisma enums for convenience
-export { WeddingEventType, PartnerInviteStatus }
+export { WeddingEventType, PartnerInviteStatus };
 
 // ============================================================================
 // VIBE QUIZ DTOs
@@ -34,55 +34,55 @@ export class SubmitVibeQuizDto {
   @IsUUID('4', { each: true })
   @ArrayMinSize(5)
   @ArrayMaxSize(10)
-  selectedImageIds: string[]
+  selectedImageIds: string[];
 }
 
 export class VibeQuizImageResponseDto {
   @ApiProperty({ description: 'Image ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Full URL of the image' })
-  url: string
+  url: string;
 
   @ApiProperty({ description: 'Thumbnail URL' })
-  thumbnailUrl: string
+  thumbnailUrl: string;
 
   @ApiProperty({ description: 'Image category', example: 'Decor' })
-  category: string
+  category: string;
 
   @ApiProperty({ description: 'Style tag', example: 'Royal' })
-  style: string
+  style: string;
 
   @ApiProperty({ description: 'Additional tags', type: [String] })
-  tags: string[]
+  tags: string[];
 }
 
 export class VibeQuizResultResponseDto {
   @ApiProperty({ description: 'Result ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'User ID' })
-  userId: string
+  userId: string;
 
   @ApiProperty({ description: 'Top preferred styles', type: [String] })
-  topStyles: string[]
+  topStyles: string[];
 
   @ApiProperty({ description: 'Top preferred colors', type: [String] })
-  topColors: string[]
+  topColors: string[];
 
   @ApiProperty({ description: 'Top preferred categories', type: [String] })
-  topCategories: string[]
+  topCategories: string[];
 
   @ApiProperty({ description: 'Completion timestamp' })
-  completedAt: Date
+  completedAt: Date;
 }
 
 export class VibeQuizStatusResponseDto {
   @ApiProperty({ description: 'Whether quiz has been completed' })
-  completed: boolean
+  completed: boolean;
 
   @ApiPropertyOptional({ description: 'Quiz result if completed' })
-  result?: VibeQuizResultResponseDto
+  result?: VibeQuizResultResponseDto;
 }
 
 // ============================================================================
@@ -93,23 +93,23 @@ export class CreateWeddingIdentityDto {
   @ApiProperty({ description: 'First partner name', example: 'Rohit' })
   @IsString()
   @MinLength(2)
-  partnerOneName: string
+  partnerOneName: string;
 
   @ApiProperty({ description: 'Second partner name', example: 'Riya' })
   @IsString()
   @MinLength(2)
-  partnerTwoName: string
+  partnerTwoName: string;
 
   @ApiPropertyOptional({ description: 'Event date' })
   @IsOptional()
   @ValidateIf((o) => o.eventDate !== undefined && o.eventDate !== '')
   @IsDateString()
-  eventDate?: string
+  eventDate?: string;
 
   @ApiPropertyOptional({ description: 'Event type', enum: WeddingEventType })
   @IsOptional()
   @IsEnum(WeddingEventType)
-  eventType?: WeddingEventType
+  eventType?: WeddingEventType;
 }
 
 export class UpdateWeddingIdentityDto {
@@ -117,78 +117,81 @@ export class UpdateWeddingIdentityDto {
   @IsOptional()
   @IsString()
   @MinLength(2)
-  displayName?: string
+  displayName?: string;
 
   @ApiPropertyOptional({ description: 'Event date' })
   @IsOptional()
   @ValidateIf((o) => o.eventDate !== undefined && o.eventDate !== '')
   @IsDateString()
-  eventDate?: string
+  eventDate?: string;
 
   @ApiPropertyOptional({ description: 'Event type', enum: WeddingEventType })
   @IsOptional()
   @IsEnum(WeddingEventType)
-  eventType?: WeddingEventType
+  eventType?: WeddingEventType;
 }
 
 export class InvitePartnerDto {
   @ApiProperty({ description: 'Partner email address' })
   @IsEmail()
-  email: string
+  email: string;
 
   @ApiPropertyOptional({ description: 'Partner phone number' })
   @IsOptional()
   @IsString()
-  phone?: string
+  phone?: string;
 }
 
 export class WeddingPartnerResponseDto {
   @ApiProperty({ description: 'Partner ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Partner name' })
-  name: string
+  name: string;
 
   @ApiPropertyOptional({ description: 'Partner email', nullable: true })
-  email: string | null
+  email: string | null;
 
   @ApiPropertyOptional({ description: 'Partner phone', nullable: true })
-  phone: string | null
+  phone: string | null;
 
   @ApiProperty({ description: 'Whether this partner is the owner' })
-  isOwner: boolean
+  isOwner: boolean;
 
   @ApiProperty({ description: 'Invite status', enum: PartnerInviteStatus })
-  inviteStatus: PartnerInviteStatus
+  inviteStatus: PartnerInviteStatus;
 
   @ApiPropertyOptional({ description: 'When invite was sent', nullable: true })
-  invitedAt: Date | null
+  invitedAt: Date | null;
 
-  @ApiPropertyOptional({ description: 'When invite was accepted', nullable: true })
-  acceptedAt: Date | null
+  @ApiPropertyOptional({
+    description: 'When invite was accepted',
+    nullable: true,
+  })
+  acceptedAt: Date | null;
 }
 
 export class WeddingIdentityResponseDto {
   @ApiProperty({ description: 'Wedding identity ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Display name', example: 'Rohit & Riya' })
-  displayName: string
+  displayName: string;
 
   @ApiPropertyOptional({ description: 'Event date', nullable: true })
-  eventDate: Date | null
+  eventDate: Date | null;
 
   @ApiProperty({ description: 'Event type', enum: WeddingEventType })
-  eventType: WeddingEventType
+  eventType: WeddingEventType;
 
   @ApiProperty({ description: 'Partners', type: [WeddingPartnerResponseDto] })
-  partners: WeddingPartnerResponseDto[]
+  partners: WeddingPartnerResponseDto[];
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Updated at' })
-  updatedAt: Date
+  updatedAt: Date;
 }
 
 // ============================================================================
@@ -197,11 +200,11 @@ export class WeddingIdentityResponseDto {
 
 export class OnboardingStatusResponseDto {
   @ApiProperty({ description: 'Whether vibe quiz is completed' })
-  vibeQuizCompleted: boolean
+  vibeQuizCompleted: boolean;
 
   @ApiProperty({ description: 'Whether wedding identity is created' })
-  weddingIdentityCreated: boolean
+  weddingIdentityCreated: boolean;
 
   @ApiProperty({ description: 'Overall onboarding completion status' })
-  isOnboardingComplete: boolean
+  isOnboardingComplete: boolean;
 }

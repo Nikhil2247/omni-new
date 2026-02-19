@@ -2,10 +2,13 @@
 // CONVERSATION REPOSITORY - Messaging Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { Prisma, Conversation } from '@prisma/client'
-import { BaseRepository, PaginatedResult } from '../../../core/database/repositories/base.repository'
-import { PrismaService } from '../../../core/database/prisma.service'
+import { Injectable } from '@nestjs/common';
+import { Prisma, Conversation } from '@prisma/client';
+import {
+  BaseRepository,
+  PaginatedResult,
+} from '../../../core/database/repositories/base.repository';
+import { PrismaService } from '../../../core/database/prisma.service';
 
 @Injectable()
 export class ConversationRepository extends BaseRepository<
@@ -16,17 +19,20 @@ export class ConversationRepository extends BaseRepository<
   Prisma.ConversationWhereUniqueInput,
   Prisma.ConversationOrderByWithRelationInput
 > {
-  protected readonly modelName = 'Conversation'
+  protected readonly modelName = 'Conversation';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.conversation
+    return this.prisma.conversation;
   }
 
-  async findDirectConversationByUsers(userId: string, otherUserId: string): Promise<Conversation | null> {
+  async findDirectConversationByUsers(
+    userId: string,
+    otherUserId: string,
+  ): Promise<Conversation | null> {
     return this.prisma.conversation.findFirst({
       where: {
         type: 'DIRECT',
@@ -36,26 +42,27 @@ export class ConversationRepository extends BaseRepository<
           { participants: { some: { userId: otherUserId } } },
         ],
       },
-    })
+    });
   }
 
   async findByLeadId(leadId: string): Promise<Conversation | null> {
     return this.prisma.conversation.findFirst({
       where: { leadId },
-    })
+    });
   }
 
-  async findUserConversations(userId: string, page: number, limit: number): Promise<PaginatedResult<Conversation>> {
+  async findUserConversations(
+    userId: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResult<Conversation>> {
     return this.findManyPaginated(
       { page, limit },
       {
         where: {
           participants: { some: { userId } },
         },
-        orderBy: [
-          { lastMessageAt: 'desc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ lastMessageAt: 'desc' }, { createdAt: 'desc' }],
         include: {
           participants: {
             include: {
@@ -97,6 +104,6 @@ export class ConversationRepository extends BaseRepository<
           },
         },
       },
-    )
+    );
   }
 }

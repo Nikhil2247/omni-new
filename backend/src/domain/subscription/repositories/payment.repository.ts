@@ -2,16 +2,16 @@
 // PAYMENT REPOSITORY - Subscription Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { Prisma, Payment } from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { Prisma, Payment } from '@prisma/client';
 
 @Injectable()
 export class PaymentRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: Prisma.PaymentCreateInput): Promise<Payment> {
-    return this.prisma.payment.create({ data })
+    return this.prisma.payment.create({ data });
   }
 
   async findById(id: string): Promise<Payment | null> {
@@ -21,7 +21,7 @@ export class PaymentRepository {
         invoice: true,
         paymentMethod: true,
       },
-    })
+    });
   }
 
   async findByInvoice(invoiceId: string): Promise<Payment[]> {
@@ -29,7 +29,7 @@ export class PaymentRepository {
       where: { invoiceId },
       include: { paymentMethod: true },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async findByVendorProfile(vendorProfileId: string): Promise<Payment[]> {
@@ -48,14 +48,14 @@ export class PaymentRepository {
         paymentMethod: true,
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async update(id: string, data: Prisma.PaymentUpdateInput): Promise<Payment> {
     return this.prisma.payment.update({
       where: { id },
       data,
-    })
+    });
   }
 
   async getRecentPayments(limit: number = 10): Promise<Payment[]> {
@@ -68,6 +68,6 @@ export class PaymentRepository {
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
-    })
+    });
   }
 }

@@ -13,70 +13,77 @@ import {
   RequestTimeoutException,
   SetMetadata,
   Logger,
-} from '@nestjs/common'
-import { Reflector } from '@nestjs/core'
-import { Observable, throwError, TimeoutError } from 'rxjs'
-import { catchError, timeout } from 'rxjs/operators'
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { Observable, throwError, TimeoutError } from 'rxjs';
+import { catchError, timeout } from 'rxjs/operators';
 
-export const TIMEOUT_KEY = 'timeout'
-export const NO_TIMEOUT_KEY = 'no-timeout'
+export const TIMEOUT_KEY = 'timeout';
+export const NO_TIMEOUT_KEY = 'no-timeout';
 
 /**
  * Decorator to set custom timeout for a route
  * @param milliseconds Timeout in milliseconds
  */
-export const Timeout = (milliseconds: number) => SetMetadata(TIMEOUT_KEY, milliseconds)
+export const Timeout = (milliseconds: number) =>
+  SetMetadata(TIMEOUT_KEY, milliseconds);
 
 /**
  * Decorator to disable timeout for a route
  */
-export const NoTimeout = () => SetMetadata(NO_TIMEOUT_KEY, true)
+export const NoTimeout = () => SetMetadata(NO_TIMEOUT_KEY, true);
 
 @Injectable()
 export class TimeoutInterceptor implements NestInterceptor {
-  private readonly logger = new Logger(TimeoutInterceptor.name)
-  private readonly defaultTimeout: number
+  private readonly logger = new Logger(TimeoutInterceptor.name);
+  private readonly defaultTimeout: number;
 
   constructor(
     private readonly reflector: Reflector,
     defaultTimeout: number = 30000, // 30 seconds default
   ) {
-    this.defaultTimeout = defaultTimeout
+    this.defaultTimeout = defaultTimeout;
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     // Check if timeout is disabled for this route
-    const noTimeout = this.reflector.getAllAndOverride<boolean>(NO_TIMEOUT_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ])
+    const noTimeout = this.reflector.getAllAndOverride<boolean>(
+      NO_TIMEOUT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (noTimeout) {
-      return next.handle()
+      return next.handle();
     }
 
     // Get custom timeout or use default
-    const timeoutMs = this.reflector.getAllAndOverride<number>(TIMEOUT_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]) ?? this.defaultTimeout
+    const timeoutMs =
+      this.reflector.getAllAndOverride<number>(TIMEOUT_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? this.defaultTimeout;
 
-    const request = context.switchToHttp().getRequest()
-    const method = request?.method || 'UNKNOWN'
-    const url = request?.url || 'unknown'
+    const request = context.switchToHttp().getRequest();
+    const method = request?.method || 'UNKNOWN';
+    const url = request?.url || 'unknown';
 
     return next.handle().pipe(
       timeout(timeoutMs),
       catchError((err) => {
         if (err instanceof TimeoutError) {
-          this.logger.warn(`Request timeout: ${method} ${url} (${timeoutMs}ms)`)
-          return throwError(() => new RequestTimeoutException(
-            `Request timeout after ${timeoutMs}ms`,
-          ))
+          this.logger.warn(
+            `Request timeout: ${method} ${url} (${timeoutMs}ms)`,
+          );
+          return throwError(
+            () =>
+              new RequestTimeoutException(
+                `Request timeout after ${timeoutMs}ms`,
+              ),
+          );
         }
-        return throwError(() => err)
+        return throwError(() => err);
       }),
-    )
+    );
   }
 }
 
@@ -86,7 +93,7 @@ export class TimeoutInterceptor implements NestInterceptor {
 
 @Injectable()
 export class TimeoutService {
-  private readonly logger = new Logger(TimeoutService.name)
+  private readonly logger = new Logger(TimeoutService.name);
 
   /**
    * Execute a function with timeout
@@ -103,19 +110,19 @@ export class TimeoutService {
             errorMessage || `Operation timed out after ${timeoutMs}ms`,
             timeoutMs,
           ),
-        )
-      }, timeoutMs)
+        );
+      }, timeoutMs);
 
       fn()
         .then((result) => {
-          clearTimeout(timer)
-          resolve(result)
+          clearTimeout(timer);
+          resolve(result);
         })
         .catch((error) => {
-          clearTimeout(timer)
-          reject(error)
-        })
-    })
+          clearTimeout(timer);
+          reject(error);
+        });
+    });
   }
 
   /**
@@ -127,17 +134,17 @@ export class TimeoutService {
     timeoutMs: number,
   ): Promise<T> {
     try {
-      return await this.execute(fn, timeoutMs)
+      return await this.execute(fn, timeoutMs);
     } catch (error) {
       if (error instanceof TimeoutException) {
-        this.logger.debug(`Timeout occurred, using fallback`)
+        this.logger.debug(`Timeout occurred, using fallback`);
 
         if (typeof fallback === 'function') {
-          return (fallback as () => T | Promise<T>)()
+          return (fallback as () => T | Promise<T>)();
         }
-        return fallback
+        return fallback;
       }
-      throw error
+      throw error;
     }
   }
 
@@ -156,11 +163,11 @@ export class TimeoutService {
             errorMessage || `Race timed out after ${timeoutMs}ms`,
             timeoutMs,
           ),
-        )
-      }, timeoutMs)
-    })
+        );
+      }, timeoutMs);
+    });
 
-    return Promise.race([...promises, timeoutPromise])
+    return Promise.race([...promises, timeoutPromise]);
   }
 
   /**
@@ -168,20 +175,20 @@ export class TimeoutService {
    */
   async allWithTimeout<T>(
     tasks: Array<{
-      fn: () => Promise<T>
-      timeoutMs: number
+      fn: () => Promise<T>;
+      timeoutMs: number;
     }>,
   ): Promise<Array<{ success: boolean; result?: T; error?: Error }>> {
     return Promise.all(
       tasks.map(async (task) => {
         try {
-          const result = await this.execute(task.fn, task.timeoutMs)
-          return { success: true, result }
+          const result = await this.execute(task.fn, task.timeoutMs);
+          return { success: true, result };
         } catch (error) {
-          return { success: false, error: error as Error }
+          return { success: false, error: error as Error };
         }
       }),
-    )
+    );
   }
 
   /**
@@ -191,7 +198,7 @@ export class TimeoutService {
     fn: (...args: T) => Promise<R>,
     timeoutMs: number,
   ): (...args: T) => Promise<R> {
-    return (...args: T) => this.execute(() => fn(...args), timeoutMs)
+    return (...args: T) => this.execute(() => fn(...args), timeoutMs);
   }
 }
 
@@ -204,8 +211,8 @@ export class TimeoutException extends Error {
     message: string,
     public readonly timeoutMs: number,
   ) {
-    super(message)
-    this.name = 'TimeoutException'
+    super(message);
+    this.name = 'TimeoutException';
   }
 }
 
@@ -217,5 +224,5 @@ export function createTimeoutInterceptor(
   reflector: Reflector,
   defaultTimeout?: number,
 ): TimeoutInterceptor {
-  return new TimeoutInterceptor(reflector, defaultTimeout)
+  return new TimeoutInterceptor(reflector, defaultTimeout);
 }

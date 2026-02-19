@@ -2,22 +2,22 @@
 // USAGE REPOSITORY - Subscription Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { Prisma, UsageRecord } from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { Prisma, UsageRecord } from '@prisma/client';
 
 @Injectable()
 export class UsageRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async incrementUsage(params: {
-    subscriptionId: string
-    featureKey: string
-    periodStart: Date
-    periodEnd: Date
-    incrementBy?: number
+    subscriptionId: string;
+    featureKey: string;
+    periodStart: Date;
+    periodEnd: Date;
+    incrementBy?: number;
   }): Promise<UsageRecord> {
-    const incrementBy = params.incrementBy ?? 1
+    const incrementBy = params.incrementBy ?? 1;
 
     return this.prisma.usageRecord.upsert({
       where: {
@@ -38,7 +38,7 @@ export class UsageRepository {
         periodEnd: params.periodEnd,
         usageCount: incrementBy,
       },
-    })
+    });
   }
 
   async getUsageForPeriod(
@@ -57,9 +57,9 @@ export class UsageRepository {
       _sum: {
         usageCount: true,
       },
-    })
+    });
 
-    return result._sum.usageCount || 0
+    return result._sum.usageCount || 0;
   }
 
   async getUsageHistory(
@@ -74,7 +74,7 @@ export class UsageRepository {
         ...(startDate && { createdAt: { gte: startDate } }),
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async getDailyUsage(
@@ -82,8 +82,8 @@ export class UsageRepository {
     featureKey: string,
     days: number = 30,
   ) {
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     const records = await this.prisma.usageRecord.groupBy({
       by: ['periodStart'],
@@ -93,8 +93,8 @@ export class UsageRepository {
         periodStart: { gte: startDate },
       },
       _sum: { usageCount: true },
-    })
+    });
 
-    return records
+    return records;
   }
 }

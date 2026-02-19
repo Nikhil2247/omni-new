@@ -2,7 +2,7 @@
 // WHATSAPP DTOs - Planning Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsUUID,
@@ -10,12 +10,12 @@ import {
   IsArray,
   IsBoolean,
   ValidateNested,
-} from 'class-validator'
-import { Type } from 'class-transformer'
-import { WhatsAppMessageType, WhatsAppMessageStatus } from '@prisma/client'
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { WhatsAppMessageType, WhatsAppMessageStatus } from '@prisma/client';
 
 // Re-export Prisma enums for convenience
-export { WhatsAppMessageType, WhatsAppMessageStatus }
+export { WhatsAppMessageType, WhatsAppMessageStatus };
 
 // ============================================================================
 // REQUEST DTOs
@@ -25,17 +25,17 @@ export class SendWhatsAppInviteDto {
   @ApiProperty({ description: 'Array of guest IDs to send invites to' })
   @IsArray()
   @IsUUID('4', { each: true })
-  guestIds: string[]
+  guestIds: string[];
 
   @ApiPropertyOptional({ description: 'Template ID to use' })
   @IsOptional()
   @IsUUID()
-  templateId?: string
+  templateId?: string;
 
   @ApiPropertyOptional({ description: 'Custom message to send' })
   @IsOptional()
   @IsString()
-  customMessage?: string
+  customMessage?: string;
 }
 
 export class WhatsAppFilterDto {
@@ -43,34 +43,34 @@ export class WhatsAppFilterDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  rsvpStatus?: string[]
+  rsvpStatus?: string[];
 
   @ApiPropertyOptional({ description: 'Filter only guests with phone numbers' })
   @IsOptional()
   @IsBoolean()
-  hasPhone?: boolean
+  hasPhone?: boolean;
 }
 
 export class SendWhatsAppBulkDto {
   @ApiProperty({ description: 'Guestlist ID' })
   @IsUUID()
-  guestlistId: string
+  guestlistId: string;
 
   @ApiPropertyOptional({ description: 'Filter criteria' })
   @IsOptional()
   @ValidateNested()
   @Type(() => WhatsAppFilterDto)
-  filter?: WhatsAppFilterDto
+  filter?: WhatsAppFilterDto;
 
   @ApiPropertyOptional({ description: 'Template ID to use' })
   @IsOptional()
   @IsUUID()
-  templateId?: string
+  templateId?: string;
 
   @ApiPropertyOptional({ description: 'Custom message to send' })
   @IsOptional()
   @IsString()
-  customMessage?: string
+  customMessage?: string;
 }
 
 // ============================================================================
@@ -79,62 +79,68 @@ export class SendWhatsAppBulkDto {
 
 export class WhatsAppMessageResponseDto {
   @ApiProperty({ description: 'Message ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Guest ID' })
-  guestId: string
+  guestId: string;
 
   @ApiProperty({ description: 'Guest name' })
-  guestName: string
+  guestName: string;
 
   @ApiProperty({ description: 'Guest phone' })
-  guestPhone: string
+  guestPhone: string;
 
   @ApiProperty({ description: 'Message type', enum: WhatsAppMessageType })
-  messageType: WhatsAppMessageType
+  messageType: WhatsAppMessageType;
 
   @ApiProperty({ description: 'Message status', enum: WhatsAppMessageStatus })
-  status: WhatsAppMessageStatus
+  status: WhatsAppMessageStatus;
 
   @ApiPropertyOptional({ description: 'When message was sent', nullable: true })
-  sentAt: Date | null
+  sentAt: Date | null;
 
-  @ApiPropertyOptional({ description: 'When message was delivered', nullable: true })
-  deliveredAt: Date | null
+  @ApiPropertyOptional({
+    description: 'When message was delivered',
+    nullable: true,
+  })
+  deliveredAt: Date | null;
 
   @ApiPropertyOptional({ description: 'When message was read', nullable: true })
-  readAt: Date | null
+  readAt: Date | null;
 
-  @ApiPropertyOptional({ description: 'Error message if failed', nullable: true })
-  errorMessage: string | null
+  @ApiPropertyOptional({
+    description: 'Error message if failed',
+    nullable: true,
+  })
+  errorMessage: string | null;
 }
 
 export class WhatsAppTemplateResponseDto {
   @ApiProperty({ description: 'Template ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Template name' })
-  name: string
+  name: string;
 
   @ApiProperty({ description: 'Message type', enum: WhatsAppMessageType })
-  type: WhatsAppMessageType
+  type: WhatsAppMessageType;
 
   @ApiProperty({ description: 'Template content with variables' })
-  content: string
+  content: string;
 
   @ApiProperty({ description: 'List of variable names', type: [String] })
-  variables: string[]
+  variables: string[];
 }
 
 export class WhatsAppInviteResponseDto {
   @ApiProperty({ description: 'Whether operation was successful' })
-  success: boolean
+  success: boolean;
 
   @ApiProperty({ description: 'Number of messages sent' })
-  sent: number
+  sent: number;
 
   @ApiProperty({ description: 'Number of messages that failed' })
-  failed: number
+  failed: number;
 
   @ApiPropertyOptional({
     description: 'Error details for failed messages',
@@ -147,22 +153,22 @@ export class WhatsAppInviteResponseDto {
       },
     },
   })
-  errors?: { guestId: string; error: string }[]
+  errors?: { guestId: string; error: string }[];
 }
 
 export class WhatsAppSummaryResponseDto {
   @ApiProperty({ description: 'Total messages sent' })
-  totalSent: number
+  totalSent: number;
 
   @ApiProperty({ description: 'Messages delivered' })
-  delivered: number
+  delivered: number;
 
   @ApiProperty({ description: 'Messages read' })
-  read: number
+  read: number;
 
   @ApiProperty({ description: 'Messages pending' })
-  pending: number
+  pending: number;
 
   @ApiProperty({ description: 'Messages failed' })
-  failed: number
+  failed: number;
 }

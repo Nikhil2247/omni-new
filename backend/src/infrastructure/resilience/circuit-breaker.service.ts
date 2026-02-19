@@ -5,7 +5,7 @@
 // States: CLOSED (normal) -> OPEN (failing) -> HALF_OPEN (testing)
 // ============================================================================
 
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common';
 
 export enum CircuitState {
   CLOSED = 'CLOSED',
@@ -14,36 +14,36 @@ export enum CircuitState {
 }
 
 export interface CircuitBreakerOptions {
-  name: string
-  failureThreshold?: number // Number of failures before opening
-  successThreshold?: number // Number of successes in half-open to close
-  timeout?: number // Time in ms before trying half-open
-  volumeThreshold?: number // Minimum calls before calculating failure rate
-  failureRateThreshold?: number // Percentage (0-100) failure rate to open
+  name: string;
+  failureThreshold?: number; // Number of failures before opening
+  successThreshold?: number; // Number of successes in half-open to close
+  timeout?: number; // Time in ms before trying half-open
+  volumeThreshold?: number; // Minimum calls before calculating failure rate
+  failureRateThreshold?: number; // Percentage (0-100) failure rate to open
 }
 
 export interface CircuitBreakerStats {
-  name: string
-  state: CircuitState
-  failures: number
-  successes: number
-  totalCalls: number
-  lastFailure?: Date
-  lastSuccess?: Date
-  lastStateChange: Date
+  name: string;
+  state: CircuitState;
+  failures: number;
+  successes: number;
+  totalCalls: number;
+  lastFailure?: Date;
+  lastSuccess?: Date;
+  lastStateChange: Date;
 }
 
 interface CircuitBreakerInstance {
-  options: Required<CircuitBreakerOptions>
-  state: CircuitState
-  failures: number
-  successes: number
-  totalCalls: number
-  lastFailure?: Date
-  lastSuccess?: Date
-  lastStateChange: Date
-  halfOpenSuccesses: number
-  nextAttempt: number
+  options: Required<CircuitBreakerOptions>;
+  state: CircuitState;
+  failures: number;
+  successes: number;
+  totalCalls: number;
+  lastFailure?: Date;
+  lastSuccess?: Date;
+  lastStateChange: Date;
+  halfOpenSuccesses: number;
+  nextAttempt: number;
 }
 
 export class CircuitOpenError extends Error {
@@ -51,32 +51,37 @@ export class CircuitOpenError extends Error {
     public readonly circuitName: string,
     public readonly nextAttempt: Date,
   ) {
-    super(`Circuit breaker '${circuitName}' is OPEN. Next attempt at ${nextAttempt.toISOString()}`)
-    this.name = 'CircuitOpenError'
+    super(
+      `Circuit breaker '${circuitName}' is OPEN. Next attempt at ${nextAttempt.toISOString()}`,
+    );
+    this.name = 'CircuitOpenError';
   }
 }
 
 @Injectable()
 export class CircuitBreakerService {
-  private readonly logger = new Logger(CircuitBreakerService.name)
-  private readonly circuits = new Map<string, CircuitBreakerInstance>()
+  private readonly logger = new Logger(CircuitBreakerService.name);
+  private readonly circuits = new Map<string, CircuitBreakerInstance>();
 
-  private readonly defaultOptions: Omit<Required<CircuitBreakerOptions>, 'name'> = {
+  private readonly defaultOptions: Omit<
+    Required<CircuitBreakerOptions>,
+    'name'
+  > = {
     failureThreshold: 5,
     successThreshold: 3,
     timeout: 30000, // 30 seconds
     volumeThreshold: 10,
     failureRateThreshold: 50,
-  }
+  };
 
   /**
    * Create or get a circuit breaker instance
    */
   getCircuit(options: CircuitBreakerOptions): CircuitBreakerInstance {
-    const existing = this.circuits.get(options.name)
+    const existing = this.circuits.get(options.name);
 
     if (existing) {
-      return existing
+      return existing;
     }
 
     const circuit: CircuitBreakerInstance = {
@@ -91,12 +96,12 @@ export class CircuitBreakerService {
       lastStateChange: new Date(),
       halfOpenSuccesses: 0,
       nextAttempt: 0,
-    }
+    };
 
-    this.circuits.set(options.name, circuit)
-    this.logger.log(`Circuit breaker created: ${options.name}`)
+    this.circuits.set(options.name, circuit);
+    this.logger.log(`Circuit breaker created: ${options.name}`);
 
-    return circuit
+    return circuit;
   }
 
   /**
@@ -107,36 +112,38 @@ export class CircuitBreakerService {
     fn: () => Promise<T>,
     fallback?: () => Promise<T>,
   ): Promise<T> {
-    const circuit = this.getCircuit(options)
+    const circuit = this.getCircuit(options);
 
     // Check if circuit is open
     if (circuit.state === CircuitState.OPEN) {
       if (Date.now() < circuit.nextAttempt) {
         // Still in timeout period
         if (fallback) {
-          this.logger.debug(`Circuit ${options.name} OPEN, using fallback`)
-          return fallback()
+          this.logger.debug(`Circuit ${options.name} OPEN, using fallback`);
+          return fallback();
         }
-        throw new CircuitOpenError(options.name, new Date(circuit.nextAttempt))
+        throw new CircuitOpenError(options.name, new Date(circuit.nextAttempt));
       }
 
       // Timeout expired, try half-open
-      this.transitionTo(circuit, CircuitState.HALF_OPEN)
+      this.transitionTo(circuit, CircuitState.HALF_OPEN);
     }
 
     try {
-      const result = await fn()
-      this.onSuccess(circuit)
-      return result
+      const result = await fn();
+      this.onSuccess(circuit);
+      return result;
     } catch (error) {
-      this.onFailure(circuit)
+      this.onFailure(circuit);
 
       if (circuit.state === CircuitState.OPEN && fallback) {
-        this.logger.debug(`Circuit ${options.name} OPEN after failure, using fallback`)
-        return fallback()
+        this.logger.debug(
+          `Circuit ${options.name} OPEN after failure, using fallback`,
+        );
+        return fallback();
       }
 
-      throw error
+      throw error;
     }
   }
 
@@ -144,25 +151,25 @@ export class CircuitBreakerService {
    * Check if a circuit allows requests
    */
   isAvailable(name: string): boolean {
-    const circuit = this.circuits.get(name)
+    const circuit = this.circuits.get(name);
 
-    if (!circuit) return true
+    if (!circuit) return true;
 
-    if (circuit.state === CircuitState.CLOSED) return true
+    if (circuit.state === CircuitState.CLOSED) return true;
 
-    if (circuit.state === CircuitState.HALF_OPEN) return true
+    if (circuit.state === CircuitState.HALF_OPEN) return true;
 
     // OPEN state - check if timeout has passed
-    return Date.now() >= circuit.nextAttempt
+    return Date.now() >= circuit.nextAttempt;
   }
 
   /**
    * Get circuit breaker statistics
    */
   getStats(name: string): CircuitBreakerStats | null {
-    const circuit = this.circuits.get(name)
+    const circuit = this.circuits.get(name);
 
-    if (!circuit) return null
+    if (!circuit) return null;
 
     return {
       name,
@@ -173,7 +180,7 @@ export class CircuitBreakerService {
       lastFailure: circuit.lastFailure,
       lastSuccess: circuit.lastSuccess,
       lastStateChange: circuit.lastStateChange,
-    }
+    };
   }
 
   /**
@@ -189,23 +196,23 @@ export class CircuitBreakerService {
       lastFailure: circuit.lastFailure,
       lastSuccess: circuit.lastSuccess,
       lastStateChange: circuit.lastStateChange,
-    }))
+    }));
   }
 
   /**
    * Manually reset a circuit breaker to CLOSED state
    */
   reset(name: string): void {
-    const circuit = this.circuits.get(name)
+    const circuit = this.circuits.get(name);
 
     if (circuit) {
-      circuit.state = CircuitState.CLOSED
-      circuit.failures = 0
-      circuit.successes = 0
-      circuit.totalCalls = 0
-      circuit.halfOpenSuccesses = 0
-      circuit.lastStateChange = new Date()
-      this.logger.log(`Circuit ${name} manually reset to CLOSED`)
+      circuit.state = CircuitState.CLOSED;
+      circuit.failures = 0;
+      circuit.successes = 0;
+      circuit.totalCalls = 0;
+      circuit.halfOpenSuccesses = 0;
+      circuit.lastStateChange = new Date();
+      this.logger.log(`Circuit ${name} manually reset to CLOSED`);
     }
   }
 
@@ -213,46 +220,46 @@ export class CircuitBreakerService {
    * Remove a circuit breaker
    */
   remove(name: string): void {
-    this.circuits.delete(name)
-    this.logger.log(`Circuit ${name} removed`)
+    this.circuits.delete(name);
+    this.logger.log(`Circuit ${name} removed`);
   }
 
   private onSuccess(circuit: CircuitBreakerInstance): void {
-    circuit.successes++
-    circuit.totalCalls++
-    circuit.lastSuccess = new Date()
+    circuit.successes++;
+    circuit.totalCalls++;
+    circuit.lastSuccess = new Date();
 
     if (circuit.state === CircuitState.HALF_OPEN) {
-      circuit.halfOpenSuccesses++
+      circuit.halfOpenSuccesses++;
 
       if (circuit.halfOpenSuccesses >= circuit.options.successThreshold) {
-        this.transitionTo(circuit, CircuitState.CLOSED)
-        circuit.failures = 0
-        circuit.halfOpenSuccesses = 0
+        this.transitionTo(circuit, CircuitState.CLOSED);
+        circuit.failures = 0;
+        circuit.halfOpenSuccesses = 0;
       }
     }
   }
 
   private onFailure(circuit: CircuitBreakerInstance): void {
-    circuit.failures++
-    circuit.totalCalls++
-    circuit.lastFailure = new Date()
+    circuit.failures++;
+    circuit.totalCalls++;
+    circuit.lastFailure = new Date();
 
     if (circuit.state === CircuitState.HALF_OPEN) {
       // Any failure in half-open goes back to open
-      this.transitionTo(circuit, CircuitState.OPEN)
-      circuit.nextAttempt = Date.now() + circuit.options.timeout
-      circuit.halfOpenSuccesses = 0
-      return
+      this.transitionTo(circuit, CircuitState.OPEN);
+      circuit.nextAttempt = Date.now() + circuit.options.timeout;
+      circuit.halfOpenSuccesses = 0;
+      return;
     }
 
     if (circuit.state === CircuitState.CLOSED) {
       // Check if we should open the circuit
-      const shouldOpen = this.shouldOpenCircuit(circuit)
+      const shouldOpen = this.shouldOpenCircuit(circuit);
 
       if (shouldOpen) {
-        this.transitionTo(circuit, CircuitState.OPEN)
-        circuit.nextAttempt = Date.now() + circuit.options.timeout
+        this.transitionTo(circuit, CircuitState.OPEN);
+        circuit.nextAttempt = Date.now() + circuit.options.timeout;
       }
     }
   }
@@ -260,28 +267,31 @@ export class CircuitBreakerService {
   private shouldOpenCircuit(circuit: CircuitBreakerInstance): boolean {
     // Check failure threshold
     if (circuit.failures >= circuit.options.failureThreshold) {
-      return true
+      return true;
     }
 
     // Check failure rate threshold (only if volume threshold met)
     if (circuit.totalCalls >= circuit.options.volumeThreshold) {
-      const failureRate = (circuit.failures / circuit.totalCalls) * 100
+      const failureRate = (circuit.failures / circuit.totalCalls) * 100;
 
       if (failureRate >= circuit.options.failureRateThreshold) {
-        return true
+        return true;
       }
     }
 
-    return false
+    return false;
   }
 
-  private transitionTo(circuit: CircuitBreakerInstance, newState: CircuitState): void {
-    const oldState = circuit.state
-    circuit.state = newState
-    circuit.lastStateChange = new Date()
+  private transitionTo(
+    circuit: CircuitBreakerInstance,
+    newState: CircuitState,
+  ): void {
+    const oldState = circuit.state;
+    circuit.state = newState;
+    circuit.lastStateChange = new Date();
 
     this.logger.log(
       `Circuit ${circuit.options.name} transitioned: ${oldState} -> ${newState}`,
-    )
+    );
   }
 }

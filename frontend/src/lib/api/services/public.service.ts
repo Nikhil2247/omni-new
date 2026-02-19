@@ -16,10 +16,47 @@ const resolveMediaUrl = (value?: string | null): string | null | undefined => {
   return getMinioViewUrl(value) || value
 }
 
-const normalizeVendor = (vendor: VendorProfile): VendorProfile => ({
-  ...vendor,
-  profilePhotoUrl: resolveMediaUrl(vendor.profilePhotoUrl) ?? vendor.profilePhotoUrl,
+const normalizePortfolioMediaItem = <T extends {
+  url?: string | null
+  thumbnailUrl?: string | null
+  cdnUrl?: string | null
+}>(item: T): T => ({
+  ...item,
+  url: resolveMediaUrl(item.url) ?? item.url,
+  thumbnailUrl: resolveMediaUrl(item.thumbnailUrl) ?? item.thumbnailUrl,
+  cdnUrl: resolveMediaUrl(item.cdnUrl) ?? item.cdnUrl,
 })
+
+type VendorPortfolioMedia = {
+  url?: string | null
+  thumbnailUrl?: string | null
+  cdnUrl?: string | null
+}
+
+type VendorPortfolio = {
+  mediaItems?: VendorPortfolioMedia[] | null
+}
+
+type VendorWithPortfolios = VendorProfile & {
+  portfolios?: VendorPortfolio[]
+}
+
+const normalizeVendor = (vendor: VendorProfile): VendorProfile => {
+  const vendorWithPortfolios = vendor as VendorWithPortfolios
+
+  return {
+    ...vendor,
+    profilePhotoUrl: resolveMediaUrl(vendor.profilePhotoUrl) ?? vendor.profilePhotoUrl,
+    portfolios: Array.isArray(vendorWithPortfolios.portfolios)
+      ? vendorWithPortfolios.portfolios.map((portfolio) => ({
+          ...portfolio,
+          mediaItems: Array.isArray(portfolio?.mediaItems)
+            ? portfolio.mediaItems.map((item) => normalizePortfolioMediaItem(item))
+            : portfolio?.mediaItems,
+        }))
+      : vendorWithPortfolios.portfolios,
+  } as VendorProfile
+}
 
 const normalizeDiscoveryMedia = (item: PortfolioMediaItem): PortfolioMediaItem => ({
   ...item,

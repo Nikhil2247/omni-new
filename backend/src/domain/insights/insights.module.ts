@@ -5,14 +5,14 @@
 // vendor performance metrics, and admin dashboard insights
 // ============================================================================
 
-import { Module } from '@nestjs/common'
-import { DatabaseModule } from '../../core/database/database.module'
-import { UserEngagementService } from './services/user-engagement.service'
-import { AnalyticsTrackingService } from './services/analytics-tracking.service'
-import { VendorMetricsService } from './services/vendor-metrics.service'
-import { PlatformMetricsService } from './services/platform-metrics.service'
-import { InsightsAggregatorService } from './services/insights-aggregator.service'
-import { EngagementListener } from './listeners/engagement.listener'
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from '../../core/database/database.module';
+import { UserEngagementService } from './services/user-engagement.service';
+import { AnalyticsTrackingService } from './services/analytics-tracking.service';
+import { VendorMetricsService } from './services/vendor-metrics.service';
+import { PlatformMetricsService } from './services/platform-metrics.service';
+import { InsightsAggregatorService } from './services/insights-aggregator.service';
+import { EngagementListener } from './listeners/engagement.listener';
 
 @Module({
   imports: [DatabaseModule],

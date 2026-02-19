@@ -11,9 +11,15 @@ export class GuestlistUpdatedEvent {
 }
 
 export class GuestAddedEvent {
-  constructor(public readonly guestlistId: string, public readonly guestId: string) {}
+  constructor(
+    public readonly guestlistId: string,
+    public readonly guestId: string,
+  ) {}
 }
 
 export class RSVPUpdatedEvent {
-  constructor(public readonly guestlistId: string, public readonly guestId: string) {}
-} 
+  constructor(
+    public readonly guestlistId: string,
+    public readonly guestId: string,
+  ) {}
+}

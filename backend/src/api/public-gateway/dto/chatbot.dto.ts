@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer'
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsNumber,
@@ -6,62 +6,62 @@ import {
   IsString,
   Min,
   ValidateNested,
-} from 'class-validator'
+} from 'class-validator';
 
 export class ChatbotContextDto {
   @IsOptional()
   @IsString()
-  categoryId?: string
+  categoryId?: string;
 
   @IsOptional()
   @IsString()
-  categoryName?: string
+  categoryName?: string;
 
   @IsOptional()
   @IsString()
-  cityId?: string
+  cityId?: string;
 
   @IsOptional()
   @IsString()
-  cityName?: string
+  cityName?: string;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  budgetMin?: number
+  budgetMin?: number;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  budgetMax?: number
+  budgetMax?: number;
 
   @IsOptional()
   @IsString()
-  eventType?: string
+  eventType?: string;
 }
 
 export class ChatbotMessageHistoryDto {
   @IsString()
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant';
 
   @IsString()
-  content: string
+  content: string;
 }
 
 export class ChatbotMessageDto {
   @IsString()
-  message: string
+  message: string;
 
   @IsOptional()
   @ValidateNested()
   @Type(() => ChatbotContextDto)
-  context?: ChatbotContextDto
+  context?: ChatbotContextDto;
 
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ChatbotMessageHistoryDto)
-  conversationHistory?: ChatbotMessageHistoryDto[]
+  conversationHistory?: ChatbotMessageHistoryDto[];
 }

@@ -2,10 +2,10 @@
 // GUESTLIST REPOSITORY - Planning Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { Prisma, Guestlist, Guest } from '@prisma/client'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import { PrismaService } from '../../../core/database/prisma.service'
+import { Injectable } from '@nestjs/common';
+import { Prisma, Guestlist, Guest } from '@prisma/client';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { PrismaService } from '../../../core/database/prisma.service';
 
 @Injectable()
 export class GuestlistRepository extends BaseRepository<
@@ -16,14 +16,14 @@ export class GuestlistRepository extends BaseRepository<
   Prisma.GuestlistWhereUniqueInput,
   Prisma.GuestlistOrderByWithRelationInput
 > {
-  protected readonly modelName = 'Guestlist'
+  protected readonly modelName = 'Guestlist';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.guestlist
+    return this.prisma.guestlist;
   }
 
   async findByEventId(eventId: string): Promise<Guestlist | null> {
@@ -34,7 +34,7 @@ export class GuestlistRepository extends BaseRepository<
           orderBy: { createdAt: 'asc' },
         },
       },
-    })
+    });
   }
 
   async getStats(guestlistId: string) {
@@ -43,13 +43,18 @@ export class GuestlistRepository extends BaseRepository<
       where: { guestlistId },
       _count: true,
       _sum: { plusOne: true },
-    })
+    });
 
-    const totalInvited = stats.reduce((sum, stat) => sum + stat._count, 0)
-    const confirmed = stats.find(s => s.rsvpStatus === 'ATTENDING')?._count || 0
-    const declined = stats.find(s => s.rsvpStatus === 'NOT_ATTENDING')?._count || 0
-    const pending = stats.find(s => s.rsvpStatus === 'PENDING')?._count || 0
-    const totalPlusOnes = stats.reduce((sum, stat) => sum + (stat._sum.plusOne || 0), 0)
+    const totalInvited = stats.reduce((sum, stat) => sum + stat._count, 0);
+    const confirmed =
+      stats.find((s) => s.rsvpStatus === 'ATTENDING')?._count || 0;
+    const declined =
+      stats.find((s) => s.rsvpStatus === 'NOT_ATTENDING')?._count || 0;
+    const pending = stats.find((s) => s.rsvpStatus === 'PENDING')?._count || 0;
+    const totalPlusOnes = stats.reduce(
+      (sum, stat) => sum + (stat._sum.plusOne || 0),
+      0,
+    );
 
     return {
       totalInvited,
@@ -57,25 +62,31 @@ export class GuestlistRepository extends BaseRepository<
       declined,
       pending,
       totalExpected: confirmed + totalPlusOnes,
-    }
+    };
   }
 
-  async addGuest(guestlistId: string, data: Prisma.GuestCreateInput): Promise<Guest> {
-    return this.prisma.guest.create({ data })
+  async addGuest(
+    guestlistId: string,
+    data: Prisma.GuestCreateInput,
+  ): Promise<Guest> {
+    return this.prisma.guest.create({ data });
   }
 
-  async updateGuest(guestId: string, data: Prisma.GuestUpdateInput): Promise<Guest> {
+  async updateGuest(
+    guestId: string,
+    data: Prisma.GuestUpdateInput,
+  ): Promise<Guest> {
     return this.prisma.guest.update({
       where: { id: guestId },
       data,
-    })
+    });
   }
 
   async deleteGuest(guestId: string): Promise<void> {
-    await this.prisma.guest.delete({ where: { id: guestId } })
+    await this.prisma.guest.delete({ where: { id: guestId } });
   }
 
   async findGuestById(guestId: string): Promise<Guest | null> {
-    return this.prisma.guest.findUnique({ where: { id: guestId } })
+    return this.prisma.guest.findUnique({ where: { id: guestId } });
   }
-} 
+}

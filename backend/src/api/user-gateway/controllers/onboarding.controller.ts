@@ -2,14 +2,28 @@
 // ONBOARDING CONTROLLER - User Gateway
 // ============================================================================
 
-import { Controller, Get, Post, Patch, Body, Param, UseGuards, Req } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger'
-import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard'
-import { RolesGuard } from '../../../core/auth/guards/roles.guard'
-import { UserAccess } from '../../../core/auth/decorators/roles.decorator'
-import { VibeQuizService } from '../../../domain/planning/services/vibe-quiz.service'
-import { WeddingIdentityService } from '../../../domain/planning/services/wedding-identity.service'
-import { PrismaService } from '../../../core/database/prisma.service'
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../core/auth/guards/roles.guard';
+import { UserAccess } from '../../../core/auth/decorators/roles.decorator';
+import { VibeQuizService } from '../../../domain/planning/services/vibe-quiz.service';
+import { WeddingIdentityService } from '../../../domain/planning/services/wedding-identity.service';
+import { PrismaService } from '../../../core/database/prisma.service';
 import {
   SubmitVibeQuizDto,
   VibeQuizImageResponseDto,
@@ -20,10 +34,16 @@ import {
   InvitePartnerDto,
   WeddingIdentityResponseDto,
   OnboardingStatusResponseDto,
-} from '../../../domain/planning/dto/onboarding.dto'
+} from '../../../domain/planning/dto/onboarding.dto';
 
 interface AuthenticatedRequest {
-  user: { id: string; email: string; firstName?: string; lastName?: string; hasCompletedOnboarding?: boolean }
+  user: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    hasCompletedOnboarding?: boolean;
+  };
 }
 
 @ApiTags('User - Onboarding')
@@ -45,8 +65,10 @@ export class OnboardingController {
   @Get('status')
   @ApiOperation({ summary: 'Get onboarding status' })
   @ApiResponse({ status: 200, type: OnboardingStatusResponseDto })
-  async getOnboardingStatus(@Req() req: AuthenticatedRequest): Promise<OnboardingStatusResponseDto> {
-    const userId = req.user.id
+  async getOnboardingStatus(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<OnboardingStatusResponseDto> {
+    const userId = req.user.id;
 
     const [user, quizStatus, weddingIdentity] = await Promise.all([
       this.prisma.user.findUnique({
@@ -55,14 +77,15 @@ export class OnboardingController {
       }),
       this.vibeQuizService.getStatus(userId),
       this.weddingIdentityService.getByUserId(userId),
-    ])
+    ]);
 
     return {
       vibeQuizCompleted: quizStatus.completed,
       weddingIdentityCreated: !!weddingIdentity,
       // Onboarding is complete when user has completed the vibe quiz
-      isOnboardingComplete: user?.hasCompletedOnboarding ?? quizStatus.completed,
-    }
+      isOnboardingComplete:
+        user?.hasCompletedOnboarding ?? quizStatus.completed,
+    };
   }
 
   // ============================================================================
@@ -73,14 +96,16 @@ export class OnboardingController {
   @ApiOperation({ summary: 'Get vibe quiz images' })
   @ApiResponse({ status: 200, type: [VibeQuizImageResponseDto] })
   async getVibeQuizImages(): Promise<VibeQuizImageResponseDto[]> {
-    return this.vibeQuizService.getImages()
+    return this.vibeQuizService.getImages();
   }
 
   @Get('vibe-quiz/status')
   @ApiOperation({ summary: 'Get vibe quiz completion status' })
   @ApiResponse({ status: 200, type: VibeQuizStatusResponseDto })
-  async getVibeQuizStatus(@Req() req: AuthenticatedRequest): Promise<VibeQuizStatusResponseDto> {
-    return this.vibeQuizService.getStatus(req.user.id)
+  async getVibeQuizStatus(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<VibeQuizStatusResponseDto> {
+    return this.vibeQuizService.getStatus(req.user.id);
   }
 
   @Post('vibe-quiz/submit')
@@ -90,7 +115,7 @@ export class OnboardingController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: SubmitVibeQuizDto,
   ): Promise<VibeQuizResultResponseDto> {
-    return this.vibeQuizService.submitQuiz(req.user.id, dto)
+    return this.vibeQuizService.submitQuiz(req.user.id, dto);
   }
 
   // ============================================================================
@@ -100,8 +125,10 @@ export class OnboardingController {
   @Get('wedding-identity')
   @ApiOperation({ summary: 'Get wedding identity' })
   @ApiResponse({ status: 200, type: WeddingIdentityResponseDto })
-  async getWeddingIdentity(@Req() req: AuthenticatedRequest): Promise<WeddingIdentityResponseDto | null> {
-    return this.weddingIdentityService.getByUserId(req.user.id)
+  async getWeddingIdentity(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<WeddingIdentityResponseDto | null> {
+    return this.weddingIdentityService.getByUserId(req.user.id);
   }
 
   @Post('wedding-identity')
@@ -111,8 +138,8 @@ export class OnboardingController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: CreateWeddingIdentityDto,
   ): Promise<WeddingIdentityResponseDto> {
-    const userName = req.user.firstName || req.user.email.split('@')[0]
-    return this.weddingIdentityService.create(req.user.id, userName, dto)
+    const userName = req.user.firstName || req.user.email.split('@')[0];
+    return this.weddingIdentityService.create(req.user.id, userName, dto);
   }
 
   @Patch('wedding-identity')
@@ -122,8 +149,8 @@ export class OnboardingController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: UpdateWeddingIdentityDto,
   ): Promise<WeddingIdentityResponseDto> {
-    const userName = req.user.firstName || req.user.email.split('@')[0]
-    return this.weddingIdentityService.update(req.user.id, userName, dto)
+    const userName = req.user.firstName || req.user.email.split('@')[0];
+    return this.weddingIdentityService.update(req.user.id, userName, dto);
   }
 
   @Post('wedding-identity/invite')
@@ -133,8 +160,12 @@ export class OnboardingController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: InvitePartnerDto,
   ): Promise<{ success: boolean; message: string }> {
-    const userName = req.user.firstName || req.user.email.split('@')[0]
-    return this.weddingIdentityService.invitePartner(req.user.id, userName, dto)
+    const userName = req.user.firstName || req.user.email.split('@')[0];
+    return this.weddingIdentityService.invitePartner(
+      req.user.id,
+      userName,
+      dto,
+    );
   }
 
   @Post('wedding-identity/accept/:token')
@@ -143,7 +174,10 @@ export class OnboardingController {
   async acceptInvite(
     @Req() req: AuthenticatedRequest,
     @Param('token') token: string,
-  ): Promise<{ success: boolean; weddingIdentity: WeddingIdentityResponseDto | null }> {
-    return this.weddingIdentityService.acceptInvite(req.user.id, token)
+  ): Promise<{
+    success: boolean;
+    weddingIdentity: WeddingIdentityResponseDto | null;
+  }> {
+    return this.weddingIdentityService.acceptInvite(req.user.id, token);
   }
 }

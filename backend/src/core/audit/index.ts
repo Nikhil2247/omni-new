@@ -3,17 +3,17 @@
 // ============================================================================
 
 // Module
-export * from './audit.module'
+export * from './audit.module';
 
 // Services
-export * from './audit.service'
-export * from './audit-query.service'
+export * from './audit.service';
+export * from './audit-query.service';
 
 // Interceptor
-export * from './audit.interceptor'
+export * from './audit.interceptor';
 
 // Decorators
-export * from './audit.decorators'
+export * from './audit.decorators';
 
 // Types
-export * from './audit.types'
+export * from './audit.types';

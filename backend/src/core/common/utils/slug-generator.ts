@@ -4,14 +4,14 @@
 // Utilities for generating unique, URL-safe slugs
 // ============================================================================
 
-import slugify from 'slugify'
-import { PrismaService } from '../../database/prisma.service'
+import slugify from 'slugify';
+import { PrismaService } from '../../database/prisma.service';
 
 export interface SlugOptions {
-  lower?: boolean
-  strict?: boolean
-  replacement?: string
-  maxLength?: number
+  lower?: boolean;
+  strict?: boolean;
+  replacement?: string;
+  maxLength?: number;
 }
 
 export class SlugGenerator {
@@ -20,30 +20,30 @@ export class SlugGenerator {
     strict: true,
     replacement: '-',
     maxLength: 100,
-  }
+  };
 
   /**
    * Generate a basic slug from text
    */
   static generate(text: string, options: SlugOptions = {}): string {
-    const opts = { ...this.defaultOptions, ...options }
+    const opts = { ...this.defaultOptions, ...options };
 
     let slug = slugify(text, {
       lower: opts.lower,
       strict: opts.strict,
       replacement: opts.replacement,
-    })
+    });
 
     // Enforce max length
     if (opts.maxLength && slug.length > opts.maxLength) {
-      slug = slug.slice(0, opts.maxLength)
+      slug = slug.slice(0, opts.maxLength);
       // Remove trailing hyphen if present
       if (slug.endsWith('-')) {
-        slug = slug.slice(0, -1)
+        slug = slug.slice(0, -1);
       }
     }
 
-    return slug
+    return slug;
   }
 
   /**
@@ -54,32 +54,32 @@ export class SlugGenerator {
     existingCheck: (slug: string) => Promise<boolean>,
     options: SlugOptions = {},
   ): Promise<string> {
-    const baseSlug = this.generate(text, options)
+    const baseSlug = this.generate(text, options);
 
     // Check if base slug is available
-    const exists = await existingCheck(baseSlug)
+    const exists = await existingCheck(baseSlug);
     if (!exists) {
-      return baseSlug
+      return baseSlug;
     }
 
     // Try adding numbers until unique
-    let counter = 1
-    let slug = `${baseSlug}-${counter}`
+    let counter = 1;
+    let slug = `${baseSlug}-${counter}`;
 
     while (await existingCheck(slug)) {
-      counter++
-      slug = `${baseSlug}-${counter}`
+      counter++;
+      slug = `${baseSlug}-${counter}`;
 
       // Safety limit
       if (counter > 1000) {
         // Add random suffix instead
-        const randomSuffix = Math.random().toString(36).substring(2, 8)
-        slug = `${baseSlug}-${randomSuffix}`
-        break
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        slug = `${baseSlug}-${randomSuffix}`;
+        break;
       }
     }
 
-    return slug
+    return slug;
   }
 
   /**
@@ -92,9 +92,9 @@ export class SlugGenerator {
     slugField: string = 'slug',
     options: SlugOptions = {},
   ): Promise<string> {
-    const model = (prisma as any)[modelName]
+    const model = (prisma as any)[modelName];
     if (!model) {
-      throw new Error(`Model ${modelName} not found`)
+      throw new Error(`Model ${modelName} not found`);
     }
 
     return this.generateUnique(
@@ -103,11 +103,11 @@ export class SlugGenerator {
         const existing = await model.findFirst({
           where: { [slugField]: slug },
           select: { id: true },
-        })
-        return !!existing
+        });
+        return !!existing;
       },
       options,
-    )
+    );
   }
 
   /**
@@ -127,11 +127,11 @@ export class SlugGenerator {
             ...(excludeId && { id: { not: excludeId } }),
           },
           select: { id: true },
-        })
-        return !!existing
+        });
+        return !!existing;
       },
       { maxLength: 80 },
-    )
+    );
   }
 
   /**
@@ -151,11 +151,11 @@ export class SlugGenerator {
             ...(excludeId && { id: { not: excludeId } }),
           },
           select: { id: true },
-        })
-        return !!existing
+        });
+        return !!existing;
       },
       { maxLength: 50 },
-    )
+    );
   }
 
   /**
@@ -164,8 +164,8 @@ export class SlugGenerator {
   static isValidSlug(slug: string): boolean {
     // Valid slug: lowercase letters, numbers, and hyphens
     // Cannot start or end with hyphen, no consecutive hyphens
-    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-    return slugRegex.test(slug)
+    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    return slugRegex.test(slug);
   }
 
   /**
@@ -176,6 +176,6 @@ export class SlugGenerator {
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, '-') // Replace invalid chars with hyphen
       .replace(/-+/g, '-') // Replace multiple hyphens with single
-      .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
   }
 }

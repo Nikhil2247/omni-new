@@ -11,9 +11,12 @@ export class BudgetUpdatedEvent {
 }
 
 export class BudgetItemAddedEvent {
-  constructor(public readonly budgetId: string, public readonly itemId: string) {}
+  constructor(
+    public readonly budgetId: string,
+    public readonly itemId: string,
+  ) {}
 }
 
 export class BudgetExceededEvent {
   constructor(public readonly budgetId: string) {}
-} 
+}

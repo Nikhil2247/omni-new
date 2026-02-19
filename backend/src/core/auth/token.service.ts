@@ -5,65 +5,65 @@
 // Supports enhanced session tracking with device and location information
 // ============================================================================
 
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
-import { ConfigService } from '@nestjs/config'
-import * as bcrypt from 'bcryptjs'
-import { PrismaService } from '../database/prisma.service'
-import { DeviceInfo, GeoLocation } from './login-activity.service'
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcryptjs';
+import { PrismaService } from '../database/prisma.service';
+import { DeviceInfo, GeoLocation } from './login-activity.service';
 
 export interface TokenPayload {
-  sub: string
-  email: string
-  roles: string[]
-  tenantId?: string
-  sessionId?: string
-  iat?: number
-  exp?: number
+  sub: string;
+  email: string;
+  roles: string[];
+  tenantId?: string;
+  sessionId?: string;
+  iat?: number;
+  exp?: number;
 }
 
 export interface RefreshTokenPayload {
-  sub: string
-  type: 'refresh'
-  sessionId: string
-  iat?: number
-  exp?: number
+  sub: string;
+  type: 'refresh';
+  sessionId: string;
+  iat?: number;
+  exp?: number;
 }
 
 export interface TokenPair {
-  accessToken: string
-  refreshToken: string
-  expiresIn: number
-  sessionId?: string
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  sessionId?: string;
 }
 
 export interface SessionContext {
-  ipAddress: string
-  userAgent?: string
-  deviceInfo?: DeviceInfo
-  geoLocation?: GeoLocation
+  ipAddress: string;
+  userAgent?: string;
+  deviceInfo?: DeviceInfo;
+  geoLocation?: GeoLocation;
 }
 
 export interface SessionInfo {
-  id: string
-  deviceType: string | null
-  deviceName: string | null
-  browser: string | null
-  os: string | null
-  location: string | null
-  ipAddress: string | null
-  lastActiveAt: Date
-  createdAt: Date
-  expiresAt: Date
-  isCurrent: boolean
+  id: string;
+  deviceType: string | null;
+  deviceName: string | null;
+  browser: string | null;
+  os: string | null;
+  location: string | null;
+  ipAddress: string | null;
+  lastActiveAt: Date;
+  createdAt: Date;
+  expiresAt: Date;
+  isCurrent: boolean;
 }
 
 @Injectable()
 export class TokenService {
-  private readonly logger = new Logger(TokenService.name)
-  private readonly ACCESS_TOKEN_EXPIRY = '15m'
-  private readonly REFRESH_TOKEN_EXPIRY = '7d'
-  private readonly REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000
+  private readonly logger = new Logger(TokenService.name);
+  private readonly ACCESS_TOKEN_EXPIRY = '15m';
+  private readonly REFRESH_TOKEN_EXPIRY = '7d';
+  private readonly REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -79,19 +79,19 @@ export class TokenService {
     context?: SessionContext,
   ): Promise<TokenPair> {
     // Create session first
-    const session = await this.createSession(payload.sub, context)
+    const session = await this.createSession(payload.sub, context);
 
     const [accessToken, refreshToken] = await Promise.all([
       this.generateAccessToken({ ...payload, sessionId: session.id }),
       this.generateRefreshToken(payload.sub, session.id),
-    ])
+    ]);
 
     return {
       accessToken,
       refreshToken,
       expiresIn: 900, // 15 minutes in seconds
       sessionId: session.id,
-    }
+    };
   }
 
   /**
@@ -103,7 +103,7 @@ export class TokenService {
     return this.jwtService.signAsync(payload, {
       expiresIn: this.ACCESS_TOKEN_EXPIRY,
       secret: this.configService.get<string>('JWT_SECRET'),
-    })
+    });
   }
 
   /**
@@ -117,21 +117,21 @@ export class TokenService {
       sub: userId,
       type: 'refresh',
       sessionId,
-    }
+    };
 
     const refreshToken = await this.jwtService.signAsync(payload, {
       expiresIn: this.REFRESH_TOKEN_EXPIRY,
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-    })
+    });
 
     // Store hashed refresh token for additional security
-    const hashedToken = await bcrypt.hash(refreshToken, 10)
+    const hashedToken = await bcrypt.hash(refreshToken, 10);
     await this.prisma.userSession.update({
       where: { id: sessionId },
       data: { refreshToken: hashedToken },
-    })
+    });
 
-    return refreshToken
+    return refreshToken;
   }
 
   /**
@@ -141,32 +141,32 @@ export class TokenService {
     try {
       const payload = await this.jwtService.verifyAsync<TokenPayload>(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
-      })
+      });
 
       // Verify session is still valid (not revoked)
       if (payload.sessionId) {
         const session = await this.prisma.userSession.findUnique({
           where: { id: payload.sessionId },
-        })
+        });
 
         if (!session || session.isRevoked) {
-          throw new UnauthorizedException('Session has been revoked')
+          throw new UnauthorizedException('Session has been revoked');
         }
 
         // Update last active time
         await this.prisma.userSession.update({
           where: { id: payload.sessionId },
           data: { lastActiveAt: new Date() },
-        })
+        });
       }
 
-      return payload
+      return payload;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw error
+        throw error;
       }
-      this.logger.warn('Access token verification failed', error)
-      throw new UnauthorizedException('Invalid or expired token')
+      this.logger.warn('Access token verification failed', error);
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 
@@ -180,50 +180,50 @@ export class TokenService {
         {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         },
-      )
+      );
 
       if (payload.type !== 'refresh') {
-        throw new UnauthorizedException('Invalid token type')
+        throw new UnauthorizedException('Invalid token type');
       }
 
       // Verify session exists and is valid
       const session = await this.prisma.userSession.findUnique({
         where: { id: payload.sessionId },
-      })
+      });
 
       if (!session) {
-        throw new UnauthorizedException('Session not found')
+        throw new UnauthorizedException('Session not found');
       }
 
       if (session.isRevoked) {
-        throw new UnauthorizedException('Session has been revoked')
+        throw new UnauthorizedException('Session has been revoked');
       }
 
       if (session.expiresAt < new Date()) {
-        throw new UnauthorizedException('Session expired')
+        throw new UnauthorizedException('Session expired');
       }
 
       // Verify token matches stored hash
       const isValidToken = await bcrypt.compare(
         token,
         session.refreshToken || '',
-      )
+      );
       if (!isValidToken) {
         // Possible token reuse attack - invalidate all sessions for this user
         this.logger.warn(
           `Possible token reuse attack detected for user: ${payload.sub}`,
-        )
-        await this.invalidateAllUserSessions(payload.sub)
-        throw new UnauthorizedException('Invalid refresh token')
+        );
+        await this.invalidateAllUserSessions(payload.sub);
+        throw new UnauthorizedException('Invalid refresh token');
       }
 
-      return payload
+      return payload;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        throw error
+        throw error;
       }
-      this.logger.warn('Refresh token verification failed', error)
-      throw new UnauthorizedException('Invalid or expired refresh token')
+      this.logger.warn('Refresh token verification failed', error);
+      throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
 
@@ -234,18 +234,18 @@ export class TokenService {
     oldRefreshToken: string,
     context?: SessionContext,
   ): Promise<TokenPair> {
-    const payload = await this.verifyRefreshToken(oldRefreshToken)
+    const payload = await this.verifyRefreshToken(oldRefreshToken);
 
     // Get existing session to preserve some data
     const existingSession = await this.prisma.userSession.findUnique({
       where: { id: payload.sessionId },
-    })
+    });
 
     // Invalidate old session
     await this.prisma.userSession.update({
       where: { id: payload.sessionId },
       data: { isRevoked: true },
-    })
+    });
 
     // Get user with roles for new token pair
     const user = await this.prisma.user.findUnique({
@@ -258,10 +258,10 @@ export class TokenService {
           select: { id: true },
         },
       },
-    })
+    });
 
     if (!user) {
-      throw new UnauthorizedException('User not found')
+      throw new UnauthorizedException('User not found');
     }
 
     // Merge existing session context with new context
@@ -277,16 +277,16 @@ export class TokenService {
         country: undefined,
         city: existingSession?.location || undefined,
       },
-    }
+    };
 
     const newPayload: Omit<TokenPayload, 'iat' | 'exp' | 'sessionId'> = {
       sub: user.id,
       email: user.email,
       roles: user.userRoles.map((ur) => ur.role.name),
       tenantId: user.vendorProfile?.id,
-    }
+    };
 
-    return this.generateTokenPair(newPayload, mergedContext)
+    return this.generateTokenPair(newPayload, mergedContext);
   }
 
   /**
@@ -297,8 +297,8 @@ export class TokenService {
     context?: SessionContext,
   ): Promise<{ id: string }> {
     // Build device name from device info
-    const deviceName = this.buildDeviceName(context?.deviceInfo)
-    const location = this.buildLocation(context?.geoLocation)
+    const deviceName = this.buildDeviceName(context?.deviceInfo);
+    const location = this.buildLocation(context?.geoLocation);
 
     const session = await this.prisma.userSession.create({
       data: {
@@ -312,35 +312,35 @@ export class TokenService {
         lastActiveAt: new Date(),
         isRevoked: false,
       },
-    })
+    });
 
-    return { id: session.id }
+    return { id: session.id };
   }
 
   /**
    * Build device name from device info
    */
   private buildDeviceName(deviceInfo?: DeviceInfo): string | null {
-    if (!deviceInfo) return null
+    if (!deviceInfo) return null;
 
-    const parts: string[] = []
-    if (deviceInfo.browser) parts.push(deviceInfo.browser)
-    if (deviceInfo.os) parts.push(`on ${deviceInfo.os}`)
+    const parts: string[] = [];
+    if (deviceInfo.browser) parts.push(deviceInfo.browser);
+    if (deviceInfo.os) parts.push(`on ${deviceInfo.os}`);
 
-    return parts.length > 0 ? parts.join(' ') : null
+    return parts.length > 0 ? parts.join(' ') : null;
   }
 
   /**
    * Build location string from geo location
    */
   private buildLocation(geoLocation?: GeoLocation): string | null {
-    if (!geoLocation) return null
+    if (!geoLocation) return null;
 
-    const parts: string[] = []
-    if (geoLocation.city) parts.push(geoLocation.city)
-    if (geoLocation.country) parts.push(geoLocation.country)
+    const parts: string[] = [];
+    if (geoLocation.city) parts.push(geoLocation.city);
+    if (geoLocation.country) parts.push(geoLocation.country);
 
-    return parts.length > 0 ? parts.join(', ') : null
+    return parts.length > 0 ? parts.join(', ') : null;
   }
 
   /**
@@ -351,10 +351,10 @@ export class TokenService {
       await this.prisma.userSession.update({
         where: { id: sessionId },
         data: { isRevoked: true },
-      })
-      this.logger.debug(`Invalidated session: ${sessionId}`)
+      });
+      this.logger.debug(`Invalidated session: ${sessionId}`);
     } catch (error) {
-      this.logger.warn(`Failed to invalidate session: ${sessionId}`, error)
+      this.logger.warn(`Failed to invalidate session: ${sessionId}`, error);
     }
   }
 
@@ -365,10 +365,10 @@ export class TokenService {
     const result = await this.prisma.userSession.updateMany({
       where: { userId, isRevoked: false },
       data: { isRevoked: true },
-    })
+    });
     this.logger.debug(
       `Invalidated ${result.count} sessions for user: ${userId}`,
-    )
+    );
   }
 
   /**
@@ -396,7 +396,7 @@ export class TokenService {
         expiresAt: true,
       },
       orderBy: { lastActiveAt: 'desc' },
-    })
+    });
 
     return sessions.map((session) => ({
       id: session.id,
@@ -410,7 +410,7 @@ export class TokenService {
       createdAt: session.createdAt,
       expiresAt: session.expiresAt,
       isCurrent: session.id === currentSessionId,
-    }))
+    }));
   }
 
   /**
@@ -423,7 +423,7 @@ export class TokenService {
         isRevoked: false,
         expiresAt: { gt: new Date() },
       },
-    })
+    });
   }
 
   /**
@@ -437,9 +437,9 @@ export class TokenService {
         isRevoked: false,
       },
       data: { isRevoked: true },
-    })
+    });
 
-    return result.count > 0
+    return result.count > 0;
   }
 
   /**
@@ -459,10 +459,10 @@ export class TokenService {
           },
         ],
       },
-    })
+    });
 
-    this.logger.log(`Cleaned up ${result.count} expired/old sessions`)
-    return result.count
+    this.logger.log(`Cleaned up ${result.count} expired/old sessions`);
+    return result.count;
   }
 
   /**
@@ -470,9 +470,9 @@ export class TokenService {
    */
   decodeToken(token: string): TokenPayload | null {
     try {
-      return this.jwtService.decode(token) as TokenPayload
+      return this.jwtService.decode(token);
     } catch {
-      return null
+      return null;
     }
   }
 
@@ -484,41 +484,41 @@ export class TokenService {
    * Extract browser from user agent
    */
   private extractBrowser(userAgent: string | null): string | null {
-    if (!userAgent) return null
+    if (!userAgent) return null;
 
     if (/chrome/i.test(userAgent) && !/edg/i.test(userAgent)) {
-      return 'Chrome'
+      return 'Chrome';
     } else if (/firefox/i.test(userAgent)) {
-      return 'Firefox'
+      return 'Firefox';
     } else if (/safari/i.test(userAgent) && !/chrome/i.test(userAgent)) {
-      return 'Safari'
+      return 'Safari';
     } else if (/edg/i.test(userAgent)) {
-      return 'Edge'
+      return 'Edge';
     } else if (/msie|trident/i.test(userAgent)) {
-      return 'Internet Explorer'
+      return 'Internet Explorer';
     }
 
-    return null
+    return null;
   }
 
   /**
    * Extract OS from user agent
    */
   private extractOS(userAgent: string | null): string | null {
-    if (!userAgent) return null
+    if (!userAgent) return null;
 
     if (/windows/i.test(userAgent)) {
-      return 'Windows'
+      return 'Windows';
     } else if (/macintosh|mac os/i.test(userAgent)) {
-      return 'macOS'
+      return 'macOS';
     } else if (/linux/i.test(userAgent) && !/android/i.test(userAgent)) {
-      return 'Linux'
+      return 'Linux';
     } else if (/android/i.test(userAgent)) {
-      return 'Android'
+      return 'Android';
     } else if (/iphone|ipad|ipod/i.test(userAgent)) {
-      return 'iOS'
+      return 'iOS';
     }
 
-    return null
+    return null;
   }
 }

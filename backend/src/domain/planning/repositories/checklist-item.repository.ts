@@ -2,13 +2,10 @@
 // CHECKLIST ITEM REPOSITORY
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { BaseRepository } from '../../../core/database/repositories/base.repository'
-import {
-  ChecklistItem,
-  Prisma,
-} from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { BaseRepository } from '../../../core/database/repositories/base.repository';
+import { ChecklistItem, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ChecklistItemRepository extends BaseRepository<
@@ -19,21 +16,21 @@ export class ChecklistItemRepository extends BaseRepository<
   Prisma.ChecklistItemWhereUniqueInput,
   Prisma.ChecklistItemOrderByWithRelationInput
 > {
-  protected readonly modelName = 'ChecklistItem'
+  protected readonly modelName = 'ChecklistItem';
 
   constructor(prisma: PrismaService) {
-    super(prisma)
+    super(prisma);
   }
 
   protected get model() {
-    return this.prisma.checklistItem
+    return this.prisma.checklistItem;
   }
 
   async findByChecklist(checklistId: string) {
     return this.model.findMany({
       where: { checklistId },
       orderBy: { sortOrder: 'asc' },
-    })
+    });
   }
 
   async findCompleted(checklistId: string) {
@@ -43,7 +40,7 @@ export class ChecklistItemRepository extends BaseRepository<
         isCompleted: true,
       },
       orderBy: { completedAt: 'desc' },
-    })
+    });
   }
 
   async findPending(checklistId: string) {
@@ -53,26 +50,26 @@ export class ChecklistItemRepository extends BaseRepository<
         isCompleted: false,
       },
       orderBy: { sortOrder: 'asc' },
-    })
+    });
   }
 
   async getCompletionStats(checklistId: string) {
     const total = await this.model.count({
       where: { checklistId },
-    })
+    });
 
     const completed = await this.model.count({
       where: {
         checklistId,
         isCompleted: true,
       },
-    })
+    });
 
     return {
       total,
       completed,
       pending: total - completed,
       percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
-    }
+    };
   }
 }

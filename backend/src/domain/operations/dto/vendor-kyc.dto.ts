@@ -2,7 +2,7 @@
 // VENDOR KYC DTOs - Operations Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsUUID,
@@ -10,7 +10,7 @@ import {
   IsEnum,
   IsDateString,
   MaxLength,
-} from 'class-validator'
+} from 'class-validator';
 
 export enum KYCStatus {
   PENDING = 'PENDING',
@@ -28,23 +28,26 @@ export enum KYCStatus {
 export class CreateVendorKYCDto {
   @ApiProperty({ description: 'Vendor profile ID' })
   @IsUUID()
-  vendorProfileId: string
+  vendorProfileId: string;
 
-  @ApiProperty({ description: 'Legal business name', example: 'ABC Photography LLC' })
+  @ApiProperty({
+    description: 'Legal business name',
+    example: 'ABC Photography LLC',
+  })
   @IsString()
   @MaxLength(255)
-  legalName: string
+  legalName: string;
 
   @ApiProperty({ description: 'Business type', example: 'LLC' })
   @IsString()
   @MaxLength(100)
-  businessType: string
+  businessType: string;
 
   @ApiPropertyOptional({ description: 'Tax ID / GSTIN / EIN', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  taxId?: string
+  taxId?: string;
 }
 
 // ============================================================================
@@ -56,41 +59,47 @@ export class UpdateVendorKYCDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  legalName?: string
+  legalName?: string;
 
   @ApiPropertyOptional({ description: 'Business type' })
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  businessType?: string
+  businessType?: string;
 
   @ApiPropertyOptional({ description: 'Tax ID / GSTIN / EIN', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  taxId?: string
+  taxId?: string;
 }
 
 export class SubmitKYCDto {
   @ApiProperty({ description: 'KYC ID to submit for review' })
   @IsUUID()
-  kycId: string
+  kycId: string;
 }
 
 export class ReviewKYCDto {
   @ApiProperty({ description: 'KYC ID' })
   @IsUUID()
-  kycId: string
+  kycId: string;
 
-  @ApiProperty({ description: 'Approval decision', enum: ['APPROVED', 'REJECTED'] })
+  @ApiProperty({
+    description: 'Approval decision',
+    enum: ['APPROVED', 'REJECTED'],
+  })
   @IsEnum(['APPROVED', 'REJECTED'])
-  decision: 'APPROVED' | 'REJECTED'
+  decision: 'APPROVED' | 'REJECTED';
 
-  @ApiPropertyOptional({ description: 'Rejection reason (required if rejected)', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Rejection reason (required if rejected)',
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  rejectionReason?: string
+  rejectionReason?: string;
 }
 
 // ============================================================================
@@ -101,25 +110,25 @@ export class SearchVendorKYCDto {
   @ApiPropertyOptional({ description: 'Filter by status', enum: KYCStatus })
   @IsOptional()
   @IsEnum(KYCStatus)
-  status?: KYCStatus
+  status?: KYCStatus;
 
   @ApiPropertyOptional({ description: 'Filter by vendor profile ID' })
   @IsOptional()
   @IsUUID()
-  vendorProfileId?: string
+  vendorProfileId?: string;
 
   @ApiPropertyOptional({ description: 'Search by legal name' })
   @IsOptional()
   @IsString()
-  legalName?: string
+  legalName?: string;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
-  page?: number
+  page?: number;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 20 })
   @IsOptional()
-  limit?: number
+  limit?: number;
 }
 
 // ============================================================================
@@ -128,38 +137,38 @@ export class SearchVendorKYCDto {
 
 export class VendorKYCResponseDto {
   @ApiProperty({ description: 'KYC ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Vendor profile ID' })
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Legal business name' })
-  legalName: string
+  legalName: string;
 
   @ApiProperty({ description: 'Business type' })
-  businessType: string
+  businessType: string;
 
   @ApiPropertyOptional({ description: 'Tax ID', nullable: true })
-  taxId: string | null
+  taxId: string | null;
 
   @ApiProperty({ description: 'KYC status', enum: KYCStatus })
-  status: KYCStatus
+  status: KYCStatus;
 
   @ApiPropertyOptional({ description: 'Submitted at', nullable: true })
-  submittedAt: Date | null
+  submittedAt: Date | null;
 
   @ApiPropertyOptional({ description: 'Approved at', nullable: true })
-  approvedAt: Date | null
+  approvedAt: Date | null;
 
   @ApiPropertyOptional({ description: 'Rejected at', nullable: true })
-  rejectedAt: Date | null
+  rejectedAt: Date | null;
 
   @ApiPropertyOptional({ description: 'Rejection reason', nullable: true })
-  rejectionReason: string | null
+  rejectionReason: string | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Updated at' })
-  updatedAt: Date
+  updatedAt: Date;
 }

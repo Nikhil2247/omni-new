@@ -2,8 +2,16 @@
 // VENDOR AGREEMENT DTOs - Operations Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsEnum, IsNumber, IsBoolean, Min } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsBoolean,
+  Min,
+} from 'class-validator';
 
 export enum AgreementStatus {
   DRAFT = 'DRAFT',
@@ -21,41 +29,45 @@ export enum AgreementStatus {
 export class CreateVendorAgreementDto {
   @ApiProperty({ description: 'Active event ID' })
   @IsUUID()
-  activeEventId: string
+  activeEventId: string;
 
   @ApiPropertyOptional({ description: 'Requirement item ID', nullable: true })
   @IsOptional()
   @IsUUID()
-  requirementItemId?: string
+  requirementItemId?: string;
 
   @ApiProperty({ description: 'Vendor profile ID' })
   @IsUUID()
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Vendor business name' })
   @IsString()
-  vendorName: string
+  vendorName: string;
 
-  @ApiProperty({ description: 'Agreed amount', example: 5000.00 })
+  @ApiProperty({ description: 'Agreed amount', example: 5000.0 })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  agreedAmount: number
+  agreedAmount: number;
 
-  @ApiPropertyOptional({ description: 'Advance paid', example: 1000.00, default: 0 })
+  @ApiPropertyOptional({
+    description: 'Advance paid',
+    example: 1000.0,
+    default: 0,
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  advancePaid?: number
+  advancePaid?: number;
 
   @ApiPropertyOptional({ description: 'Contract terms', nullable: true })
   @IsOptional()
   @IsString()
-  contractTerms?: string
+  contractTerms?: string;
 
   @ApiPropertyOptional({ description: 'Special requirements', nullable: true })
   @IsOptional()
   @IsString()
-  specialRequirements?: string
+  specialRequirements?: string;
 }
 
 // ============================================================================
@@ -67,38 +79,38 @@ export class UpdateVendorAgreementDto {
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  agreedAmount?: number
+  agreedAmount?: number;
 
   @ApiPropertyOptional({ description: 'Advance paid' })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  advancePaid?: number
+  advancePaid?: number;
 
   @ApiPropertyOptional({ description: 'Contract terms', nullable: true })
   @IsOptional()
   @IsString()
-  contractTerms?: string
+  contractTerms?: string;
 
   @ApiPropertyOptional({ description: 'Special requirements', nullable: true })
   @IsOptional()
   @IsString()
-  specialRequirements?: string
+  specialRequirements?: string;
 
   @ApiPropertyOptional({ description: 'Status', enum: AgreementStatus })
   @IsOptional()
   @IsEnum(AgreementStatus)
-  status?: AgreementStatus
+  status?: AgreementStatus;
 
   @ApiPropertyOptional({ description: 'Signed by vendor' })
   @IsOptional()
   @IsBoolean()
-  signedByVendor?: boolean
+  signedByVendor?: boolean;
 
   @ApiPropertyOptional({ description: 'Signed by ops' })
   @IsOptional()
   @IsBoolean()
-  signedByOps?: boolean
+  signedByOps?: boolean;
 }
 
 // ============================================================================
@@ -107,50 +119,50 @@ export class UpdateVendorAgreementDto {
 
 export class VendorAgreementResponseDto {
   @ApiProperty({ description: 'Agreement ID' })
-  id: string
+  id: string;
 
   @ApiProperty({ description: 'Active event ID' })
-  activeEventId: string
+  activeEventId: string;
 
   @ApiPropertyOptional({ description: 'Requirement item ID', nullable: true })
-  requirementItemId: string | null
+  requirementItemId: string | null;
 
   @ApiProperty({ description: 'Vendor profile ID' })
-  vendorProfileId: string
+  vendorProfileId: string;
 
   @ApiProperty({ description: 'Vendor name' })
-  vendorName: string
+  vendorName: string;
 
   @ApiProperty({ description: 'Agreed amount' })
-  agreedAmount: number
+  agreedAmount: number;
 
   @ApiProperty({ description: 'Advance paid' })
-  advancePaid: number
+  advancePaid: number;
 
   @ApiProperty({ description: 'Balance due' })
-  balanceDue: number
+  balanceDue: number;
 
   @ApiPropertyOptional({ description: 'Contract terms', nullable: true })
-  contractTerms: string | null
+  contractTerms: string | null;
 
   @ApiPropertyOptional({ description: 'Special requirements', nullable: true })
-  specialRequirements: string | null
+  specialRequirements: string | null;
 
   @ApiProperty({ description: 'Status', enum: AgreementStatus })
-  status: AgreementStatus
+  status: AgreementStatus;
 
   @ApiProperty({ description: 'Signed by vendor' })
-  signedByVendor: boolean
+  signedByVendor: boolean;
 
   @ApiProperty({ description: 'Signed by ops' })
-  signedByOps: boolean
+  signedByOps: boolean;
 
   @ApiPropertyOptional({ description: 'Locked at', nullable: true })
-  lockedAt: Date | null
+  lockedAt: Date | null;
 
   @ApiProperty({ description: 'Created at' })
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty({ description: 'Updated at' })
-  updatedAt: Date
-} 
+  updatedAt: Date;
+}

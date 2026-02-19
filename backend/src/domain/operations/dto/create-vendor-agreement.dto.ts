@@ -1,1 +1,1 @@
-export { CreateVendorAgreementDto } from './vendor-agreement.dto'
+export { CreateVendorAgreementDto } from './vendor-agreement.dto';

@@ -11,5 +11,8 @@ export class ChecklistUpdatedEvent {
 }
 
 export class ChecklistItemCompletedEvent {
-  constructor(public readonly checklistId: string, public readonly itemId: string) {}
-} 
+  constructor(
+    public readonly checklistId: string,
+    public readonly itemId: string,
+  ) {}
+}

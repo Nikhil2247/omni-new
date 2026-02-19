@@ -1,1 +1,1 @@
-export { UpdateRSVPDto } from './guestlist.dto'
+export { UpdateRSVPDto } from './guestlist.dto';

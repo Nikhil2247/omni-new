@@ -67,8 +67,6 @@ import { AuditService } from 'src/core/audit';
     VendorFollowsController,
     VendorReviewsController,
   ],
-  providers: [
-    NotificationService, AuditService
-  ]
+  providers: [NotificationService, AuditService],
 })
 export class UserGatewayModule {}

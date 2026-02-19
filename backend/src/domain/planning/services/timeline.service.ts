@@ -2,16 +2,16 @@
 // TIMELINE SERVICE - Planning Domain
 // ============================================================================
 
-import { Injectable, NotFoundException, Logger } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { Timeline } from '@prisma/client'
-import { TimelineRepository } from '../repositories/timeline.repository'
-import { CreateTimelineDto } from '../dto/create-timeline.dto'
-import { randomUUID } from 'crypto'
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Timeline } from '@prisma/client';
+import { TimelineRepository } from '../repositories/timeline.repository';
+import { CreateTimelineDto } from '../dto/create-timeline.dto';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class TimelineService {
-  private readonly logger = new Logger(TimelineService.name)
+  private readonly logger = new Logger(TimelineService.name);
 
   constructor(
     private readonly timelineRepository: TimelineRepository,
@@ -19,14 +19,14 @@ export class TimelineService {
   ) {}
 
   async create(dto: CreateTimelineDto): Promise<Timeline> {
-    this.logger.log(`Creating timeline for event: ${dto.eventId}`)
+    this.logger.log(`Creating timeline for event: ${dto.eventId}`);
 
     const timeline = await this.timelineRepository.create({
       event: { connect: { id: dto.eventId } },
       name: dto.name,
       date: new Date(dto.eventDate),
       items: dto.items
-        ? dto.items.map(item => ({
+        ? dto.items.map((item) => ({
             id: randomUUID(),
             title: item.title,
             description: item.description,
@@ -35,44 +35,58 @@ export class TimelineService {
             isCompleted: false,
           }))
         : [],
-    })
+    });
 
-    this.eventEmitter.emit('timeline.created', { timelineId: timeline.id, eventId: dto.eventId })
-    return timeline
+    this.eventEmitter.emit('timeline.created', {
+      timelineId: timeline.id,
+      eventId: dto.eventId,
+    });
+    return timeline;
   }
 
   async findById(id: string): Promise<Timeline> {
-    const timeline = await this.timelineRepository.findById(id)
+    const timeline = await this.timelineRepository.findById(id);
     if (!timeline) {
-      throw new NotFoundException('Timeline not found')
+      throw new NotFoundException('Timeline not found');
     }
-    return timeline
+    return timeline;
   }
 
   async findByEventId(eventId: string): Promise<Timeline | null> {
-    return this.timelineRepository.findByEventId(eventId)
+    return this.timelineRepository.findByEventId(eventId);
   }
 
-  async update(id: string, dto: { name?: string; eventDate?: string }): Promise<Timeline> {
-    await this.findById(id)
-    const updateData: any = {}
-    if (dto.name) updateData.name = dto.name
-    if (dto.eventDate) updateData.date = new Date(dto.eventDate)
+  async update(
+    id: string,
+    dto: { name?: string; eventDate?: string },
+  ): Promise<Timeline> {
+    await this.findById(id);
+    const updateData: any = {};
+    if (dto.name) updateData.name = dto.name;
+    if (dto.eventDate) updateData.date = new Date(dto.eventDate);
 
-    const timeline = await this.timelineRepository.update(id, updateData)
-    this.eventEmitter.emit('timeline.updated', { timelineId: id })
-    return timeline
+    const timeline = await this.timelineRepository.update(id, updateData);
+    this.eventEmitter.emit('timeline.updated', { timelineId: id });
+    return timeline;
   }
 
   async delete(id: string): Promise<void> {
-    await this.findById(id)
-    await this.timelineRepository.delete(id)
-    this.eventEmitter.emit('timeline.deleted', { timelineId: id })
+    await this.findById(id);
+    await this.timelineRepository.delete(id);
+    this.eventEmitter.emit('timeline.deleted', { timelineId: id });
   }
 
-  async addItem(timelineId: string, item: { title: string; description?: string; scheduledTime: string; duration?: number }) {
-    const timeline = await this.findById(timelineId)
-    const items = Array.isArray(timeline.items) ? [...timeline.items] : []
+  async addItem(
+    timelineId: string,
+    item: {
+      title: string;
+      description?: string;
+      scheduledTime: string;
+      duration?: number;
+    },
+  ) {
+    const timeline = await this.findById(timelineId);
+    const items = Array.isArray(timeline.items) ? [...timeline.items] : [];
     const newItem = {
       id: randomUUID(),
       title: item.title,
@@ -80,58 +94,71 @@ export class TimelineService {
       scheduledTime: item.scheduledTime,
       duration: item.duration,
       isCompleted: false,
-    }
+    };
 
-    items.push(newItem)
+    items.push(newItem);
 
     await this.timelineRepository.update(timelineId, {
       items,
-    })
+    });
 
-    return newItem
+    return newItem;
   }
 
-  async updateItem(timelineId: string, itemId: string, updates: { title?: string; description?: string; scheduledTime?: string; duration?: number; isCompleted?: boolean }) {
-    const timeline = await this.findById(timelineId)
-    const items = Array.isArray(timeline.items) ? [...timeline.items] : []
-    const itemIndex = items.findIndex((item: any) => item.id === itemId)
+  async updateItem(
+    timelineId: string,
+    itemId: string,
+    updates: {
+      title?: string;
+      description?: string;
+      scheduledTime?: string;
+      duration?: number;
+      isCompleted?: boolean;
+    },
+  ) {
+    const timeline = await this.findById(timelineId);
+    const items = Array.isArray(timeline.items) ? [...timeline.items] : [];
+    const itemIndex = items.findIndex((item: any) => item.id === itemId);
 
     if (itemIndex === -1) {
-      throw new NotFoundException('Timeline item not found')
+      throw new NotFoundException('Timeline item not found');
     }
 
-    const currentItem = items[itemIndex] as any
+    const currentItem = items[itemIndex] as any;
     items[itemIndex] = {
       ...currentItem,
       ...updates,
-      completedAt: updates.isCompleted && !currentItem.isCompleted ? new Date() : currentItem.completedAt,
-    }
+      completedAt:
+        updates.isCompleted && !currentItem.isCompleted
+          ? new Date()
+          : currentItem.completedAt,
+    };
 
-    await this.timelineRepository.update(timelineId, { items })
-    return items[itemIndex]
+    await this.timelineRepository.update(timelineId, { items });
+    return items[itemIndex];
   }
 
   async removeItem(timelineId: string, itemId: string) {
-    const timeline = await this.findById(timelineId)
-    const items = Array.isArray(timeline.items) ? [...timeline.items] : []
-    const filteredItems = items.filter((item: any) => item.id !== itemId)
+    const timeline = await this.findById(timelineId);
+    const items = Array.isArray(timeline.items) ? [...timeline.items] : [];
+    const filteredItems = items.filter((item: any) => item.id !== itemId);
 
     if (filteredItems.length === items.length) {
-      throw new NotFoundException('Timeline item not found')
+      throw new NotFoundException('Timeline item not found');
     }
 
-    await this.timelineRepository.update(timelineId, { items: filteredItems })
-    return { success: true }
+    await this.timelineRepository.update(timelineId, { items: filteredItems });
+    return { success: true };
   }
 
   async getUpcomingItems(timelineId: string) {
-    const timeline = await this.findById(timelineId)
-    const now = new Date()
-    const items = Array.isArray(timeline.items) ? timeline.items : []
+    const timeline = await this.findById(timelineId);
+    const now = new Date();
+    const items = Array.isArray(timeline.items) ? timeline.items : [];
 
     return items.filter((item: any) => {
-      if (!item?.scheduledTime) return false
-      return new Date(item.scheduledTime) >= now
-    })
+      if (!item?.scheduledTime) return false;
+      return new Date(item.scheduledTime) >= now;
+    });
   }
 }

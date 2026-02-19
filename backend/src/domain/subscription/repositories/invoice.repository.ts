@@ -2,9 +2,9 @@
 // INVOICE REPOSITORY - Subscription Domain
 // ============================================================================
 
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../../../core/database/prisma.service'
-import { Prisma, Invoice } from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { Prisma, Invoice } from '@prisma/client';
 
 @Injectable()
 export class InvoiceRepository {
@@ -14,14 +14,17 @@ export class InvoiceRepository {
     return this.prisma.invoice.create({
       data,
       include: { lineItems: true },
-    })
+    });
   }
 
-  async findById(id: string, include?: Prisma.InvoiceInclude): Promise<Invoice | null> {
+  async findById(
+    id: string,
+    include?: Prisma.InvoiceInclude,
+  ): Promise<Invoice | null> {
     return this.prisma.invoice.findUnique({
       where: { id },
       include,
-    })
+    });
   }
 
   async findByInvoiceNumber(invoiceNumber: string): Promise<Invoice | null> {
@@ -32,7 +35,7 @@ export class InvoiceRepository {
         lineItems: true,
         payments: true,
       },
-    })
+    });
   }
 
   async findBySubscription(subscriptionId: string): Promise<Invoice[]> {
@@ -40,7 +43,7 @@ export class InvoiceRepository {
       where: { subscriptionId },
       include: { lineItems: true, payments: true },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async findByVendorProfile(vendorProfileId: string): Promise<Invoice[]> {
@@ -54,7 +57,7 @@ export class InvoiceRepository {
         payments: true,
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
   }
 
   async update(id: string, data: Prisma.InvoiceUpdateInput): Promise<Invoice> {
@@ -62,7 +65,7 @@ export class InvoiceRepository {
       where: { id },
       data,
       include: { lineItems: true },
-    })
+    });
   }
 
   async getUnpaidInvoices(subscriptionId: string): Promise<Invoice[]> {
@@ -72,11 +75,11 @@ export class InvoiceRepository {
         status: { in: ['OPEN', 'DRAFT'] },
       },
       include: { lineItems: true },
-    })
+    });
   }
 
   async getOverdueInvoices(): Promise<Invoice[]> {
-    const now = new Date()
+    const now = new Date();
 
     return this.prisma.invoice.findMany({
       where: {
@@ -88,6 +91,6 @@ export class InvoiceRepository {
           include: { vendorProfile: true },
         },
       },
-    })
+    });
   }
 }

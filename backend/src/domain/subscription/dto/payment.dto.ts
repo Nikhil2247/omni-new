@@ -2,8 +2,16 @@
 // PAYMENT DTOs - Subscription Domain
 // ============================================================================
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsEnum, IsOptional, IsNumber, Min, IsBoolean } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsString,
+  IsUUID,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+  Min,
+  IsBoolean,
+} from 'class-validator';
 
 export enum PaymentMethodType {
   CARD = 'CARD',
@@ -39,65 +47,65 @@ export enum InvoiceStatus {
 export class CreatePaymentMethodDto {
   @ApiProperty({ description: 'Subscription ID' })
   @IsUUID()
-  subscriptionId: string
+  subscriptionId: string;
 
   @ApiProperty({ description: 'Payment method type', enum: PaymentMethodType })
   @IsEnum(PaymentMethodType)
-  type: PaymentMethodType
+  type: PaymentMethodType;
 
   @ApiPropertyOptional({ description: 'Card last 4 digits' })
   @IsOptional()
   @IsString()
-  cardLast4?: string
+  cardLast4?: string;
 
   @ApiPropertyOptional({ description: 'Card brand (visa, mastercard, etc.)' })
   @IsOptional()
   @IsString()
-  cardBrand?: string
+  cardBrand?: string;
 
   @ApiPropertyOptional({ description: 'Card expiry month' })
   @IsOptional()
   @IsNumber()
-  cardExpMonth?: number
+  cardExpMonth?: number;
 
   @ApiPropertyOptional({ description: 'Card expiry year' })
   @IsOptional()
   @IsNumber()
-  cardExpYear?: number
+  cardExpYear?: number;
 
   @ApiPropertyOptional({ description: 'Set as default payment method' })
   @IsOptional()
   @IsBoolean()
-  isDefault?: boolean
+  isDefault?: boolean;
 }
 
 export class PaymentMethodResponseDto {
   @ApiProperty()
-  id: string
+  id: string;
 
   @ApiProperty()
-  subscriptionId: string
+  subscriptionId: string;
 
   @ApiProperty({ enum: PaymentMethodType })
-  type: PaymentMethodType
+  type: PaymentMethodType;
 
   @ApiPropertyOptional()
-  cardLast4?: string
+  cardLast4?: string;
 
   @ApiPropertyOptional()
-  cardBrand?: string
+  cardBrand?: string;
 
   @ApiPropertyOptional()
-  cardExpMonth?: number
+  cardExpMonth?: number;
 
   @ApiPropertyOptional()
-  cardExpYear?: number
+  cardExpYear?: number;
 
   @ApiProperty()
-  isDefault: boolean
+  isDefault: boolean;
 
   @ApiProperty()
-  createdAt: Date
+  createdAt: Date;
 }
 
 // ============================================================================
@@ -106,48 +114,48 @@ export class PaymentMethodResponseDto {
 
 export class InvoiceResponseDto {
   @ApiProperty()
-  id: string
+  id: string;
 
   @ApiProperty()
-  invoiceNumber: string
+  invoiceNumber: string;
 
   @ApiProperty()
-  subscriptionId: string
+  subscriptionId: string;
 
   @ApiProperty({ enum: InvoiceStatus })
-  status: InvoiceStatus
+  status: InvoiceStatus;
 
   @ApiProperty()
-  subtotal: number
+  subtotal: number;
 
   @ApiPropertyOptional()
-  discountAmount?: number
+  discountAmount?: number;
 
   @ApiPropertyOptional()
-  taxAmount?: number
+  taxAmount?: number;
 
   @ApiProperty()
-  totalAmount: number
+  totalAmount: number;
 
   @ApiProperty()
-  currency: string
+  currency: string;
 
   @ApiProperty()
-  periodStart: Date
+  periodStart: Date;
 
   @ApiProperty()
-  periodEnd: Date
+  periodEnd: Date;
 
   @ApiPropertyOptional()
-  paidAt?: Date
+  paidAt?: Date;
 
   @ApiPropertyOptional()
-  pdfUrl?: string
+  pdfUrl?: string;
 
   @ApiProperty()
-  createdAt: Date
+  createdAt: Date;
 
-  lineItems?: any[]
+  lineItems?: any[];
 }
 
 // ============================================================================
@@ -157,49 +165,49 @@ export class InvoiceResponseDto {
 export class CreatePaymentDto {
   @ApiProperty({ description: 'Invoice ID' })
   @IsUUID()
-  invoiceId: string
+  invoiceId: string;
 
   @ApiProperty({ description: 'Payment method ID' })
   @IsUUID()
-  paymentMethodId: string
+  paymentMethodId: string;
 
   @ApiProperty({ description: 'Amount to pay' })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  amount: number
+  amount: number;
 
   @ApiProperty({ description: 'Currency', default: 'INR' })
   @IsString()
-  currency: string
+  currency: string;
 }
 
 export class PaymentResponseDto {
   @ApiProperty()
-  id: string
+  id: string;
 
   @ApiProperty()
-  invoiceId: string
+  invoiceId: string;
 
   @ApiProperty()
-  paymentMethodId: string
+  paymentMethodId: string;
 
   @ApiProperty()
-  amount: number
+  amount: number;
 
   @ApiProperty()
-  currency: string
+  currency: string;
 
   @ApiProperty({ enum: PaymentStatus })
-  status: PaymentStatus
+  status: PaymentStatus;
 
   @ApiPropertyOptional()
-  failureMessage?: string
+  failureMessage?: string;
 
   @ApiProperty()
-  createdAt: Date
+  createdAt: Date;
 
   @ApiPropertyOptional()
-  processedAt?: Date
+  processedAt?: Date;
 }
 
 // ============================================================================
@@ -209,35 +217,35 @@ export class PaymentResponseDto {
 export class ApplyCouponDto {
   @ApiProperty({ description: 'Coupon code' })
   @IsString()
-  code: string
+  code: string;
 
   @ApiProperty({ description: 'Plan ID to apply coupon to' })
   @IsUUID()
-  planId: string
+  planId: string;
 }
 
 export class CouponResponseDto {
   @ApiProperty()
-  id: string
+  id: string;
 
   @ApiProperty()
-  code: string
+  code: string;
 
   @ApiProperty()
-  discountType: string
+  discountType: string;
 
   @ApiProperty()
-  discountValue: number
+  discountValue: number;
 
   @ApiPropertyOptional()
-  maxRedemptions?: number
+  maxRedemptions?: number;
 
   @ApiProperty()
-  timesRedeemed: number
+  timesRedeemed: number;
 
   @ApiPropertyOptional()
-  expiresAt?: Date
+  expiresAt?: Date;
 
   @ApiProperty()
-  isActive: boolean
+  isActive: boolean;
 }

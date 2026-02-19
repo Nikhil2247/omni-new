@@ -2,10 +2,21 @@
 // VENDOR PROFILE DTOs - Data Transfer Objects for Vendor Profile Operations
 // ============================================================================
 
-import { IsString, IsEmail, IsOptional, IsEnum, IsArray, IsNumber, Min, IsUUID, IsInt, IsBoolean } from 'class-validator'
-import { Type } from 'class-transformer'
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
-import { VendorStatus } from '@prisma/client'
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsEnum,
+  IsArray,
+  IsNumber,
+  Min,
+  IsUUID,
+  IsInt,
+  IsBoolean,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { VendorStatus } from '@prisma/client';
 
 // ============================================================================
 // CREATE VENDOR PROFILE
@@ -15,79 +26,84 @@ export class CreateVendorProfileDto {
   @ApiProperty({ description: 'User ID (owner of the profile)' })
   @IsOptional()
   @IsUUID()
-  userId: string
+  userId: string;
 
   @ApiProperty({ description: 'Business name' })
   @IsString()
-  businessName: string
+  businessName: string;
 
   @ApiPropertyOptional({ description: 'Business slug (unique identifier)' })
   @IsOptional()
   @IsString()
-  slug?: string
+  slug?: string;
 
-  @ApiPropertyOptional({ description: 'Service category identifier (UUID, slug, name, or legacy cat-N)' })
+  @ApiPropertyOptional({
+    description:
+      'Service category identifier (UUID, slug, name, or legacy cat-N)',
+  })
   @IsOptional()
   @IsString()
-  categoryId?: string
+  categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Business tagline' })
   @IsOptional()
   @IsString()
-  tagline?: string
+  tagline?: string;
 
   @ApiPropertyOptional({ description: 'Business description' })
   @IsOptional()
   @IsString()
-  description?: string
+  description?: string;
 
   @ApiPropertyOptional({ description: 'Contact email' })
   @IsOptional()
   @IsEmail()
-  contactEmail?: string
+  contactEmail?: string;
 
   @ApiPropertyOptional({ description: 'Contact phone' })
   @IsOptional()
   @IsString()
-  contactPhone?: string
+  contactPhone?: string;
 
   @ApiPropertyOptional({ description: 'Website URL' })
   @IsOptional()
   @IsString()
-  website?: string
+  website?: string;
 
   @ApiPropertyOptional({ description: 'Address ID' })
   @IsOptional()
   @IsUUID()
-  addressId?: string
+  addressId?: string;
 
   @ApiPropertyOptional({ description: 'Service radius in miles' })
   @IsOptional()
   @IsInt()
   @Min(0)
-  serviceRadius?: number
+  serviceRadius?: number;
 
   @ApiPropertyOptional({ description: 'Service area city IDs' })
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  serviceAreaCityIds?: string[]
+  serviceAreaCityIds?: string[];
 
   @ApiPropertyOptional({ description: 'Profile photo URL' })
   @IsOptional()
   @IsString()
-  profilePhotoUrl?: string
+  profilePhotoUrl?: string;
 }
 
 // ============================================================================
 // UPDATE VENDOR PROFILE
 // ============================================================================
 
-export class UpdateVendorProfileDto extends PartialType(CreateVendorProfileDto) {
+export class UpdateVendorProfileDto extends PartialType(
+  CreateVendorProfileDto,
+) {
   @ApiPropertyOptional({ enum: VendorStatus })
   @IsOptional()
   @IsEnum(VendorStatus)
-  status?: VendorStatus
+  status?: VendorStatus;
 }
 
 // ============================================================================
@@ -95,44 +111,49 @@ export class UpdateVendorProfileDto extends PartialType(CreateVendorProfileDto) 
 // ============================================================================
 
 export class SearchVendorProfileDto {
-  @ApiPropertyOptional({ description: 'Search query (name, tagline, description)' })
+  @ApiPropertyOptional({
+    description: 'Search query (name, tagline, description)',
+  })
   @IsOptional()
   @IsString()
-  query?: string
+  query?: string;
 
   @ApiPropertyOptional({ description: 'Filter by category ID' })
   @IsOptional()
   @IsUUID()
-  categoryId?: string
+  categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by city ID' })
   @IsOptional()
   @IsUUID()
-  cityId?: string
+  cityId?: string;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  page?: number = 1
+  page?: number = 1;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  limit?: number = 20
+  limit?: number = 20;
 
-  @ApiPropertyOptional({ description: 'Sort by field', enum: ['createdAt', 'leadCount', 'viewCount'] })
+  @ApiPropertyOptional({
+    description: 'Sort by field',
+    enum: ['createdAt', 'leadCount', 'viewCount'],
+  })
   @IsOptional()
   @IsString()
-  sortBy?: 'createdAt' | 'leadCount' | 'viewCount'
+  sortBy?: 'createdAt' | 'leadCount' | 'viewCount';
 
   @ApiPropertyOptional({ description: 'Sort order', enum: ['asc', 'desc'] })
   @IsOptional()
   @IsEnum(['asc', 'desc'])
-  sortOrder?: 'asc' | 'desc'
+  sortOrder?: 'asc' | 'desc';
 }
 
 // ============================================================================
@@ -143,70 +164,73 @@ export class SearchVendorIndexDto {
   @ApiPropertyOptional({ description: 'Full-text search query' })
   @IsOptional()
   @IsString()
-  query?: string
+  query?: string;
 
   @ApiPropertyOptional({ description: 'Filter by category ID' })
   @IsOptional()
   @IsUUID()
-  categoryId?: string
+  categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by city name' })
   @IsOptional()
   @IsString()
-  city?: string
+  city?: string;
 
   @ApiPropertyOptional({ description: 'Filter by country name' })
   @IsOptional()
   @IsString()
-  country?: string
+  country?: string;
 
   @ApiPropertyOptional({ description: 'Filter by service area city ID' })
   @IsOptional()
   @IsUUID()
-  serviceAreaCityId?: string
+  serviceAreaCityId?: string;
 
   @ApiPropertyOptional({ description: 'Minimum price filter' })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  priceMin?: number
+  priceMin?: number;
 
   @ApiPropertyOptional({ description: 'Maximum price filter' })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  priceMax?: number
+  priceMax?: number;
 
   @ApiPropertyOptional({ description: 'Filter verified vendors only' })
   @IsOptional()
   @IsBoolean()
-  isVerified?: boolean
+  isVerified?: boolean;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  page?: number = 1
+  page?: number = 1;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  limit?: number = 20
+  limit?: number = 20;
 
-  @ApiPropertyOptional({ description: 'Sort by field', enum: ['createdAt', 'viewCount', 'leadCount', 'minPrice'] })
+  @ApiPropertyOptional({
+    description: 'Sort by field',
+    enum: ['createdAt', 'viewCount', 'leadCount', 'minPrice'],
+  })
   @IsOptional()
   @IsString()
-  sortBy?: 'createdAt' | 'viewCount' | 'leadCount' | 'minPrice'
+  sortBy?: 'createdAt' | 'viewCount' | 'leadCount' | 'minPrice';
 
   @ApiPropertyOptional({ description: 'Sort order', enum: ['asc', 'desc'] })
   @IsOptional()
   @IsEnum(['asc', 'desc'])
-  sortOrder?: 'asc' | 'desc'
+  sortOrder?: 'asc' | 'desc';
 }
 
 // ============================================================================
@@ -217,43 +241,43 @@ export class SearchNearbyVendorsDto {
   @ApiPropertyOptional({ description: 'Full-text search query' })
   @IsOptional()
   @IsString()
-  query?: string
+  query?: string;
 
   @ApiPropertyOptional({ description: 'Filter by category ID' })
   @IsOptional()
   @IsUUID()
-  categoryId?: string
+  categoryId?: string;
 
   @ApiProperty({ description: 'Latitude' })
   @Type(() => Number)
   @IsNumber()
-  lat: number
+  lat: number;
 
   @ApiProperty({ description: 'Longitude' })
   @Type(() => Number)
   @IsNumber()
-  lng: number
+  lng: number;
 
   @ApiPropertyOptional({ description: 'Radius in meters', default: 50000 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(100)
-  radiusInMeters?: number = 50000
+  radiusInMeters?: number = 50000;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  page?: number = 1
+  page?: number = 1;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 20 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  limit?: number = 20
+  limit?: number = 20;
 }
 
 // ============================================================================
@@ -263,14 +287,14 @@ export class SearchNearbyVendorsDto {
 export class VendorSuggestionsDto {
   @ApiProperty({ description: 'Search query' })
   @IsString()
-  query: string
+  query: string;
 
   @ApiPropertyOptional({ description: 'Number of suggestions', default: 5 })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
-  limit?: number = 5
+  limit?: number = 5;
 }
 
 // ============================================================================
@@ -279,84 +303,85 @@ export class VendorSuggestionsDto {
 
 export class VendorProfileResponseDto {
   @ApiProperty()
-  id: string
+  id: string;
 
   @ApiProperty()
-  userId: string
+  userId: string;
 
   @ApiProperty()
-  businessName: string
+  businessName: string;
 
   @ApiProperty()
-  slug: string
+  slug: string;
 
   @ApiProperty()
-  categoryId: string
+  categoryId: string;
 
   @ApiPropertyOptional({ type: String, nullable: true })
-  tagline?: string | null
+  tagline?: string | null;
 
   @ApiPropertyOptional({ type: String, nullable: true })
-  description?: string | null
+  description?: string | null;
 
   @ApiPropertyOptional()
-  contactPhone?: string | null
+  contactPhone?: string | null;
 
   @ApiPropertyOptional()
-  contactEmail?: string | null
+  contactEmail?: string | null;
 
   @ApiPropertyOptional()
-  website?: string | null
+  website?: string | null;
 
   @ApiPropertyOptional()
-  addressId?: string | null
+  addressId?: string | null;
 
   @ApiPropertyOptional()
-  serviceRadius?: number | null
+  serviceRadius?: number | null;
 
   @ApiPropertyOptional()
-  profilePhotoUrl?: string | null
+  profilePhotoUrl?: string | null;
 
   @ApiProperty({ enum: VendorStatus })
-  status: VendorStatus
+  status: VendorStatus;
 
   @ApiProperty()
-  leadCount: number
+  leadCount: number;
 
   @ApiProperty()
-  viewCount: number
+  viewCount: number;
 
   @ApiPropertyOptional()
-  followersCount?: number
+  followersCount?: number;
 
   @ApiPropertyOptional()
-  reviewsCount?: number
+  reviewsCount?: number;
 
   @ApiPropertyOptional()
-  averageRating?: number | null
+  averageRating?: number | null;
 
   @ApiPropertyOptional()
-  verifiedAt?: Date | null
+  verifiedAt?: Date | null;
 
   @ApiPropertyOptional()
-  featuredUntil?: Date | null
+  featuredUntil?: Date | null;
 
-  @ApiPropertyOptional({ description: 'Whether the current user follows this vendor' })
-  isFollowing?: boolean
+  @ApiPropertyOptional({
+    description: 'Whether the current user follows this vendor',
+  })
+  isFollowing?: boolean;
 
   @ApiProperty()
-  createdAt: Date
+  createdAt: Date;
 
   @ApiProperty()
-  updatedAt: Date
+  updatedAt: Date;
 
   // Relations (optional, can be included)
-  category?: any
-  address?: any
-  serviceAreas?: any[]
-  services?: any[]
-  portfolios?: any[]
-  badges?: any[]
-  eventHistory?: any[]
+  category?: any;
+  address?: any;
+  serviceAreas?: any[];
+  services?: any[];
+  portfolios?: any[];
+  badges?: any[];
+  eventHistory?: any[];
 }
-
