@@ -433,6 +433,7 @@ export default function VendorPageClient({
                       src={vendor.profilePhotoUrl}
                       alt={vendor.businessName || ''}
                       fill
+                      unoptimized
                       className="object-cover"
                     />
                   ) : (
@@ -617,6 +618,7 @@ export default function VendorPageClient({
                           src={media.cdnUrl || media.url}
                           alt={media.altText || 'Portfolio'}
                           fill
+                          unoptimized
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                         {media.type === 'VIDEO' && (
@@ -1125,6 +1127,7 @@ export default function VendorPageClient({
                   alt="Portfolio"
                   width={1200}
                   height={800}
+                  unoptimized
                   className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
                 />
               )}
