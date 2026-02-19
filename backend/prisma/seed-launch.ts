@@ -529,65 +529,82 @@ async function seedVendorTaxonomy() {
 }
 
 async function seedComprehensiveTags() {
-  const tags = [
-    'Wedding',
-    'Engagement',
-    'Reception',
-    'Haldi',
-    'Mehndi',
-    'Sangeet',
-    'Destination',
-    'Luxury',
-    'Budget-Friendly',
-    'Premium',
-    'Outdoor',
-    'Indoor',
-    'Rooftop',
-    'Garden',
-    'Farmhouse',
-    'Beach',
-    'Traditional',
-    'Modern',
-    'Minimalist',
-    'Bohemian',
-    'Royal',
-    'Classic',
-    'Cinematic',
-    'Candid',
-    'Editorial',
-    'Drone',
-    'North Indian',
-    'South Indian',
-    'Punjabi',
-    'Gujarati',
-    'Rajasthani',
-    'Multi-Cuisine',
-    'Vegetarian',
-    'Vegan',
-    'Jain Menu',
-    'Live Counter',
-    'Cocktail Party',
-    'Corporate Event',
-    'Birthday',
-    'Anniversary',
-    'Intimate Event',
-    'Large Gatherings',
-    'Bridal Entry',
-    'Baraat',
-    'Fireworks',
-    'Sustainable',
-    'Eco-Friendly',
-    'Premium Decor',
-    'Floral Luxury',
-    'Custom Theme',
+  const vendorTags = [
+    // Event formats
+    'Wedding', 'Engagement', 'Reception', 'Haldi', 'Mehndi', 'Sangeet', 'Roka', 'Cocktail',
+    'Destination Wedding', 'Intimate Wedding', 'Big Fat Wedding', 'Micro Wedding',
+    'Birthday', 'Anniversary', 'Baby Shower', 'Corporate Event', 'Festive Event',
+    // Service quality and positioning
+    'Luxury', 'Premium', 'Budget-Friendly', 'Value for Money', 'High Rated', 'Verified Vendor',
+    'Trusted', 'Fast Response', 'On-Time Delivery',
+    // Venue and setup style
+    'Indoor', 'Outdoor', 'Rooftop', 'Banquet Hall', 'Farmhouse', 'Resort', 'Beachside', 'Garden Setup',
+    'Heritage Venue', 'Poolside Setup',
+    // Design and creative
+    'Traditional', 'Modern', 'Minimalist', 'Royal', 'Classic', 'Bohemian', 'Rustic',
+    'Contemporary', 'Theme Based', 'Floral Luxury', 'Pastel Decor', 'Bold Decor',
+    // Photography / media style
+    'Candid Photography', 'Traditional Photography', 'Cinematic Video', 'Documentary Style',
+    'Drone Coverage', 'Reels Coverage', 'Same Day Edit',
+    // Food and catering
+    'Multi-Cuisine', 'North Indian', 'South Indian', 'Punjabi', 'Gujarati', 'Rajasthani',
+    'Vegetarian', 'Jain Menu', 'Vegan', 'Live Counters', 'Fusion Menu', 'Dessert Studio',
+    // Operations / experience
+    'Full Planning', 'Partial Planning', 'Day Coordination', 'Guest Management',
+    'Vendor Management', 'Custom Package', 'All Inclusive', 'Last Minute Booking',
+    // Trends
+    'Sustainable', 'Eco-Friendly', 'Pet Friendly', 'Family Friendly', 'Custom Theme',
+    'Bridal Entry', 'Baraat Special', 'Fireworks',
   ]
 
-  for (const tagName of tags) {
-    const slug = tagName
+  const mediaHashtags = [
+    'weddinginspiration', 'indianwedding', 'weddingdecor', 'bridallook', 'groomstyle',
+    'bridalentry', 'weddingreels', 'weddinghighlights', 'weddingfilm', 'candidmoments',
+    'candidphotography', 'cinematicwedding', 'droneshots', 'preweddingshoot', 'savethedate',
+    'engagementshoot', 'mehndivibes', 'haldiceremony', 'sangeetnight', 'receptionnight',
+    'baraatmoments', 'weddinggoals', 'shaadiseason', 'bigfatindianwedding', 'destinationwedding',
+    'luxurywedding', 'intimatewedding', 'microcelebration', 'weddingdetails', 'tablescapeinspo',
+    'floraldecor', 'stagegoals', 'mandapdecor', 'bridalportrait', 'groupportraits',
+    'coupleshoot', 'sunsetshoot', 'goldenhour', 'nightportrait', 'weddingstory',
+    'behindthescenes', 'eventstyling', 'weddingideas', 'vendorfeature', 'realwedding',
+    'weddingvenue', 'banquetsetup', 'gardenwedding', 'beachwedding', 'rooftopwedding',
+    'weddingmenu', 'livecounter', 'desserttable', 'cocktailhour', 'weddingmusic',
+    'djnight', 'liveband', 'weddingdance', 'bridalmakeup', 'hairgoals',
+    'mehndiart', 'weddingplanner', 'eventplanner', 'celebrationmoments', 'familymoments',
+  ]
+
+  const blogTags = [
+    'Wedding Planning', 'Planning Checklist', 'Budget Planning', 'Cost Saving', 'Timeline Guide',
+    'Vendor Selection', 'Vendor Contracts', 'Negotiation Tips', 'Venue Guide', 'Venue Shortlisting',
+    'Destination Weddings', 'Real Weddings', 'Vendor Spotlight', 'Bride Guide', 'Groom Guide',
+    'Bridal Fashion', 'Groom Fashion', 'Jewelry Guide', 'Invitation Design', 'Wedding Website',
+    'Photography Tips', 'Videography Tips', 'Decor Trends', 'Floral Design', 'Color Palettes',
+    'Theme Weddings', 'Traditional Ceremonies', 'Modern Weddings', 'Intimate Weddings', 'Luxury Weddings',
+    'Catering Ideas', 'Wedding Menu', 'Dessert Ideas', 'Guest Experience', 'Entertainment Ideas',
+    'Sangeet Ideas', 'Mehndi Ideas', 'Haldi Ideas', 'Reception Ideas', 'Bridal Entry Ideas',
+    'Sustainable Weddings', 'Eco Friendly Events', 'DIY Decor', 'DIY Wedding', 'Post Wedding Tasks',
+    'Honeymoon Planning', 'Marriage Documentation', 'Health and Wellness', 'Pre Wedding Prep', 'Wedding Mistakes',
+    'Seasonal Weddings', 'Monsoon Weddings', 'Winter Weddings', 'Summer Weddings', 'Engagement Ideas',
+    'Anniversary Ideas', 'Family Functions', 'Corporate Event Planning', 'Social Media Strategy', 'SEO Content',
+    'Content Marketing', 'Business Growth', 'Lead Generation', 'Conversion Tips', 'Client Retention',
+  ]
+
+  const toSlug = (value: string) =>
+    value
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .trim()
       .replace(/\s+/g, '-')
+
+  const normalizeHashtag = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/^#+/, '')
+      .replace(/[^a-z0-9_]/g, '')
+      .slice(0, 80)
+
+  for (const tagName of vendorTags) {
+    const slug = toSlug(tagName)
 
     await prisma.tag.upsert({
       where: { slug },
@@ -596,6 +613,38 @@ async function seedComprehensiveTags() {
       },
       create: {
         name: tagName,
+        slug,
+      },
+    })
+  }
+
+  for (const hashtagValue of mediaHashtags) {
+    const normalized = normalizeHashtag(hashtagValue)
+    if (!normalized) continue
+
+    await prisma.hashtag.upsert({
+      where: { normalized },
+      update: {
+        tag: normalized,
+      },
+      create: {
+        tag: normalized,
+        normalized,
+      },
+    })
+  }
+
+  for (const blogTagName of blogTags) {
+    const safeName = blogTagName.slice(0, 50)
+    const slug = toSlug(safeName).slice(0, 60)
+
+    await prisma.blogTag.upsert({
+      where: { slug },
+      update: {
+        name: safeName,
+      },
+      create: {
+        name: safeName,
         slug,
       },
     })
