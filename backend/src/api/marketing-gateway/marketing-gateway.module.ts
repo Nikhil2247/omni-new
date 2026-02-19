@@ -11,10 +11,11 @@ import { MediaController } from './controllers/media.controller';
 import { PromotionsController } from './controllers/promotions.controller';
 import { CategoriesController } from './controllers/categories.controller';
 import { ContentModule } from '../../domain/content/content.module';
+import { StorageModule } from '../../infrastructure/storage/storage.module';
 import { NotificationService } from 'src/infrastructure/notifications/notification.service';
 
 @Module({
-  imports: [ContentModule],
+  imports: [ContentModule, StorageModule],
   controllers: [
     CampaignsController,
     ContentController,

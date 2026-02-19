@@ -79,6 +79,7 @@ export const API_ENDPOINTS = {
       POSTS: '/marketing/content/posts',
       POST_BY_ID: (id: string) => `/marketing/content/posts/${id}`,
       PUBLISH_POST: (id: string) => `/marketing/content/posts/${id}/publish`,
+      UPLOAD_IMAGE: '/marketing/content/posts/upload-image',
     },
   },
   OPS: {

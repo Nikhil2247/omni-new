@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { BlogStatus } from '@/lib/api/types/marketing.types'
 import { FileUpload } from '@/components/ui/file-upload'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import { uploadService } from '@/lib/api/services/upload.service'
+import { marketingService } from '@/lib/api/services/marketing.service'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 
 export default function MarketingContentDetailPage() {
@@ -135,9 +135,8 @@ export default function MarketingContentDetailPage() {
           return localPreview
         })
       }
-      const presigned = await uploadService.getPresignedUrl(file.name, file.type, 'media')
-      await uploadService.uploadToPresignedUrl(presigned.uploadUrl, file)
-      const resolvedUploadedUrl = presigned.fileUrl || presigned.filePath
+      const uploaded = await marketingService.uploadBlogImage(file)
+      const resolvedUploadedUrl = uploaded.url || uploaded.path
 
       if (type === 'featured') {
         setFeaturedImage(resolvedUploadedUrl)

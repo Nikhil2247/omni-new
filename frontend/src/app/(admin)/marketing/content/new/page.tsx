@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { FileUpload } from '@/components/ui/file-upload'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
-import { uploadService } from '@/lib/api/services/upload.service'
+import { marketingService } from '@/lib/api/services/marketing.service'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { FileText, Image, Settings, Tags } from 'lucide-react'
 
@@ -118,9 +118,8 @@ export default function MarketingContentNewPage() {
           return localPreview
         })
       }
-      const presigned = await uploadService.getPresignedUrl(file.name, file.type, 'media')
-      await uploadService.uploadToPresignedUrl(presigned.uploadUrl, file)
-      const resolvedUploadedUrl = presigned.fileUrl || presigned.filePath
+      const uploaded = await marketingService.uploadBlogImage(file)
+      const resolvedUploadedUrl = uploaded.url || uploaded.path
 
       if (type === 'featured') {
         setFeaturedImage(resolvedUploadedUrl)

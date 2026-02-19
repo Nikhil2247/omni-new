@@ -15,6 +15,33 @@ import * as path from 'path';
 export class MediaController {
   constructor(private readonly minioService: MinioService) {}
 
+  @Get('presigned')
+  async getPresignedMediaUrl(
+    @Query('path') path: string,
+    @Query('expiresIn') expiresIn?: string,
+  ) {
+    if (!path) {
+      throw new BadRequestException('path is required');
+    }
+
+    const objectPath = await this.resolveObjectPath(path);
+    const ttl = expiresIn ? Number(expiresIn) : 3600;
+
+    if (!Number.isFinite(ttl) || ttl <= 0) {
+      throw new BadRequestException('expiresIn must be a positive number');
+    }
+
+    const url = await this.minioService.getPresignedGetUrl(objectPath, {
+      expiresIn: Math.floor(ttl),
+    });
+
+    return {
+      path: objectPath,
+      url,
+      expiresIn: Math.floor(ttl),
+    };
+  }
+
   @Get('view')
   async viewMedia(
     @Query('path') path: string,
@@ -44,10 +71,16 @@ export class MediaController {
       if (info?.size) {
         res.setHeader('Content-Length', info.size.toString());
       }
+      if (info?.etag) {
+        res.setHeader('ETag', info.etag);
+      }
+      if (info?.lastModified) {
+        res.setHeader('Last-Modified', info.lastModified.toUTCString());
+      }
       if (ttl) {
-        res.setHeader('Cache-Control', `private, max-age=${ttl}`);
+        res.setHeader('Cache-Control', `public, max-age=${ttl}`);
       } else {
-        res.setHeader('Cache-Control', 'public, max-age=300');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 

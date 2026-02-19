@@ -53,4 +53,12 @@ export const marketingService = {
     const { data } = await apiClient.post(API_ENDPOINTS.MARKETING.CONTENT.PUBLISH_POST(id))
     return data?.data ?? data
   },
+  uploadBlogImage: async (file: File): Promise<{ path: string; url: string }> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await apiClient.post(API_ENDPOINTS.MARKETING.CONTENT.UPLOAD_IMAGE, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data?.data ?? data
+  },
 }

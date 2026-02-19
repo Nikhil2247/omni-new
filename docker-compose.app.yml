@@ -12,6 +12,12 @@
 #
 # This file contains only the application services (frontend + backend)
 # and connects to the shared infrastructure network.
+#
+# Recommended Environment Variables (Coolify):
+#   MINIO_PUBLIC_URL            - Public MinIO host reachable by browser (e.g. https://minio.your-domain.com)
+#   NEXT_PUBLIC_MEDIA_DELIVERY  - auto | direct | proxy (recommended: direct)
+#   NEXT_PUBLIC_CDN_ENABLED     - true/false
+#   NEXT_PUBLIC_CDN_BASE_URL    - CDN origin/base URL if using CDN
 
 services:
   # ===========================================
@@ -25,6 +31,11 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-}
+      - NEXT_PUBLIC_MINIO_BUCKET=${MINIO_DEFAULT_BUCKET:-omnicassion}
+      - NEXT_PUBLIC_MEDIA_DELIVERY=${NEXT_PUBLIC_MEDIA_DELIVERY:-auto}
+      - NEXT_PUBLIC_CDN_ENABLED=${NEXT_PUBLIC_CDN_ENABLED:-false}
+      - NEXT_PUBLIC_CDN_BASE_URL=${NEXT_PUBLIC_CDN_BASE_URL:-}
     networks:
       - infra-network
       - coolify
@@ -84,6 +95,8 @@ services:
       - MINIO_ENDPOINT=infra-minio
       - MINIO_PORT=9000
       - MINIO_USE_SSL=false
+      # Public URL reachable by browsers (fixes presigned upload/preview when MINIO_ENDPOINT is internal)
+      - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-}
       - MINIO_DEFAULT_BUCKET=uploads
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin123

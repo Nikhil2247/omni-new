@@ -71,6 +71,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'backend.omnicassion.com',
       },
+      {
+        protocol: 'http',
+        hostname: 'files.omnicassion.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'files.omnicassion.com',
+      },
     ],
   },
 

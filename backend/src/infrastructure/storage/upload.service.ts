@@ -382,9 +382,6 @@ export class UploadService {
       uploadOptions,
     );
 
-    // Get public URL
-    const url = await this.minioService.getFileUrl(filePath);
-
     let thumbnailUrl: string | undefined;
     let thumbnailPath: string | undefined;
 
@@ -408,7 +405,7 @@ export class UploadService {
           { contentType: 'image/webp' },
         );
 
-        thumbnailUrl = await this.minioService.getFileUrl(thumbnailPath);
+        thumbnailUrl = thumbnailPath;
         this.logger.debug(`Thumbnail generated: ${thumbnailPath}`);
       } catch (error) {
         this.logger.warn(
@@ -427,7 +424,7 @@ export class UploadService {
       size: processedFile.length,
       mimeType: finalMimeType,
       bucket: this.minioService.getDefaultBucket(),
-      url,
+      url: filePath,
       thumbnailUrl,
       thumbnailPath,
       width,
@@ -505,9 +502,6 @@ export class UploadService {
       uploadOptions,
     );
 
-    // Get public URL
-    const url = await this.minioService.getFileUrl(filePath);
-
     this.logger.log(`File uploaded: ${filePath}`);
 
     return {
@@ -517,7 +511,7 @@ export class UploadService {
       size: file.length,
       mimeType,
       bucket: this.minioService.getDefaultBucket(),
-      url,
+      url: filePath,
       metadata: uploadOptions.metadata,
     };
   }
@@ -664,8 +658,6 @@ export class UploadService {
     await this.cleanupChunks(uploadId, session.totalChunks);
     this.chunkedUploads.delete(uploadId);
 
-    const url = await this.minioService.getFileUrl(filePath);
-
     this.logger.log(`Chunked upload completed: ${uploadId} -> ${filePath}`);
 
     return {
@@ -675,7 +667,7 @@ export class UploadService {
       size: completeFile.length,
       mimeType: session.mimeType,
       bucket: this.minioService.getDefaultBucket(),
-      url,
+      url: filePath,
     };
   }
 
@@ -724,9 +716,7 @@ export class UploadService {
       contentType: mimeType,
     });
 
-    const fileUrl = await this.minioService.getFileUrl(filePath);
-
-    return { uploadUrl, filePath, fileUrl };
+    return { uploadUrl, filePath, fileUrl: filePath };
   }
 
   async getPresignedDownloadUrl(
@@ -774,8 +764,6 @@ export class UploadService {
   async getFileInfo(filePath: string): Promise<UploadedFile | null> {
     try {
       const info = await this.minioService.getFileInfo(filePath);
-      const url = await this.minioService.getFileUrl(filePath);
-
       return {
         originalName:
           info.metadata?.['original-name'] || path.basename(filePath),
@@ -784,7 +772,7 @@ export class UploadService {
         size: info.size,
         mimeType: info.metadata?.['Content-Type'] || 'application/octet-stream',
         bucket: this.minioService.getDefaultBucket(),
-        url,
+        url: filePath,
         metadata: info.metadata,
       };
     } catch {

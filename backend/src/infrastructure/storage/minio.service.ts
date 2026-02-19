@@ -54,6 +54,7 @@ export interface PresignedUrlOptions {
 export class MinioService implements OnModuleInit {
   private readonly logger = new Logger(MinioService.name);
   private client: Minio.Client;
+  private presignClient?: Minio.Client;
   private readonly defaultBucket: string;
 
   constructor(private readonly configService: ConfigService) {
@@ -87,6 +88,34 @@ export class MinioService implements OnModuleInit {
       secretKey,
       useSSL,
     });
+
+    this.presignClient = this.client;
+
+    const publicMinioBaseUrl = this.getPublicMinioBaseUrl();
+    if (publicMinioBaseUrl) {
+      try {
+        const parsedPublicUrl = new URL(publicMinioBaseUrl);
+        this.presignClient = new Minio.Client({
+          endPoint: parsedPublicUrl.hostname,
+          port: parsedPublicUrl.port
+            ? Number(parsedPublicUrl.port)
+            : parsedPublicUrl.protocol === 'https:'
+              ? 443
+              : 80,
+          accessKey,
+          secretKey,
+          useSSL: parsedPublicUrl.protocol === 'https:',
+        });
+
+        this.logger.log(
+          `Using public MinIO host for presigned URLs: ${parsedPublicUrl.origin}`,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Invalid MINIO_PUBLIC_URL provided, falling back to internal MinIO host for presigned URLs: ${publicMinioBaseUrl}`,
+        );
+      }
+    }
 
     try {
       // Verify connection by checking if default bucket exists
@@ -422,6 +451,29 @@ export class MinioService implements OnModuleInit {
   // PRESIGNED URL OPERATIONS
   // ============================================================================
 
+  private getPublicMinioBaseUrl(): string | null {
+    const configured = this.configService.get<string>('MINIO_PUBLIC_URL', '');
+    const trimmed = configured.trim();
+
+    if (!trimmed) {
+      return null;
+    }
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed.replace(/\/+$/, '');
+    }
+
+    const useSSL =
+      this.configService.get<string>('MINIO_USE_SSL', 'false') === 'true';
+    const protocol = useSSL ? 'https' : 'http';
+
+    return `${protocol}://${trimmed.replace(/\/+$/, '')}`;
+  }
+
+  private getPresignClient(): Minio.Client {
+    return this.presignClient || this.client;
+  }
+
   async getPresignedGetUrl(
     objectName: string,
     options?: PresignedUrlOptions,
@@ -438,7 +490,7 @@ export class MinioService implements OnModuleInit {
           options.responseContentDisposition;
       }
 
-      return await this.client.presignedGetObject(
+      return await this.getPresignClient().presignedGetObject(
         targetBucket,
         objectName,
         expiresIn,
@@ -462,7 +514,7 @@ export class MinioService implements OnModuleInit {
     const expiresIn = options?.expiresIn || 3600;
 
     try {
-      return await this.client.presignedPutObject(
+      return await this.getPresignClient().presignedPutObject(
         targetBucket,
         objectName,
         expiresIn,
@@ -488,7 +540,7 @@ export class MinioService implements OnModuleInit {
     const expires = new Date();
     expires.setSeconds(expires.getSeconds() + (expiresIn || 3600));
 
-    const policy = this.client.newPostPolicy();
+    const policy = this.getPresignClient().newPostPolicy();
     policy.setBucket(targetBucket);
     policy.setKey(objectName);
     policy.setExpires(expires);
@@ -512,7 +564,7 @@ export class MinioService implements OnModuleInit {
     }
 
     try {
-      return await this.client.presignedPostPolicy(policy);
+      return await this.getPresignClient().presignedPostPolicy(policy);
     } catch (error) {
       this.logger.error(
         `Failed to get presigned POST policy: ${objectName}`,
@@ -528,6 +580,12 @@ export class MinioService implements OnModuleInit {
 
   async getFileUrl(objectName: string, bucket?: string): Promise<string> {
     const targetBucket = bucket || this.defaultBucket;
+    const publicBaseUrl = this.getPublicMinioBaseUrl();
+
+    if (publicBaseUrl) {
+      return `${publicBaseUrl}/${targetBucket}/${objectName}`;
+    }
+
     const endpoint = this.configService.get<string>(
       'MINIO_ENDPOINT',
       'localhost',

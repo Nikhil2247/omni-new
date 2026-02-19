@@ -8,9 +8,13 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
   Req,
   ForbiddenException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { BlogService } from '../../../domain/content/services/blog.service';
 import {
   CreateBlogPostDto,
@@ -23,6 +27,10 @@ import {
   MarketingAccess,
   Roles,
 } from '../../../core/auth/decorators/roles.decorator';
+import {
+  UploadService,
+  FileCategory,
+} from '../../../infrastructure/storage/upload.service';
 
 const CONTENT_WRITER_ROLE = 'CONTENT_WRITER';
 const MARKETING_ADMIN_ROLES = ['ADMIN_SYSTEM', 'MARKETING_SERVICES_ADMIN'];
@@ -36,7 +44,63 @@ const CONTENT_EDITOR_ROLES = [
 @UseGuards(JwtAuthGuard, RolesGuard)
 @MarketingAccess()
 export class ContentController {
-  constructor(private readonly blogService: BlogService) {}
+  constructor(
+    private readonly blogService: BlogService,
+    private readonly uploadService: UploadService,
+  ) {}
+
+  @Post('posts/upload-image')
+  @Roles(...CONTENT_EDITOR_ROLES)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const uploaded = await this.uploadService.uploadImage(
+      file.buffer,
+      file.originalname,
+      FileCategory.MEDIA,
+      file.mimetype,
+      {
+        validation: {
+          maxSize: 20 * 1024 * 1024, // 20MB
+          allowedMimeTypes: [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/gif',
+            'image/avif',
+            'image/heic',
+            'image/heif',
+          ],
+          allowedExtensions: [
+            '.jpg',
+            '.jpeg',
+            '.png',
+            '.webp',
+            '.gif',
+            '.avif',
+            '.heic',
+            '.heif',
+          ],
+        },
+        imageProcessing: {
+          convertToWebP: true,
+          quality: 82,
+        },
+      },
+    );
+
+    return {
+      path: uploaded.path,
+      url: uploaded.url,
+      mimeType: uploaded.mimeType,
+      width: uploaded.width,
+      height: uploaded.height,
+      size: uploaded.size,
+    };
+  }
 
   @Post('posts')
   @Roles(...CONTENT_EDITOR_ROLES)
