@@ -54,6 +54,50 @@ const PRICE_UNITS = [
   { value: 'per_unit', label: 'Per Unit' },
 ]
 
+const DURATION_UNITS = [
+  { value: 'hours', label: 'Hours' },
+  { value: 'day', label: 'Day' },
+  { value: 'month', label: 'Month' },
+] as const
+
+const toMinutes = (duration: string, unit: (typeof DURATION_UNITS)[number]['value']) => {
+  const numericDuration = Number(duration)
+  if (!Number.isFinite(numericDuration) || numericDuration <= 0) {
+    return undefined
+  }
+
+  switch (unit) {
+    case 'hours':
+      return Math.round(numericDuration * 60)
+    case 'day':
+      return Math.round(numericDuration * 24 * 60)
+    case 'month':
+      return Math.round(numericDuration * 30 * 24 * 60)
+    default:
+      return Math.round(numericDuration)
+  }
+}
+
+const fromMinutes = (
+  minutes: number,
+  unit: (typeof DURATION_UNITS)[number]['value'],
+) => {
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return ''
+  }
+
+  switch (unit) {
+    case 'hours':
+      return (minutes / 60).toString()
+    case 'day':
+      return (minutes / (24 * 60)).toString()
+    case 'month':
+      return (minutes / (30 * 24 * 60)).toString()
+    default:
+      return minutes.toString()
+  }
+}
+
 export default function BusinessServicesPage() {
   const { data: profile, isLoading: profileLoading } = useBusinessProfile()
   const { data: services, isLoading: servicesLoading } = useBusinessServices(profile?.id || '')
@@ -70,6 +114,7 @@ export default function BusinessServicesPage() {
     basePrice: '',
     priceUnit: 'per_event',
     duration: '',
+    durationUnit: 'hours' as (typeof DURATION_UNITS)[number]['value'],
     isActive: true,
     features: '',
   })
@@ -81,19 +126,34 @@ export default function BusinessServicesPage() {
       basePrice: '',
       priceUnit: 'per_event',
       duration: '',
+      durationUnit: 'hours',
       isActive: true,
       features: '',
     })
   }
 
+  const getServiceBasePrice = (service: VendorService) => {
+    const rawValue = (service as any)?.basePrice ?? (service as any)?.startingPrice ?? 0
+    const value = typeof rawValue === 'number' ? rawValue : Number(rawValue)
+    return Number.isFinite(value) ? value : 0
+  }
+
+  const getServicePriceUnit = (service: VendorService) => {
+    const unit = (service as any)?.priceUnit
+    return unit || 'per_event'
+  }
+
   const openEditDialog = (service: VendorService) => {
+    const basePrice = getServiceBasePrice(service)
+    const durationUnit: (typeof DURATION_UNITS)[number]['value'] = 'hours'
     setSelectedService(service)
     setFormData({
       name: service.name,
       description: service.description || '',
-      basePrice: service.basePrice.toString(),
-      priceUnit: service.priceUnit,
-      duration: service.duration?.toString() || '',
+      basePrice: basePrice.toString(),
+      priceUnit: getServicePriceUnit(service),
+      duration: service.duration ? fromMinutes(service.duration, durationUnit) : '',
+      durationUnit,
       isActive: service.isActive,
       features: service.features?.join('\n') || '',
     })
@@ -103,6 +163,10 @@ export default function BusinessServicesPage() {
   const handleCreate = () => {
     if (!profile) return
 
+    const normalizedDuration = formData.duration
+      ? toMinutes(formData.duration, formData.durationUnit)
+      : undefined
+
     createService.mutate(
       {
         vendorProfileId: profile.id,
@@ -110,7 +174,7 @@ export default function BusinessServicesPage() {
         description: formData.description || undefined,
         basePrice: parseFloat(formData.basePrice),
         priceUnit: formData.priceUnit,
-        duration: formData.duration ? parseInt(formData.duration) : undefined,
+        duration: normalizedDuration,
         isActive: formData.isActive,
         features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : undefined,
       },
@@ -126,6 +190,10 @@ export default function BusinessServicesPage() {
   const handleUpdate = () => {
     if (!selectedService) return
 
+    const normalizedDuration = formData.duration
+      ? toMinutes(formData.duration, formData.durationUnit)
+      : undefined
+
     updateService.mutate(
       {
         id: selectedService.id,
@@ -134,7 +202,7 @@ export default function BusinessServicesPage() {
           description: formData.description || undefined,
           basePrice: parseFloat(formData.basePrice),
           priceUnit: formData.priceUnit,
-          duration: formData.duration ? parseInt(formData.duration) : undefined,
+          duration: normalizedDuration,
           isActive: formData.isActive,
           features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : undefined,
         },
@@ -311,7 +379,7 @@ export default function BusinessServicesPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm">
                       <DollarSign className="h-4 w-4 text-green-600" />
-                      <span className="font-semibold">{formatPrice(service.basePrice, service.priceUnit)}</span>
+                      <span className="font-semibold">{formatPrice(getServiceBasePrice(service), getServicePriceUnit(service))}</span>
                     </div>
                     {service.duration && (
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -411,15 +479,35 @@ export default function BusinessServicesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration (minutes)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min="0"
-                placeholder="e.g., 120"
-                value={formData.duration}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
-              />
+              <Label htmlFor="duration">Duration</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  id="duration"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="e.g., 2"
+                  value={formData.duration}
+                  onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                />
+                <select
+                  id="durationUnit"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={formData.durationUnit}
+                  onChange={(e) =>
+                    setFormData(prev => ({
+                      ...prev,
+                      durationUnit: e.target.value as (typeof DURATION_UNITS)[number]['value'],
+                    }))
+                  }
+                >
+                  {DURATION_UNITS.map((unit) => (
+                    <option key={unit.value} value={unit.value}>
+                      {unit.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -526,14 +614,34 @@ export default function BusinessServicesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-duration">Duration (minutes)</Label>
-              <Input
-                id="edit-duration"
-                type="number"
-                min="0"
-                value={formData.duration}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
-              />
+              <Label htmlFor="edit-duration">Duration</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  id="edit-duration"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.duration}
+                  onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                />
+                <select
+                  id="edit-durationUnit"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  value={formData.durationUnit}
+                  onChange={(e) =>
+                    setFormData(prev => ({
+                      ...prev,
+                      durationUnit: e.target.value as (typeof DURATION_UNITS)[number]['value'],
+                    }))
+                  }
+                >
+                  {DURATION_UNITS.map((unit) => (
+                    <option key={unit.value} value={unit.value}>
+                      {unit.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="space-y-2">

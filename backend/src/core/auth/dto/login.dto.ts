@@ -50,6 +50,24 @@ export class RefreshTokenDto {
   refreshToken: string
 }
 
+export class GoogleLoginDto {
+  @ApiProperty({
+    description: 'Google ID token returned by Google Identity Services',
+  })
+  @IsString()
+  @IsNotEmpty()
+  idToken: string
+
+  @ApiPropertyOptional({
+    description: 'Account type used when creating a new account via Google login',
+    enum: ['USER', 'VENDOR'],
+    example: 'USER',
+  })
+  @IsOptional()
+  @IsString()
+  accountType?: 'USER' | 'VENDOR'
+}
+
 export class TokenResponseDto {
   @ApiProperty({ description: 'JWT access token' })
   accessToken: string

@@ -26,6 +26,67 @@ import type {
 import type { Timeline } from '../types/timeline.types'
 import type { UploadedFile } from './upload.service'
 
+const inferPriceUnit = (service: any): string => {
+  if (service?.priceUnit) return service.priceUnit
+
+  switch (service?.pricingType) {
+    case 'FIXED':
+      return 'fixed'
+    case 'RANGE':
+    case 'STARTING_AT':
+    case 'TIERED':
+    case 'CONTACT_FOR_QUOTE':
+    default:
+      return 'per_event'
+  }
+}
+
+const normalizeVendorService = (service: any): VendorService => {
+  const rawBasePrice =
+    service?.basePrice ??
+    service?.startingPrice ??
+    service?.minPrice ??
+    0
+
+  const parsedBasePrice =
+    typeof rawBasePrice === 'number'
+      ? rawBasePrice
+      : Number(rawBasePrice)
+
+  return {
+    ...service,
+    basePrice: Number.isFinite(parsedBasePrice) ? parsedBasePrice : 0,
+    priceUnit: inferPriceUnit(service),
+    duration:
+      service?.duration === null || service?.duration === undefined
+        ? null
+        : Number(service.duration),
+    features: Array.isArray(service?.features) ? service.features : [],
+  }
+}
+
+const normalizeVendorServicesResponse = <T>(data: T): T => {
+  const payload: any = (data as any)?.data ?? data
+
+  if (Array.isArray(payload)) {
+    const normalized = payload.map(normalizeVendorService)
+    if ((data as any)?.data) {
+      return { ...(data as any), data: normalized } as T
+    }
+    return normalized as T
+  }
+
+  if (payload && typeof payload === 'object' && payload.id) {
+    const normalized = normalizeVendorService(payload)
+    if ((data as any)?.data) {
+      return { ...(data as any), data: normalized } as T
+    }
+    return normalized as T
+  }
+
+  return data
+}
+
 export const businessService = {
   // ==================== Profile ====================
   getMyProfile: async (): Promise<ApiResponse<VendorProfile>> => {
@@ -159,22 +220,22 @@ export const businessService = {
   // ==================== Services ====================
   getServices: async (vendorProfileId: string): Promise<ApiResponse<VendorService[]>> => {
     const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.SERVICES, { params: { vendorProfileId } })
-    return data
+    return normalizeVendorServicesResponse(data)
   },
 
   getService: async (id: string): Promise<ApiResponse<VendorService>> => {
     const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.SERVICE_BY_ID(id))
-    return data
+    return normalizeVendorServicesResponse(data)
   },
 
   createService: async (payload: CreateServiceRequest): Promise<ApiResponse<VendorService>> => {
     const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.SERVICES, payload)
-    return data
+    return normalizeVendorServicesResponse(data)
   },
 
   updateService: async (id: string, payload: UpdateServiceRequest): Promise<ApiResponse<VendorService>> => {
     const { data } = await apiClient.put(API_ENDPOINTS.BUSINESS.SERVICE_BY_ID(id), payload)
-    return data
+    return normalizeVendorServicesResponse(data)
   },
 
   deleteService: async (id: string): Promise<{ success: boolean }> => {

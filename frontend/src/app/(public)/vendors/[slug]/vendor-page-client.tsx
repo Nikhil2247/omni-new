@@ -82,13 +82,54 @@ const formatFollowers = (count: number) => {
   return count.toString()
 }
 
-const formatPrice = (price?: number | null) => {
-  if (!price) return null
+const formatPrice = (price?: number | null, currency: string = 'INR') => {
+  if (price === undefined || price === null) return null
+
+  const normalizedCurrency = (currency || 'INR').toUpperCase()
+
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'INR',
+    currency: normalizedCurrency,
     maximumFractionDigits: 0,
   }).format(price)
+}
+
+const getPricingTypeLabel = (pricingType?: string) => {
+  switch (pricingType) {
+    case 'FIXED':
+      return 'Fixed Price'
+    case 'RANGE':
+      return 'Price Range'
+    case 'STARTING_AT':
+      return 'Starting At'
+    case 'TIERED':
+      return 'Package Tiers'
+    case 'CONTACT_FOR_QUOTE':
+      return 'Contact For Quote'
+    default:
+      return null
+  }
+}
+
+const formatDuration = (durationMinutes?: number | null) => {
+  if (!durationMinutes || durationMinutes <= 0) return null
+
+  if (durationMinutes % (30 * 24 * 60) === 0) {
+    const months = durationMinutes / (30 * 24 * 60)
+    return `${months} ${months === 1 ? 'month' : 'months'}`
+  }
+
+  if (durationMinutes % (24 * 60) === 0) {
+    const days = durationMinutes / (24 * 60)
+    return `${days} ${days === 1 ? 'day' : 'days'}`
+  }
+
+  if (durationMinutes % 60 === 0) {
+    const hours = durationMinutes / 60
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`
+  }
+
+  return `${durationMinutes} min`
 }
 
 const formatEventDate = (date?: string | null) => {
@@ -721,12 +762,19 @@ export default function VendorPageClient({
                             )}
                           </div>
                           <div className="shrink-0 text-right">
-                            {service.startingPrice || service.basePrice ? (
+                            {service.startingPrice !== null && service.startingPrice !== undefined ? (
                               <>
                                 <p className="text-lg font-bold text-foreground">
-                                  {formatPrice(service.startingPrice || service.basePrice)}
+                                  {formatPrice(service.startingPrice, service.currency)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">starting price</p>
+                              </>
+                            ) : service.basePrice !== null && service.basePrice !== undefined ? (
+                              <>
+                                <p className="text-lg font-bold text-foreground">
+                                  {formatPrice(service.basePrice, service.currency)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">price</p>
                               </>
                             ) : (
                               <Badge variant="secondary">Contact for price</Badge>
@@ -735,25 +783,23 @@ export default function VendorPageClient({
                         </div>
 
                         <div className="mt-4 flex flex-wrap items-center gap-3">
-                          {service.pricingType && (
+                          {getPricingTypeLabel(service.pricingType) && (
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                               <IndianRupee className="h-3 w-3" />
-                              {service.pricingType === 'FIXED' ? 'Fixed Price' :
-                               service.pricingType === 'HOURLY' ? 'Per Hour' :
-                               service.pricingType === 'DAILY' ? 'Per Day' : service.pricingType}
+                              {getPricingTypeLabel(service.pricingType)}
                             </span>
                           )}
-                          {service.duration && (
+                          {formatDuration(service.duration) && (
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              {service.duration}
+                              {formatDuration(service.duration)}
                             </span>
                           )}
                         </div>
 
-                        {service.maxPrice && service.maxPrice !== service.startingPrice && (
+                        {service.maxPrice !== null && service.maxPrice !== undefined && service.maxPrice !== service.startingPrice && (
                           <p className="mt-2 text-xs text-muted-foreground">
-                            Up to {formatPrice(service.maxPrice)}
+                            Up to {formatPrice(service.maxPrice, service.currency)}
                           </p>
                         )}
                       </motion.div>

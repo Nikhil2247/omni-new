@@ -3,7 +3,15 @@
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/lib/api/services/auth.service'
-import type { LoginRequest, RegisterRequest, PasswordResetRequest, PasswordResetConfirmRequest, VerifyEmailRequest, TwoFactorRequest } from '@/lib/api/types/auth.types'
+import type {
+  LoginRequest,
+  RegisterRequest,
+  PasswordResetRequest,
+  PasswordResetConfirmRequest,
+  VerifyEmailRequest,
+  TwoFactorRequest,
+  GoogleLoginRequest,
+} from '@/lib/api/types/auth.types'
 import { useAuthStore } from '@/store/auth-store'
 import { getDefaultPath } from '@/lib/utils/permissions'
 import { getSafeReturnUrl } from '@/lib/utils/navigation'
@@ -32,6 +40,31 @@ export function useLogin(returnUrl?: string | null) {
 
   return useMutation({
     mutationFn: (payload: LoginRequest) => authService.login(payload),
+    onMutate: () => setLoading(true),
+    onSuccess: (data) => {
+      if (data.requiresTwoFactor) {
+        setLoading(false)
+        return
+      }
+      if (!data.tokens || !data.user) {
+        setLoading(false)
+        return
+      }
+      const mappedUser = mapUser(data.user)
+      setCredentials(data.tokens.accessToken, data.tokens.refreshToken, mappedUser)
+      const safeReturnUrl = getSafeReturnUrl(returnUrl)
+      router.push(safeReturnUrl ?? getDefaultPath(mappedUser.role as Role))
+    },
+    onError: () => setLoading(false),
+  })
+}
+
+export function useGoogleLogin(returnUrl?: string | null) {
+  const router = useRouter()
+  const { setCredentials, setLoading } = useAuthStore()
+
+  return useMutation({
+    mutationFn: (payload: GoogleLoginRequest) => authService.googleLogin(payload),
     onMutate: () => setLoading(true),
     onSuccess: (data) => {
       if (data.requiresTwoFactor) {

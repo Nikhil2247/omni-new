@@ -2,6 +2,7 @@ import { apiClient } from '../client'
 import { API_ENDPOINTS } from '../endpoints'
 import type {
   LoginRequest,
+  GoogleLoginRequest,
   LoginResponse,
   TwoFactorRequest,
   RegisterRequest,
@@ -20,6 +21,11 @@ import type {
 export const authService = {
   login: async (payload: LoginRequest): Promise<LoginResponse> => {
     const { data } = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, payload)
+    return data
+  },
+
+  googleLogin: async (payload: GoogleLoginRequest): Promise<LoginResponse> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE, payload)
     return data
   },
 

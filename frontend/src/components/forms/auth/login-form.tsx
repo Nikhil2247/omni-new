@@ -1,13 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import { useLogin } from '@/hooks/use-auth'
+import { useEffect, useRef } from 'react'
+import { useGoogleLogin, useLogin } from '@/hooks/use-auth'
 import { TwoFactorForm } from '@/components/forms/auth/two-factor-form'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+
+declare global {
+  interface Window {
+    google?: {
+      accounts?: {
+        id?: {
+          initialize: (config: {
+            client_id: string
+            callback: (response: { credential?: string }) => void
+          }) => void
+          renderButton: (
+            parent: HTMLElement,
+            options: Record<string, unknown>,
+          ) => void
+        }
+      }
+    }
+  }
+}
 
 interface LoginFormProps {
   returnUrl?: string | null
@@ -15,10 +36,106 @@ interface LoginFormProps {
 
 export function LoginForm({ returnUrl }: LoginFormProps) {
   const loginMutation = useLogin(returnUrl)
+  const googleLoginMutation = useGoogleLogin(returnUrl)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [tempToken, setTempToken] = useState<string | null>(null)
+  const [googleReady, setGoogleReady] = useState(false)
+  const googleButtonRef = useRef<HTMLDivElement | null>(null)
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+
+  useEffect(() => {
+    if (!googleClientId) {
+      return
+    }
+
+    let cancelled = false
+
+    const initGoogleButton = () => {
+      if (
+        cancelled ||
+        !googleButtonRef.current ||
+        !window.google?.accounts?.id
+      ) {
+        return
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response) => {
+          const credential = response.credential
+          if (!credential) {
+            toast.error('Google sign-in failed. Please try again.')
+            return
+          }
+
+          try {
+            const result = await googleLoginMutation.mutateAsync({
+              idToken: credential,
+            })
+
+            if (result.requiresTwoFactor) {
+              const token = result.tokens?.accessToken
+              if (token) {
+                setTempToken(token)
+              }
+              toast.info('Two-factor authentication required.')
+              return
+            }
+
+            toast.success('Welcome back!')
+          } catch (error: any) {
+            toast.error(
+              error?.response?.data?.message ||
+                'Google login failed. Please try again.',
+            )
+          }
+        },
+      })
+
+      googleButtonRef.current.innerHTML = ''
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: 380,
+        text: 'continue_with',
+      })
+
+      setGoogleReady(true)
+    }
+
+    if (window.google?.accounts?.id) {
+      initGoogleButton()
+      return () => {
+        cancelled = true
+      }
+    }
+
+    const scriptId = 'google-identity-services'
+    const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null
+
+    if (existingScript) {
+      existingScript.addEventListener('load', initGoogleButton)
+      return () => {
+        cancelled = true
+        existingScript.removeEventListener('load', initGoogleButton)
+      }
+    }
+
+    const script = document.createElement('script')
+    script.id = scriptId
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = initGoogleButton
+    document.head.appendChild(script)
+
+    return () => {
+      cancelled = true
+      script.onload = null
+    }
+  }, [googleClientId, googleLoginMutation])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -61,6 +178,26 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {googleClientId ? (
+        <div className="space-y-3">
+          <div
+            ref={googleButtonRef}
+            className="flex min-h-10 w-full items-center justify-center"
+          />
+          {!googleReady ? (
+            <p className="text-center text-xs text-muted-foreground">
+              Preparing Google sign-in...
+            </p>
+          ) : null}
+          <div className="relative">
+            <Separator />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+              or
+            </span>
+          </div>
+        </div>
+      ) : null}
+
       <div className="space-y-2">
         <Label htmlFor="email">Email address</Label>
         <div className="relative">

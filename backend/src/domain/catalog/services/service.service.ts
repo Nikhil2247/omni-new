@@ -4,9 +4,9 @@
 
 import { Injectable, NotFoundException, Logger } from '@nestjs/common'
 import { EventEmitter2 } from '@nestjs/event-emitter'
-import { Service } from '@prisma/client'
+import { PricingType as PrismaPricingType, Service } from '@prisma/client'
 import { ServiceRepository } from '../repositories/service.repository'
-import { CreateServiceDto, UpdateServiceDto } from '../dto/service.dto'
+import { CreateServiceDto, DurationUnit, UpdateServiceDto } from '../dto/service.dto'
 import { PrismaService } from '../../../core/database/prisma.service'
 import { Prisma } from '@prisma/client'
 const { Decimal } = Prisma
@@ -21,18 +21,61 @@ export class ServiceService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  private normalizeDurationToMinutes(
+    duration?: number,
+    durationValue?: number,
+    durationUnit?: DurationUnit,
+  ): number | undefined {
+    const baseValue = durationValue ?? duration
+
+    if (baseValue === undefined || baseValue === null) {
+      return undefined
+    }
+
+    if (!Number.isFinite(baseValue) || baseValue <= 0) {
+      return undefined
+    }
+
+    switch (durationUnit) {
+      case DurationUnit.HOURS:
+        return Math.round(baseValue * 60)
+      case DurationUnit.DAY:
+        return Math.round(baseValue * 24 * 60)
+      case DurationUnit.MONTH:
+        return Math.round(baseValue * 30 * 24 * 60)
+      case DurationUnit.MINUTES:
+      default:
+        return Math.round(baseValue)
+    }
+  }
+
   async create(dto: CreateServiceDto): Promise<Service> {
     this.logger.log(`Creating service for vendor: ${dto.vendorProfileId}`)
+
+    const resolvedPricingType =
+      dto.pricingType ?? (dto.basePrice !== undefined ? PrismaPricingType.FIXED : PrismaPricingType.STARTING_AT)
+    const resolvedStartingPrice = dto.startingPrice ?? dto.basePrice
+    const hasPricingTiers = !!dto.pricingTiers?.length
+    const normalizedDuration = this.normalizeDurationToMinutes(
+      dto.duration,
+      dto.durationValue,
+      dto.durationUnit,
+    )
+
+    if (normalizedDuration !== undefined) {
+      this.logger.debug(`Normalized service duration to ${normalizedDuration} minutes`) 
+    }
 
     const service = await this.serviceRepository.create({
       vendorProfile: { connect: { id: dto.vendorProfileId } },
       serviceType: dto.serviceTypeId ? { connect: { id: dto.serviceTypeId } } : undefined,
       name: dto.name,
       description: dto.description,
-      pricingType: dto.pricingType as any,
+      pricingType: hasPricingTiers ? PrismaPricingType.TIERED : (resolvedPricingType as any),
       currency: dto.currency ?? 'USD',
-      startingPrice: dto.startingPrice ? new Decimal(dto.startingPrice) : undefined,
-      maxPrice: dto.maxPrice ? new Decimal(dto.maxPrice) : undefined,
+      startingPrice: resolvedStartingPrice !== undefined ? new Decimal(resolvedStartingPrice) : undefined,
+      maxPrice: dto.maxPrice !== undefined ? new Decimal(dto.maxPrice) : undefined,
+      isActive: dto.isActive ?? true,
       sortOrder: dto.sortOrder ?? 0,
       pricingTiers: dto.pricingTiers ? {
         create: dto.pricingTiers.map((tier, index) => ({
@@ -69,13 +112,24 @@ export class ServiceService {
   async update(id: string, dto: UpdateServiceDto): Promise<Service> {
     await this.findById(id)
 
+    const resolvedStartingPrice = dto.startingPrice ?? dto.basePrice
+    const normalizedDuration = this.normalizeDurationToMinutes(
+      dto.duration,
+      dto.durationValue,
+      dto.durationUnit,
+    )
+
+    if (normalizedDuration !== undefined) {
+      this.logger.debug(`Normalized service duration to ${normalizedDuration} minutes`) 
+    }
+
     return this.serviceRepository.update(id, {
       name: dto.name,
       description: dto.description,
       pricingType: dto.pricingType as any,
       currency: dto.currency,
-      startingPrice: dto.startingPrice ? new Decimal(dto.startingPrice) : undefined,
-      maxPrice: dto.maxPrice ? new Decimal(dto.maxPrice) : undefined,
+      startingPrice: resolvedStartingPrice !== undefined ? new Decimal(resolvedStartingPrice) : undefined,
+      maxPrice: dto.maxPrice !== undefined ? new Decimal(dto.maxPrice) : undefined,
       isActive: dto.isActive,
       sortOrder: dto.sortOrder,
     }, { pricingTiers: true, serviceType: true })

@@ -225,7 +225,8 @@ export class VendorProfileService {
       website: dto.website,
       serviceRadius: dto.serviceRadius,
       address: dto.addressId ? { connect: { id: dto.addressId } } : undefined,
-      status: 'DRAFT',
+      status: 'ACTIVE',
+      verifiedAt: new Date(),
       // Create service areas if provided
       serviceAreas: dto.serviceAreaCityIds && dto.serviceAreaCityIds.length > 0 ? {
         create: dto.serviceAreaCityIds.map(cityId => ({
@@ -278,13 +279,14 @@ export class VendorProfileService {
    * Submit vendor profile for verification
    */
   async submitForVerification(id: string): Promise<VendorProfile> {
-    this.logger.log(`Submitting vendor profile for verification: ${id}`)
+    this.logger.log(`Auto-approving vendor profile verification: ${id}`)
     
     const vendorProfile = await this.vendorProfileRepository.update(id, {
-      status: 'PENDING_REVIEW',
+      status: 'ACTIVE',
+      verifiedAt: new Date(),
     })
 
-    this.eventEmitter.emit(VENDOR_EVENTS.VERIFICATION_REQUESTED, {
+    this.eventEmitter.emit(VENDOR_EVENTS.VERIFIED, {
       vendorProfileId: id,
     })
 
@@ -534,23 +536,16 @@ export class VendorProfileService {
    * Submit profile for review
    */
   async submitForReview(id: string): Promise<VendorProfile> {
-    this.logger.log(`Submitting vendor profile for review: ${id}`)
-
-    const vendorProfile = await this.findById(id, false)
-
-    if (vendorProfile.status !== 'DRAFT') {
-      throw new BadRequestException('Only draft profiles can be submitted for review')
-    }
+    this.logger.log(`Auto-approving vendor profile review submission: ${id}`)
 
     const updated = await this.vendorProfileRepository.update(id, {
-      status: 'PENDING_REVIEW',
+      status: 'ACTIVE',
+      verifiedAt: new Date(),
     })
 
-    // Emit event for operations team
-    this.eventEmitter.emit(VENDOR_EVENTS.VERIFICATION_REQUESTED, {
+    this.eventEmitter.emit(VENDOR_EVENTS.VERIFIED, {
       vendorProfileId: id,
-      businessName: vendorProfile.businessName,
-      userId: vendorProfile.userId,
+      userId: updated.userId,
     })
 
     return updated

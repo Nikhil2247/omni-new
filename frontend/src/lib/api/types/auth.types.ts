@@ -26,6 +26,11 @@ export interface TwoFactorRequest {
   code: string
 }
 
+export interface GoogleLoginRequest {
+  idToken: string
+  accountType?: 'USER' | 'VENDOR'
+}
+
 export interface LoginResponse {
   success: boolean
   requiresTwoFactor: boolean

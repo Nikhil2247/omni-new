@@ -19,6 +19,7 @@ import {
   TwoFactorLoginDto,
   RefreshTokenDto,
   LogoutDto,
+  GoogleLoginDto,
 } from './dto/login.dto'
 import { RegisterDto } from './dto/register.dto'
 import {
@@ -56,6 +57,32 @@ export class AuthController {
   async login(@Body() dto: LoginDto, @Req() req: Request) {
     const context = this.buildContext(req)
     const result = await this.authService.login(dto.email, dto.password, context)
+
+    return {
+      success: true,
+      requiresTwoFactor: !!result.requiresTwoFactor,
+      tokens: result.tokens,
+      user: result.user,
+    }
+  }
+
+  @Post('google')
+  @Public()
+  @Audited({
+    action: 'LOGIN_SOCIAL_GOOGLE',
+    entityType: 'User',
+    getEntityId: (_req, res) => res?.user?.id,
+    includeRequestBody: false,
+    includeResponseBody: false,
+    severity: AuditSeverity.INFO,
+  })
+  async loginWithGoogle(@Body() dto: GoogleLoginDto, @Req() req: Request) {
+    const context = this.buildContext(req)
+    const result = await this.authService.loginWithGoogleIdToken(
+      dto.idToken,
+      context,
+      dto.accountType,
+    )
 
     return {
       success: true,

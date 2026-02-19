@@ -14,6 +14,7 @@ import {
   Logger,
 } from '@nestjs/common'
 import { EventEmitter2 } from '@nestjs/event-emitter'
+import { ConfigService } from '@nestjs/config'
 import { LoginMethod } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 import * as crypto from 'crypto'
@@ -68,6 +69,18 @@ export interface RegisterResult {
   verificationToken: string
 }
 
+interface GoogleTokenInfo {
+  aud?: string
+  azp?: string
+  email?: string
+  email_verified?: 'true' | 'false'
+  given_name?: string
+  family_name?: string
+  name?: string
+  picture?: string
+  sub?: string
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
@@ -91,6 +104,7 @@ export class AuthService {
     private readonly emailVerificationService: EmailVerificationService,
     private readonly roleLookupService: RoleLookupService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -331,6 +345,188 @@ export class AuthService {
     return this.completeLogin(user, context)
   }
 
+  async loginWithGoogleIdToken(
+    idToken: string,
+    context: LoginContext,
+    accountType: 'USER' | 'VENDOR' = 'USER',
+  ): Promise<LoginResult> {
+    await this.enforceMaintenanceAccess()
+
+    const tokenInfo = await this.verifyGoogleIdToken(idToken)
+
+    if (!tokenInfo.email || tokenInfo.email_verified !== 'true') {
+      await this.recordFailedLogin(
+        tokenInfo.email || '',
+        null,
+        'google_email_not_verified',
+        context,
+        LoginMethod.SOCIAL_GOOGLE,
+      )
+      throw new UnauthorizedException('Google account email is not verified')
+    }
+
+    const normalizedEmail = tokenInfo.email.toLowerCase().trim()
+
+    let user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      include: {
+        userRoles: {
+          include: { role: true },
+        },
+        vendorProfile: {
+          select: { id: true },
+        },
+      },
+    })
+
+    if (!user) {
+      const normalizedAccountType = accountType === 'VENDOR' ? 'VENDOR' : 'USER'
+      const roleName =
+        normalizedAccountType === 'VENDOR'
+          ? ROLE_NAMES.BUSINESS_ADMIN
+          : ROLE_NAMES.USER
+      const roleId = this.roleLookupService.getRoleIdByName(roleName)
+
+      if (!roleId) {
+        this.logger.error(`Role lookup failed for Google login role: ${roleName}`)
+        throw new ServiceUnavailableException('Login is temporarily unavailable')
+      }
+
+      const fallbackName = tokenInfo.name?.trim() || ''
+      const [fallbackFirstName, ...fallbackLastParts] = fallbackName.split(' ')
+      const fallbackLastName = fallbackLastParts.join(' ') || null
+
+      const passwordHash = await this.hashPassword(this.generateSecureToken())
+
+      user = await this.prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          passwordHash,
+          firstName: tokenInfo.given_name || fallbackFirstName || null,
+          lastName: tokenInfo.family_name || fallbackLastName,
+          status: 'ACTIVE',
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          userRoles: {
+            create: {
+              roleId,
+            },
+          },
+        },
+        include: {
+          userRoles: {
+            include: { role: true },
+          },
+          vendorProfile: {
+            select: { id: true },
+          },
+        },
+      })
+
+      this.eventEmitter.emit('user.registered', {
+        userId: user.id,
+        email: user.email,
+        timestamp: new Date(),
+      })
+    }
+
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const remainingMinutes = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60000,
+      )
+      await this.recordFailedLogin(
+        normalizedEmail,
+        user.id,
+        'account_locked',
+        context,
+        LoginMethod.SOCIAL_GOOGLE,
+      )
+      throw new UnauthorizedException(
+        `Account temporarily locked. Try again in ${remainingMinutes} minutes`,
+      )
+    }
+
+    if (user.status === 'SUSPENDED') {
+      await this.recordFailedLogin(
+        normalizedEmail,
+        user.id,
+        'account_suspended',
+        context,
+        LoginMethod.SOCIAL_GOOGLE,
+      )
+      throw new UnauthorizedException('Account is suspended')
+    }
+
+    if (user.status === 'DELETED') {
+      await this.recordFailedLogin(
+        normalizedEmail,
+        user.id,
+        'account_deleted',
+        context,
+        LoginMethod.SOCIAL_GOOGLE,
+      )
+      throw new UnauthorizedException('Account not found')
+    }
+
+    if (!user.emailVerified || user.status === 'PENDING') {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          status: 'ACTIVE',
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
+        include: {
+          userRoles: {
+            include: { role: true },
+          },
+          vendorProfile: {
+            select: { id: true },
+          },
+        },
+      })
+    }
+
+    const authUser: AuthUser = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      status: user.status,
+      roles: user.userRoles.map((ur) => ur.role.name),
+      tenantId: user.vendorProfile?.id,
+      emailVerified: user.emailVerified,
+      twoFactorEnabled: user.twoFactorEnabled,
+      hasCompletedOnboarding: user.hasCompletedOnboarding,
+    }
+
+    await this.enforceMaintenanceAccess(authUser.roles)
+
+    if (authUser.twoFactorEnabled) {
+      const tempToken = this.generateTemporary2FAToken()
+
+      this.pending2FALogins.set(tempToken, {
+        userId: authUser.id,
+        expiresAt: Date.now() + 5 * 60 * 1000,
+        context,
+      })
+
+      return {
+        user: authUser,
+        tokens: {
+          accessToken: tempToken,
+          refreshToken: '',
+          expiresIn: 300,
+        },
+        requiresTwoFactor: true,
+      }
+    }
+
+    return this.completeLogin(authUser, context, undefined, LoginMethod.SOCIAL_GOOGLE)
+  }
+
   /**
    * Complete 2FA verification and issue tokens
    */
@@ -393,6 +589,7 @@ export class AuthService {
     user: AuthUser,
     context: LoginContext,
     twoFactorInfo?: { twoFactorUsed: boolean; twoFactorMethod: string },
+    loginMethod: LoginMethod = LoginMethod.EMAIL_PASSWORD,
   ): Promise<LoginResult> {
     const tokenPayload: Omit<TokenPayload, 'iat' | 'exp'> = {
       sub: user.id,
@@ -420,7 +617,7 @@ export class AuthService {
         success: true,
         loginMethod: twoFactorInfo?.twoFactorUsed
           ? LoginMethod.TWO_FACTOR
-          : LoginMethod.EMAIL_PASSWORD,
+          : loginMethod,
         ipAddress: context.ipAddress,
         userAgent: context.userAgent,
         twoFactorUsed: twoFactorInfo?.twoFactorUsed,
@@ -1011,5 +1208,33 @@ export class AuthService {
    */
   private generateTemporary2FAToken(): string {
     return `2fa_${crypto.randomBytes(32).toString('hex')}`
+  }
+
+  private async verifyGoogleIdToken(idToken: string): Promise<GoogleTokenInfo> {
+    const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID')?.trim()
+    const clientSecret = this.configService
+      .get<string>('GOOGLE_CLIENT_SECRET')
+      ?.trim()
+
+    if (!clientId || !clientSecret) {
+      this.logger.error('Google OAuth is not configured (GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET missing)')
+      throw new ServiceUnavailableException('Google login is not configured')
+    }
+
+    const response = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
+    )
+
+    if (!response.ok) {
+      throw new UnauthorizedException('Invalid Google token')
+    }
+
+    const tokenInfo = (await response.json()) as GoogleTokenInfo
+
+    if (tokenInfo.aud !== clientId && tokenInfo.azp !== clientId) {
+      throw new UnauthorizedException('Google token audience mismatch')
+    }
+
+    return tokenInfo
   }
 }

@@ -1,6 +1,7 @@
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
+    GOOGLE: '/auth/google',
     TWO_FACTOR: '/auth/2fa/verify',
     REGISTER: '/auth/register',
     REFRESH: '/auth/refresh',

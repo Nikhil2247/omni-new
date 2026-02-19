@@ -193,13 +193,19 @@ export interface CreateMediaItemRequest {
 export interface VendorService {
   id: string
   vendorProfileId: string
+  serviceTypeId?: string | null
   name: string
   description?: string | null
-  basePrice: number
-  priceUnit: string
+  pricingType?: 'FIXED' | 'RANGE' | 'STARTING_AT' | 'TIERED' | 'CONTACT_FOR_QUOTE'
+  currency?: string
+  startingPrice?: number | null
+  maxPrice?: number | null
+  basePrice?: number
+  priceUnit?: string
   duration?: number | null
   isActive: boolean
   features?: string[]
+  sortOrder?: number
   createdAt: string
   updatedAt: string
 }
@@ -208,9 +214,15 @@ export interface CreateServiceRequest {
   vendorProfileId: string
   name: string
   description?: string
-  basePrice: number
-  priceUnit: string
+  pricingType?: 'FIXED' | 'RANGE' | 'STARTING_AT' | 'TIERED' | 'CONTACT_FOR_QUOTE'
+  currency?: string
+  startingPrice?: number
+  maxPrice?: number
+  basePrice?: number
+  priceUnit?: string
   duration?: number
+  durationValue?: number
+  durationUnit?: 'minutes' | 'hours' | 'day' | 'month'
   isActive?: boolean
   features?: string[]
 }

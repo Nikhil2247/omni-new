@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsString, IsUUID, IsOptional, IsEnum, IsNumber, Min, ValidateNested, IsInt } from 'class-validator'
+import { IsString, IsUUID, IsOptional, IsEnum, IsNumber, Min, ValidateNested, IsInt, IsBoolean, IsArray } from 'class-validator'
 import { Type } from 'class-transformer'
 
 export enum PricingType {
@@ -12,6 +12,13 @@ export enum PricingType {
   STARTING_AT = 'STARTING_AT',
   TIERED = 'TIERED',
   CONTACT_FOR_QUOTE = 'CONTACT_FOR_QUOTE',
+}
+
+export enum DurationUnit {
+  MINUTES = 'minutes',
+  HOURS = 'hours',
+  DAY = 'day',
+  MONTH = 'month',
 }
 
 export class CreatePricingTierDto {
@@ -70,9 +77,52 @@ export class CreateServiceDto {
   @IsString()
   description?: string
 
-  @ApiProperty({ description: 'Pricing type', enum: PricingType })
+  @ApiPropertyOptional({ description: 'Pricing type', enum: PricingType })
+  @IsOptional()
   @IsEnum(PricingType)
-  pricingType: PricingType
+  pricingType?: PricingType
+
+  @ApiPropertyOptional({ description: 'Legacy field: base price (maps to startingPrice)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  basePrice?: number
+
+  @ApiPropertyOptional({ description: 'Legacy field: pricing unit label' })
+  @IsOptional()
+  @IsString()
+  priceUnit?: string
+
+  @ApiPropertyOptional({ description: 'Legacy field: duration in minutes' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  duration?: number
+
+  @ApiPropertyOptional({ description: 'New format: duration numeric value (paired with durationUnit)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  durationValue?: number
+
+  @ApiPropertyOptional({ description: 'New format: duration unit', enum: DurationUnit })
+  @IsOptional()
+  @IsEnum(DurationUnit)
+  durationUnit?: DurationUnit
+
+  @ApiPropertyOptional({ description: 'Legacy field: active flag', default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean
+
+  @ApiPropertyOptional({ description: 'Legacy field: feature list', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  features?: string[]
 
   @ApiPropertyOptional({ description: 'Currency', default: 'USD' })
   @IsOptional()
@@ -126,15 +176,54 @@ export class UpdateServiceDto {
 
   @ApiPropertyOptional({ description: 'Starting price', nullable: true })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   startingPrice?: number
 
   @ApiPropertyOptional({ description: 'Max price', nullable: true })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   maxPrice?: number
+
+  @ApiPropertyOptional({ description: 'Legacy field: base price (maps to startingPrice)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  basePrice?: number
+
+  @ApiPropertyOptional({ description: 'Legacy field: pricing unit label' })
+  @IsOptional()
+  @IsString()
+  priceUnit?: string
+
+  @ApiPropertyOptional({ description: 'Legacy field: duration in minutes' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  duration?: number
+
+  @ApiPropertyOptional({ description: 'New format: duration numeric value (paired with durationUnit)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  durationValue?: number
+
+  @ApiPropertyOptional({ description: 'New format: duration unit', enum: DurationUnit })
+  @IsOptional()
+  @IsEnum(DurationUnit)
+  durationUnit?: DurationUnit
+
+  @ApiPropertyOptional({ description: 'Legacy field: feature list', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  features?: string[]
 
   @ApiPropertyOptional({ description: 'Active' })
   @IsOptional()
