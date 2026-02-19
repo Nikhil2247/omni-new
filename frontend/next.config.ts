@@ -63,6 +63,14 @@ const nextConfig: NextConfig = {
         hostname: '147.93.106.69',
         port: '3001', // Backend public IP HTTPS
       },
+      {
+        protocol: 'http',
+        hostname: 'backend.omnicassion.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'backend.omnicassion.com',
+      },
     ],
   },
 

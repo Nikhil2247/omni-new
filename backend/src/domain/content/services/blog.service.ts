@@ -22,6 +22,51 @@ import { PaginatedResult } from '../../../core/database/repositories/base.reposi
 export class BlogService {
   private readonly logger = new Logger(BlogService.name);
 
+  private normalizeBlogMediaPath(value?: string | null): string | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      return trimmed.replace(/^\/+/, '');
+    }
+
+    try {
+      const parsed = new URL(trimmed);
+      const mediaPathParam = parsed.searchParams.get('path');
+
+      if (mediaPathParam) {
+        try {
+          return decodeURIComponent(mediaPathParam).replace(/^\/+/, '');
+        } catch {
+          return mediaPathParam.replace(/^\/+/, '');
+        }
+      }
+
+      const isMinioLikeHost =
+        parsed.hostname === 'infra-minio' ||
+        parsed.hostname === 'localhost' ||
+        parsed.hostname === '127.0.0.1' ||
+        parsed.port === '9000';
+
+      if (isMinioLikeHost) {
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        if (segments.length > 1) {
+          return segments.slice(1).join('/');
+        }
+      }
+
+      return trimmed;
+    } catch {
+      return trimmed;
+    }
+  }
+
   constructor(
     private readonly blogPostRepository: BlogPostRepository,
     private readonly eventEmitter: EventEmitter2,
@@ -41,6 +86,11 @@ export class BlogService {
       );
     }
 
+    const normalizedOgImage = this.normalizeBlogMediaPath(dto.ogImage);
+    const normalizedFeaturedImage = this.normalizeBlogMediaPath(
+      dto.featuredImage,
+    );
+
     const blogPost = await this.blogPostRepository.create({
       title: dto.title,
       slug,
@@ -50,8 +100,8 @@ export class BlogService {
       metaDescription: dto.metaDescription,
       focusKeyword: dto.focusKeyword,
       keywords: dto.keywords || [],
-      ogImage: dto.ogImage,
-      featuredImage: dto.featuredImage,
+      ogImage: normalizedOgImage,
+      featuredImage: normalizedFeaturedImage,
       featuredImageAlt: dto.featuredImageAlt,
       authorId,
       category: dto.categoryId
@@ -120,6 +170,11 @@ export class BlogService {
       }
     }
 
+    const normalizedOgImage = this.normalizeBlogMediaPath(dto.ogImage);
+    const normalizedFeaturedImage = this.normalizeBlogMediaPath(
+      dto.featuredImage,
+    );
+
     const updated = await this.blogPostRepository.update(
       id,
       {
@@ -131,8 +186,8 @@ export class BlogService {
         metaDescription: dto.metaDescription,
         focusKeyword: dto.focusKeyword,
         keywords: dto.keywords,
-        ogImage: dto.ogImage,
-        featuredImage: dto.featuredImage,
+        ogImage: normalizedOgImage,
+        featuredImage: normalizedFeaturedImage,
         featuredImageAlt: dto.featuredImageAlt,
         status: dto.status,
         category: dto.categoryId
