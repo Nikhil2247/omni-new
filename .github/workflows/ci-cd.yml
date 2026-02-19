@@ -64,7 +64,7 @@ jobs:
     name: Test Backend
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflow == 'true' || github.event_name == 'workflow_dispatch'
+    if: (needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflow == 'true' || github.event_name == 'workflow_dispatch') && (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
     defaults:
       run:
         working-directory: ./backend
@@ -75,11 +75,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: ./backend/package-lock.json
-      - run: npm ci
+      - run: npm ci --prefer-offline --no-audit --no-fund
       - run: npx prisma generate
       - run: npm run build
       - name: Run tests
-        if: ${{ !inputs.skip_tests }}
         run: npm test -- --passWithNoTests
         env:
           NODE_ENV: test
@@ -89,7 +88,7 @@ jobs:
     name: Test Frontend
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflow == 'true' || github.event_name == 'workflow_dispatch'
+    if: (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflow == 'true' || github.event_name == 'workflow_dispatch') && (github.event_name != 'workflow_dispatch' || !inputs.skip_tests)
     defaults:
       run:
         working-directory: ./frontend
@@ -100,19 +99,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: ./frontend/package-lock.json
-      - run: npm ci
-      - run: npm run build
+      - run: npm ci --prefer-offline --no-audit --no-fund
+      - run: npm run build -- --no-lint
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://api.your-domain.com' }}
           NEXT_PUBLIC_APP_NAME: ${{ vars.NEXT_PUBLIC_APP_NAME || 'Omnicassion' }}
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: 676629116358-1gic365ui8tiv4rhaei1f5cn8lol61it.apps.googleusercontent.com
           NEXT_PUBLIC_APP_ENV: production
 
-  # 4. Build & Push Docker Images
-  build-images:
-    name: Build Images
+  # 4. Build & Push Backend Image
+  build-backend-image:
+    name: Build Backend Image
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend, changes]
-    if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: [changes, test-backend]
+    if: always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')))) && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflow == 'true' || github.event_name == 'workflow_dispatch') && (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
     permissions:
       contents: read
       packages: write
@@ -133,7 +133,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Backend Build using Lowercase Repo Name
       - name: Build and push Backend
         uses: docker/build-push-action@v6
         with:
@@ -141,10 +140,37 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/backend:latest
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          pull: true
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
 
-      # Frontend Build using Lowercase Repo Name
+  # 5. Build & Push Frontend Image
+  build-frontend-image:
+    name: Build Frontend Image
+    runs-on: ubuntu-latest
+    needs: [changes, test-frontend]
+    if: always() && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')))) && (needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflow == 'true' || github.event_name == 'workflow_dispatch') && (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set lower case owner and repo name
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and push Frontend
         uses: docker/build-push-action@v6
         with:
@@ -152,19 +178,23 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/frontend:latest
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          pull: true
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.your-domain.com' }}
             NEXT_PUBLIC_APP_NAME=${{ vars.NEXT_PUBLIC_APP_NAME || 'Omnicassion' }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=676629116358-1gic365ui8tiv4rhaei1f5cn8lol61it.apps.googleusercontent.com
             NEXT_PUBLIC_APP_ENV=production
 
-  # 5. Deploy to Production (App Only - Infrastructure deployed separately)
+  # 6. Deploy to Production (App Only - Infrastructure deployed separately)
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    needs: [build-images]
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.deploy_environment == 'production')
+    needs: [build-backend-image, build-frontend-image]
+    if: (github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.deploy_environment == 'production')) && (needs.build-backend-image.result == 'success' || needs.build-backend-image.result == 'skipped') && (needs.build-frontend-image.result == 'success' || needs.build-frontend-image.result == 'skipped')
     environment:
       name: production
     steps:
