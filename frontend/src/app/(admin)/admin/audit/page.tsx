@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, FileText } from 'lucide-react'
 import { useAdminAudit } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,18 +30,19 @@ export default function AdminAuditPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Audit logs</h1>
-        <p className="text-muted-foreground">Track administrative changes and actions.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Audit Logs</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Track all administrative changes and system actions</p>
       </div>
 
+      {/* Log table */}
       <Card>
         <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <CardTitle>Audit activity</CardTitle>
-          <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3">
+          <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Action"
+                placeholder="Filter by action"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 className="pl-8"
@@ -61,7 +62,11 @@ export default function AdminAuditPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-40" />
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-md" />
+              ))}
+            </div>
           ) : data?.data?.length ? (
             <Table>
               <TableHeader>
@@ -69,7 +74,7 @@ export default function AdminAuditPage() {
                   <TableHead>Action</TableHead>
                   <TableHead>Entity</TableHead>
                   <TableHead>User</TableHead>
-                  <TableHead>Time</TableHead>
+                  <TableHead className="text-right">Time</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -79,14 +84,24 @@ export default function AdminAuditPage() {
                     <TableCell>
                       <Badge variant="secondary">{log.entityType}</Badge>
                     </TableCell>
-                    <TableCell>{log.userId || 'System'}</TableCell>
-                    <TableCell>{formatDateTime(log.createdAt)}</TableCell>
+                    <TableCell className="text-muted-foreground">{log.userId || 'System'}</TableCell>
+                    <TableCell className="text-right text-sm text-muted-foreground">
+                      {formatDateTime(log.createdAt)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
-            <p className="text-sm text-muted-foreground">No audit logs found.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                <FileText className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="mt-4 text-sm font-medium">No audit logs found</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Try adjusting your filters to see results.
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>

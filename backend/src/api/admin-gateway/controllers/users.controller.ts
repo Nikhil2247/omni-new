@@ -122,17 +122,17 @@ export class UsersController {
     @Body() dto: AssignRoleDto,
     @CurrentUser() admin: CurrentUserData,
   ) {
-    await this.prisma.userRoleAssignment.upsert({
-      where: {
-        userId_roleId: { userId, roleId: dto.roleId },
-      },
-      update: {},
-      create: {
-        userId,
-        roleId: dto.roleId,
-        assignedBy: admin?.id,
-      },
-    });
+    // Enforce single role: remove all existing assignments then create the new one atomically
+    await this.prisma.$transaction([
+      this.prisma.userRoleAssignment.deleteMany({ where: { userId } }),
+      this.prisma.userRoleAssignment.create({
+        data: {
+          userId,
+          roleId: dto.roleId,
+          assignedBy: admin?.id,
+        },
+      }),
+    ]);
 
     return this.prisma.userRoleAssignment.findMany({
       where: { userId },

@@ -97,20 +97,17 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <PublicHeader />
       <div className="relative flex flex-1 pt-16 md:pt-0">
         <aside className="bg-background/95 fixed top-0 left-0 z-40 hidden h-screen w-16 flex-col border-r backdrop-blur-md md:flex">
-          <div className="flex items-center justify-center py-3">
+          <div className="flex items-center justify-center py-3 border-b">
             <Link href="/" aria-label="Home">
               <img
-                src="/images/1.png"
-                className="h-8 rounded-full"
+                src="/icons/omnicassion favicon.png"
+                className="h-8 w-auto object-contain rounded-full"
                 alt="Omnicassion Logo"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
               />
             </Link>
           </div>
 
-          <nav className="space-y-1 px-2 py-3">
+          <nav className="space-y-1 px-2 py-3 pt-4">
             {navItems.map((item) => {
               const isActive =
                 item.href === "/"

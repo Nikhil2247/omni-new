@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+import { toast } from 'sonner'
 import {
   useAdminRoles,
   useAdminUser,
   useAssignUserRole,
-  useRemoveUserRole,
   useUpdateUserStatus,
 } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
@@ -22,120 +24,194 @@ export default function AdminUserDetailPage() {
     return Array.isArray(value) ? value[0] : value
   }, [params])
 
-  const { data: user, isLoading } = useAdminUser(userId ?? '')
+  const { data: user, isLoading, refetch: refetchUser } = useAdminUser(userId ?? '')
   const { data: roles } = useAdminRoles()
   const updateStatus = useUpdateUserStatus(userId ?? '')
   const assignRole = useAssignUserRole(userId ?? '')
-  const removeRole = useRemoveUserRole(userId ?? '')
 
   const [status, setStatus] = useState('')
   const [selectedRole, setSelectedRole] = useState('')
+  const [isChangingRole, setIsChangingRole] = useState(false)
 
+  // Sync local status state with server value (backend returns uppercase enum)
   useEffect(() => {
     if (user?.status) {
       setStatus(user.status)
     }
-  }, [user])
+  }, [user?.status])
+
+  const currentRole = user?.userRoles?.[0] ?? null
+
+  const handleRoleSave = async () => {
+    if (!selectedRole) return
+    try {
+      // Backend atomically removes all existing roles and assigns the new one
+      await assignRole.mutateAsync(selectedRole)
+      await refetchUser()
+      toast.success('Role updated successfully')
+      setSelectedRole('')
+      setIsChangingRole(false)
+    } catch {
+      // individual errors are toasted in the hooks
+    }
+  }
+
+  const isSavingRole = assignRole.isPending
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-1/3" />
-        <Skeleton className="h-40" />
+      <div className="space-y-6">
+        <Skeleton className="h-28 w-full rounded-2xl" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
       </div>
     )
   }
 
   if (!user) {
-    return <div className="text-sm text-destructive">User not found.</div>
+    return (
+      <div className="flex min-h-50 flex-col items-center justify-center gap-3">
+        <p className="text-sm text-destructive">User not found.</p>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/admin/users"><ArrowLeft className="mr-1 h-4 w-4" />Back to users</Link>
+        </Button>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">{formatName(user)}</h1>
-        <p className="text-muted-foreground">{user.email}</p>
+        <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2">
+          <Link href="/admin/users"><ArrowLeft className="mr-1 h-4 w-4" />Users</Link>
+        </Button>
+        <h1 className="text-2xl font-semibold tracking-tight">{formatName(user)}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
+        {/* Status card */}
         <Card>
           <CardHeader>
-            <CardTitle>Status</CardTitle>
+            <CardTitle>Account status</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* Status select uses uppercase values matching Prisma UserStatus enum */}
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                <SelectItem value="DELETED">Deleted</SelectItem>
               </SelectContent>
             </Select>
             <Button
               onClick={() => updateStatus.mutate(status)}
-              disabled={!status || updateStatus.isPending}
+              disabled={!status || updateStatus.isPending || status === user.status}
+              className="w-full"
             >
-              Update status
+              {updateStatus.isPending ? 'Saving...' : 'Update status'}
             </Button>
           </CardContent>
         </Card>
 
+        {/* Role card — single role enforced */}
         <Card>
           <CardHeader>
-            <CardTitle>Roles</CardTitle>
+            <CardTitle>Role</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {user.userRoles?.length ? (
-                user.userRoles.map((role) => (
-                  <div key={role.id} className="flex items-center gap-2">
-                    <Badge variant="secondary">{role.role.displayName}</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeRole.mutate(role.role.id)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))
+          <CardContent className="space-y-4">
+            {/* Current role display */}
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Current role</p>
+              {currentRole ? (
+                <Badge variant="secondary" className="text-sm px-3 py-1">
+                  {currentRole.role.displayName}
+                </Badge>
               ) : (
-                <span className="text-sm text-muted-foreground">No roles assigned.</span>
+                <span className="text-sm text-muted-foreground">No role assigned</span>
               )}
             </div>
-            <div className="flex flex-col gap-2">
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Assign role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles?.map((role) => (
-                    <SelectItem key={role.id} value={role.id}>
-                      {role.displayName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            {/* Change / assign role */}
+            {isChangingRole || !currentRole ? (
+              <div className="space-y-2">
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={currentRole ? 'Select new role' : 'Assign a role'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles
+                      ?.filter((r) => r.id !== currentRole?.role.id)
+                      .map((role) => (
+                        <SelectItem key={role.id} value={role.id}>
+                          {role.displayName}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleRoleSave}
+                    disabled={!selectedRole || isSavingRole}
+                    className="flex-1"
+                  >
+                    {isSavingRole ? 'Saving...' : currentRole ? 'Change role' : 'Assign role'}
+                  </Button>
+                  {currentRole && (
+                    <Button
+                      variant="outline"
+                      onClick={() => { setIsChangingRole(false); setSelectedRole('') }}
+                      disabled={isSavingRole}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : (
               <Button
-                onClick={() => assignRole.mutate(selectedRole)}
-                disabled={!selectedRole || assignRole.isPending}
+                variant="outline"
+                className="w-full"
+                onClick={() => setIsChangingRole(true)}
               >
-                Assign role
+                Change role
               </Button>
-            </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Account details card */}
         <Card>
           <CardHeader>
             <CardTitle>Account details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Status</span>
-              <span>{user.status}</span>
+              <Badge variant={statusVariant(user.status)} className="text-xs">{formatStatus(user.status)}</Badge>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Email verified</span>
+              <span>{user.emailVerified ? 'Yes' : 'No'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">2FA enabled</span>
+              <span>{user.twoFactorEnabled ? 'Yes' : 'No'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Last login</span>
+              <span>{user.lastLoginAt ? formatDateTime(user.lastLoginAt) : '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Onboarding</span>
+              <span>{user.hasCompletedOnboarding ? 'Complete' : 'Pending'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Created</span>
@@ -157,6 +233,16 @@ function formatName(user: { firstName: string | null; lastName: string | null; e
   return name || user.email
 }
 
+function formatStatus(status: string) {
+  const map: Record<string, string> = {
+    ACTIVE: 'Active',
+    PENDING: 'Pending',
+    SUSPENDED: 'Suspended',
+    DELETED: 'Deleted',
+  }
+  return map[status] ?? status
+}
+
 function formatDateTime(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
@@ -166,4 +252,10 @@ function formatDateTime(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date)
+}
+
+function statusVariant(status: string): 'default' | 'destructive' | 'secondary' {
+  if (status === 'ACTIVE') return 'default'
+  if (status === 'SUSPENDED' || status === 'DELETED') return 'destructive'
+  return 'secondary'
 }

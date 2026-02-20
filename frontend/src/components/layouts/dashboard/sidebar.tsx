@@ -33,14 +33,25 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b px-4">
-        <Link href="/" className={cn(
-          'flex items-center gap-2 transition-opacity duration-200',
-          (isCollapsed && 'lg:opacity-0 lg:hidden') || 'opacity-100'
-        )}>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-primary to-primary/60">
-            <span className="text-lg font-bold text-primary-foreground">O</span>
-          </div>
-          <span className="text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">Omni</span>
+        <Link href="/" className="flex items-center gap-2">
+          {/* Full logo (expanded) */}
+          <img
+            src="/images/omnilogo.avif"
+            alt="Omnicassion"
+            className={cn(
+              'h-8 w-auto object-contain transition-opacity duration-200',
+              isCollapsed && 'lg:hidden'
+            )}
+          />
+          {/* Icon-only logo (collapsed) */}
+          <img
+            src="/icons/omnicassion favicon.png"
+            alt="Omnicassion"
+            className={cn(
+              'h-8 w-8 object-contain transition-opacity duration-200',
+              !isCollapsed && 'lg:hidden'
+            )}
+          />
         </Link>
         
         {/* Close button (mobile) */}

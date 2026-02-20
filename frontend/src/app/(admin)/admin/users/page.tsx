@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, UserX } from 'lucide-react'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -37,10 +37,11 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Users</h1>
-        <p className="text-muted-foreground">View platform users and access roles.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
+        <p className="mt-1 text-sm text-muted-foreground">View and manage platform users and their roles</p>
       </div>
 
+      {/* Users table */}
       <Card>
         <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <CardTitle>User directory</CardTitle>
@@ -69,14 +70,18 @@ export default function AdminUsersPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <Skeleton className="h-40" />
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-md" />
+              ))}
+            </div>
           ) : data?.data?.length ? (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Roles</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead />
                 </TableRow>
@@ -89,23 +94,21 @@ export default function AdminUsersPage() {
                       <div className="text-xs text-muted-foreground">{user.email}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusVariant(user.status)}>{user.status}</Badge>
+                      <Badge variant={statusVariant(user.status)}>{formatStatus(user.status)}</Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.userRoles?.length
-                          ? user.userRoles.map((role) => (
-                              <Badge key={role.id} variant="secondary">
-                                {role.role.displayName}
-                              </Badge>
-                            ))
-                          : '—'}
-                      </div>
+                      {user.userRoles?.[0] ? (
+                        <Badge variant="secondary">{user.userRoles[0].role.displayName}</Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No role</span>
+                      )}
                     </TableCell>
-                    <TableCell>{formatDate(user.createdAt)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDate(user.createdAt)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`/admin/users/${user.id}`}>View</Link>
+                        <Link href={`/admin/users/${user.id}`}>Manage</Link>
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -113,7 +116,15 @@ export default function AdminUsersPage() {
               </TableBody>
             </Table>
           ) : (
-            <p className="text-sm text-muted-foreground">No users found.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                <UserX className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="mt-4 text-sm font-medium">No users found</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Try adjusting your search or status filter.
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -135,7 +146,17 @@ function formatDate(value: string) {
 }
 
 function statusVariant(status: string) {
-  if (status === 'active') return 'default'
-  if (status === 'suspended') return 'destructive'
-  return 'secondary'
+  if (status === 'ACTIVE') return 'default' as const
+  if (status === 'SUSPENDED' || status === 'DELETED') return 'destructive' as const
+  return 'secondary' as const
+}
+
+function formatStatus(status: string) {
+  const map: Record<string, string> = {
+    ACTIVE: 'Active',
+    PENDING: 'Pending',
+    SUSPENDED: 'Suspended',
+    DELETED: 'Deleted',
+  }
+  return map[status] ?? status
 }

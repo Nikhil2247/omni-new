@@ -41,7 +41,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Page content */}
           <main className="flex-1 p-4 sm:p-6 lg:p-8">
-            <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-9xl">
               {children}
             </div>
           </main>

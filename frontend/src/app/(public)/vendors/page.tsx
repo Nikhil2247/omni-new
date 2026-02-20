@@ -272,9 +272,9 @@ function VendorFilters({
   onClear: () => void;
 }) {
   return (
-    <div className="bg-muted/20 border-border rounded-2xl border p-4 sm:p-5">
+    <div className="rounded-2xl border border-[#165EA6]/20 p-4 sm:p-5" style={{ background: 'linear-gradient(160deg, #165EA6/5 0%, rgba(22,94,166,0.06) 100%)', backgroundColor: 'rgba(22,94,166,0.05)' }}>
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-serif text-lg font-semibold">Filters</h2>
+        <h2 className="font-serif text-lg font-semibold" style={{ color: '#165EA6' }}>Filters</h2>
         {activeFiltersCount > 0 && (
           <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-semibold">
             {activeFiltersCount} active
@@ -431,18 +431,26 @@ function VendorsPageContent() {
 
   return (
     <main className="bg-background min-h-screen">
-      <section className="bg-muted/20 border-b py-4 lg:py-5">
+      <section
+        className="relative border-b py-6 lg:py-8 overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #165EA6 0%, rgba(22,94,166,0.5) 60%, rgba(22,94,166,0) 100%)',
+        }}
+      >
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-sky-400/20 blur-[80px]" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-blue-300/10 blur-[80px]" />
         <div className="mx-auto max-w-8xl px-6">
           <FadeIn className="flex items-center justify-between gap-4">
             <div>
-              <h1 className="font-serif text-2xl font-bold sm:text-3xl">Find your perfect team</h1>
-              <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+              <h1 className="font-serif text-2xl font-bold text-white sm:text-3xl">Find your perfect team</h1>
+              <p className="mt-1 text-sm text-white/70 sm:text-base">
                 Browse and filter vendors like an e-commerce catalog.
               </p>
             </div>
 
             <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-              <Button variant="outline" className="lg:hidden" onClick={() => setMobileFiltersOpen(true)}>
+              <Button variant="outline" className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white lg:hidden" onClick={() => setMobileFiltersOpen(true)}>
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
                 Filters
               </Button>
@@ -475,9 +483,9 @@ function VendorsPageContent() {
       </section>
 
       <div className="mx-auto max-w-8xl px-6 py-8 lg:py-10">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8 lg:items-start">
           <aside className="hidden lg:block">
-            <div className="sticky top-24">
+            <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl pb-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20">
               <VendorFilters
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}

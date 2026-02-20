@@ -107,13 +107,6 @@ export default function SystemDashboardPage() {
         </div>
       </div>
 
-      {/* System Health Status Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        {systemServices.map((service) => (
-          <ServiceHealthCard key={service.name} service={service} />
-        ))}
-      </div>
-
       {/* Platform Stats & Health */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Platform Health Ring */}

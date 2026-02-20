@@ -20,7 +20,8 @@ export const adminService = {
   },
   getUser: async (id: string): Promise<AdminUser> => {
     const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.USER_BY_ID(id))
-    return data
+    // Backend wraps single entities in { success, data, meta }
+    return data?.data ?? data
   },
   updateUserStatus: async (id: string, status: string) => {
     const { data } = await apiClient.patch(API_ENDPOINTS.ADMIN.USER_STATUS(id), { status })

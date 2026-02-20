@@ -201,7 +201,7 @@ function DiscoverPageContent() {
       <section className="border-b bg-muted/20 py-3 lg:py-4">
         <div className="mx-auto max-w-8xl px-6">
           {/* Search Bar */}
-          <FadeIn delay={0.05} className="max-w-5xl">
+          <FadeIn delay={0.05} className="max-w-6xl">
             <div className="relative flex items-center bg-background border border-border rounded-full shadow-sm p-1.5 transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30">
               <Input
                 type="text"
@@ -217,11 +217,6 @@ function DiscoverPageContent() {
             </div>
           </FadeIn>
 
-          <FadeIn className="mt-3 text-left">
-            <h1 className="font-serif text-2xl font-bold sm:text-3xl">
-              Get inspired
-            </h1>
-          </FadeIn>
         </div>
       </section>
 

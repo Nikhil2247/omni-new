@@ -15,7 +15,6 @@ import {
   Users,
   Activity,
   Zap,
-  BarChart3,
   Target,
   Clock,
   DollarSign,
@@ -77,7 +76,7 @@ export default function AdminDashboardPage() {
 
   if (error || !data) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
+      <div className="flex min-h-100 items-center justify-center">
         <Card className="max-w-md text-center">
           <CardContent className="pt-6">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
@@ -114,28 +113,12 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 dark:from-violet-950/30 dark:via-purple-950/30 dark:to-indigo-950/30">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-
-        <div className="relative z-10 p-6 md:p-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
-                <BarChart3 className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold md:text-3xl">Admin Dashboard</h1>
-                <p className="mt-1 text-muted-foreground">
-                  Platform overview and key performance signals
-                </p>
-              </div>
-            </div>
-
-            <DateRangeSelector value={dateRange} onChange={setDateRange} />
-          </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Admin Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Platform overview and key performance signals</p>
         </div>
+        <DateRangeSelector value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* Overview Stats */}

@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Activity,
-  BarChart3,
   Calendar,
   DollarSign,
   Search,
@@ -38,9 +37,9 @@ export default function AdminInsightsPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="mt-2 h-4 w-96" />
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-72" />
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -132,25 +131,12 @@ export default function AdminInsightsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8">
-        <div className="absolute right-0 top-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 -mb-32 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-
-        <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20">
-              <BarChart3 className="h-7 w-7 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Platform Insights</h1>
-              <p className="text-muted-foreground">
-                Comprehensive analytics and performance metrics
-              </p>
-            </div>
-          </div>
-          <DateRangeSelector value={dateRange} onChange={setDateRange} />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Platform Insights</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Comprehensive analytics and performance metrics</p>
         </div>
+        <DateRangeSelector value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* Executive Summary Stats */}

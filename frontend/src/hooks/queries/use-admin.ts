@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { adminService } from '@/lib/api/services/admin.service'
 import type { AdminAuditParams, AdminUserListParams, SystemConfigState } from '@/lib/api/types/admin.types'
 
@@ -54,7 +55,11 @@ export function useUpdateSystemConfig() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: Partial<SystemConfigState>) => adminService.updateSystemConfig(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.systemConfig() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.systemConfig() })
+      toast.success('System config updated')
+    },
+    onError: () => toast.error('Failed to update system config'),
   })
 }
 
@@ -77,7 +82,11 @@ export function useCreateFeatureFlag() {
   return useMutation({
     mutationFn: (payload: { key: string; description?: string; enabled?: boolean }) =>
       adminService.createFeatureFlag(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.featureFlags() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.featureFlags() })
+      toast.success('Feature flag created')
+    },
+    onError: () => toast.error('Failed to create feature flag'),
   })
 }
 
@@ -89,7 +98,11 @@ export function useUpdateFeatureFlag() {
         description: payload.description,
         enabled: payload.enabled,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.featureFlags() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.featureFlags() })
+      toast.success('Feature flag updated')
+    },
+    onError: () => toast.error('Failed to update feature flag'),
   })
 }
 
@@ -104,7 +117,15 @@ export function useUpdateUserStatus(userId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (status: string) => adminService.updateUserStatus(userId, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.user(userId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.user(userId) })
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      toast.success('User status updated')
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to update user status'
+      toast.error(msg)
+    },
   })
 }
 
@@ -112,7 +133,14 @@ export function useAssignUserRole(userId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (roleId: string) => adminService.assignRole(userId, roleId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.user(userId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.user(userId) })
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to assign role'
+      toast.error(msg)
+    },
   })
 }
 
@@ -120,7 +148,14 @@ export function useRemoveUserRole(userId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (roleId: string) => adminService.removeRole(userId, roleId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.user(userId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.user(userId) })
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to remove role'
+      toast.error(msg)
+    },
   })
 }
 
@@ -153,7 +188,14 @@ export function useCreateRole() {
   return useMutation({
     mutationFn: (payload: { name: string; displayName: string; description?: string; level?: number }) =>
       adminService.createRole(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.roles() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.roles() })
+      toast.success('Role created')
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to create role'
+      toast.error(msg)
+    },
   })
 }
 
@@ -161,6 +203,13 @@ export function useDeleteRole() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => adminService.deleteRole(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminKeys.roles() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.roles() })
+      toast.success('Role deleted')
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Failed to delete role'
+      toast.error(msg)
+    },
   })
 }

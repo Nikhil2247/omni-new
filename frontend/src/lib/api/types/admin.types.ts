@@ -12,9 +12,17 @@ export interface AdminUser {
   email: string
   firstName: string | null
   lastName: string | null
+  phone: string | null
+  avatarUrl: string | null
   status: string
+  emailVerified: boolean
+  emailVerifiedAt: string | null
+  twoFactorEnabled: boolean
+  hasCompletedOnboarding: boolean
+  lastLoginAt: string | null
   createdAt: string
   updatedAt: string
+  deletedAt: string | null
   userRoles?: AdminUserRole[]
   vendorProfile?: { id: string } | null
   sessions?: Array<{

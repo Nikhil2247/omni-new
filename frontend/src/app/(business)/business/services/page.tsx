@@ -1,20 +1,20 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 import {
   useBusinessProfile,
   useBusinessServices,
   useCreateService,
   useUpdateService,
   useDeleteService,
-} from '@/hooks/queries/use-business'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
+} from "@/hooks/queries/use-business";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -22,14 +22,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 import {
   Package,
   Plus,
@@ -42,130 +42,131 @@ import {
   XCircle,
   Loader2,
   AlertTriangle,
-} from 'lucide-react'
-import type { VendorService, CreateServiceRequest, UpdateServiceRequest } from '@/lib/api/types/business.types'
+} from "lucide-react";
+import type {
+  VendorService,
+  CreateServiceRequest,
+  UpdateServiceRequest,
+} from "@/lib/api/types/business.types";
 
 const PRICE_UNITS = [
-  { value: 'per_hour', label: 'Per Hour' },
-  { value: 'per_day', label: 'Per Day' },
-  { value: 'per_event', label: 'Per Event' },
-  { value: 'fixed', label: 'Fixed Price' },
-  { value: 'per_person', label: 'Per Person' },
-  { value: 'per_unit', label: 'Per Unit' },
-]
+  { value: "per_hour", label: "Per Hour" },
+  { value: "per_day", label: "Per Day" },
+  { value: "per_event", label: "Per Event" },
+  { value: "fixed", label: "Fixed Price" },
+  { value: "per_person", label: "Per Person" },
+  { value: "per_unit", label: "Per Unit" },
+];
 
 const DURATION_UNITS = [
-  { value: 'hours', label: 'Hours' },
-  { value: 'day', label: 'Day' },
-  { value: 'month', label: 'Month' },
-] as const
+  { value: "hours", label: "Hours" },
+  { value: "day", label: "Day" },
+  { value: "month", label: "Month" },
+] as const;
 
-const toMinutes = (duration: string, unit: (typeof DURATION_UNITS)[number]['value']) => {
-  const numericDuration = Number(duration)
+const toMinutes = (duration: string, unit: (typeof DURATION_UNITS)[number]["value"]) => {
+  const numericDuration = Number(duration);
   if (!Number.isFinite(numericDuration) || numericDuration <= 0) {
-    return undefined
+    return undefined;
   }
 
   switch (unit) {
-    case 'hours':
-      return Math.round(numericDuration * 60)
-    case 'day':
-      return Math.round(numericDuration * 24 * 60)
-    case 'month':
-      return Math.round(numericDuration * 30 * 24 * 60)
+    case "hours":
+      return Math.round(numericDuration * 60);
+    case "day":
+      return Math.round(numericDuration * 24 * 60);
+    case "month":
+      return Math.round(numericDuration * 30 * 24 * 60);
     default:
-      return Math.round(numericDuration)
+      return Math.round(numericDuration);
   }
-}
+};
 
-const fromMinutes = (
-  minutes: number,
-  unit: (typeof DURATION_UNITS)[number]['value'],
-) => {
+const fromMinutes = (minutes: number, unit: (typeof DURATION_UNITS)[number]["value"]) => {
   if (!Number.isFinite(minutes) || minutes <= 0) {
-    return ''
+    return "";
   }
 
   switch (unit) {
-    case 'hours':
-      return (minutes / 60).toString()
-    case 'day':
-      return (minutes / (24 * 60)).toString()
-    case 'month':
-      return (minutes / (30 * 24 * 60)).toString()
+    case "hours":
+      return (minutes / 60).toString();
+    case "day":
+      return (minutes / (24 * 60)).toString();
+    case "month":
+      return (minutes / (30 * 24 * 60)).toString();
     default:
-      return minutes.toString()
+      return minutes.toString();
   }
-}
+};
 
 export default function BusinessServicesPage() {
-  const { data: profile, isLoading: profileLoading } = useBusinessProfile()
-  const { data: services, isLoading: servicesLoading } = useBusinessServices(profile?.id || '')
-  const createService = useCreateService()
-  const updateService = useUpdateService()
-  const deleteService = useDeleteService()
+  const { data: profile, isLoading: profileLoading } = useBusinessProfile();
+  const { data: services, isLoading: servicesLoading } = useBusinessServices(profile?.id || "");
+  const createService = useCreateService();
+  const updateService = useUpdateService();
+  const deleteService = useDeleteService();
 
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useState(false)
-  const [selectedService, setSelectedService] = useState<VendorService | null>(null)
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedService, setSelectedService] = useState<VendorService | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    basePrice: '',
-    priceUnit: 'per_event',
-    duration: '',
-    durationUnit: 'hours' as (typeof DURATION_UNITS)[number]['value'],
+    name: "",
+    description: "",
+    basePrice: "",
+    priceUnit: "per_event",
+    duration: "",
+    durationUnit: "hours" as (typeof DURATION_UNITS)[number]["value"],
     isActive: true,
-    features: '',
-  })
+    features: "",
+  });
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      description: '',
-      basePrice: '',
-      priceUnit: 'per_event',
-      duration: '',
-      durationUnit: 'hours',
+      name: "",
+      description: "",
+      basePrice: "",
+      priceUnit: "per_event",
+      duration: "",
+      durationUnit: "hours",
       isActive: true,
-      features: '',
-    })
-  }
+      features: "",
+    });
+  };
 
   const getServiceBasePrice = (service: VendorService) => {
-    const rawValue = (service as any)?.basePrice ?? (service as any)?.startingPrice ?? 0
-    const value = typeof rawValue === 'number' ? rawValue : Number(rawValue)
-    return Number.isFinite(value) ? value : 0
-  }
+    const rawValue = (service as any)?.basePrice ?? (service as any)?.startingPrice ?? 0;
+    const value = typeof rawValue === "number" ? rawValue : Number(rawValue);
+    return Number.isFinite(value) ? value : 0;
+  };
 
   const getServicePriceUnit = (service: VendorService) => {
-    const unit = (service as any)?.priceUnit
-    return unit || 'per_event'
-  }
+    const unit = (service as any)?.priceUnit;
+    return unit || "per_event";
+  };
 
   const openEditDialog = (service: VendorService) => {
-    const basePrice = getServiceBasePrice(service)
-    const durationUnit: (typeof DURATION_UNITS)[number]['value'] = 'hours'
-    setSelectedService(service)
+    const basePrice = getServiceBasePrice(service);
+    const durationUnit: (typeof DURATION_UNITS)[number]["value"] = "hours";
+    setSelectedService(service);
     setFormData({
       name: service.name,
-      description: service.description || '',
+      description: service.description || "",
       basePrice: basePrice.toString(),
       priceUnit: getServicePriceUnit(service),
-      duration: service.duration ? fromMinutes(service.duration, durationUnit) : '',
+      duration: service.duration ? fromMinutes(service.duration, durationUnit) : "",
       durationUnit,
       isActive: service.isActive,
-      features: service.features?.join('\n') || '',
-    })
-    setShowEditDialog(true)
-  }
+      features: service.features?.join("\n") || "",
+    });
+    setShowEditDialog(true);
+  };
 
   const handleCreate = () => {
-    if (!profile) return
+    if (!profile) return;
 
     const normalizedDuration = formData.duration
       ? toMinutes(formData.duration, formData.durationUnit)
-      : undefined
+      : undefined;
 
     createService.mutate(
       {
@@ -176,23 +177,25 @@ export default function BusinessServicesPage() {
         priceUnit: formData.priceUnit,
         duration: normalizedDuration,
         isActive: formData.isActive,
-        features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : undefined,
+        features: formData.features
+          ? formData.features.split("\n").filter((f) => f.trim())
+          : undefined,
       },
       {
         onSuccess: () => {
-          setShowCreateDialog(false)
-          resetForm()
+          setShowCreateDialog(false);
+          resetForm();
         },
       }
-    )
-  }
+    );
+  };
 
   const handleUpdate = () => {
-    if (!selectedService) return
+    if (!selectedService) return;
 
     const normalizedDuration = formData.duration
       ? toMinutes(formData.duration, formData.durationUnit)
-      : undefined
+      : undefined;
 
     updateService.mutate(
       {
@@ -204,49 +207,51 @@ export default function BusinessServicesPage() {
           priceUnit: formData.priceUnit,
           duration: normalizedDuration,
           isActive: formData.isActive,
-          features: formData.features ? formData.features.split('\n').filter(f => f.trim()) : undefined,
+          features: formData.features
+            ? formData.features.split("\n").filter((f) => f.trim())
+            : undefined,
         },
       },
       {
         onSuccess: () => {
-          setShowEditDialog(false)
-          setSelectedService(null)
-          resetForm()
+          setShowEditDialog(false);
+          setSelectedService(null);
+          resetForm();
         },
       }
-    )
-  }
+    );
+  };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this service?')) {
-      deleteService.mutate(id)
+    if (confirm("Are you sure you want to delete this service?")) {
+      deleteService.mutate(id);
     }
-  }
+  };
 
   const handleToggleActive = (service: VendorService) => {
     updateService.mutate({
       id: service.id,
       payload: { isActive: !service.isActive },
-    })
-  }
+    });
+  };
 
   const formatPrice = (price: number, unit: string | undefined | null) => {
-    const formatted = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    const formatted = new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       minimumFractionDigits: 0,
-    }).format(price || 0)
-    if (!unit) return formatted
-    const unitLabel = PRICE_UNITS.find(u => u.value === unit)?.label || unit
-    return `${formatted} ${unitLabel.toLowerCase()}`
-  }
+    }).format(price || 0);
+    if (!unit) return formatted;
+    const unitLabel = PRICE_UNITS.find((u) => u.value === unit)?.label || unit;
+    return `${formatted} ${unitLabel.toLowerCase()}`;
+  };
 
   if (profileLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
-    )
+    );
   }
 
   if (!profile) {
@@ -258,18 +263,18 @@ export default function BusinessServicesPage() {
         </div>
         <Card>
           <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
+            <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-yellow-500" />
             <h3 className="text-lg font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-2">
               Please create your business profile first before adding services.
             </p>
-            <Button className="mt-4" onClick={() => window.location.href = '/business/profile'}>
+            <Button className="mt-4" onClick={() => (window.location.href = "/business/profile")}>
               Create Profile
             </Button>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -280,7 +285,12 @@ export default function BusinessServicesPage() {
           <h1 className="text-2xl font-bold">Services</h1>
           <p className="text-muted-foreground">Manage your service offerings and packages</p>
         </div>
-        <Button onClick={() => { resetForm(); setShowCreateDialog(true) }}>
+        <Button
+          onClick={() => {
+            resetForm();
+            setShowCreateDialog(true);
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Service
         </Button>
@@ -289,17 +299,23 @@ export default function BusinessServicesPage() {
       {/* Services List */}
       {servicesLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
         </div>
       ) : !services || services.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <Package className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <h3 className="text-lg font-semibold">No Services Yet</h3>
             <p className="text-muted-foreground mt-2">
               Add your first service to start showcasing your offerings.
             </p>
-            <Button className="mt-4" onClick={() => { resetForm(); setShowCreateDialog(true) }}>
+            <Button
+              className="mt-4"
+              onClick={() => {
+                resetForm();
+                setShowCreateDialog(true);
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Your First Service
             </Button>
@@ -308,15 +324,15 @@ export default function BusinessServicesPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {services.map((service) => (
-            <Card key={service.id} className={!service.isActive ? 'opacity-60' : ''}>
+            <Card key={service.id} className={!service.isActive ? "opacity-60" : ""}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg">{service.name}</CardTitle>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="mt-1 flex items-center gap-2">
                       <Badge
-                        variant={service.isActive ? 'default' : 'secondary'}
-                        className={service.isActive ? 'bg-green-100 text-green-700' : ''}
+                        variant={service.isActive ? "default" : "secondary"}
+                        className={service.isActive ? "bg-green-100 text-green-700" : ""}
                       >
                         {service.isActive ? (
                           <>
@@ -370,7 +386,7 @@ export default function BusinessServicesPage() {
               </CardHeader>
               <CardContent>
                 {service.description && (
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                  <p className="text-muted-foreground mb-4 line-clamp-2 text-sm">
                     {service.description}
                   </p>
                 )}
@@ -378,11 +394,12 @@ export default function BusinessServicesPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                      <span className="font-semibold">{formatPrice(getServiceBasePrice(service), getServicePriceUnit(service))}</span>
+                      <span className="font-semibold">
+                        {formatPrice(getServiceBasePrice(service), getServicePriceUnit(service))}
+                      </span>
                     </div>
                     {service.duration && (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground flex items-center gap-1 text-sm">
                         <Clock className="h-4 w-4" />
                         {service.duration} min
                       </div>
@@ -390,8 +407,8 @@ export default function BusinessServicesPage() {
                   </div>
 
                   {service.features && service.features.length > 0 && (
-                    <div className="pt-3 border-t mt-3">
-                      <p className="text-xs text-muted-foreground mb-2">Features:</p>
+                    <div className="mt-3 border-t pt-3">
+                      <p className="text-muted-foreground mb-2 text-xs">Features:</p>
                       <div className="flex flex-wrap gap-1">
                         {service.features.slice(0, 3).map((feature, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
@@ -418,9 +435,7 @@ export default function BusinessServicesPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Add New Service</DialogTitle>
-            <DialogDescription>
-              Create a new service offering for your customers.
-            </DialogDescription>
+            <DialogDescription>Create a new service offering for your customers.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -429,7 +444,7 @@ export default function BusinessServicesPage() {
                 id="name"
                 placeholder="e.g., Wedding Photography Package"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               />
             </div>
 
@@ -440,7 +455,7 @@ export default function BusinessServicesPage() {
                 placeholder="Describe what's included in this service..."
                 rows={3}
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               />
             </div>
 
@@ -448,16 +463,17 @@ export default function BusinessServicesPage() {
               <div className="space-y-2">
                 <Label htmlFor="basePrice">Base Price *</Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="basePrice"
                     type="number"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
-                    className="pl-9"
+                    className="pl-2"
                     value={formData.basePrice}
-                    onChange={(e) => setFormData(prev => ({ ...prev, basePrice: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, basePrice: e.target.value }))
+                    }
                   />
                 </div>
               </div>
@@ -465,9 +481,9 @@ export default function BusinessServicesPage() {
                 <Label htmlFor="priceUnit">Price Unit</Label>
                 <select
                   id="priceUnit"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
                   value={formData.priceUnit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priceUnit: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, priceUnit: e.target.value }))}
                 >
                   {PRICE_UNITS.map((unit) => (
                     <option key={unit.value} value={unit.value}>
@@ -488,16 +504,16 @@ export default function BusinessServicesPage() {
                   step="1"
                   placeholder="e.g., 2"
                   value={formData.duration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, duration: e.target.value }))}
                 />
                 <select
                   id="durationUnit"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
                   value={formData.durationUnit}
                   onChange={(e) =>
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
-                      durationUnit: e.target.value as (typeof DURATION_UNITS)[number]['value'],
+                      durationUnit: e.target.value as (typeof DURATION_UNITS)[number]["value"],
                     }))
                   }
                 >
@@ -517,7 +533,7 @@ export default function BusinessServicesPage() {
                 placeholder="8 hours coverage&#10;500+ edited photos&#10;Online gallery"
                 rows={4}
                 value={formData.features}
-                onChange={(e) => setFormData(prev => ({ ...prev, features: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, features: e.target.value }))}
               />
             </div>
 
@@ -526,7 +542,9 @@ export default function BusinessServicesPage() {
               <Switch
                 id="isActive"
                 checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, isActive: checked }))
+                }
               />
             </div>
           </div>
@@ -544,7 +562,7 @@ export default function BusinessServicesPage() {
                   Creating...
                 </>
               ) : (
-                'Create Service'
+                "Create Service"
               )}
             </Button>
           </DialogFooter>
@@ -556,9 +574,7 @@ export default function BusinessServicesPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Service</DialogTitle>
-            <DialogDescription>
-              Update your service details.
-            </DialogDescription>
+            <DialogDescription>Update your service details.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -566,7 +582,7 @@ export default function BusinessServicesPage() {
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               />
             </div>
 
@@ -576,7 +592,7 @@ export default function BusinessServicesPage() {
                 id="edit-description"
                 rows={3}
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               />
             </div>
 
@@ -584,15 +600,16 @@ export default function BusinessServicesPage() {
               <div className="space-y-2">
                 <Label htmlFor="edit-basePrice">Base Price *</Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="edit-basePrice"
                     type="number"
                     min="0"
                     step="0.01"
-                    className="pl-9"
+                    className="pl-2"
                     value={formData.basePrice}
-                    onChange={(e) => setFormData(prev => ({ ...prev, basePrice: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, basePrice: e.target.value }))
+                    }
                   />
                 </div>
               </div>
@@ -600,9 +617,9 @@ export default function BusinessServicesPage() {
                 <Label htmlFor="edit-priceUnit">Price Unit</Label>
                 <select
                   id="edit-priceUnit"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
                   value={formData.priceUnit}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priceUnit: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, priceUnit: e.target.value }))}
                 >
                   {PRICE_UNITS.map((unit) => (
                     <option key={unit.value} value={unit.value}>
@@ -622,16 +639,16 @@ export default function BusinessServicesPage() {
                   min="0"
                   step="1"
                   value={formData.duration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, duration: e.target.value }))}
                 />
                 <select
                   id="edit-durationUnit"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
                   value={formData.durationUnit}
                   onChange={(e) =>
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
-                      durationUnit: e.target.value as (typeof DURATION_UNITS)[number]['value'],
+                      durationUnit: e.target.value as (typeof DURATION_UNITS)[number]["value"],
                     }))
                   }
                 >
@@ -650,7 +667,7 @@ export default function BusinessServicesPage() {
                 id="edit-features"
                 rows={4}
                 value={formData.features}
-                onChange={(e) => setFormData(prev => ({ ...prev, features: e.target.value }))}
+                onChange={(e) => setFormData((prev) => ({ ...prev, features: e.target.value }))}
               />
             </div>
 
@@ -659,7 +676,9 @@ export default function BusinessServicesPage() {
               <Switch
                 id="edit-isActive"
                 checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, isActive: checked }))
+                }
               />
             </div>
           </div>
@@ -677,12 +696,12 @@ export default function BusinessServicesPage() {
                   Saving...
                 </>
               ) : (
-                'Save Changes'
+                "Save Changes"
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
