@@ -87,67 +87,213 @@ const DEFAULT_IMAGE_PROCESSING: ImageProcessingOptions = {
 
 const DEFAULT_VALIDATION: Record<FileCategory, FileValidationOptions> = {
   [FileCategory.AVATAR]: {
-    maxSize: 5 * 1024 * 1024, // 5MB
-    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
-    allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
-  },
-  [FileCategory.EVENT_BANNER]: {
     maxSize: 10 * 1024 * 1024, // 10MB
-    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-    allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
-  },
-  [FileCategory.EVENT_GALLERY]: {
-    maxSize: 20 * 1024 * 1024, // 20MB
     allowedMimeTypes: [
       'image/jpeg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-      'video/mp4',
-      'video/webm',
-    ],
-    allowedExtensions: [
-      '.jpg',
-      '.jpeg',
-      '.png',
-      '.webp',
-      '.gif',
-      '.mp4',
-      '.webm',
-    ],
-  },
-  [FileCategory.VENUE_IMAGE]: {
-    maxSize: 15 * 1024 * 1024, // 15MB
-    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-    allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
-  },
-  [FileCategory.VENDOR_PROFILE]: {
-    maxSize: 10 * 1024 * 1024, // 10MB
-    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-    allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
-  },
-  [FileCategory.PORTFOLIO]: {
-    maxSize: 25 * 1024 * 1024, // 25MB
-    allowedMimeTypes: [
-      'image/jpeg',
+      'image/jpg',
       'image/png',
       'image/webp',
       'image/gif',
       'image/heic',
       'image/heif',
-      'video/mp4',
-      'video/webm',
+      'image/x-heic',
+      'image/x-heif',
+      'image/avif',
+      'image/tiff',
+      'image/tif',
+      'image/bmp',
+      'image/x-bmp',
+      'image/x-ms-bmp',
+      'image/jfif',
+      'image/pjpeg',
+      'image/jxl',
+      'image/svg+xml',
     ],
     allowedExtensions: [
-      '.jpg',
-      '.jpeg',
-      '.png',
-      '.webp',
-      '.gif',
-      '.heic',
-      '.heif',
-      '.mp4',
-      '.webm',
+      '.jpg', '.jpeg', '.jfif', '.png', '.webp', '.gif',
+      '.heic', '.heif', '.avif', '.tiff', '.tif',
+      '.bmp', '.jxl', '.svg',
+    ],
+  },
+  [FileCategory.EVENT_BANNER]: {
+    maxSize: 20 * 1024 * 1024, // 20MB
+    allowedMimeTypes: [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/heic',
+      'image/heif',
+      'image/x-heic',
+      'image/x-heif',
+      'image/avif',
+      'image/tiff',
+      'image/tif',
+      'image/bmp',
+      'image/x-bmp',
+      'image/x-ms-bmp',
+      'image/jfif',
+      'image/pjpeg',
+      'image/jxl',
+      'image/svg+xml',
+    ],
+    allowedExtensions: [
+      '.jpg', '.jpeg', '.jfif', '.png', '.webp', '.gif',
+      '.heic', '.heif', '.avif', '.tiff', '.tif',
+      '.bmp', '.jxl', '.svg',
+    ],
+  },
+  [FileCategory.EVENT_GALLERY]: {
+    maxSize: 50 * 1024 * 1024, // 50MB
+    allowedMimeTypes: [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/heic',
+      'image/heif',
+      'image/x-heic',
+      'image/x-heif',
+      'image/avif',
+      'image/tiff',
+      'image/tif',
+      'image/bmp',
+      'image/x-bmp',
+      'image/x-ms-bmp',
+      'image/jfif',
+      'image/pjpeg',
+      'image/jxl',
+      'image/svg+xml',
+      'image/x-adobe-dng',
+      'image/dng',
+      'image/x-canon-cr2',
+      'image/x-nikon-nef',
+      'image/x-sony-arw',
+      'image/x-olympus-orf',
+      'image/x-fuji-raf',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+    ],
+    allowedExtensions: [
+      '.jpg', '.jpeg', '.jfif', '.png', '.webp', '.gif',
+      '.heic', '.heif', '.avif', '.tiff', '.tif',
+      '.bmp', '.jxl', '.svg',
+      '.dng', '.cr2', '.nef', '.arw', '.orf', '.raf',
+      '.mp4', '.webm', '.mov',
+    ],
+  },
+  [FileCategory.VENUE_IMAGE]: {
+    maxSize: 30 * 1024 * 1024, // 30MB
+    allowedMimeTypes: [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/heic',
+      'image/heif',
+      'image/x-heic',
+      'image/x-heif',
+      'image/avif',
+      'image/tiff',
+      'image/tif',
+      'image/bmp',
+      'image/x-bmp',
+      'image/x-ms-bmp',
+      'image/jfif',
+      'image/pjpeg',
+      'image/jxl',
+      'image/svg+xml',
+      'image/x-adobe-dng',
+      'image/dng',
+      'image/x-canon-cr2',
+      'image/x-nikon-nef',
+      'image/x-sony-arw',
+      'image/x-olympus-orf',
+      'image/x-fuji-raf',
+    ],
+    allowedExtensions: [
+      '.jpg', '.jpeg', '.jfif', '.png', '.webp', '.gif',
+      '.heic', '.heif', '.avif', '.tiff', '.tif',
+      '.bmp', '.jxl', '.svg',
+      '.dng', '.cr2', '.nef', '.arw', '.orf', '.raf',
+    ],
+  },
+  [FileCategory.VENDOR_PROFILE]: {
+    maxSize: 20 * 1024 * 1024, // 20MB
+    allowedMimeTypes: [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/heic',
+      'image/heif',
+      'image/x-heic',
+      'image/x-heif',
+      'image/avif',
+      'image/tiff',
+      'image/tif',
+      'image/bmp',
+      'image/x-bmp',
+      'image/x-ms-bmp',
+      'image/jfif',
+      'image/pjpeg',
+      'image/jxl',
+      'image/svg+xml',
+    ],
+    allowedExtensions: [
+      '.jpg', '.jpeg', '.jfif', '.png', '.webp', '.gif',
+      '.heic', '.heif', '.avif', '.tiff', '.tif',
+      '.bmp', '.jxl', '.svg',
+    ],
+  },
+  [FileCategory.PORTFOLIO]: {
+    maxSize: 50 * 1024 * 1024, // 50MB
+    allowedMimeTypes: [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/heic',
+      'image/heif',
+      'image/x-heic',
+      'image/x-heif',
+      'image/avif',
+      'image/tiff',
+      'image/tif',
+      'image/bmp',
+      'image/x-bmp',
+      'image/x-ms-bmp',
+      'image/jfif',
+      'image/pjpeg',
+      'image/jxl',
+      'image/svg+xml',
+      'image/x-adobe-dng',
+      'image/dng',
+      'image/x-canon-cr2',
+      'image/x-canon-crw',
+      'image/x-nikon-nef',
+      'image/x-sony-arw',
+      'image/x-olympus-orf',
+      'image/x-panasonic-raw',
+      'image/x-fuji-raf',
+      'image/x-sigma-x3f',
+      'video/mp4',
+      'video/webm',
+      'video/quicktime',
+      'video/x-msvideo',
+    ],
+    allowedExtensions: [
+      '.jpg', '.jpeg', '.jfif', '.png', '.webp', '.gif',
+      '.heic', '.heif', '.avif', '.tiff', '.tif',
+      '.bmp', '.jxl', '.svg',
+      '.dng', '.cr2', '.crw', '.nef', '.arw', '.orf', '.raf', '.rw2', '.x3f',
+      '.mp4', '.webm', '.mov', '.avi',
     ],
   },
   [FileCategory.DOCUMENT]: {
@@ -215,14 +361,41 @@ export class UploadService {
   private isProcessableImage(mimeType: string): boolean {
     const processableMimeTypes = [
       'image/jpeg',
+      'image/jpg',
       'image/png',
       'image/webp',
       'image/gif',
       'image/tiff',
+      'image/tif',
       'image/bmp',
       'image/avif',
       'image/heic',
       'image/heif',
+      'image/x-heic',
+      'image/x-heif',
+      'image/jfif',
+      'image/pjpeg',
+      'image/x-png',
+      'image/x-bmp',
+      'image/x-ms-bmp',
+      'image/x-tiff',
+      'image/x-tif',
+      'image/x-citrix-jpeg',
+      'image/x-citrix-png',
+      'image/vnd.ms-photo',  // JPEG XR
+      'image/jxl',           // JPEG XL
+      'image/x-jxl',
+      'image/x-raw',
+      'image/x-adobe-dng',
+      'image/dng',
+      'image/x-canon-cr2',
+      'image/x-canon-crw',
+      'image/x-nikon-nef',
+      'image/x-sony-arw',
+      'image/x-olympus-orf',
+      'image/x-panasonic-raw',
+      'image/x-fuji-raf',
+      'image/x-sigma-x3f',
     ];
     return processableMimeTypes.includes(mimeType.toLowerCase());
   }
@@ -320,9 +493,12 @@ export class UploadService {
       imageProcessing?: ImageProcessingOptions;
     },
   ): Promise<UploadedFile> {
+    // Resolve the effective MIME type (handles octet-stream from mobile/browsers)
+    const resolvedMimeType = this.resolveMimeType(mimeType, originalName);
+
     // Validate file
     const validation = options?.validation || DEFAULT_VALIDATION[category];
-    await this.validateFile(file, originalName, mimeType, validation);
+    await this.validateFile(file, originalName, resolvedMimeType, validation);
 
     const imageOpts = {
       ...DEFAULT_IMAGE_PROCESSING,
@@ -330,13 +506,13 @@ export class UploadService {
     };
 
     let processedFile = file;
-    let finalMimeType = mimeType;
+    let finalMimeType = resolvedMimeType;
     let finalExtension = path.extname(originalName);
     let width: number | undefined;
     let height: number | undefined;
 
     // Process image if it's a processable type
-    if (this.isProcessableImage(mimeType)) {
+    if (this.isProcessableImage(resolvedMimeType)) {
       try {
         const processed = await this.processImage(file, imageOpts);
         processedFile = processed.buffer;
@@ -346,7 +522,7 @@ export class UploadService {
         height = processed.height;
 
         this.logger.debug(
-          `Image processed: ${originalName} -> WebP (${width}x${height}, ${processedFile.length} bytes)`,
+          `Image processed: ${originalName} (${resolvedMimeType}) -> WebP (${width}x${height}, ${processedFile.length} bytes)`,
         );
       } catch (error) {
         this.logger.warn(
@@ -357,7 +533,6 @@ export class UploadService {
     }
 
     // Generate unique filename with correct extension
-    const baseName = path.basename(originalName, path.extname(originalName));
     const filename = `${Date.now()}-${randomUUID()}${finalExtension}`;
     const filePath =
       options?.customPath || this.generatePath(category, filename);
@@ -367,7 +542,7 @@ export class UploadService {
       contentType: finalMimeType,
       metadata: {
         'original-name': originalName,
-        'original-mime-type': mimeType,
+        'original-mime-type': resolvedMimeType,
         category,
         ...(width && { width: String(width) }),
         ...(height && { height: String(height) }),
@@ -386,7 +561,7 @@ export class UploadService {
     let thumbnailPath: string | undefined;
 
     // Generate and upload thumbnail if requested
-    if (imageOpts.generateThumbnail && this.isProcessableImage(mimeType)) {
+    if (imageOpts.generateThumbnail && this.isProcessableImage(resolvedMimeType)) {
       try {
         const thumbnail = await this.generateThumbnail(
           file,
@@ -405,7 +580,7 @@ export class UploadService {
           { contentType: 'image/webp' },
         );
 
-        thumbnailUrl = thumbnailPath;
+        thumbnailUrl = await this.minioService.getFileUrl(thumbnailPath);
         this.logger.debug(`Thumbnail generated: ${thumbnailPath}`);
       } catch (error) {
         this.logger.warn(
@@ -417,6 +592,8 @@ export class UploadService {
 
     this.logger.log(`Image uploaded: ${filePath}`);
 
+    const fileUrl = await this.minioService.getFileUrl(filePath);
+
     return {
       originalName,
       filename,
@@ -424,7 +601,7 @@ export class UploadService {
       size: processedFile.length,
       mimeType: finalMimeType,
       bucket: this.minioService.getDefaultBucket(),
-      url: filePath,
+      url: fileUrl,
       thumbnailUrl,
       thumbnailPath,
       width,
@@ -476,9 +653,12 @@ export class UploadService {
       customPath?: string;
     },
   ): Promise<UploadedFile> {
+    // Resolve the effective MIME type (handles octet-stream from mobile/browsers)
+    const resolvedMimeType = this.resolveMimeType(mimeType, originalName);
+
     // Validate file
     const validation = options?.validation || DEFAULT_VALIDATION[category];
-    await this.validateFile(file, originalName, mimeType, validation);
+    await this.validateFile(file, originalName, resolvedMimeType, validation);
 
     // Generate unique filename
     const filename = this.generateFilename(originalName);
@@ -487,7 +667,7 @@ export class UploadService {
 
     // Upload to MinIO
     const uploadOptions: UploadOptions = {
-      contentType: mimeType,
+      contentType: resolvedMimeType,
       metadata: {
         'original-name': originalName,
         category,
@@ -504,14 +684,16 @@ export class UploadService {
 
     this.logger.log(`File uploaded: ${filePath}`);
 
+    const fileUrl = await this.minioService.getFileUrl(filePath);
+
     return {
       originalName,
       filename,
       path: filePath,
       size: file.length,
-      mimeType,
+      mimeType: resolvedMimeType,
       bucket: this.minioService.getDefaultBucket(),
-      url: filePath,
+      url: fileUrl,
       metadata: uploadOptions.metadata,
     };
   }
@@ -660,6 +842,8 @@ export class UploadService {
 
     this.logger.log(`Chunked upload completed: ${uploadId} -> ${filePath}`);
 
+    const fileUrl = await this.minioService.getFileUrl(filePath);
+
     return {
       originalName: session.filename,
       filename,
@@ -667,7 +851,7 @@ export class UploadService {
       size: completeFile.length,
       mimeType: session.mimeType,
       bucket: this.minioService.getDefaultBucket(),
-      url: filePath,
+      url: fileUrl,
     };
   }
 
@@ -716,7 +900,9 @@ export class UploadService {
       contentType: mimeType,
     });
 
-    return { uploadUrl, filePath, fileUrl: filePath };
+    const fileUrl = await this.minioService.getFileUrl(filePath);
+
+    return { uploadUrl, filePath, fileUrl };
   }
 
   async getPresignedDownloadUrl(
@@ -764,6 +950,8 @@ export class UploadService {
   async getFileInfo(filePath: string): Promise<UploadedFile | null> {
     try {
       const info = await this.minioService.getFileInfo(filePath);
+      const fileUrl = await this.minioService.getFileUrl(filePath);
+
       return {
         originalName:
           info.metadata?.['original-name'] || path.basename(filePath),
@@ -772,7 +960,7 @@ export class UploadService {
         size: info.size,
         mimeType: info.metadata?.['Content-Type'] || 'application/octet-stream',
         bucket: this.minioService.getDefaultBucket(),
-        url: filePath,
+        url: fileUrl,
         metadata: info.metadata,
       };
     } catch {
@@ -784,12 +972,78 @@ export class UploadService {
   // VALIDATION
   // ============================================================================
 
+  /**
+   * Map a file extension to its canonical MIME type.
+   * Used as a fallback when the client sends a generic type like application/octet-stream.
+   */
+  private extensionToMimeType(ext: string): string | null {
+    const map: Record<string, string> = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.jfif': 'image/jpeg',
+      '.pjpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+      '.gif': 'image/gif',
+      '.heic': 'image/heic',
+      '.heif': 'image/heif',
+      '.avif': 'image/avif',
+      '.tiff': 'image/tiff',
+      '.tif': 'image/tiff',
+      '.bmp': 'image/bmp',
+      '.jxl': 'image/jxl',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      // RAW camera formats
+      '.dng': 'image/x-adobe-dng',
+      '.cr2': 'image/x-canon-cr2',
+      '.crw': 'image/x-canon-crw',
+      '.nef': 'image/x-nikon-nef',
+      '.arw': 'image/x-sony-arw',
+      '.orf': 'image/x-olympus-orf',
+      '.rw2': 'image/x-panasonic-raw',
+      '.raf': 'image/x-fuji-raf',
+      '.x3f': 'image/x-sigma-x3f',
+      // Video
+      '.mp4': 'video/mp4',
+      '.webm': 'video/webm',
+      '.mov': 'video/quicktime',
+      '.avi': 'video/x-msvideo',
+      // Documents
+      '.pdf': 'application/pdf',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.xls': 'application/vnd.ms-excel',
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.txt': 'text/plain',
+      '.csv': 'text/csv',
+    };
+    return map[ext.toLowerCase()] ?? null;
+  }
+
+  /**
+   * Resolve the effective MIME type: use the client-supplied value unless it is generic
+   * (application/octet-stream / binary/octet-stream), in which case derive it from the
+   * file extension so that HEIC, RAW, etc. still pass validation.
+   */
+  private resolveMimeType(mimeType: string, filename: string): string {
+    const generic = ['application/octet-stream', 'binary/octet-stream', ''];
+    if (generic.includes(mimeType.toLowerCase())) {
+      const ext = path.extname(filename).toLowerCase();
+      return this.extensionToMimeType(ext) ?? mimeType;
+    }
+    return mimeType;
+  }
+
   private async validateFile(
     file: Buffer,
     filename: string,
     mimeType: string,
     options: FileValidationOptions,
   ): Promise<void> {
+    // Normalise MIME type before validation (handles octet-stream from browsers/mobile)
+    const resolvedMime = this.resolveMimeType(mimeType, filename);
+
     // Check file size
     if (options.maxSize && file.length > options.maxSize) {
       throw new BadRequestException(
@@ -799,7 +1053,7 @@ export class UploadService {
 
     // Check MIME type
     if (options.allowedMimeTypes && options.allowedMimeTypes.length > 0) {
-      if (!options.allowedMimeTypes.includes(mimeType)) {
+      if (!options.allowedMimeTypes.includes(resolvedMime)) {
         throw new BadRequestException(
           `File type not allowed. Allowed types: ${options.allowedMimeTypes.join(', ')}`,
         );

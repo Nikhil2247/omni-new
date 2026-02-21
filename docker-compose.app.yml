@@ -97,7 +97,9 @@ services:
       - MINIO_USE_SSL=false
       # Public URL reachable by browsers (fixes presigned upload/preview when MINIO_ENDPOINT is internal)
       - MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-}
-      - MINIO_DEFAULT_BUCKET=uploads
+      - MINIO_DEFAULT_BUCKET=${MINIO_DEFAULT_BUCKET:-omnicassion}
+      - MINIO_BUCKET=${MINIO_DEFAULT_BUCKET:-omnicassion}
+      - MINIO_AUTO_SET_PUBLIC_READ=true
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin123
       - MINIO_REGION=us-east-1

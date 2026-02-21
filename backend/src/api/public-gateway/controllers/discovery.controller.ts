@@ -18,6 +18,7 @@ import {
   CurrentUser,
   CurrentUserData,
 } from '../../../core/auth/decorators/current-user.decorator';
+import { MediaUrlNormalizerService } from '../services/media-url-normalizer.service';
 
 @Public()
 @Controller('discovery')
@@ -26,6 +27,7 @@ export class DiscoveryController {
     private readonly vendorProfileService: VendorProfileService,
     private readonly portfolioService: PortfolioService,
     private readonly vendorIndexer: VendorIndexer,
+    private readonly mediaUrlNormalizer: MediaUrlNormalizerService,
   ) {}
 
   @Get('vendors')
@@ -33,12 +35,15 @@ export class DiscoveryController {
     @Query() query: SearchVendorProfileDto,
     @CurrentUser() user?: CurrentUserData,
   ) {
-    return this.vendorProfileService.search(query, user?.id);
+    return this.vendorProfileService
+      .search(query, user?.id)
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('search')
   searchVendorsIndexed(@Query() query: SearchVendorIndexDto) {
-    return this.vendorIndexer.searchVendors(query.query || '', {
+    return this.vendorIndexer
+      .searchVendors(query.query || '', {
       page: query.page,
       hitsPerPage: query.limit,
       categoryId: query.categoryId,
@@ -50,12 +55,14 @@ export class DiscoveryController {
       isVerified: query.isVerified,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
-    });
+      })
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('nearby')
   searchNearbyVendors(@Query() query: SearchNearbyVendorsDto) {
-    return this.vendorIndexer.searchNearbyVendors(
+    return this.vendorIndexer
+      .searchNearbyVendors(
       query.query || '',
       query.lat,
       query.lng,
@@ -65,7 +72,8 @@ export class DiscoveryController {
         hitsPerPage: query.limit,
         categoryId: query.categoryId,
       },
-    );
+      )
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('suggestions')
@@ -77,14 +85,18 @@ export class DiscoveryController {
   getVendorBySlug(
     @Param('slug') slug: string,
   ): Promise<VendorProfileResponseDto> {
-    return this.vendorProfileService.findBySlug(slug);
+    return this.vendorProfileService
+      .findBySlug(slug)
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('featured')
   getFeatured(
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getFeatured(limit || 10);
+    return this.vendorProfileService
+      .getFeatured(limit || 10)
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('media')
@@ -99,7 +111,9 @@ export class DiscoveryController {
       hasPreviousPage: boolean;
     };
   }> {
-    return this.portfolioService.getPublicMediaFeed(query);
+    return this.portfolioService
+      .getPublicMediaFeed(query)
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('categories/:categoryId/vendors')
@@ -107,7 +121,9 @@ export class DiscoveryController {
     @Param('categoryId') categoryId: string,
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getByCategory(categoryId, limit || 20);
+    return this.vendorProfileService
+      .getByCategory(categoryId, limit || 20)
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('cities/:cityId/vendors')
@@ -115,6 +131,8 @@ export class DiscoveryController {
     @Param('cityId') cityId: string,
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getByCity(cityId, limit || 20);
+    return this.vendorProfileService
+      .getByCity(cityId, limit || 20)
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Sparkles, ArrowRight, Loader2 } from 'lucide-react'
@@ -170,9 +171,13 @@ export default function VibeQuizPage() {
                       : 'ring-transparent hover:ring-pink-200'
                   )}
                 >
-                  <img
+                  <NextImage
                     src={image.thumbnailUrl || image.url}
                     alt={`${image.category} - ${image.style}`}
+                    width={800}
+                    height={800}
+                    unoptimized={true}
+                    priority={true}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   />
 

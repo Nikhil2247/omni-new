@@ -1,6 +1,4 @@
-import { API_ENDPOINTS } from '@/lib/api/endpoints'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+const MINIO_PUBLIC_URL = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || 'https://files.omnicassion.com'
 const MINIO_ENDPOINT = process.env.NEXT_PUBLIC_MINIO_ENDPOINT || 'localhost'
 const MINIO_PORT = process.env.NEXT_PUBLIC_MINIO_PORT || '9000'
 const MINIO_BUCKET = process.env.NEXT_PUBLIC_MINIO_BUCKET || 'omnicassion'
@@ -8,17 +6,20 @@ const CDN_ENABLED = process.env.NEXT_PUBLIC_CDN_ENABLED === 'true'
 const CDN_BASE_URL = process.env.NEXT_PUBLIC_CDN_BASE_URL || ''
 
 const normalizedMinioEndpoint = MINIO_ENDPOINT.replace(/^https?:\/\//, '').replace(/\/$/, '')
+const normalizedPublicBaseUrl = MINIO_PUBLIC_URL
+  ? MINIO_PUBLIC_URL.replace(/\/+$/, '')
+  : `http://${normalizedMinioEndpoint}:${MINIO_PORT}`
 
 /**
- * Check if URL is already our backend media viewer endpoint
+ * Build direct public object URL from object path
  */
-const isMediaViewApiUrl = (url: string): boolean => {
-  try {
-    const urlObj = new URL(url)
-    return urlObj.pathname.endsWith(API_ENDPOINTS.PUBLIC.MEDIA.VIEW)
-  } catch {
-    return false
-  }
+const toPublicObjectUrl = (objectPath: string): string => {
+  const normalizedPath = objectPath.replace(/^\/+/, '')
+  const pathWithoutBucket = normalizedPath.startsWith(`${MINIO_BUCKET}/`)
+    ? normalizedPath.slice(MINIO_BUCKET.length + 1)
+    : normalizedPath
+
+  return `${normalizedPublicBaseUrl}/${MINIO_BUCKET}/${pathWithoutBucket}`
 }
 
 /**
@@ -85,8 +86,8 @@ const isMinioPath = (pathOrUrl: string): boolean => {
  * - CDN URLs (if CDN is enabled) - returned with CDN base URL
  * - External URLs (Unsplash, etc.) - returned as-is
  * - Already presigned MinIO URLs - returned as-is
- * - MinIO object paths - generates presigned URL via API or CDN
- * - Direct MinIO URLs without presigning - generates presigned URL via API
+ * - MinIO object paths - returns direct MinIO public URL or CDN URL
+ * - Direct MinIO URLs without presigning - returned as-is
  *
  * @param pathOrUrl - The file path or URL
  * @param options - Optional settings
@@ -97,11 +98,6 @@ export const getMinioViewUrl = (
   options?: { expiresIn?: number; useCdn?: boolean }
 ): string | null => {
   if (!pathOrUrl) return null
-
-  // Already correctly routed through backend media viewer
-  if (pathOrUrl.startsWith('http') && isMediaViewApiUrl(pathOrUrl)) {
-    return pathOrUrl
-  }
 
   // If it's an external URL (like Unsplash), return as-is
   if (isExternalUrl(pathOrUrl)) {
@@ -116,26 +112,24 @@ export const getMinioViewUrl = (
     return pathOrUrl
   }
 
-  // If it's a MinIO URL without presigning, extract the path
+  // If it's a MinIO URL, return direct URL (or CDN URL when enabled)
   if (isMinioUrl(pathOrUrl)) {
     try {
       const urlObj = new URL(pathOrUrl)
-      // Extract path after bucket name (e.g., /bucket/path/file.jpg -> path/file.jpg)
       const pathParts = urlObj.pathname.split('/').filter(Boolean)
       if (pathParts.length >= 2) {
+        const bucket = pathParts[0]
         const objectPath = pathParts.slice(1).join('/')
         
-        // Use CDN if enabled
         if (shouldUseCdn && CDN_BASE_URL) {
           return `${CDN_BASE_URL}/${objectPath}`
         }
 
-        // Otherwise, get presigned URL via API
-        const params = new URLSearchParams({ path: objectPath })
-        if (options?.expiresIn) {
-          params.set('expiresIn', String(options.expiresIn))
+        if (bucket === MINIO_BUCKET) {
+          return pathOrUrl
         }
-        return `${API_URL}${API_ENDPOINTS.PUBLIC.MEDIA.VIEW}?${params.toString()}`
+
+        return `${normalizedPublicBaseUrl}/${bucket}/${objectPath}`
       }
     } catch {
       // Fall through to treat as path
@@ -149,12 +143,8 @@ export const getMinioViewUrl = (
       return `${CDN_BASE_URL}/${pathOrUrl}`
     }
 
-    // Otherwise, generate presigned URL
-    const params = new URLSearchParams({ path: pathOrUrl })
-    if (options?.expiresIn) {
-      params.set('expiresIn', String(options.expiresIn))
-    }
-    return `${API_URL}${API_ENDPOINTS.PUBLIC.MEDIA.VIEW}?${params.toString()}`
+    // Otherwise, return direct public MinIO URL
+    return toPublicObjectUrl(pathOrUrl)
   }
 
   // Fallback: return as-is if none of the above conditions match
@@ -191,22 +181,5 @@ export const getBestImageUrl = (
  * Check if an image URL needs to go through the MinIO proxy
  */
 export const needsMinioProxy = (url?: string | null): boolean => {
-  if (!url) return false
-
-  // Already routed through backend media viewer
-  if (url.startsWith('http') && isMediaViewApiUrl(url)) return false
-
-  // External URLs don't need proxy
-  if (isExternalUrl(url)) return false
-
-  // Already presigned URLs don't need proxy
-  if (hasPresignedParams(url)) return false
-
-  // MinIO URLs without presigning need proxy
-  if (isMinioUrl(url)) return true
-
-  // MinIO paths need proxy
-  if (isMinioPath(url)) return true
-
   return false
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { PublicHeader } from "./public-header";
@@ -99,8 +100,12 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         <aside className="bg-background/95 fixed top-0 left-0 z-40 hidden h-screen w-16 flex-col border-r backdrop-blur-md md:flex">
           <div className="flex items-center justify-center py-3 border-b">
             <Link href="/" aria-label="Home">
-              <img
+              <NextImage
                 src="/icons/omnicassion favicon.png"
+                width={32}
+                height={32}
+                unoptimized={true}
+                priority={true}
                 className="h-8 w-auto object-contain rounded-full"
                 alt="Omnicassion Logo"
               />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import NextImage from "next/image";
 import { useEffect, useState } from "react";
 import { GlobalSearch } from "@/components/common/global-search";
 import { searchApi, type SearchResultItem, type GlobalSearchResponse } from "@/lib/api/search";
@@ -142,9 +143,13 @@ function SearchResultCard({ result }: { result: SearchResultItem }) {
       {/* Image */}
       {result.imageUrl && (
         <div className="relative aspect-video w-full overflow-hidden bg-muted">
-          <img
+          <NextImage
             src={result.imageUrl}
             alt={result.title}
+            width={1200}
+            height={675}
+            unoptimized={true}
+            priority={true}
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
           />
           {result.isVerified && (

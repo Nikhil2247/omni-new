@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import NextImage from 'next/image'
 import { format } from 'date-fns'
 import {
   useGuestUploads,
@@ -233,11 +234,14 @@ export function MemoryModeration({ memoryId }: MemoryModerationProps) {
 
               {/* Image */}
               <div className="aspect-square bg-muted">
-                <img
+                <NextImage
                   src={getMinioViewUrl(upload.thumbnailUrl || upload.mediaUrl) || ''}
                   alt={upload.caption || 'Guest photo'}
+                  width={600}
+                  height={600}
+                  unoptimized={true}
+                  priority={true}
                   className="w-full h-full object-cover"
-                  loading="lazy"
                 />
               </div>
 

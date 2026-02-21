@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
+import NextImage from 'next/image'
 import { useDropzone, type Accept } from 'react-dropzone'
 import { cn } from '@/lib/utils'
 import { Button } from './button'
@@ -196,9 +197,13 @@ export function FileUpload({
               {/* Preview image or icon */}
               <div className="aspect-square bg-muted flex items-center justify-center">
                 {item.preview ? (
-                  <img
+                  <NextImage
                     src={item.preview}
                     alt={item.file.name}
+                    width={400}
+                    height={400}
+                    unoptimized={true}
+                    priority={true}
                     className="h-full w-full object-cover"
                   />
                 ) : (

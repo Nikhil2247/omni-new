@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(xxd:*)",
+      "Bash(gunzip:*)",
+      "Bash(npm run migrate:extract:*)",
+      "Bash(node -e:*)",
+      "Bash(npm run migrate:mongodb:*)"
+    ]
+  }
+}

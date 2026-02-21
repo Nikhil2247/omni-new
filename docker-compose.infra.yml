@@ -16,8 +16,11 @@
 #   POSTGRES_DB         - Database name (default: app_db)
 #   MINIO_ROOT_USER     - MinIO admin username (default: minioadmin)
 #   MINIO_ROOT_PASSWORD - MinIO admin password (default: minioadmin123)
-#   MINIO_DEFAULT_BUCKETS - Comma-separated bucket names (default: uploads,backups,cms-uploads)
+#   MINIO_SERVER_URL - Public MinIO API URL (example: https://files.omnicassion.com)
+#   MINIO_BROWSER_REDIRECT_URL - Public MinIO Console URL (example: https://minio-console.omnicassion.com)
+#   MINIO_DEFAULT_BUCKETS - Comma-separated bucket names (default: omnicassion)
 #   MEILI_MASTER_KEY    - Meilisearch master key (default: masterKey123456789)
+#   MEILISEARCH_IMAGE_TAG - Meilisearch image tag (default: v1.35.0)
 #
 # Connecting from other services (use these in your app):
 #   - PostgreSQL: postgresql://postgres:password@infra-postgres:5432/app_db
@@ -175,6 +178,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_SERVER_URL: ${MINIO_SERVER_URL:-}
       MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-}
     volumes:
       - infra-minio-data:/data
@@ -217,7 +221,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
-      MINIO_DEFAULT_BUCKETS: ${MINIO_DEFAULT_BUCKETS:-uploads,backups,cms-uploads}
+      MINIO_DEFAULT_BUCKETS: ${MINIO_DEFAULT_BUCKETS:-omnicassion}
     entrypoint: /bin/sh
     command:
       - -c
@@ -245,7 +249,7 @@ services:
   # Meilisearch - Full-text Search Engine
   # ===========================================
   meilisearch:
-    image: getmeili/meilisearch:latest
+    image: getmeili/meilisearch:${MEILISEARCH_IMAGE_TAG:-v1.35.0}
     container_name: infra-meilisearch
     hostname: infra-meilisearch
     ports:

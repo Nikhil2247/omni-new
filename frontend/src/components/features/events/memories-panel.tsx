@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import NextImage from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -572,9 +573,13 @@ function UploadCard({
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      <img
+      <NextImage
         src={imageUrl}
         alt={upload.caption || 'Guest upload'}
+        width={600}
+        height={600}
+        unoptimized={true}
+        priority={true}
         className="w-full h-full object-cover"
       />
       

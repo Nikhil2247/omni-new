@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import NextImage from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, X, Loader2, MapPin, Tag, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -262,9 +263,13 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
                     )}
                   >
                     {result.imageUrl && (
-                      <img
+                      <NextImage
                         src={result.imageUrl}
                         alt={result.title}
+                        width={48}
+                        height={48}
+                        unoptimized={true}
+                        priority={true}
                         className="h-12 w-12 rounded-md object-cover"
                       />
                     )}

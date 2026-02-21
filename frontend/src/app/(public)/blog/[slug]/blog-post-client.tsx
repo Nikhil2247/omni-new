@@ -1,5 +1,6 @@
 'use client'
 
+import NextImage from 'next/image'
 import { Clock, Eye, Calendar, ArrowLeft, Share2, BookOpen } from 'lucide-react'
 import { usePublicBlogPost } from '@/hooks/queries/use-public-blog'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
@@ -231,9 +232,13 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
               <div className="mb-12 overflow-hidden rounded-2xl border shadow-lg">
                 <AspectRatio ratio={16 / 9}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <NextImage
                     src={featuredImageUrl}
                     alt={post.featuredImageAlt || post.title}
+                    width={1600}
+                    height={900}
+                    unoptimized={true}
+                    priority={true}
                     className="h-full w-full object-cover"
                   />
                 </AspectRatio>

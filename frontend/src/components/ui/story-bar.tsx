@@ -113,6 +113,8 @@ export function StoryBar({
                     src={story.image}
                     alt={story.title}
                     fill
+                    unoptimized={true}
+                    priority={true}
                     className="object-cover"
                   />
                 </div>
@@ -240,6 +242,8 @@ export function StoryViewer({
               src={currentStory.image}
               alt={currentStory.title}
               fill
+              unoptimized={true}
+              priority={true}
               className="object-contain"
             />
           </motion.div>
@@ -252,6 +256,8 @@ export function StoryViewer({
                 alt=""
                 width={40}
                 height={40}
+                unoptimized={true}
+                priority={true}
                 className="object-cover"
               />
             </div>

@@ -64,6 +64,36 @@ export class MinioService implements OnModuleInit {
     );
   }
 
+  private getConfiguredBuckets(): string[] {
+    const defaultBucket = this.defaultBucket?.trim();
+    const legacyBucket = this.configService
+      .get<string>('MINIO_BUCKET', '')
+      .trim();
+
+    const buckets = [defaultBucket, legacyBucket]
+      .filter((value): value is string => Boolean(value))
+      .map((value) => value.replace(/^\/+|\/+$/g, ''));
+
+    return Array.from(new Set(buckets));
+  }
+
+  private async ensureBucketReady(
+    bucket: string,
+    applyPublicReadPolicy: boolean,
+  ): Promise<void> {
+    const bucketExists = await this.client.bucketExists(bucket);
+
+    if (!bucketExists) {
+      await this.createBucket(bucket);
+      this.logger.log(`Created bucket: ${bucket}`);
+    }
+
+    if (applyPublicReadPolicy) {
+      await this.setPublicReadPolicy(bucket);
+      this.logger.log(`Public read policy enforced for bucket: ${bucket}`);
+    }
+  }
+
   async onModuleInit(): Promise<void> {
     const endPoint = this.configService.get<string>(
       'MINIO_ENDPOINT',
@@ -118,12 +148,13 @@ export class MinioService implements OnModuleInit {
     }
 
     try {
-      // Verify connection by checking if default bucket exists
-      const bucketExists = await this.client.bucketExists(this.defaultBucket);
+      const shouldSetPublicRead =
+        this.configService.get<string>('MINIO_AUTO_SET_PUBLIC_READ', 'true') ===
+        'true';
 
-      if (!bucketExists) {
-        await this.createBucket(this.defaultBucket);
-        this.logger.log(`Created default bucket: ${this.defaultBucket}`);
+      const buckets = this.getConfiguredBuckets();
+      for (const bucket of buckets) {
+        await this.ensureBucketReady(bucket, shouldSetPublicRead);
       }
 
       this.logger.log(`Connected to MinIO at ${endPoint}:${port}`);

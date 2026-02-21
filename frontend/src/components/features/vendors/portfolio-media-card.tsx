@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Heart } from 'lucide-react'
@@ -97,11 +98,14 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
         className="block w-full"
         aria-label={`View ${item.vendor.businessName || 'vendor'} profile`}
       >
-        <img
+        <NextImage
           src={imageUrl}
           alt={item.altText || item.vendor.businessName || 'Portfolio image'}
+          width={1200}
+          height={900}
+          unoptimized={true}
+          priority={true}
           className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          loading="lazy"
         />
       </Link>
       

@@ -38,6 +38,7 @@ import { UserAccess } from '../../../core/auth/decorators/roles.decorator';
 import { UserId } from '../../../core/auth/decorators/current-user.decorator';
 import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer';
 import { ANALYTICS_EVENTS } from '../../../core/events/event-constants';
+import { MinioService } from '../../../infrastructure/storage/minio.service';
 
 class VendorClickDto {
   @IsUUID()
@@ -58,6 +59,7 @@ export class DiscoveryController {
     private readonly vendorProfileService: VendorProfileService,
     private readonly vendorIndexer: VendorIndexer,
     private readonly eventEmitter: EventEmitter2,
+    private readonly minioService: MinioService,
   ) {}
 
   /**
@@ -92,7 +94,7 @@ export class DiscoveryController {
       });
     });
 
-    return result;
+    return this.normalizeMediaUrlsInResponse(result);
   }
 
   /**
@@ -147,7 +149,7 @@ export class DiscoveryController {
       });
     });
 
-    return result;
+    return this.normalizeMediaUrlsInResponse(result);
   }
 
   /**
@@ -195,7 +197,7 @@ export class DiscoveryController {
       });
     });
 
-    return result;
+    return this.normalizeMediaUrlsInResponse(result);
   }
 
   /**
@@ -233,7 +235,7 @@ export class DiscoveryController {
       source: 'direct',
     });
 
-    return vendor;
+    return this.normalizeMediaUrlsInResponse(vendor);
   }
 
   /**
@@ -274,7 +276,8 @@ export class DiscoveryController {
   async getFeaturedVendors(
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getFeatured(limit || 10);
+    const vendors = await this.vendorProfileService.getFeatured(limit || 10);
+    return this.normalizeMediaUrlsInResponse(vendors);
   }
 
   /**
@@ -289,7 +292,11 @@ export class DiscoveryController {
     @Param('categoryId') categoryId: string,
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getByCategory(categoryId, limit || 20);
+    const vendors = await this.vendorProfileService.getByCategory(
+      categoryId,
+      limit || 20,
+    );
+    return this.normalizeMediaUrlsInResponse(vendors);
   }
 
   /**
@@ -304,6 +311,98 @@ export class DiscoveryController {
     @Param('cityId') cityId: string,
     @Query('limit') limit?: number,
   ): Promise<VendorProfileResponseDto[]> {
-    return this.vendorProfileService.getByCity(cityId, limit || 20);
+    const vendors = await this.vendorProfileService.getByCity(cityId, limit || 20);
+    return this.normalizeMediaUrlsInResponse(vendors);
+  }
+
+  private async normalizeMediaUrlsInResponse<T>(payload: T): Promise<T> {
+    return (await this.normalizeValue(payload, null)) as T;
+  }
+
+  private async normalizeValue(
+    value: unknown,
+    key: string | null,
+  ): Promise<unknown> {
+    if (value == null) {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      if (!this.isMediaKey(key)) {
+        return value;
+      }
+      const objectPath = this.extractObjectPath(value);
+      if (!objectPath) {
+        return value;
+      }
+      return this.minioService.getFileUrl(objectPath);
+    }
+
+    if (Array.isArray(value)) {
+      return Promise.all(value.map((item) => this.normalizeValue(item, null)));
+    }
+
+    if (typeof value === 'object') {
+      const entries = Object.entries(value as Record<string, unknown>);
+      const normalized = await Promise.all(
+        entries.map(async ([entryKey, entryValue]) => [
+          entryKey,
+          await this.normalizeValue(entryValue, entryKey),
+        ]),
+      );
+      return Object.fromEntries(normalized);
+    }
+
+    return value;
+  }
+
+  private isMediaKey(key: string | null): boolean {
+    if (!key) {
+      return false;
+    }
+
+    return /^(url|thumbnailUrl|cdnUrl|mediaUrl|profilePhotoUrl|avatarUrl|imageUrl|logo|featuredImage|ogImage)$/i.test(
+      key,
+    );
+  }
+
+  private extractObjectPath(value: string): string | null {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      const normalized = trimmed.replace(/^\/+/, '');
+      return normalized.includes('/') ? normalized : null;
+    }
+
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.hostname.toLowerCase() === 'files.omnicassion.com') {
+        return null;
+      }
+
+      const mediaPathParam = parsed.searchParams.get('path');
+      if (mediaPathParam) {
+        return decodeURIComponent(mediaPathParam).replace(/^\/+/, '');
+      }
+
+      const segments = decodeURIComponent(parsed.pathname)
+        .split('/')
+        .filter(Boolean);
+      if (segments.length <= 1) {
+        return null;
+      }
+
+      const bucket = this.minioService.getDefaultBucket();
+      if (segments[0] === bucket) {
+        return segments.slice(1).join('/');
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
   }
 }

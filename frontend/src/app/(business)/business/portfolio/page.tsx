@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import NextImage from 'next/image'
 import {
   useBusinessProfile,
   useBusinessPortfolio,
@@ -924,7 +925,15 @@ function MediaCard({
     <Card className="overflow-hidden group">
       <div className="relative aspect-square bg-muted">
         {item.type === 'IMAGE' ? (
-          <img src={resolvedUrl} alt={item.altText || 'Media item'} className="object-cover w-full h-full" />
+          <NextImage
+            src={resolvedUrl}
+            alt={item.altText || 'Media item'}
+            width={800}
+            height={800}
+            unoptimized={true}
+            priority={true}
+            className="object-cover w-full h-full"
+          />
         ) : (
           <div className="flex items-center justify-center h-full">
             <Video className="h-12 w-12 text-muted-foreground" />
@@ -988,7 +997,15 @@ function MediaListItem({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted shrink-0">
           {item.type === 'IMAGE' ? (
-            <img src={resolvedUrl} alt={item.altText || 'Media item'} className="object-cover w-full h-full" />
+            <NextImage
+              src={resolvedUrl}
+              alt={item.altText || 'Media item'}
+              width={256}
+              height={256}
+              unoptimized={true}
+              priority={true}
+              className="object-cover w-full h-full"
+            />
           ) : (
             <div className="flex items-center justify-center h-full">
               <Video className="h-6 w-6 text-muted-foreground" />
@@ -1063,7 +1080,15 @@ function AlbumCard({
     >
       <div className="relative h-28 bg-muted sm:h-30">
         {coverUrl ? (
-          <img src={coverUrl} alt={album.title} className="object-cover w-full h-full" />
+          <NextImage
+            src={coverUrl}
+            alt={album.title}
+            width={640}
+            height={360}
+            unoptimized={true}
+            priority={true}
+            className="object-cover w-full h-full"
+          />
         ) : (
           <div className="flex items-center justify-center h-full">
             <ImageIcon className="h-8 w-8 text-muted-foreground" />

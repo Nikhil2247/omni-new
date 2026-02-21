@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import NextImage from 'next/image'
 import { useLogout } from '@/hooks/use-auth'
 import { useChangePassword, useEnable2FA, useVerify2FA, useDisable2FA } from '@/hooks/use-user-settings'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -226,7 +227,15 @@ export function SecurityForm() {
               {/* TODO: Display QR code from API response */}
               <div className="flex h-48 items-center justify-center rounded-lg border bg-muted">
                 {qrCode ? (
-                  <img src={qrCode} alt="2FA QR Code" className="h-full w-auto" />
+                  <NextImage
+                    src={qrCode}
+                    alt="2FA QR Code"
+                    width={192}
+                    height={192}
+                    unoptimized={true}
+                    priority={true}
+                    className="h-full w-auto"
+                  />
                 ) : (
                   <p className="text-sm text-muted-foreground">Loading QR code...</p>
                 )}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import NextImage from 'next/image'
 import { format } from 'date-fns'
 import { useGuestUploads } from '@/hooks/queries/use-guest-uploads'
 import { getMinioViewUrl } from '@/lib/utils/minio'
@@ -71,11 +72,14 @@ export function MemoryGallery({ memoryId }: MemoryGalleryProps) {
               onClick={() => setSelectedPhoto(upload.id)}
               className="relative aspect-square rounded-lg overflow-hidden bg-muted group focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <img
+              <NextImage
                 src={getMinioViewUrl(upload.thumbnailUrl || upload.mediaUrl) || ''}
                 alt={upload.caption || 'Guest photo'}
+                width={600}
+                height={600}
+                unoptimized={true}
+                priority={true}
                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                loading="lazy"
               />
               {upload.uploaderName && (
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -96,9 +100,13 @@ export function MemoryGallery({ memoryId }: MemoryGalleryProps) {
           {selectedUpload && (
             <div className="space-y-4">
               <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted">
-                <img
+                <NextImage
                   src={getMinioViewUrl(selectedUpload.mediaUrl) || ''}
                   alt={selectedUpload.caption || 'Guest photo'}
+                  width={1200}
+                  height={900}
+                  unoptimized={true}
+                  priority={true}
                   className="w-full h-full object-contain"
                 />
               </div>

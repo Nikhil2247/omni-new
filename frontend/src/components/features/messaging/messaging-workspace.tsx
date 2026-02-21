@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import NextImage from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth-store'
 import { MessagingClient } from '@/lib/websocket/messaging-client'
@@ -1242,9 +1243,13 @@ function AttachmentPreview({ attachment }: { attachment: MessageAttachment }) {
   if (isImage) {
     return (
       <div className="overflow-hidden rounded-xl">
-        <img
+        <NextImage
           src={attachment.url}
           alt={attachment.fileName}
+          width={960}
+          height={640}
+          unoptimized={true}
+          priority={true}
           className="max-h-48 max-w-full object-cover md:max-h-64"
         />
       </div>

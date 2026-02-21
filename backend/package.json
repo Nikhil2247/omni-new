@@ -20,7 +20,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node prisma/seed.ts",
     "db:empty": "ts-node prisma/empty-db.ts",
-    "seed:launch": "ts-node prisma/seed-launch.ts"
+    "seed:launch": "ts-node prisma/seed-launch.ts",
+    "seed:vendor": "ts-node prisma/seed-vendor.ts",
+    "migrate:extract": "ts-node scripts/extract-bson-to-json.ts",
+    "migrate:mongodb": "ts-node scripts/migrate-mongodb-to-postgres.ts",
+    "migrate:full": "npm run migrate:extract && npm run migrate:mongodb"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
@@ -46,6 +50,7 @@
     "@socket.io/redis-adapter": "^8.3.0",
     "@types/nodemailer": "^7.0.5",
     "bcryptjs": "^3.0.3",
+    "bson": "^7.2.0",
     "bullmq": "^5.66.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
@@ -69,6 +74,7 @@
     "slugify": "^1.6.6",
     "socket.io": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
+    "tar": "^7.5.9",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

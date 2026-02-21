@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useCreateBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
@@ -337,9 +338,13 @@ export default function MarketingContentNewPage() {
                   <Label>Preview</Label>
                   <div className="overflow-hidden rounded-lg border">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <NextImage
                       src={featuredImagePreview || getMinioViewUrl(featuredImage) || featuredImage}
                       alt={featuredImageAlt || 'Featured image preview'}
+                      width={1200}
+                      height={480}
+                      unoptimized={true}
+                      priority={true}
                       className="h-48 w-full object-cover"
                     />
                   </div>
@@ -395,9 +400,13 @@ export default function MarketingContentNewPage() {
                   <Label>Preview</Label>
                   <div className="overflow-hidden rounded-lg border">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <NextImage
                       src={ogImagePreview || getMinioViewUrl(ogImage) || ogImage}
                       alt="Open Graph preview"
+                      width={1200}
+                      height={480}
+                      unoptimized={true}
+                      priority={true}
                       className="h-48 w-full object-cover"
                     />
                   </div>

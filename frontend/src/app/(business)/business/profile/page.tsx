@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ElementType } from 'react'
 import Link from 'next/link'
+import NextImage from 'next/image'
 import {
   useBusinessProfile,
   useCreateBusinessProfile,
@@ -380,7 +381,15 @@ export default function BusinessProfilePage() {
                 </div>
                 {createPhotoPreviewUrl && (
                   <div className="h-28 w-28 overflow-hidden rounded-full border bg-muted">
-                    <img src={createPhotoPreviewUrl} alt="Profile preview" className="h-full w-full object-cover" />
+                    <NextImage
+                      src={createPhotoPreviewUrl}
+                      alt="Profile preview"
+                      width={224}
+                      height={224}
+                      unoptimized={true}
+                      priority={true}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                 )}
               </div>
@@ -474,7 +483,15 @@ export default function BusinessProfilePage() {
                 <div className="absolute inset-0 rounded-full bg-linear-to-tr from-primary via-primary/80 to-primary/60" />
                 <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-background">
                   {profilePhotoViewUrl ? (
-                    <img src={profilePhotoViewUrl} alt={profile.businessName || ''} className="h-full w-full object-cover" />
+                    <NextImage
+                      src={profilePhotoViewUrl}
+                      alt={profile.businessName || ''}
+                      width={336}
+                      height={336}
+                      unoptimized={true}
+                      priority={true}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-muted text-4xl font-bold text-muted-foreground">
                       {profile.businessName?.charAt(0) || 'B'}
@@ -615,7 +632,15 @@ export default function BusinessProfilePage() {
                         {media.type === 'VIDEO' ? (
                           <>
                             {thumbnailUrl ? (
-                              <img src={thumbnailUrl} alt={media.altText || 'Portfolio video'} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                              <NextImage
+                                src={thumbnailUrl}
+                                alt={media.altText || 'Portfolio video'}
+                                width={800}
+                                height={800}
+                                unoptimized={true}
+                                priority={true}
+                                className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                              />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center bg-muted">
                                 <Play className="h-10 w-10 text-muted-foreground/60" />
@@ -627,7 +652,15 @@ export default function BusinessProfilePage() {
                           </>
                         ) : (
                           mediaUrl ? (
-                            <img src={mediaUrl} alt={media.altText || 'Portfolio image'} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                            <NextImage
+                              src={mediaUrl}
+                              alt={media.altText || 'Portfolio image'}
+                              width={800}
+                              height={800}
+                              unoptimized={true}
+                              priority={true}
+                              className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                            />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center bg-muted">
                               <ImageIcon className="h-8 w-8 text-muted-foreground/60" />

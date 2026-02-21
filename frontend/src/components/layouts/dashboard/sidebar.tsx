@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import NextImage from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -35,8 +36,12 @@ export function Sidebar() {
       <div className="flex h-16 items-center justify-between border-b px-4">
         <Link href="/" className="flex items-center gap-2">
           {/* Full logo (expanded) */}
-          <img
+          <NextImage
             src="/images/omnilogo.avif"
+            width={32}
+            height={32}
+            unoptimized={true}
+            priority={true}
             alt="Omnicassion"
             className={cn(
               'h-8 w-auto object-contain transition-opacity duration-200',
@@ -44,8 +49,12 @@ export function Sidebar() {
             )}
           />
           {/* Icon-only logo (collapsed) */}
-          <img
+          <NextImage
             src="/icons/omnicassion favicon.png"
+            width={32}
+            height={32}
+            unoptimized={true}
+            priority={true}
             alt="Omnicassion"
             className={cn(
               'h-8 w-8 object-contain transition-opacity duration-200',

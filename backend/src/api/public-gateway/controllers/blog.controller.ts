@@ -6,6 +6,7 @@ import {
 } from '../../../domain/content/dto/blog-post.dto';
 import { PrismaService } from '../../../core/database/prisma.service';
 import { Public } from '../../../core/auth/decorators/public.decorator';
+import { MediaUrlNormalizerService } from '../services/media-url-normalizer.service';
 
 @Controller('blog')
 @Public()
@@ -13,19 +14,24 @@ export class BlogController {
   constructor(
     private readonly blogService: BlogService,
     private readonly prisma: PrismaService,
+    private readonly mediaUrlNormalizer: MediaUrlNormalizerService,
   ) {}
 
   @Get('posts')
   list(@Query() query: SearchBlogPostsDto) {
-    return this.blogService.search({
-      ...query,
-      status: BlogStatus.PUBLISHED,
-    });
+    return this.blogService
+      .search({
+        ...query,
+        status: BlogStatus.PUBLISHED,
+      })
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('posts/:slug')
   getBySlug(@Param('slug') slug: string) {
-    return this.blogService.findBySlug(slug, true);
+    return this.blogService
+      .findBySlug(slug, true)
+      .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 
   @Get('categories')

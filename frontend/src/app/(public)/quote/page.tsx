@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import NextImage from 'next/image'
 import axios from 'axios'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -247,7 +248,15 @@ export default function QuotePage() {
         <aside className="space-y-4">
           {imageUrl && (
             <div className="overflow-hidden rounded-xl border">
-              <img src={imageUrl} alt="Reference" className="h-auto w-full object-cover" loading="lazy" />
+              <NextImage
+                src={imageUrl}
+                alt="Reference"
+                width={1200}
+                height={900}
+                unoptimized={true}
+                priority={true}
+                className="h-auto w-full object-cover"
+              />
               <div className="p-3 text-xs text-muted-foreground">Reference image</div>
             </div>
           )}

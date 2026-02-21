@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { useMemo, useState } from 'react'
 import { Clock, Eye, Search } from 'lucide-react'
 import { usePublicBlogCategories, usePublicBlogPosts, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
@@ -106,9 +107,13 @@ export default function BlogPage() {
                   <AspectRatio ratio={16 / 9} className="bg-muted">
                     {(getMinioViewUrl(post.featuredImage) || post.featuredImage) ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <NextImage
                         src={getMinioViewUrl(post.featuredImage) || post.featuredImage || ''}
                         alt={post.featuredImageAlt || post.title}
+                        width={1600}
+                        height={900}
+                        unoptimized={true}
+                        priority={true}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (

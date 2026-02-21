@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import NextImage from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import { useBlogPost, useDeleteBlogPost, usePublishBlogPost, useUpdateBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
@@ -316,9 +317,13 @@ export default function MarketingContentDetailPage() {
               placeholder="Featured image URL"
             />
             {featuredImage ? (
-              <img
+              <NextImage
                 src={featuredImagePreview || getMinioViewUrl(featuredImage) || featuredImage}
                 alt={featuredImageAlt || 'Featured image preview'}
+                width={1200}
+                height={400}
+                unoptimized={true}
+                priority={true}
                 className="h-40 w-full rounded-md object-cover"
               />
             ) : null}
@@ -348,9 +353,13 @@ export default function MarketingContentDetailPage() {
               placeholder="OG image URL"
             />
             {ogImage ? (
-              <img
+              <NextImage
                 src={ogImagePreview || getMinioViewUrl(ogImage) || ogImage}
                 alt="Open Graph preview"
+                width={1200}
+                height={400}
+                unoptimized={true}
+                priority={true}
                 className="h-40 w-full rounded-md object-cover"
               />
             ) : null}

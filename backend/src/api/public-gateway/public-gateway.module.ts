@@ -20,6 +20,7 @@ import { MediaTagsController } from './controllers/media-tags.controller';
 import { ChatbotController } from './controllers/chatbot.controller';
 import { ChatbotService } from './services/chatbot.service';
 import { GlobalSearchService } from './services/global-search.service';
+import { MediaUrlNormalizerService } from './services/media-url-normalizer.service';
 
 @Module({
   imports: [
@@ -45,6 +46,6 @@ import { GlobalSearchService } from './services/global-search.service';
     ChatbotController,
     SearchController,
   ],
-  providers: [ChatbotService, GlobalSearchService],
+  providers: [ChatbotService, GlobalSearchService, MediaUrlNormalizerService],
 })
 export class PublicGatewayModule {}

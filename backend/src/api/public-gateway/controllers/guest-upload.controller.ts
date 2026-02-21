@@ -26,6 +26,7 @@ import {
   UploadService,
   FileCategory,
 } from '../../../infrastructure/storage/upload.service';
+import { MinioService } from '../../../infrastructure/storage/minio.service';
 import { CreateGuestUploadDto } from '../../../domain/planning/dto/guest-upload.dto';
 
 @Controller('guest-upload')
@@ -35,6 +36,7 @@ export class GuestUploadController {
   constructor(
     private readonly guestUploadService: GuestUploadService,
     private readonly uploadService: UploadService,
+    private readonly minioService: MinioService,
   ) {}
 
   @Get(':eventCode')
@@ -144,11 +146,18 @@ export class GuestUploadController {
       caption: dto.caption,
     });
 
+    const mediaUrl = guestUpload.mediaUrl
+      ? await this.minioService.getFileUrl(guestUpload.mediaUrl)
+      : guestUpload.mediaUrl;
+    const thumbnailUrl = guestUpload.thumbnailUrl
+      ? await this.minioService.getFileUrl(guestUpload.thumbnailUrl)
+      : guestUpload.thumbnailUrl;
+
     return {
       id: guestUpload.id,
       status: guestUpload.status,
-      mediaUrl: guestUpload.mediaUrl,
-      thumbnailUrl: guestUpload.thumbnailUrl,
+      mediaUrl,
+      thumbnailUrl,
       message:
         guestUpload.status === 'PENDING'
           ? 'Your photo has been submitted and is awaiting approval'
@@ -162,17 +171,25 @@ export class GuestUploadController {
   async getPublicGallery(@Param('eventCode') eventCode: string) {
     const uploads = await this.guestUploadService.findByEventCode(eventCode);
 
-    return {
-      count: uploads.length,
-      uploads: uploads.map((upload) => ({
+    const mappedUploads = await Promise.all(
+      uploads.map(async (upload) => ({
         id: upload.id,
-        mediaUrl: upload.mediaUrl,
-        thumbnailUrl: upload.thumbnailUrl,
+        mediaUrl: upload.mediaUrl
+          ? await this.minioService.getFileUrl(upload.mediaUrl)
+          : upload.mediaUrl,
+        thumbnailUrl: upload.thumbnailUrl
+          ? await this.minioService.getFileUrl(upload.thumbnailUrl)
+          : upload.thumbnailUrl,
         mediaType: upload.mediaType,
         uploaderName: upload.uploaderName,
         caption: upload.caption,
         createdAt: upload.createdAt,
       })),
+    );
+
+    return {
+      count: mappedUploads.length,
+      uploads: mappedUploads,
     };
   }
 }

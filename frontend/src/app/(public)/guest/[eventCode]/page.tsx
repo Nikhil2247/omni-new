@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import NextImage from 'next/image'
 import { useParams } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
 import { format } from 'date-fns'
@@ -217,9 +218,13 @@ export default function GuestUploadPage() {
                   </div>
                 ) : (
                   <div className="relative">
-                    <img
+                    <NextImage
                       src={preview || ''}
                       alt="Preview"
+                      width={1200}
+                      height={800}
+                      unoptimized={true}
+                      priority={true}
                       className="w-full rounded-lg object-cover max-h-64"
                     />
                     <Button
@@ -293,9 +298,13 @@ export default function GuestUploadPage() {
                     key={upload.id}
                     className="aspect-square rounded-lg overflow-hidden bg-gray-100"
                   >
-                    <img
+                    <NextImage
                       src={getMinioViewUrl(upload.thumbnailUrl || upload.mediaUrl) || ''}
                       alt={upload.caption || 'Guest photo'}
+                      width={600}
+                      height={600}
+                      unoptimized={true}
+                      priority={true}
                       className="w-full h-full object-cover"
                     />
                   </div>

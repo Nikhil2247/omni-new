@@ -170,6 +170,8 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
                   src={vendor.profilePhotoUrl}
                   alt={vendor.businessName || 'Vendor'}
                   fill
+                  unoptimized={true}
+                  priority={true}
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 />

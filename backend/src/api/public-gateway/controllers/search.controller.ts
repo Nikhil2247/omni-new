@@ -13,6 +13,7 @@ import {
   SearchSuggestionsDto,
 } from '../dto/search.dto';
 import { VendorIndexer } from '../../../infrastructure/search/indexers/vendor.indexer';
+import { MediaUrlNormalizerService } from '../services/media-url-normalizer.service';
 
 @Public()
 @Controller('search')
@@ -20,6 +21,7 @@ export class SearchController {
   constructor(
     private readonly searchService: GlobalSearchService,
     private readonly vendorIndexer: VendorIndexer,
+    private readonly mediaUrlNormalizer: MediaUrlNormalizerService,
   ) {}
 
   /**
@@ -29,7 +31,8 @@ export class SearchController {
    */
   @Get()
   async search(@Query() dto: GlobalSearchDto) {
-    return this.searchService.search(dto);
+    const result = await this.searchService.search(dto);
+    return this.mediaUrlNormalizer.normalizeDeep(result);
   }
 
   /**
@@ -39,7 +42,8 @@ export class SearchController {
    */
   @Get('quick')
   async quickSearch(@Query() dto: QuickSearchDto) {
-    return this.searchService.quickSearch(dto);
+    const result = await this.searchService.quickSearch(dto);
+    return this.mediaUrlNormalizer.normalizeDeep(result);
   }
 
   /**

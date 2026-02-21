@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import NextImage from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -62,8 +63,12 @@ export function PublicHeader({}: PublicHeaderProps) {
         <div className="flex items-center gap-2">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <img
+            <NextImage
               src="/images/omnilogo.avif"
+              width={150}
+              height={120}
+              unoptimized={true}
+              priority={true}
               className="h-9 rounded-full"
               alt="Omnicassion Logo"
               onError={(e) => {

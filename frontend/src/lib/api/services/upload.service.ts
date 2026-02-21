@@ -165,7 +165,7 @@ export const uploadService = {
     return {
       uploadUrl: resolved?.uploadUrl,
       filePath: resolved?.filePath,
-      fileUrl: resolved?.filePath || resolved?.fileUrl,
+      fileUrl: resolved?.fileUrl || resolved?.filePath,
     }
   },
 
