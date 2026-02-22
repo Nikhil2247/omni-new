@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, FileText } from 'lucide-react'
 import { useAdminAudit } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -13,19 +14,56 @@ export default function AdminAuditPage() {
   const [query, setQuery] = useState('')
   const [entityType, setEntityType] = useState('')
   const [userId, setUserId] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [query, entityType, userId])
 
   const params = useMemo(
     () => ({
       action: query.trim() || undefined,
       entityType: entityType.trim() || undefined,
       userId: userId.trim() || undefined,
-      page: 1,
+      page: currentPage,
       limit: 25,
     }),
-    [query, entityType, userId]
+    [query, entityType, userId, currentPage]
   )
 
   const { data, isLoading } = useAdminAudit(params)
+  const rows = useMemo(() => {
+    if (Array.isArray(data?.data)) {
+      return data.data
+    }
+    if (data?.data && typeof data.data === 'object' && 'data' in data.data) {
+      const nestedData = (data.data as { data?: unknown }).data
+      if (Array.isArray(nestedData)) {
+        return nestedData
+      }
+    }
+    return []
+  }, [data])
+
+  const paginationMeta = useMemo(() => {
+    if (data?.meta && typeof data.meta === 'object' && 'totalPages' in data.meta) {
+      return data.meta
+    }
+    if (data?.data && typeof data.data === 'object' && 'meta' in data.data) {
+      const nestedMeta = (data.data as { meta?: unknown }).meta
+      if (nestedMeta && typeof nestedMeta === 'object' && 'totalPages' in nestedMeta) {
+        return nestedMeta as {
+          total: number
+          page: number
+          limit: number
+          totalPages: number
+          hasNextPage: boolean
+          hasPreviousPage: boolean
+        }
+      }
+    }
+    return undefined
+  }, [data])
 
   return (
     <div className="space-y-6">
@@ -67,7 +105,7 @@ export default function AdminAuditPage() {
                 <Skeleton key={i} className="h-12 w-full rounded-md" />
               ))}
             </div>
-          ) : data?.data?.length ? (
+          ) : rows.length ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -78,7 +116,7 @@ export default function AdminAuditPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.data.map((log) => (
+                {rows.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="font-medium">{log.action}</TableCell>
                     <TableCell>
@@ -103,6 +141,32 @@ export default function AdminAuditPage() {
               </p>
             </div>
           )}
+
+          {paginationMeta ? (
+            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                Page {paginationMeta.page} of {paginationMeta.totalPages} • {paginationMeta.total} logs
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!paginationMeta.hasPreviousPage || isLoading}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!paginationMeta.hasNextPage || isLoading}
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import type { BlogPost } from '@/lib/api/types/marketing.types'
@@ -26,8 +26,31 @@ type Heading = {
   level: number
 }
 
+const toHeadingSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+
+const getScrollParent = (element: HTMLElement): HTMLElement | null => {
+  let parent = element.parentElement
+
+  while (parent && parent !== document.body) {
+    const style = window.getComputedStyle(parent)
+    const canScroll = /(auto|scroll)/.test(style.overflowY)
+    if (canScroll && parent.scrollHeight > parent.clientHeight) {
+      return parent
+    }
+    parent = parent.parentElement
+  }
+
+  return null
+}
+
 export default function BlogPostClient({ slug, initialPost }: BlogPostClientProps) {
-  const [headings, setHeadings] = useState<Heading[]>([])
   const [activeId, setActiveId] = useState<string>('')
   const contentRef = useRef<HTMLDivElement>(null)
   const { data: post, isLoading } = usePublicBlogPost(slug ?? '', {
@@ -35,37 +58,69 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
     initialData: initialPost ?? undefined,
   })
 
-  // Extract headings from content
-  useEffect(() => {
-    if (!contentRef.current || !post?.content) return
+  const { processedContent, headings } = useMemo(() => {
+    const rawContent = post?.content || ''
+    if (!rawContent) {
+      return { processedContent: rawContent, headings: [] as Heading[] }
+    }
 
-    // Small delay to ensure DOM is fully rendered
-    const timer = setTimeout(() => {
-      if (!contentRef.current) return
+    if (typeof window === 'undefined') {
+      return { processedContent: rawContent, headings: [] as Heading[] }
+    }
 
-      const headingElements = contentRef.current.querySelectorAll('h1, h2, h3')
-      const extractedHeadings: Heading[] = []
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(rawContent, 'text/html')
+    const headingElements = doc.querySelectorAll('h1, h2, h3')
+    const extractedHeadings: Heading[] = []
+    const idCounter = new Map<string, number>()
 
-      headingElements.forEach((heading, index) => {
-        const id = heading.id || `heading-${index}`
-        if (!heading.id) {
-          heading.id = id
-        }
-        // Add scroll-mt class for smooth scrolling offset
-        heading.classList.add('scroll-mt-24')
-        
-        extractedHeadings.push({
-          id,
-          text: heading.textContent || '',
-          level: parseInt(heading.tagName[1]),
-        })
+    headingElements.forEach((heading, index) => {
+      const headingText = (heading.textContent || '').trim()
+      const baseId = toHeadingSlug(headingText) || `heading-${index + 1}`
+      const seen = idCounter.get(baseId) ?? 0
+      const id = seen === 0 ? baseId : `${baseId}-${seen + 1}`
+      idCounter.set(baseId, seen + 1)
+
+      heading.id = id
+      heading.classList.add('scroll-mt-24')
+
+      extractedHeadings.push({
+        id,
+        text: headingText,
+        level: parseInt(heading.tagName[1]),
       })
+    })
 
-      setHeadings(extractedHeadings)
-    }, 100)
-
-    return () => clearTimeout(timer)
+    return {
+      processedContent: doc.body.innerHTML,
+      headings: extractedHeadings,
+    }
   }, [post?.content])
+
+  const scrollToHeading = (id: string) => {
+    const element = document.getElementById(id)
+    if (!element) return
+
+    const scrollParent = getScrollParent(element)
+    if (scrollParent) {
+      const parentRect = scrollParent.getBoundingClientRect()
+      const elementRect = element.getBoundingClientRect()
+      const top = elementRect.top - parentRect.top + scrollParent.scrollTop - 24
+      scrollParent.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      return
+    }
+
+    const top = element.getBoundingClientRect().top + window.scrollY - 96
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+  }
+
+  const handleTocClick = (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault()
+    scrollToHeading(id)
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `#${id}`)
+    }
+  }
 
   // Track active heading on scroll
   useEffect(() => {
@@ -91,6 +146,19 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
     })
 
     return () => observer.disconnect()
+  }, [headings])
+
+  useEffect(() => {
+    if (!headings.length || typeof window === 'undefined') return
+
+    const hash = window.location.hash.replace('#', '')
+    if (!hash) return
+
+    const timer = setTimeout(() => {
+      scrollToHeading(hash)
+    }, 50)
+
+    return () => clearTimeout(timer)
   }, [headings])
 
   const handleShare = async () => {
@@ -268,15 +336,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
                     <a
                       key={heading.id}
                       href={`#${heading.id}`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        const element = document.getElementById(heading.id)
-                        if (element) {
-                          const yOffset = -100
-                          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset
-                          window.scrollTo({ top: y, behavior: 'smooth' })
-                        }
-                      }}
+                      onClick={handleTocClick(heading.id)}
                       className={cn(
                         'block py-1.5 text-sm transition-colors rounded-lg px-2 cursor-pointer',
                         heading.level === 1 && 'pl-2 font-semibold',
@@ -298,7 +358,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
             <article
               ref={contentRef}
               className="blog-content"
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              dangerouslySetInnerHTML={{ __html: processedContent }}
             />
 
             {/* Footer */}
@@ -332,15 +392,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
                       <a
                         key={heading.id}
                         href={`#${heading.id}`}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          const element = document.getElementById(heading.id)
-                          if (element) {
-                            const yOffset = -100 // Offset for sticky header
-                            const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset
-                            window.scrollTo({ top: y, behavior: 'smooth' })
-                          }
-                        }}
+                        onClick={handleTocClick(heading.id)}
                         className={cn(
                           'block py-2 text-sm transition-colors rounded-lg px-3 cursor-pointer',
                           heading.level === 1 && 'pl-2 font-semibold',

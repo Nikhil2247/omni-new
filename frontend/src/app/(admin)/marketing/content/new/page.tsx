@@ -157,14 +157,18 @@ export default function MarketingContentNewPage() {
       featuredImage: featuredImage || undefined,
       featuredImageAlt: normalizedFeaturedImageAlt || undefined,
       categoryId: categoryId === 'none' ? undefined : categoryId,
-      tagIds: tagIds.length ? tagIds : undefined,
+      tagIds,
       vendorId: vendorId || undefined,
       readingTime: readingTime ? Number(readingTime) : undefined,
     }
 
-    const result = await createPost.mutateAsync(payload)
-    if (result?.id) {
-      router.push(`/marketing/content/${result.id}`)
+    try {
+      const result = await createPost.mutateAsync(payload)
+      if (result?.id) {
+        router.push(`/marketing/content/${result.id}`)
+      }
+    } catch {
+      // toast handled in mutation hook
     }
   }
 
@@ -560,7 +564,9 @@ export default function MarketingContentNewPage() {
                               onCheckedChange={(value) => {
                                 const isChecked = Boolean(value)
                                 setTagIds((prev) =>
-                                  isChecked ? [...prev, tag.id] : prev.filter((id) => id !== tag.id),
+                                  isChecked
+                                    ? Array.from(new Set([...prev, tag.id]))
+                                    : prev.filter((id) => id !== tag.id),
                                 )
                               }}
                             />

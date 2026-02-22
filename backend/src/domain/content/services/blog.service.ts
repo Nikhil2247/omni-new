@@ -6,10 +6,12 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BlogPost } from '@prisma/client';
+import { PrismaService } from '../../../core/database/prisma.service';
 import { BlogPostRepository } from '../repositories/blog-post.repository';
 import {
   CreateBlogPostDto,
@@ -69,8 +71,30 @@ export class BlogService {
 
   constructor(
     private readonly blogPostRepository: BlogPostRepository,
+    private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  private async assertValidTagIds(tagIds?: string[]): Promise<void> {
+    if (!tagIds || tagIds.length === 0) {
+      return;
+    }
+
+    const uniqueTagIds = Array.from(new Set(tagIds));
+    const existingTags = await this.prisma.blogTag.findMany({
+      where: { id: { in: uniqueTagIds } },
+      select: { id: true },
+    });
+
+    const existingTagIdSet = new Set(existingTags.map((tag) => tag.id));
+    const missingTagIds = uniqueTagIds.filter((tagId) => !existingTagIdSet.has(tagId));
+
+    if (missingTagIds.length > 0) {
+      throw new BadRequestException(
+        `Invalid blog tag IDs: ${missingTagIds.join(', ')}`,
+      );
+    }
+  }
 
   async create(dto: CreateBlogPostDto, authorId: string): Promise<BlogPost> {
     this.logger.log(`Creating blog post: ${dto.title} by author: ${authorId}`);
@@ -90,6 +114,7 @@ export class BlogService {
     const normalizedFeaturedImage = this.normalizeBlogMediaPath(
       dto.featuredImage,
     );
+    await this.assertValidTagIds(dto.tagIds);
 
     const blogPost = await this.blogPostRepository.create({
       title: dto.title,
@@ -107,9 +132,21 @@ export class BlogService {
       category: dto.categoryId
         ? { connect: { id: dto.categoryId } }
         : undefined,
+      tags: dto.tagIds?.length
+        ? {
+            create: Array.from(new Set(dto.tagIds)).map((tagId) => ({
+              tag: { connect: { id: tagId } },
+            })),
+          }
+        : undefined,
       vendorId: dto.vendorId,
       readingTime: dto.readingTime || this.calculateReadingTime(dto.content),
       status: 'DRAFT',
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
     });
 
     this.eventEmitter.emit('blog-post.created', {
@@ -174,6 +211,7 @@ export class BlogService {
     const normalizedFeaturedImage = this.normalizeBlogMediaPath(
       dto.featuredImage,
     );
+    await this.assertValidTagIds(dto.tagIds);
 
     const updated = await this.blogPostRepository.update(
       id,
@@ -193,6 +231,15 @@ export class BlogService {
         category: dto.categoryId
           ? { connect: { id: dto.categoryId } }
           : undefined,
+        tags:
+          dto.tagIds !== undefined
+            ? {
+                deleteMany: {},
+                create: Array.from(new Set(dto.tagIds)).map((tagId) => ({
+                  tag: { connect: { id: tagId } },
+                })),
+              }
+            : undefined,
         vendorId: dto.vendorId,
         readingTime:
           dto.readingTime ||
@@ -200,6 +247,11 @@ export class BlogService {
       },
       {
         category: true,
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     );
 
@@ -220,10 +272,21 @@ export class BlogService {
       return blogPost;
     }
 
-    const published = await this.blogPostRepository.update(id, {
-      status: 'PUBLISHED',
-      publishedAt: new Date(),
-    });
+    const published = await this.blogPostRepository.update(
+      id,
+      {
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+      },
+      {
+        category: true,
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    );
 
     this.eventEmitter.emit('blog-post.published', { postId: id });
     return published;

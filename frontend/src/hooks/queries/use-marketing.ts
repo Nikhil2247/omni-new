@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { marketingService } from '@/lib/api/services/marketing.service'
 import type { BlogPostCreatePayload, BlogPostSearchParams, BlogPostUpdatePayload } from '@/lib/api/types/marketing.types'
 
@@ -9,6 +10,25 @@ const marketingKeys = {
   promotions: () => ['marketing-promotions'] as const,
   blogPosts: (params: BlogPostSearchParams) => ['marketing-blog-posts', params] as const,
   blogPost: (id: string) => ['marketing-blog-post', id] as const,
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: string | string[] } } }).response
+    const message = response?.data?.message
+    if (Array.isArray(message) && message.length) {
+      return message[0]
+    }
+    if (typeof message === 'string' && message.trim()) {
+      return message
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
+  return fallback
 }
 
 export function useMarketingCampaigns() {
@@ -58,7 +78,11 @@ export function useCreateBlogPost() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: BlogPostCreatePayload) => marketingService.createBlogPost(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: marketingKeys.blogPosts({}) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: marketingKeys.blogPosts({}) })
+      toast.success('Blog post created successfully')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, 'Failed to create blog post')),
   })
 }
 
@@ -69,7 +93,9 @@ export function useUpdateBlogPost(id: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: marketingKeys.blogPost(id) })
       queryClient.invalidateQueries({ queryKey: marketingKeys.blogPosts({}) })
+      toast.success('Blog post updated successfully')
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Failed to update blog post')),
   })
 }
 
@@ -77,7 +103,11 @@ export function useDeleteBlogPost() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => marketingService.deleteBlogPost(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: marketingKeys.blogPosts({}) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: marketingKeys.blogPosts({}) })
+      toast.success('Blog post deleted successfully')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, 'Failed to delete blog post')),
   })
 }
 
@@ -88,6 +118,8 @@ export function usePublishBlogPost() {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: marketingKeys.blogPost(id) })
       queryClient.invalidateQueries({ queryKey: marketingKeys.blogPosts({}) })
+      toast.success('Blog post published successfully')
     },
+    onError: (error) => toast.error(getErrorMessage(error, 'Failed to publish blog post')),
   })
 }

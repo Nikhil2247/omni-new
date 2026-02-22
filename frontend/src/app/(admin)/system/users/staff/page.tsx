@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { ROLE_GROUPS } from '@/config/roles'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -13,14 +14,19 @@ import type { AdminUser } from '@/lib/api/types/admin.types'
 
 export default function SystemStaffUsersPage() {
   const [query, setQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [query])
 
   const params = useMemo(
     () => ({
       query: query.trim() || undefined,
-      page: 1,
+      page: currentPage,
       limit: 100,
     }),
-    [query]
+    [query, currentPage]
   )
 
   const { data, isLoading } = useAdminUsers(params)
@@ -86,6 +92,32 @@ export default function SystemStaffUsersPage() {
           ) : (
             <p className="text-sm text-muted-foreground">No staff users found.</p>
           )}
+
+          {data?.meta?.totalPages && data.meta.totalPages > 1 ? (
+            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                Page {data.meta.page} of {data.meta.totalPages} • {data.meta.total} users
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!data.meta.hasPreviousPage || isLoading}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!data.meta.hasNextPage || isLoading}
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

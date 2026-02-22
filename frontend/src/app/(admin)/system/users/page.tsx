@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
@@ -21,15 +21,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 export default function SystemUsersPage() {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [query, status])
 
   const params = useMemo(
     () => ({
       query: query.trim() || undefined,
       status: status === 'all' ? undefined : status,
-      page: 1,
+      page: currentPage,
       limit: 20,
     }),
-    [query, status]
+    [query, status, currentPage]
   )
 
   const { data, isLoading } = useAdminUsers(params)
@@ -115,6 +120,32 @@ export default function SystemUsersPage() {
           ) : (
             <p className="text-sm text-muted-foreground">No users found.</p>
           )}
+
+          {data?.meta?.totalPages && data.meta.totalPages > 1 ? (
+            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                Page {data.meta.page} of {data.meta.totalPages} • {data.meta.total} users
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!data.meta.hasPreviousPage || isLoading}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!data.meta.hasNextPage || isLoading}
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

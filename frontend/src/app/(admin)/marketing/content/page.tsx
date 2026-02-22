@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
@@ -29,6 +29,11 @@ export default function MarketingContentPage() {
   const [status, setStatus] = useState<BlogStatus | 'all'>('all')
   const [categoryId, setCategoryId] = useState('all')
   const [tagId, setTagId] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [keyword, status, categoryId, tagId])
 
   const params = useMemo(
     () => ({
@@ -36,10 +41,10 @@ export default function MarketingContentPage() {
       status: status === 'all' ? undefined : status,
       categoryId: categoryId === 'all' ? undefined : categoryId,
       tagId: tagId === 'all' ? undefined : tagId,
-      page: 1,
+      page: currentPage,
       limit: 20,
     }),
-    [keyword, status, categoryId, tagId]
+    [keyword, status, categoryId, tagId, currentPage]
   )
 
   const { data, isLoading } = useBlogPosts(params)
@@ -172,6 +177,32 @@ export default function MarketingContentPage() {
           ) : (
             <p className="text-sm text-muted-foreground">No content found.</p>
           )}
+
+          {data?.meta?.totalPages && data.meta.totalPages > 1 ? (
+            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+              <p className="text-sm text-muted-foreground">
+                Page {data.meta.page} of {data.meta.totalPages} • {data.meta.total} items
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!data.meta.hasPreviousPage || isLoading}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!data.meta.hasNextPage || isLoading}
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

@@ -22,6 +22,7 @@
     "db:empty": "ts-node prisma/empty-db.ts",
     "seed:launch": "ts-node prisma/seed-launch.ts",
     "seed:vendor": "ts-node prisma/seed-vendor.ts",
+    "export:portfolio-media": "ts-node scripts/export-portfolio-media-urls.ts",
     "migrate:extract": "ts-node scripts/extract-bson-to-json.ts",
     "migrate:mongodb": "ts-node scripts/migrate-mongodb-to-postgres.ts",
     "migrate:full": "npm run migrate:extract && npm run migrate:mongodb"

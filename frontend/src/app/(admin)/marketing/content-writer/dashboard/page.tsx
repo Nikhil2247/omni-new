@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
@@ -10,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ContentWriterDashboardPage() {
-  const { data, isLoading } = useBlogPosts({ status: 'DRAFT', page: 1, limit: 20 })
+  const [currentPage, setCurrentPage] = useState(1)
+  const { data, isLoading } = useBlogPosts({ status: 'DRAFT', page: currentPage, limit: 20 })
 
   return (
     <RoleGuard allowedRoles={[ROLES.CONTENT_WRITER]} redirectOnFail={true} exactMatch>
@@ -52,6 +54,32 @@ export default function ContentWriterDashboardPage() {
             ) : (
               <p className="text-sm text-muted-foreground">No drafts yet. Start writing your first draft.</p>
             )}
+
+            {data?.meta?.totalPages && data.meta.totalPages > 1 ? (
+              <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+                <p className="text-sm text-muted-foreground">
+                  Page {data.meta.page} of {data.meta.totalPages} • {data.meta.total} items
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!data.meta.hasPreviousPage || isLoading}
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!data.meta.hasNextPage || isLoading}
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>

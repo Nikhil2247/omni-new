@@ -292,6 +292,7 @@ export default function BusinessProfilePage() {
   }
 
   const portfolios = profile?.portfolios || []
+  const featuredPortfolio = portfolios.find((portfolio) => portfolio.isFeatured) || null
   const allMedia = portfolios.flatMap((portfolio) => portfolio.mediaItems || [])
 
   const normalizedMedia = useMemo(
@@ -303,6 +304,18 @@ export default function BusinessProfilePage() {
       })),
     [allMedia],
   )
+
+  const normalizedFeaturedMedia = useMemo(() => {
+    if (!featuredPortfolio?.mediaItems?.length) {
+      return []
+    }
+
+    return featuredPortfolio.mediaItems.map((media) => ({
+      ...media,
+      viewerUrl: getMinioViewUrl(media.cdnUrl || media.url || media.thumbnailUrl || ''),
+      viewerThumbnailUrl: getMinioViewUrl(media.thumbnailUrl || media.cdnUrl || media.url || ''),
+    }))
+  }, [featuredPortfolio])
 
   if (isLoading) {
     return (
@@ -623,18 +636,95 @@ export default function BusinessProfilePage() {
                   <p className="mt-1 text-sm text-muted-foreground">Upload portfolio media to showcase your work.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-                  {normalizedMedia.map((media) => {
-                    const mediaUrl = media.viewerUrl
-                    const thumbnailUrl = media.viewerThumbnailUrl
-                    return (
-                      <div key={media.id} className="group relative aspect-square overflow-hidden rounded-xl border bg-muted">
-                        {media.type === 'VIDEO' ? (
-                          <>
-                            {thumbnailUrl ? (
+                <div className="space-y-6">
+                  {featuredPortfolio && normalizedFeaturedMedia.length ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-foreground">Featured Album</h3>
+                        <Badge variant="secondary">{featuredPortfolio.title}</Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                        {normalizedFeaturedMedia.slice(0, 4).map((media) => {
+                          const mediaUrl = media.viewerUrl
+                          const thumbnailUrl = media.viewerThumbnailUrl
+                          return (
+                            <div key={`featured-${media.id}`} className="group relative aspect-square overflow-hidden rounded-xl border bg-muted">
+                              {media.type === 'VIDEO' ? (
+                                <>
+                                  {thumbnailUrl ? (
+                                    <NextImage
+                                      src={thumbnailUrl}
+                                      alt={media.altText || 'Featured portfolio video'}
+                                      width={800}
+                                      height={800}
+                                      unoptimized={true}
+                                      priority={true}
+                                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                                    />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center bg-muted">
+                                      <Play className="h-10 w-10 text-muted-foreground/60" />
+                                    </div>
+                                  )}
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                    <Play className="h-10 w-10 text-white" />
+                                  </div>
+                                </>
+                              ) : mediaUrl ? (
+                                <NextImage
+                                  src={mediaUrl}
+                                  alt={media.altText || 'Featured portfolio image'}
+                                  width={800}
+                                  height={800}
+                                  unoptimized={true}
+                                  priority={true}
+                                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-muted">
+                                  <ImageIcon className="h-8 w-8 text-muted-foreground/60" />
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-foreground">All Pictures</h3>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                      {normalizedMedia.map((media) => {
+                        const mediaUrl = media.viewerUrl
+                        const thumbnailUrl = media.viewerThumbnailUrl
+                        return (
+                          <div key={media.id} className="group relative aspect-square overflow-hidden rounded-xl border bg-muted">
+                            {media.type === 'VIDEO' ? (
+                              <>
+                                {thumbnailUrl ? (
+                                  <NextImage
+                                    src={thumbnailUrl}
+                                    alt={media.altText || 'Portfolio video'}
+                                    width={800}
+                                    height={800}
+                                    unoptimized={true}
+                                    priority={true}
+                                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center bg-muted">
+                                    <Play className="h-10 w-10 text-muted-foreground/60" />
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                  <Play className="h-10 w-10 text-white" />
+                                </div>
+                              </>
+                            ) : mediaUrl ? (
                               <NextImage
-                                src={thumbnailUrl}
-                                alt={media.altText || 'Portfolio video'}
+                                src={mediaUrl}
+                                alt={media.altText || 'Portfolio image'}
                                 width={800}
                                 height={800}
                                 unoptimized={true}
@@ -643,33 +733,14 @@ export default function BusinessProfilePage() {
                               />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center bg-muted">
-                                <Play className="h-10 w-10 text-muted-foreground/60" />
+                                <ImageIcon className="h-8 w-8 text-muted-foreground/60" />
                               </div>
                             )}
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                              <Play className="h-10 w-10 text-white" />
-                            </div>
-                          </>
-                        ) : (
-                          mediaUrl ? (
-                            <NextImage
-                              src={mediaUrl}
-                              alt={media.altText || 'Portfolio image'}
-                              width={800}
-                              height={800}
-                              unoptimized={true}
-                              priority={true}
-                              className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-muted">
-                              <ImageIcon className="h-8 w-8 text-muted-foreground/60" />
-                            </div>
-                          )
-                        )}
-                      </div>
-                    )
-                  })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </>

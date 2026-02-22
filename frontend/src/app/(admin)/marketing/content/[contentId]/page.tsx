@@ -175,7 +175,7 @@ export default function MarketingContentDetailPage() {
       featuredImage: featuredImage || undefined,
       featuredImageAlt: normalizedFeaturedImageAlt || undefined,
       categoryId: categoryId === 'none' ? undefined : categoryId,
-      tagIds: tagIds.length ? tagIds : undefined,
+      tagIds,
       vendorId: vendorId || undefined,
       readingTime: readingTime ? Number(readingTime) : undefined,
     })
@@ -183,13 +183,21 @@ export default function MarketingContentDetailPage() {
 
   const handleDelete = async () => {
     if (!contentId || !canManagePublishing) return
-    await deletePost.mutateAsync(contentId)
-    router.push('/marketing/content')
+    try {
+      await deletePost.mutateAsync(contentId)
+      router.push('/marketing/content')
+    } catch {
+      // toast handled in mutation hook
+    }
   }
 
   const handlePublish = async () => {
     if (!contentId || !canManagePublishing) return
-    await publishPost.mutateAsync(contentId)
+    try {
+      await publishPost.mutateAsync(contentId)
+    } catch {
+      // toast handled in mutation hook
+    }
   }
 
   if (isLoading) {
@@ -405,7 +413,9 @@ export default function MarketingContentDetailPage() {
                         onCheckedChange={(value) => {
                           const isChecked = Boolean(value)
                           setTagIds((prev) =>
-                            isChecked ? [...prev, tag.id] : prev.filter((id) => id !== tag.id),
+                            isChecked
+                              ? Array.from(new Set([...prev, tag.id]))
+                              : prev.filter((id) => id !== tag.id),
                           )
                         }}
                       />
