@@ -116,38 +116,42 @@ export class BlogService {
     );
     await this.assertValidTagIds(dto.tagIds);
 
-    const blogPost = await this.blogPostRepository.create({
-      title: dto.title,
-      slug,
-      excerpt: dto.excerpt,
-      content: dto.content,
-      metaTitle: dto.metaTitle,
-      metaDescription: dto.metaDescription,
-      focusKeyword: dto.focusKeyword,
-      keywords: dto.keywords || [],
-      ogImage: normalizedOgImage,
-      featuredImage: normalizedFeaturedImage,
-      featuredImageAlt: dto.featuredImageAlt,
-      authorId,
-      category: dto.categoryId
-        ? { connect: { id: dto.categoryId } }
-        : undefined,
-      tags: dto.tagIds?.length
-        ? {
-            create: Array.from(new Set(dto.tagIds)).map((tagId) => ({
-              tag: { connect: { id: tagId } },
-            })),
-          }
-        : undefined,
-      vendorId: dto.vendorId,
-      readingTime: dto.readingTime || this.calculateReadingTime(dto.content),
-      status: 'DRAFT',
-      tags: {
-        include: {
-          tag: true,
+    const blogPost = await this.blogPostRepository.create(
+      {
+        title: dto.title,
+        slug,
+        excerpt: dto.excerpt,
+        content: dto.content,
+        metaTitle: dto.metaTitle,
+        metaDescription: dto.metaDescription,
+        focusKeyword: dto.focusKeyword,
+        keywords: dto.keywords || [],
+        ogImage: normalizedOgImage,
+        featuredImage: normalizedFeaturedImage,
+        featuredImageAlt: dto.featuredImageAlt,
+        authorId,
+        category: dto.categoryId
+          ? { connect: { id: dto.categoryId } }
+          : undefined,
+        tags: dto.tagIds?.length
+          ? {
+              create: Array.from(new Set(dto.tagIds)).map((tagId) => ({
+                tag: { connect: { id: tagId } },
+              })),
+            }
+          : undefined,
+        vendorId: dto.vendorId,
+        readingTime: dto.readingTime || this.calculateReadingTime(dto.content),
+        status: 'DRAFT',
+      },
+      {
+        tags: {
+          include: {
+            tag: true,
+          },
         },
       },
-    });
+    );
 
     this.eventEmitter.emit('blog-post.created', {
       postId: blogPost.id,
