@@ -104,7 +104,10 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://api.your-domain.com' }}
           NEXT_PUBLIC_APP_NAME: ${{ vars.NEXT_PUBLIC_APP_NAME || 'Omnicassion' }}
-          NEXT_PUBLIC_GOOGLE_CLIENT_ID: 676629116358-1gic365ui8tiv4rhaei1f5cn8lol61it.apps.googleusercontent.com
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '' }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || '' }}
+          NEXT_PUBLIC_GOOGLE_ADS_ID: ${{ vars.NEXT_PUBLIC_GOOGLE_ADS_ID || '' }}
+          NEXT_PUBLIC_ADSENSE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT_ID || '' }}
           NEXT_PUBLIC_APP_ENV: production
 
   # 4. Build & Push Backend Image
@@ -186,7 +189,10 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.your-domain.com' }}
             NEXT_PUBLIC_APP_NAME=${{ vars.NEXT_PUBLIC_APP_NAME || 'Omnicassion' }}
-            NEXT_PUBLIC_GOOGLE_CLIENT_ID=676629116358-1gic365ui8tiv4rhaei1f5cn8lol61it.apps.googleusercontent.com
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '' }}
+            NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || '' }}
+            NEXT_PUBLIC_GOOGLE_ADS_ID=${{ vars.NEXT_PUBLIC_GOOGLE_ADS_ID || '' }}
+            NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT_ID || '' }}
             NEXT_PUBLIC_APP_ENV=production
 
   # 6. Deploy to Production (App Only - Infrastructure deployed separately)

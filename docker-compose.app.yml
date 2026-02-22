@@ -18,6 +18,12 @@
 #   NEXT_PUBLIC_MEDIA_DELIVERY  - auto | direct | proxy (recommended: direct)
 #   NEXT_PUBLIC_CDN_ENABLED     - true/false
 #   NEXT_PUBLIC_CDN_BASE_URL    - CDN origin/base URL if using CDN
+#   NEXT_PUBLIC_GOOGLE_CLIENT_ID - Google OAuth Web client ID used by frontend button
+#   NEXT_PUBLIC_GA_MEASUREMENT_ID - Google Analytics measurement ID
+#   NEXT_PUBLIC_GOOGLE_ADS_ID   - Google Ads conversion ID
+#   NEXT_PUBLIC_ADSENSE_CLIENT_ID - Google AdSense client ID
+#   GOOGLE_CLIENT_ID            - Google OAuth Web client ID used by backend token verification
+#   GOOGLE_CLIENT_SECRET        - Google OAuth client secret used by backend config guard
 
 services:
   # ===========================================
@@ -31,6 +37,10 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+      - NEXT_PUBLIC_GA_MEASUREMENT_ID=${NEXT_PUBLIC_GA_MEASUREMENT_ID:-}
+      - NEXT_PUBLIC_GOOGLE_ADS_ID=${NEXT_PUBLIC_GOOGLE_ADS_ID:-}
+      - NEXT_PUBLIC_ADSENSE_CLIENT_ID=${NEXT_PUBLIC_ADSENSE_CLIENT_ID:-}
       - NEXT_PUBLIC_MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-}
       - NEXT_PUBLIC_MINIO_BUCKET=${MINIO_DEFAULT_BUCKET:-omnicassion}
       - NEXT_PUBLIC_MEDIA_DELIVERY=${NEXT_PUBLIC_MEDIA_DELIVERY:-auto}
@@ -87,6 +97,9 @@ services:
       - JWT_EXPIRATION=${JWT_EXPIRATION:-30m}
       - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-7d}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      # Google OAuth
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       # CORS
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - FRONTEND_URL=${FRONTEND_URL}
