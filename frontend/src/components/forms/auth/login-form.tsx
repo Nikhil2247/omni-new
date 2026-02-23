@@ -98,9 +98,15 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
       window.google.accounts.id.renderButton(googleButtonRef.current, {
         theme: 'outline',
         size: 'large',
-        width: 380,
         text: 'continue_with',
       })
+
+      // Ensure the rendered Google button respects container width on small screens
+      const btn = googleButtonRef.current.firstElementChild as HTMLElement | null
+      if (btn) {
+        btn.style.width = '100%'
+        btn.style.maxWidth = '100%'
+      }
 
       setGoogleReady(true)
     }

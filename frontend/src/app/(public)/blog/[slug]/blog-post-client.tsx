@@ -221,6 +221,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
   const featuredImageUrl = getMinioViewUrl(post.featuredImage) || post.featuredImage
 
   return (
+    <div className="overflow-x-hidden">
     <>
       {/* Hero Section */}
       <div className="relative border-b bg-linear-to-b from-muted/40 via-muted/20 to-background overflow-hidden">
@@ -252,7 +253,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
             </div>
 
             {/* Title */}
-            <h1 className="font-serif text-4xl font-bold leading-[1.15] tracking-tight md:text-5xl lg:text-6xl max-w-4xl">
+            <h1 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold leading-[1.15] tracking-tight lg:text-6xl max-w-4xl">
               {post.title}
             </h1>
 
@@ -291,7 +292,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto w-full max-w-8xl px-6 py-12">
+      <main className="mx-auto w-full max-w-8xl px-6 py-12 overflow-x-hidden">
         <div className="flex gap-12">
           {/* Article Content */}
           <div className="flex-1 min-w-0">
@@ -357,7 +358,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
             {/* Article Content - Renders TipTap HTML */}
             <article
               ref={contentRef}
-              className="blog-content"
+              className="blog-content max-w-3xl lg:max-w-none mx-auto lg:mx-0 text-base md:text-lg"
               dangerouslySetInnerHTML={{ __html: processedContent }}
             />
 
@@ -440,6 +441,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
         </div>
       </main>
     </>
+    </div>
   )
 }
 

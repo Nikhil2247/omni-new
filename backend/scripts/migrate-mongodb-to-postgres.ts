@@ -296,16 +296,14 @@ async function migrateCategories(prisma: PrismaClient): Promise<void> {
   console.log('\n📂 Ensuring launch-aligned categories...');
 
   const categories = [
-    { name: 'Photography', slug: 'photography', icon: 'camera' },
-    { name: 'Videography', slug: 'videography', icon: 'video' },
-    { name: 'Catering', slug: 'catering', icon: 'utensils' },
+    { name: 'Photo & Videography', slug: 'photography', icon: 'camera' },
+    { name: 'Food & Catering', slug: 'food-catering', icon: 'utensils' },
     { name: 'Venues', slug: 'venues', icon: 'building' },
     { name: 'Entertainment', slug: 'entertainment', icon: 'music' },
     { name: 'Decor & Design', slug: 'decor-design', icon: 'palette' },
-    { name: 'Florist', slug: 'florist', icon: 'flower' },
     { name: 'Makeup & Hair', slug: 'makeup-hair', icon: 'sparkles' },
     { name: 'Mehndi & Artists', slug: 'mehndi-artists', icon: 'brush' },
-    { name: 'Wedding Planning', slug: 'wedding-planning', icon: 'clipboard-list' },
+    { name: 'Wedding Planner', slug: 'wedding-planning', icon: 'clipboard-list' },
     { name: 'Event Planner', slug: 'event-planner', icon: 'calendar-check' },
     { name: 'Event Management Company', slug: 'event-management-company', icon: 'briefcase' },
     { name: 'Hospitality', slug: 'hospitality', icon: 'hotel' },

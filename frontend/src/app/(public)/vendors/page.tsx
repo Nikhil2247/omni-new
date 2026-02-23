@@ -245,8 +245,6 @@ type CategoryOption = {
 };
 
 function VendorFilters({
-  searchQuery,
-  setSearchQuery,
   selectedCategoryId,
   setSelectedCategoryId,
   sortBy,
@@ -257,9 +255,8 @@ function VendorFilters({
   activeFiltersCount,
   onApply,
   onClear,
+  autoApply = false,
 }: {
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
   selectedCategoryId: string;
   setSelectedCategoryId: (value: string) => void;
   sortBy: SortByValue;
@@ -270,9 +267,17 @@ function VendorFilters({
   activeFiltersCount: number;
   onApply: () => void;
   onClear: () => void;
+  autoApply?: boolean;
 }) {
+  // Auto-apply changes when used in desktop sidebar to update results immediately.
+  useEffect(() => {
+    if (!autoApply) return;
+    const timer = setTimeout(() => onApply(), 300);
+    return () => clearTimeout(timer);
+  }, [selectedCategoryId, sortBy, sortOrder, autoApply, onApply]);
+
   return (
-    <div className="rounded-2xl border border-[#165EA6]/20 p-4 sm:p-5" style={{ background: 'linear-gradient(160deg, #165EA6/5 0%, rgba(22,94,166,0.06) 100%)', backgroundColor: 'rgba(22,94,166,0.05)' }}>
+    <div className="h-full rounded-2xl border border-[#165EA6]/20 p-4 sm:p-5" style={{ background: 'linear-gradient(160deg, #165EA6/5 0%, rgba(22,94,166,0.06) 100%)', backgroundColor: 'rgba(22,94,166,0.05)' }}>
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-serif text-lg font-semibold" style={{ color: '#165EA6' }}>Filters</h2>
         {activeFiltersCount > 0 && (
@@ -283,19 +288,7 @@ function VendorFilters({
       </div>
 
       <div className="space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-medium">Search</label>
-          <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && onApply()}
-              placeholder="Vendors, services..."
-              className="pl-9"
-            />
-          </div>
-        </div>
+        {/* Search moved to header */}
 
         <div>
           <label className="mb-2 block text-sm font-medium">Category</label>
@@ -442,11 +435,25 @@ function VendorsPageContent() {
         <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-blue-300/10 blur-[80px]" />
         <div className="mx-auto max-w-8xl px-6">
           <FadeIn className="flex items-center justify-between gap-4">
-            <div>
+            <div className="w-full">
               <h1 className="font-serif text-2xl font-bold text-white sm:text-3xl">Find your perfect team</h1>
-              <p className="mt-1 text-sm text-white/70 sm:text-base">
+              {/* <p className="mt-1 text-sm text-white/70 sm:text-base">
                 Browse and filter vendors like an e-commerce catalog.
-              </p>
+              </p> */}
+
+              {/* Search moved to header so it's always visible */}
+              <div className="mt-3 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+                    placeholder="Search vendors, services..."
+                    className="pl-9 h-9 bg-white/5 text-white placeholder:text-white/60"
+                  />
+                </div>
+              </div>
             </div>
 
             <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
@@ -462,8 +469,6 @@ function VendorsPageContent() {
                 </SheetHeader>
                 <div className="px-4 pb-6">
                   <VendorFilters
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
                     selectedCategoryId={selectedCategoryId}
                     setSelectedCategoryId={setSelectedCategoryId}
                     sortBy={sortBy}
@@ -484,11 +489,9 @@ function VendorsPageContent() {
 
       <div className="mx-auto max-w-8xl px-6 py-8 lg:py-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8 lg:items-start">
-          <aside className="hidden lg:block">
-            <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto rounded-2xl pb-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20">
+          <aside className="hidden lg:block self-start sticky top-6">
+            <div className="max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40 pr-1">
               <VendorFilters
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
                 selectedCategoryId={selectedCategoryId}
                 setSelectedCategoryId={setSelectedCategoryId}
                 sortBy={sortBy}
@@ -499,6 +502,7 @@ function VendorsPageContent() {
                 activeFiltersCount={activeFiltersCount}
                 onApply={applyFilters}
                 onClear={clearFilters}
+                autoApply
               />
             </div>
           </aside>

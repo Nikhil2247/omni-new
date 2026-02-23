@@ -27,13 +27,14 @@ function AnimatedMasonryItem({
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 20, scale: 0.96 }}
-      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 20, scale: 0.96 }}
+      initial={{ opacity: 0 }}
+      animate={isInView ? { opacity: 1 } : { opacity: 0 }}
       transition={{
         duration: 0.45,
-        delay: Math.min((index % 30) * 0.03, 0.25),
+        delay: Math.min((index % 30) * 0.02, 0.18),
         ease
       }}
+      style={{ willChange: 'opacity, transform' }}
       className="break-inside-avoid mb-3 sm:mb-4 lg:mb-5"
     >
       {children}
@@ -46,7 +47,7 @@ function LoadingSkeleton() {
   const heights = [280, 320, 240, 360, 300, 260, 340, 280, 320, 380, 260, 300]
 
   return (
-    <div className="columns-1 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 lg:gap-5">
+    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 lg:gap-5">
       {heights.map((height, i) => (
         <motion.div
           key={i}
@@ -82,7 +83,7 @@ export function MasonryGrid({
   }
 
   return (
-    <div className="columns-1 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 lg:gap-5">
+    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 lg:gap-5">
       {items.map((item, index) => (
         <AnimatedMasonryItem key={item.id} index={index}>
           <PortfolioMediaCard item={item} />

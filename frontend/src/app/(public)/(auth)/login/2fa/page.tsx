@@ -22,7 +22,7 @@ export default function TwoFactorPage() {
   const returnUrl = getSafeReturnUrl(params.get('returnUrl'));
 
   return (
-    <Card className="border-border/60 bg-card/80 shadow-2xl shadow-primary/10 backdrop-blur">
+    <Card className="w-full border-border/60 bg-card/80 shadow-2xl shadow-primary/10 backdrop-blur">
       <CardHeader className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent text-primary ring-1 ring-primary/20">

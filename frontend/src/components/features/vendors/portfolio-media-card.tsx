@@ -104,7 +104,6 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
           width={1200}
           height={900}
           unoptimized={true}
-          priority={true}
           className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </Link>

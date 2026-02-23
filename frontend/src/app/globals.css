@@ -179,34 +179,51 @@ html {
 
 /* Blog post typography styling - Enhanced for elegance */
 .blog-content {
-  @apply text-lg leading-relaxed text-foreground/90;
+  @apply text-base md:text-lg leading-relaxed text-foreground/90;
   font-feature-settings: 'liga' 1, 'calt' 1;
 }
 
+/* Prevent long words/elements from causing horizontal overflow on small screens */
+.blog-content {
+  overflow-wrap: anywhere;
+}
+
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 .blog-content h1 {
-  @apply text-4xl font-bold mt-16 mb-8 leading-tight scroll-mt-24 tracking-tight;
+  @apply font-bold mt-8 mb-6 leading-tight scroll-mt-24 tracking-tight;
   @apply bg-linear-to-r from-foreground to-foreground/80 bg-clip-text text-transparent;
+  @apply text-2xl sm:text-3xl md:text-4xl lg:text-4xl;
 }
 
 .blog-content h2 {
-  @apply text-3xl font-bold mt-14 mb-6 leading-tight scroll-mt-24 tracking-tight;
+  @apply font-bold mt-6 mb-4 leading-tight scroll-mt-24 tracking-tight;
   @apply border-b border-border/40 pb-3;
+  @apply text-xl sm:text-2xl md:text-3xl;
 }
 
 .blog-content h3 {
-  @apply text-2xl font-semibold mt-12 mb-4 scroll-mt-24 tracking-tight;
+  @apply font-semibold mt-6 mb-3 scroll-mt-24 tracking-tight;
+  @apply text-lg sm:text-xl md:text-2xl;
 }
 
 .blog-content h4 {
-  @apply text-xl font-semibold mt-10 mb-3 scroll-mt-24;
+  @apply font-semibold mt-5 mb-3 scroll-mt-24;
+  @apply text-base sm:text-lg;
 }
 
 .blog-content h5 {
-  @apply text-lg font-semibold mt-8 mb-2 scroll-mt-24;
+  @apply font-semibold mt-4 mb-2 scroll-mt-24;
+  @apply text-sm sm:text-base;
 }
 
 .blog-content p {
   @apply mb-6 leading-[1.8] text-foreground/85;
+  @apply text-sm md:text-base lg:text-lg;
 }
 
 .blog-content strong {
@@ -327,13 +344,24 @@ html {
 
 /* First paragraph special styling */
 .blog-content > p:first-of-type {
-  @apply text-xl leading-relaxed text-foreground/90;
+  @apply leading-relaxed text-foreground/90;
+  @apply text-base md:text-lg;
 }
 
-/* Drop cap for first letter of first paragraph */
+/* Drop cap for first letter of first paragraph: smaller on mobile */
 .blog-content > p:first-of-type::first-letter {
-  @apply float-left text-6xl font-bold leading-none mr-2 mt-1;
-  @apply text-primary;
+  float: left;
+  font-weight: 700;
+  line-height: 1;
+  margin-right: 0.5rem;
+  margin-top: 0.1rem;
+  color: var(--primary);
+  font-size: 2.25rem; /* ~36px on small screens */
+}
+@media (min-width: 768px) {
+  .blog-content > p:first-of-type::first-letter {
+    font-size: 4rem; /* larger drop cap on md+ */
+  }
 }
 
 .blog-content strong {

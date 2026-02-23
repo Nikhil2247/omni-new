@@ -120,8 +120,8 @@ async function fetchBlogSlugRoutes(currentDate: Date): Promise<MetadataRoute.Sit
   return Array.from(slugMap.entries()).map(([slug, lastModified]) => ({
     url: `${SITE_URL}/blog/${slug}`,
     lastModified,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
+    changeFrequency: 'daily' as const,
+    priority: 0.8,
   }))
 }
 
@@ -169,7 +169,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: `${SITE_URL}/blog`,
       lastModified: currentDate,
-      changeFrequency: 'weekly',
+      changeFrequency: 'daily',
       priority: 0.8,
     },
   ];
