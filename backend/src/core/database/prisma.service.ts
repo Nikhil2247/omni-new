@@ -33,7 +33,22 @@ export class PrismaService
     }
 
     const connectionString = configService.get<string>('DATABASE_URL');
-    const pool = new Pool({ connectionString });
+    const pool = new Pool({
+      connectionString,
+      max: configService.get<number>('DATABASE_POOL_MAX', 20),
+      idleTimeoutMillis: configService.get<number>(
+        'DATABASE_IDLE_TIMEOUT_MS',
+        30000,
+      ),
+      connectionTimeoutMillis: configService.get<number>(
+        'DATABASE_CONNECTION_TIMEOUT_MS',
+        10000,
+      ),
+      statement_timeout: configService.get<number>(
+        'DATABASE_STATEMENT_TIMEOUT_MS',
+        30000,
+      ),
+    });
     const adapter = new PrismaPg(pool);
 
     const logLevels: Prisma.LogLevel[] = ['warn', 'error'];

@@ -6,6 +6,7 @@ import { generateMetadata } from "@/lib/seo/metadata";
 import { JsonLd } from "@/components/common/JsonLd";
 import { createOrganizationSchema, createWebsiteSchema } from "@/lib/seo/structured-data";
 import { ErrorBoundaryWrapper } from "@/components/common/error-boundary";
+import { EmailVerificationWrapper } from "@/components/common/email-verification-wrapper";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -97,7 +98,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
         <ErrorBoundaryWrapper>
-          <Providers>{children}</Providers>
+          <Providers>
+            <EmailVerificationWrapper />
+            {children}
+          </Providers>
         </ErrorBoundaryWrapper>
       </body>
     </html>

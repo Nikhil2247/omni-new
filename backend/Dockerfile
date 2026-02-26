@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # ===========================================
 # Omnicassion Backend - Multi-stage Dockerfile
 # ===========================================
@@ -14,7 +15,7 @@ COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund
 
 # Generate Prisma client
 RUN npx prisma generate
@@ -54,7 +55,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/package-lock.json ./package-lock.json
 
 # Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --prefer-offline --no-audit --no-fund && npm cache clean --force
 
 # Copy Prisma schema and generated client
 COPY --from=deps /app/prisma ./prisma

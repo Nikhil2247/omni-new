@@ -20,7 +20,7 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  schemas    = ["public", "catalog", "interaction", "planning", "operations", "content", "subscription"]
+  schemas    = ["public", "catalog", "interaction", "planning", "operations", "content", "subscription", "analytics"]
 }
 
 // ============================================================================
@@ -87,6 +87,7 @@ model User {
   messageReactions MessageReaction[]
   messageReceipts MessageReceipt[]
   messageDeletions MessageDeletion[]
+  funnelEvents    FunnelEvent[]
 
   @@index([email])
   @@index([status])
@@ -193,6 +194,7 @@ model UserSession {
   id           String   @id @default(uuid()) @db.Uuid
   userId       String   @map("user_id") @db.Uuid
   refreshToken String?  @map("refresh_token")        // Hashed refresh token
+  version      Int      @default(1)                   // For optimistic locking on refresh
   userAgent    String?  @map("user_agent")
   ipAddress    String?  @map("ip_address")
   deviceType   String?  @map("device_type")          // mobile, desktop, tablet
@@ -779,6 +781,8 @@ model VendorProfile {
   // Metrics (denormalized for read performance - updated via events)
   leadCount       Int       @default(0) @map("lead_count")
   viewCount       Int       @default(0) @map("view_count")
+  averageRating   Decimal?  @map("average_rating") @db.Decimal(3, 2) // Calculated atomically
+  totalReviews    Int       @default(0) @map("total_reviews")         // Count of approved reviews
 
   // Status
   status          VendorStatus @default(DRAFT)
@@ -817,6 +821,8 @@ model VendorProfile {
   @@index([categoryId, status, createdAt(sort: Desc)])  // Category filtering with recency
   @@index([status, leadCount(sort: Desc)])           // Popular vendors by leads
   @@index([status, viewCount(sort: Desc)])           // Trending vendors by views
+  @@index([status, averageRating(sort: Desc)])       // Highest rated vendors
+  @@index([categoryId, status, averageRating(sort: Desc)]) // Category with rating sort
   @@index([featuredUntil])                           // Featured vendor queries
 
   @@map("vendor_profiles")
@@ -3282,4 +3288,44 @@ enum CouponDuration {
   FOREVER           // Discount forever
 
   @@schema("subscription")
+}
+
+// ============================================================================
+// ANALYTICS SCHEMA - User behavior tracking, funnels, and business intelligence
+// ============================================================================
+
+/// FunnelEvent - Tracks user progression through conversion funnels
+/// Enables funnel analysis, drop-off identification, and conversion optimization
+model FunnelEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+
+  // Funnel Identification
+  funnelName    String   @map("funnel_name")        // e.g., "vendor_discovery", "lead_conversion"
+  stepIndex     Int      @map("step_index")         // 0-based step index in funnel
+  stepName      String   @map("step_name")          // Human-readable step name
+
+  // User & Session Tracking
+  userId        String?  @map("user_id") @db.Uuid   // Null for anonymous users
+  sessionId     String   @map("session_id")         // Frontend-generated session ID
+  anonymousId   String?  @map("anonymous_id")       // Cookie-based tracking for non-authenticated users
+
+  // Event Metadata
+  metadata      Json?                               // Additional context (vendor_id, category, etc.)
+  userAgent     String?  @map("user_agent")         // Browser/device info
+  ipAddress     String?  @map("ip_address")         // For geographic analysis
+  referrer      String?                             // Traffic source
+
+  // Timestamps
+  timestamp     DateTime @default(now())
+
+  // Relations
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Indexes for efficient querying
+  @@index([funnelName, timestamp])                  // Funnel analysis over time
+  @@index([userId, funnelName, timestamp])          // User journey tracking
+  @@index([sessionId, funnelName, stepIndex])       // Session-based funnel completion
+  @@index([timestamp])                              // Time-series queries
+  @@map("funnel_events")
+  @@schema("analytics")
 }

@@ -28,10 +28,12 @@ import { ApiKeyStrategy } from './strategies/api-key.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { TenantGuard } from './guards/tenant.guard';
+import { EmailVerifiedGuard } from './guards/email-verified.guard';
 
 // Scheduled Tasks
 import { SessionCleanupTask } from './tasks/session-cleanup.task';
 import { AuditService } from '../audit';
+import { CacheModule } from '../../infrastructure/cache/cache.module';
 
 @Global()
 @Module({
@@ -47,6 +49,7 @@ import { AuditService } from '../audit';
       }),
       inject: [ConfigService],
     }),
+    CacheModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -67,6 +70,7 @@ import { AuditService } from '../audit';
     JwtAuthGuard,
     RolesGuard,
     TenantGuard,
+    EmailVerifiedGuard,
 
     // Scheduled Tasks
     SessionCleanupTask,
@@ -83,6 +87,7 @@ import { AuditService } from '../audit';
     JwtAuthGuard,
     RolesGuard,
     TenantGuard,
+    EmailVerifiedGuard,
 
     // Modules
     JwtModule,

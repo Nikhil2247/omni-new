@@ -34,6 +34,23 @@ function mapUser(user: { id: string; email: string; firstName: string | null; la
   }
 }
 
+/**
+ * Hook to access authentication state and user data
+ */
+export function useAuth() {
+  const user = useAuthStore((state) => state.user)
+  const accessToken = useAuthStore((state) => state.accessToken)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+  const isLoading = useAuthStore((state) => state.isLoading)
+
+  return {
+    user,
+    accessToken,
+    isAuthenticated,
+    isLoading,
+  }
+}
+
 export function useLogin(returnUrl?: string | null) {
   const router = useRouter()
   const { setCredentials, setLoading } = useAuthStore()

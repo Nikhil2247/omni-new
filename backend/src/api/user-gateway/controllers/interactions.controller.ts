@@ -17,6 +17,7 @@ import {
 import { CreateMessageDto } from '../../../domain/leads/dto/message.dto';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../core/auth/guards/roles.guard';
+import { EmailVerifiedGuard } from '../../../core/auth/guards/email-verified.guard';
 import { UserAccess } from '../../../core/auth/decorators/roles.decorator';
 import {
   CurrentUser,
@@ -24,9 +25,14 @@ import {
 } from '../../../core/auth/decorators/current-user.decorator';
 import { Audited } from '../../../core/audit/audit.decorators';
 import { AuditSeverity } from '../../../core/audit/audit.types';
+import {
+  PerUserRateLimit,
+  PerUserRateLimits,
+} from '../../../infrastructure/rate-limiting/per-user-rate-limit.decorator';
+import { PerUserRateLimitGuard } from '../../../infrastructure/rate-limiting/per-user-rate-limit.guard';
 
 @Controller('interactions')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, EmailVerifiedGuard, PerUserRateLimitGuard)
 @UserAccess()
 export class InteractionsController {
   constructor(
@@ -35,6 +41,7 @@ export class InteractionsController {
   ) {}
 
   @Post('leads')
+  @PerUserRateLimit(PerUserRateLimits.LEAD_CREATION) // 10 leads per hour per user
   @Audited({
     action: 'CREATE',
     entityType: 'Lead',
@@ -65,6 +72,7 @@ export class InteractionsController {
   }
 
   @Post('messages')
+  @PerUserRateLimit(PerUserRateLimits.MESSAGE_SEND) // 30 messages per minute per user
   @Audited({
     action: 'CREATE',
     entityType: 'Message',

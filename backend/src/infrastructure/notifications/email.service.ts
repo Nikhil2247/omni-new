@@ -12,6 +12,7 @@ import type { Transporter } from 'nodemailer';
 import * as Handlebars from 'handlebars';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { CircuitBreakerService } from '../resilience/circuit-breaker.service';
 
 export interface EmailOptions {
   to: string | string[];
@@ -62,7 +63,10 @@ export class EmailService implements OnModuleInit {
   private readonly fromName: string;
   private readonly templatesDir: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly circuitBreaker: CircuitBreakerService,
+  ) {
     this.fromAddress = this.configService.get<string>(
       'EMAIL_FROM_ADDRESS',
       'noreply@omnicassion.com',
@@ -374,118 +378,147 @@ export class EmailService implements OnModuleInit {
   async send(options: EmailOptions): Promise<EmailResult> {
     await this.ensureTransporterInitialized();
 
-    try {
-      let html = options.html;
-      let text = options.text;
-      let subject = options.subject;
-
-      // Render template if specified
-      if (options.template) {
-        const template = this.templates.get(options.template);
-
-        if (template) {
-          const context = options.context || {};
-          html = template.html(context);
-          text = template.text ? template.text(context) : undefined;
-          subject = template.subject(context);
-        } else {
-          // Fallback to inline template
-          html = this.renderInlineTemplate(
-            options.template,
-            options.context || {},
-          );
-        }
-      }
-
-      const mailOptions = {
-        from: options.from || `"${this.fromName}" <${this.fromAddress}>`,
-        to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
-        cc: options.cc
-          ? Array.isArray(options.cc)
-            ? options.cc.join(', ')
-            : options.cc
-          : undefined,
-        bcc: options.bcc
-          ? Array.isArray(options.bcc)
-            ? options.bcc.join(', ')
-            : options.bcc
-          : undefined,
-        replyTo: options.replyTo,
-        subject,
-        html,
-        text,
-        attachments: options.attachments?.map((a) => ({
-          filename: a.filename,
-          content: a.content,
-          path: a.path,
-          contentType: a.contentType,
-          cid: a.cid,
-        })),
-        headers: options.headers,
-      };
-
-      const retryAttempts = Math.max(
-        0,
-        this.getNumberConfig('EMAIL_SEND_RETRY_ATTEMPTS', 2),
-      );
-      const retryDelayMs = Math.max(
-        100,
-        this.getNumberConfig('EMAIL_SEND_RETRY_DELAY_MS', 1500),
-      );
-
-      let lastError: unknown = null;
-
-      for (let attempt = 0; attempt <= retryAttempts; attempt++) {
+    // Wrap email sending with circuit breaker
+    return this.circuitBreaker.execute(
+      {
+        name: 'email-service',
+        failureThreshold: 5,
+        successThreshold: 2,
+        timeout: 60000, // 1 minute
+        volumeThreshold: 10,
+        failureRateThreshold: 50,
+      },
+      async () => {
         try {
-          const result = await this.transporter.sendMail(mailOptions);
+          let html = options.html;
+          let text = options.text;
+          let subject = options.subject;
 
-          this.logger.debug(`Email sent to ${options.to}: ${result.messageId}`);
+          // Render template if specified
+          if (options.template) {
+            const template = this.templates.get(options.template);
 
-          const previewUrl = nodemailer.getTestMessageUrl(result);
-          if (previewUrl) {
-            this.logger.debug(`Ethereal preview URL: ${previewUrl}`);
+            if (template) {
+              const context = options.context || {};
+              html = template.html(context);
+              text = template.text ? template.text(context) : undefined;
+              subject = template.subject(context);
+            } else {
+              // Fallback to inline template
+              html = this.renderInlineTemplate(
+                options.template,
+                options.context || {},
+              );
+            }
           }
+
+          const mailOptions = {
+            from: options.from || `"${this.fromName}" <${this.fromAddress}>`,
+            to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+            cc: options.cc
+              ? Array.isArray(options.cc)
+                ? options.cc.join(', ')
+                : options.cc
+              : undefined,
+            bcc: options.bcc
+              ? Array.isArray(options.bcc)
+                ? options.bcc.join(', ')
+                : options.bcc
+              : undefined,
+            replyTo: options.replyTo,
+            subject,
+            html,
+            text,
+            attachments: options.attachments?.map((a) => ({
+              filename: a.filename,
+              content: a.content,
+              path: a.path,
+              contentType: a.contentType,
+              cid: a.cid,
+            })),
+            headers: options.headers,
+          };
+
+          const retryAttempts = Math.max(
+            0,
+            this.getNumberConfig('EMAIL_SEND_RETRY_ATTEMPTS', 2),
+          );
+          const retryDelayMs = Math.max(
+            100,
+            this.getNumberConfig('EMAIL_SEND_RETRY_DELAY_MS', 1500),
+          );
+
+          let lastError: unknown = null;
+
+          for (let attempt = 0; attempt <= retryAttempts; attempt++) {
+            try {
+              const result = await this.transporter.sendMail(mailOptions);
+
+              this.logger.debug(
+                `Email sent to ${options.to}: ${result.messageId}`,
+              );
+
+              const previewUrl = nodemailer.getTestMessageUrl(result);
+              if (previewUrl) {
+                this.logger.debug(`Ethereal preview URL: ${previewUrl}`);
+              }
+
+              return {
+                success: true,
+                messageId: result.messageId,
+              };
+            } catch (error) {
+              lastError = error;
+
+              const shouldRetry = this.shouldRetryEmailError(error);
+              const isLastAttempt = attempt >= retryAttempts;
+
+              if (!shouldRetry || isLastAttempt) {
+                break;
+              }
+
+              const delayMs = retryDelayMs * 2 ** attempt;
+              const currentAttempt = attempt + 1;
+              const totalAttempts = retryAttempts + 1;
+
+              this.logger.warn(
+                `Transient email delivery failure to ${options.to} (attempt ${currentAttempt}/${totalAttempts}): ${(error as Error).message}. Retrying in ${delayMs}ms`,
+              );
+
+              await this.sleep(delayMs);
+            }
+          }
+
+          this.logger.error(
+            `Failed to send email to ${options.to}:`,
+            lastError,
+          );
 
           return {
-            success: true,
-            messageId: result.messageId,
+            success: false,
+            error:
+              (lastError as Error)?.message || 'Unknown email delivery error',
           };
         } catch (error) {
-          lastError = error;
+          this.logger.error(`Failed to send email to ${options.to}:`, error);
 
-          const shouldRetry = this.shouldRetryEmailError(error);
-          const isLastAttempt = attempt >= retryAttempts;
-
-          if (!shouldRetry || isLastAttempt) {
-            break;
-          }
-
-          const delayMs = retryDelayMs * 2 ** attempt;
-          const currentAttempt = attempt + 1;
-          const totalAttempts = retryAttempts + 1;
-
-          this.logger.warn(
-            `Transient email delivery failure to ${options.to} (attempt ${currentAttempt}/${totalAttempts}): ${(error as Error).message}. Retrying in ${delayMs}ms`,
-          );
-
-          await this.sleep(delayMs);
+          return {
+            success: false,
+            error: (error as Error).message,
+          };
         }
-      }
-
-      this.logger.error(`Failed to send email to ${options.to}:`, lastError);
-
-      return {
-        success: false,
-        error: (lastError as Error)?.message || 'Unknown email delivery error',
-      };
-    } catch (error) {
-      this.logger.error(`Failed to send email to ${options.to}:`, error);
-
-      return {
-        success: false,
-        error: (error as Error).message,
-      };
-    }
+      },
+      // Fallback: log error and return failure response
+      async () => {
+        this.logger.warn(
+          `Email circuit breaker OPEN for ${options.to}. Email queued for later retry.`,
+        );
+        return {
+          success: false,
+          error: 'Email service temporarily unavailable. Will retry later.',
+        };
+      },
+    );
   }
 
   private shouldRetryEmailError(error: unknown): boolean {

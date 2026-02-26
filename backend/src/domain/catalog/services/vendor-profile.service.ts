@@ -217,26 +217,26 @@ export class VendorProfileService {
     vendorProfile: T,
   ) {
     const followersCount = (vendorProfile as any)?._count?.followers ?? 0;
-    const reviewsCount = (vendorProfile as any)?._count?.reviews ?? 0;
+    const reviewsCount = ((vendorProfile as any)?._count?.reviews ?? 0) || ((vendorProfile as any)?.totalReviews ?? 0);
 
-    const [ratingAggregate, eventHistory] = await Promise.all([
-      this.prisma.vendorReview.aggregate({
-        where: {
-          vendorProfileId: vendorProfile.id,
-          status: 'APPROVED',
-        },
-        _avg: {
-          rating: true,
-        },
-      }),
-      this.getEventHistory(vendorProfile.id),
-    ]);
+    // Use denormalized averageRating if available (from Phase 1 improvements)
+    // Convert Decimal to number for API response
+    let averageRating: number | null = null;
+    if ((vendorProfile as any)?.averageRating !== undefined && (vendorProfile as any)?.averageRating !== null) {
+      // Convert Prisma Decimal to number
+      const decimalValue = (vendorProfile as any).averageRating;
+      averageRating = typeof decimalValue === 'object' && decimalValue.toNumber
+        ? decimalValue.toNumber()
+        : Number(decimalValue);
+    }
+
+    const eventHistory = await this.getEventHistory(vendorProfile.id);
 
     return {
       ...(vendorProfile as any),
       followersCount,
       reviewsCount,
-      averageRating: ratingAggregate._avg.rating ?? null,
+      averageRating,
       eventHistory,
     };
   }
@@ -244,7 +244,7 @@ export class VendorProfileService {
   /**
    * Create vendor profile
    */
-  async create(dto: CreateVendorProfileDto): Promise<VendorProfile> {
+  async create(dto: CreateVendorProfileDto): Promise<VendorProfileResponseDto> {
     this.logger.log(`Creating vendor profile for user: ${dto.userId}`);
 
     if (!dto.userId || !this.uuidRegex.test(dto.userId)) {
@@ -304,7 +304,7 @@ export class VendorProfileService {
     });
 
     this.logger.log(`Vendor profile created: ${vendorProfile.id}`);
-    return vendorProfile;
+    return await this.enrichVendorProfile(vendorProfile as any);
   }
 
   /**
@@ -343,7 +343,9 @@ export class VendorProfileService {
   /**
    * Submit vendor profile for verification
    */
-  async submitForVerification(id: string): Promise<VendorProfile> {
+  async submitForVerification(
+    id: string,
+  ): Promise<VendorProfileResponseDto> {
     this.logger.log(`Auto-approving vendor profile verification: ${id}`);
 
     const vendorProfile = await this.vendorProfileRepository.update(id, {
@@ -355,13 +357,13 @@ export class VendorProfileService {
       vendorProfileId: id,
     });
 
-    return vendorProfile;
+    return await this.enrichVendorProfile(vendorProfile as any);
   }
 
   /**
    * Find vendor profile by slug
    */
-  async findBySlug(slug: string): Promise<VendorProfile> {
+  async findBySlug(slug: string): Promise<VendorProfileResponseDto> {
     this.logger.debug(`Finding vendor profile by slug: ${slug}`);
 
     const vendorProfile = await this.cacheAside.get(
@@ -418,7 +420,7 @@ export class VendorProfileService {
   /**
    * Find vendor profile by user ID
    */
-  async findByUserId(userId: string): Promise<VendorProfile> {
+  async findByUserId(userId: string): Promise<VendorProfileResponseDto> {
     this.logger.debug(`Finding vendor profile by user ID: ${userId}`);
 
     const vendorProfile = await this.vendorProfileRepository.findByUserId(
@@ -467,7 +469,7 @@ export class VendorProfileService {
   async update(
     id: string,
     dto: UpdateVendorProfileDto,
-  ): Promise<VendorProfile> {
+  ): Promise<VendorProfileResponseDto> {
     this.logger.log(`Updating vendor profile: ${id}`);
 
     // Check if profile exists
@@ -522,7 +524,7 @@ export class VendorProfileService {
     });
 
     this.logger.log(`Vendor profile updated: ${id}`);
-    return vendorProfile;
+    return await this.enrichVendorProfile(vendorProfile as any);
   }
 
   /**
@@ -546,7 +548,7 @@ export class VendorProfileService {
   async search(
     searchDto: SearchVendorProfileDto,
     userId?: string,
-  ): Promise<PaginatedResult<VendorProfile>> {
+  ): Promise<PaginatedResult<VendorProfileResponseDto>> {
     this.logger.debug('Searching vendor profiles', searchDto);
     const result = await this.vendorProfileRepository.search(searchDto, userId);
     const withMetrics = await this.attachReviewMetrics(
@@ -554,14 +556,14 @@ export class VendorProfileService {
     );
     return {
       ...result,
-      data: withMetrics as unknown as VendorProfile[],
+      data: withMetrics as unknown as VendorProfileResponseDto[],
     };
   }
 
   /**
    * Get featured vendors
    */
-  async getFeatured(limit: number = 10): Promise<VendorProfile[]> {
+  async getFeatured(limit: number = 10): Promise<VendorProfileResponseDto[]> {
     this.logger.debug(`Getting featured vendors (limit: ${limit})`);
     const vendors = await this.cacheAside.get(
       `discovery:featured:${limit}`,
@@ -571,7 +573,7 @@ export class VendorProfileService {
     const withMetrics = await this.attachReviewMetrics(
       vendors as Array<{ id: string }>,
     );
-    return withMetrics as unknown as VendorProfile[];
+    return withMetrics as unknown as VendorProfileResponseDto[];
   }
 
   /**
@@ -580,7 +582,7 @@ export class VendorProfileService {
   async getByCategory(
     categoryIdOrSlug: string,
     limit: number = 20,
-  ): Promise<VendorProfile[]> {
+  ): Promise<VendorProfileResponseDto[]> {
     this.logger.debug(`Getting vendors by category: ${categoryIdOrSlug}`);
     const vendors = await this.cacheAside.get(
       `discovery:category:${categoryIdOrSlug}:limit:${limit}`,
@@ -594,7 +596,7 @@ export class VendorProfileService {
     const withMetrics = await this.attachReviewMetrics(
       vendors as Array<{ id: string }>,
     );
-    return withMetrics as unknown as VendorProfile[];
+    return withMetrics as unknown as VendorProfileResponseDto[];
   }
 
   /**
@@ -603,7 +605,7 @@ export class VendorProfileService {
   async getByCity(
     cityId: string,
     limit: number = 20,
-  ): Promise<VendorProfile[]> {
+  ): Promise<VendorProfileResponseDto[]> {
     this.logger.debug(`Getting vendors by city: ${cityId}`);
     const vendors = await this.cacheAside.get(
       `discovery:city:${cityId}:limit:${limit}`,
@@ -613,7 +615,7 @@ export class VendorProfileService {
     const withMetrics = await this.attachReviewMetrics(
       vendors as Array<{ id: string }>,
     );
-    return withMetrics as unknown as VendorProfile[];
+    return withMetrics as unknown as VendorProfileResponseDto[];
   }
 
   /**
@@ -701,7 +703,7 @@ export class VendorProfileService {
     file: Buffer,
     originalName: string,
     mimeType: string,
-  ): Promise<VendorProfile> {
+  ): Promise<VendorProfileResponseDto> {
     this.logger.log(`Uploading profile photo for vendor: ${id}`);
 
     // Get existing profile
@@ -748,13 +750,13 @@ export class VendorProfileService {
     await this.cacheAside.invalidate(`vendor:slug:${profile.slug}`);
 
     this.logger.log(`Profile photo uploaded for vendor: ${id}`);
-    return updated;
+    return await this.enrichVendorProfile(updated as any);
   }
 
   /**
    * Delete profile photo for vendor
    */
-  async deleteProfilePhoto(id: string): Promise<VendorProfile> {
+  async deleteProfilePhoto(id: string): Promise<VendorProfileResponseDto> {
     this.logger.log(`Deleting profile photo for vendor: ${id}`);
 
     const profile = await this.findById(id, false);
@@ -777,6 +779,6 @@ export class VendorProfileService {
     // Invalidate cache
     await this.cacheAside.invalidate(`vendor:slug:${profile.slug}`);
 
-    return updated;
+    return await this.enrichVendorProfile(updated as any);
   }
 }

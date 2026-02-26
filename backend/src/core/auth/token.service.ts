@@ -124,11 +124,14 @@ export class TokenService {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
     });
 
-    // Store hashed refresh token for additional security
+    // Store hashed refresh token for additional security with version increment
     const hashedToken = await bcrypt.hash(refreshToken, 10);
     await this.prisma.userSession.update({
       where: { id: sessionId },
-      data: { refreshToken: hashedToken },
+      data: {
+        refreshToken: hashedToken,
+        version: { increment: 1 },
+      },
     });
 
     return refreshToken;
@@ -350,7 +353,10 @@ export class TokenService {
     try {
       await this.prisma.userSession.update({
         where: { id: sessionId },
-        data: { isRevoked: true },
+        data: {
+          isRevoked: true,
+          version: { increment: 1 },
+        },
       });
       this.logger.debug(`Invalidated session: ${sessionId}`);
     } catch (error) {
@@ -360,11 +366,15 @@ export class TokenService {
 
   /**
    * Invalidate all user sessions
+   * Uses version increment for immediate invalidation across instances
    */
   async invalidateAllUserSessions(userId: string): Promise<void> {
     const result = await this.prisma.userSession.updateMany({
       where: { userId, isRevoked: false },
-      data: { isRevoked: true },
+      data: {
+        isRevoked: true,
+        version: { increment: 1 }, // Increment version to invalidate cached tokens
+      },
     });
     this.logger.debug(
       `Invalidated ${result.count} sessions for user: ${userId}`,
@@ -436,7 +446,10 @@ export class TokenService {
         userId, // Ensure user owns this session
         isRevoked: false,
       },
-      data: { isRevoked: true },
+      data: {
+        isRevoked: true,
+        version: { increment: 1 },
+      },
     });
 
     return result.count > 0;

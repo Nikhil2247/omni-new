@@ -12,6 +12,9 @@ import { AnalyticsTrackingService } from './services/analytics-tracking.service'
 import { VendorMetricsService } from './services/vendor-metrics.service';
 import { PlatformMetricsService } from './services/platform-metrics.service';
 import { InsightsAggregatorService } from './services/insights-aggregator.service';
+import { FunnelAnalyticsService } from './services/funnel-analytics.service';
+import { AutomatedCountsService } from './services/automated-counts.service';
+import { ComprehensiveMetricsService } from './services/comprehensive-metrics.service';
 import { EngagementListener } from './listeners/engagement.listener';
 
 @Module({
@@ -22,6 +25,9 @@ import { EngagementListener } from './listeners/engagement.listener';
     PlatformMetricsService,
     InsightsAggregatorService,
     AnalyticsTrackingService,
+    FunnelAnalyticsService,
+    AutomatedCountsService,
+    ComprehensiveMetricsService,
     EngagementListener,
   ],
   exports: [
@@ -30,6 +36,9 @@ import { EngagementListener } from './listeners/engagement.listener';
     PlatformMetricsService,
     InsightsAggregatorService,
     AnalyticsTrackingService,
+    FunnelAnalyticsService,
+    AutomatedCountsService,
+    ComprehensiveMetricsService,
   ],
 })
 export class InsightsModule {}

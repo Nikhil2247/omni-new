@@ -2,15 +2,21 @@
 // LEAD SERVICE - Leads Domain
 // ============================================================================
 
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  Logger,
+  ConflictException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Lead, Prisma } from '@prisma/client';
+import { Lead, Prisma, LeadStatus } from '@prisma/client';
 import { LeadRepository } from '../repositories/lead.repository';
 import { CreateLeadDto, UpdateLeadDto, SearchLeadsDto } from '../dto/lead.dto';
 import { PaginatedResult } from '../../../core/database/repositories/base.repository';
 import { Decimal } from '@prisma/client/runtime/client';
 import { ConversationService } from '../../messaging/services/conversation.service';
 import { MessagingMessageService } from '../../messaging/services/message.service';
+import { PrismaService } from '../../../core/database/prisma.service';
 
 // Type for Lead with included relations
 export type LeadWithRelations = Prisma.LeadGetPayload<{
@@ -44,6 +50,7 @@ export class LeadService {
     private readonly eventEmitter: EventEmitter2,
     private readonly conversationService: ConversationService,
     private readonly messagingMessageService: MessagingMessageService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async create(dto: CreateLeadDto): Promise<Lead> {
@@ -51,20 +58,16 @@ export class LeadService {
       `Creating lead for vendor: ${dto.vendorProfileId} from planner: ${dto.plannerId}`,
     );
 
-    const lead = await this.leadRepository.create(
-      {
-        vendorProfile: { connect: { id: dto.vendorProfileId } },
-        planner: { connect: { id: dto.plannerId } },
-        event: dto.eventId ? { connect: { id: dto.eventId } } : undefined,
-        source: dto.source,
-        status: 'NEW',
-        eventDate: dto.eventDate ? new Date(dto.eventDate) : undefined,
-        eventType: dto.eventType,
-        guestCount: dto.guestCount,
-        budget: dto.budget ? new Decimal(dto.budget) : undefined,
-        initialMessage: dto.initialMessage,
+    // Check for duplicate lead creation (prevent double-click)
+    const duplicateCheckTime = new Date(Date.now() - 60000); // Last 60 seconds
+    const existingLead = await this.prisma.lead.findFirst({
+      where: {
+        plannerId: dto.plannerId,
+        vendorProfileId: dto.vendorProfileId,
+        ...(dto.eventId && { eventId: dto.eventId }),
+        createdAt: { gte: duplicateCheckTime },
       },
-      {
+      include: {
         vendorProfile: {
           select: {
             id: true,
@@ -81,34 +84,104 @@ export class LeadService {
           },
         },
       },
-    );
+    });
 
+    if (existingLead) {
+      this.logger.warn(
+        `Duplicate lead creation prevented for planner ${dto.plannerId} and vendor ${dto.vendorProfileId}`,
+      );
+      return existingLead;
+    }
+
+    // Wrap entire lead creation flow in transaction for atomicity
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Create lead
+      const lead = await tx.lead.create({
+        data: {
+          vendorProfile: { connect: { id: dto.vendorProfileId } },
+          planner: { connect: { id: dto.plannerId } },
+          event: dto.eventId ? { connect: { id: dto.eventId } } : undefined,
+          source: dto.source,
+          status: 'NEW',
+          eventDate: dto.eventDate ? new Date(dto.eventDate) : undefined,
+          eventType: dto.eventType,
+          guestCount: dto.guestCount,
+          budget: dto.budget ? new Decimal(dto.budget) : undefined,
+          initialMessage: dto.initialMessage,
+        },
+        include: {
+          vendorProfile: {
+            select: {
+              id: true,
+              businessName: true,
+              slug: true,
+            },
+          },
+          planner: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      // Create conversation for lead
+      const conversation = await tx.conversation.create({
+        data: {
+          type: 'LEAD',
+          lead: { connect: { id: lead.id } },
+          participants: {
+            create: [
+              {
+                user: { connect: { id: dto.plannerId } },
+                role: 'PLANNER',
+              },
+              {
+                user: { connect: { id: dto.vendorProfileId } },
+                role: 'VENDOR',
+              },
+            ],
+          },
+        },
+        include: {
+          participants: true,
+        },
+      });
+
+      // Send initial message if provided
+      if (dto.initialMessage) {
+        await tx.message.create({
+          data: {
+            conversation: { connect: { id: conversation.id } },
+            sender: { connect: { id: dto.plannerId } },
+            content: dto.initialMessage,
+          },
+        });
+
+        // Update conversation lastMessageAt
+        await tx.conversation.update({
+          where: { id: conversation.id },
+          data: { lastMessageAt: new Date() },
+        });
+      }
+
+      return lead;
+    });
+
+    // Emit event after successful transaction commit
     this.eventEmitter.emit('lead.created', {
-      leadId: lead.id,
+      leadId: result.id,
       vendorProfileId: dto.vendorProfileId,
       plannerId: dto.plannerId,
       source: dto.source,
     });
 
-    try {
-      const conversation =
-        await this.conversationService.createLeadConversation(
-          lead.id,
-          dto.plannerId,
-          dto.vendorProfileId,
-        );
+    this.logger.log(`Lead created successfully: ${result.id}`);
 
-      if (dto.initialMessage) {
-        await this.messagingMessageService.sendMessage(dto.plannerId, {
-          conversationId: conversation.id,
-          content: dto.initialMessage,
-        });
-      }
-    } catch (error) {
-      this.logger.error('Failed to initialize lead conversation', error);
-    }
-
-    return lead;
+    return result;
   }
 
   async findById(id: string): Promise<LeadWithRelations> {
@@ -157,34 +230,75 @@ export class LeadService {
     return this.leadRepository.search(dto);
   }
 
+  /**
+   * Update lead status atomically with optimistic locking
+   * Prevents race conditions when multiple requests try to update status
+   */
+  async updateStatusAtomic(
+    id: string,
+    newStatus: LeadStatus,
+    expectedCurrentStatus?: LeadStatus,
+  ): Promise<Lead> {
+    const lead = await this.findById(id);
+
+    // If expected status is provided, use optimistic locking
+    if (expectedCurrentStatus) {
+      const result = await this.prisma.$executeRaw`
+        UPDATE interaction."leads"
+        SET status = ${newStatus}::"interaction"."LeadStatus",
+            "updated_at" = NOW()
+        WHERE id = ${id}
+          AND status = ${expectedCurrentStatus}::"interaction"."LeadStatus"
+          AND "deleted_at" IS NULL
+      `;
+
+      if (result === 0) {
+        throw new ConflictException(
+          `Lead status has changed. Expected ${expectedCurrentStatus} but found ${lead.status}`,
+        );
+      }
+    } else {
+      // No optimistic lock, just update
+      await this.leadRepository.update(id, { status: newStatus });
+    }
+
+    // Fetch updated lead
+    const updated = await this.findById(id);
+
+    // Emit status change event
+    this.eventEmitter.emit('lead.status-changed', {
+      leadId: id,
+      oldStatus: lead.status,
+      newStatus,
+      vendorProfileId: lead.vendorProfileId,
+      plannerId: lead.plannerId,
+    });
+
+    // Handle conversion
+    if (newStatus === 'WON') {
+      await this.leadRepository.update(id, { convertedAt: new Date() });
+      this.eventEmitter.emit('lead.converted', { leadId: id });
+    }
+
+    return updated;
+  }
+
   async update(id: string, dto: UpdateLeadDto): Promise<Lead> {
     const lead = await this.findById(id);
     const oldStatus = lead.status;
 
+    // If status is being changed, use atomic update
+    if (dto.status && dto.status !== oldStatus) {
+      return this.updateStatusAtomic(id, dto.status as LeadStatus);
+    }
+
+    // Otherwise, update non-status fields normally
     const updated = await this.leadRepository.update(id, {
-      status: dto.status,
       eventDate: dto.eventDate ? new Date(dto.eventDate) : undefined,
       eventType: dto.eventType,
       guestCount: dto.guestCount,
       budget: dto.budget ? new Decimal(dto.budget) : undefined,
     });
-
-    if (dto.status && dto.status !== oldStatus) {
-      this.eventEmitter.emit('lead.status-changed', {
-        leadId: id,
-        oldStatus,
-        newStatus: dto.status,
-        vendorProfileId: lead.vendorProfileId,
-        plannerId: lead.plannerId,
-      });
-
-      if (dto.status === 'WON') {
-        await this.leadRepository.update(id, {
-          convertedAt: new Date(),
-        });
-        this.eventEmitter.emit('lead.converted', { leadId: id });
-      }
-    }
 
     return updated;
   }
@@ -205,8 +319,11 @@ export class LeadService {
     const lead = await this.findById(id);
 
     if (lead.status === 'NEW') {
-      const updated = await this.leadRepository.update(id, {
-        status: 'CONTACTED',
+      // Use atomic update with optimistic locking
+      const updated = await this.updateStatusAtomic(id, 'CONTACTED', 'NEW');
+
+      // Update responded timestamp
+      await this.leadRepository.update(id, {
         respondedAt: new Date(),
       });
 

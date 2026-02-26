@@ -11,11 +11,21 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import * as compression from 'compression';
+import * as cookieParser from 'cookie-parser';
+import * as csurf from 'csurf';
 import { AppModule } from './app.module';
 import { createRedisIoAdapter } from './infrastructure/websockets/redis-io.adapter';
 import { IdempotencyInterceptor } from './infrastructure/idempotency/idempotency.interceptor';
 import { IdempotencyService } from './infrastructure/idempotency/idempotency.service';
 import { EmailService } from './infrastructure/notifications/email.service';
+import { initializeSentry } from './infrastructure/monitoring/sentry.config';
+
+// Initialize Sentry as early as possible
+const sentryDsn = process.env.SENTRY_DSN;
+const nodeEnv = process.env.NODE_ENV || 'development';
+if (sentryDsn) {
+  initializeSentry(sentryDsn, nodeEnv);
+}
 
 if (!process.env.PRISMA_CLIENT_ENGINE_TYPE) {
   process.env.PRISMA_CLIENT_ENGINE_TYPE = 'binary';
@@ -154,6 +164,31 @@ async function bootstrap() {
 
   // Trust proxy (for rate limiting behind load balancer)
   app.set('trust proxy', 1);
+
+  // ===========================================================================
+  // CSRF PROTECTION
+  // ===========================================================================
+
+  // Cookie parser (required for CSRF)
+  app.use(cookieParser());
+
+  // CSRF protection for state-changing operations
+  // Disabled in development for easier API testing
+  const enableCsrf = configService.get('NODE_ENV') === 'production';
+  if (enableCsrf) {
+    app.use(
+      csurf({
+        cookie: {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'strict',
+        },
+      }),
+    );
+    logger.log('CSRF protection enabled');
+  } else {
+    logger.warn('CSRF protection disabled (development mode)');
+  }
 
   // ===========================================================================
   // VALIDATION CONFIGURATION (ADR-011)

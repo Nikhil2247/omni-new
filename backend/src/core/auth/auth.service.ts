@@ -28,6 +28,7 @@ import {
 } from './login-activity.service';
 import { EmailVerificationService } from './email-verification.service';
 import { RoleLookupService, ROLE_NAMES } from '../lookup/role-lookup.service';
+import { DragonflyService } from '../../infrastructure/cache/dragonfly.service';
 
 export interface AuthUser {
   id: string;
@@ -91,15 +92,10 @@ export class AuthService {
   private readonly SALT_ROUNDS = 12;
   private readonly MAX_LOGIN_ATTEMPTS = 5;
   private readonly LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+  private readonly PENDING_2FA_TTL = 300; // 5 minutes in seconds
   private readonly maintenanceCacheTtlMs = 10_000;
   private maintenanceCache: { enabled: boolean; expiresAt: number } | null =
     null;
-
-  // Temporary store for pending 2FA verification (use Redis in production)
-  private readonly pending2FALogins = new Map<
-    string,
-    { userId: string; expiresAt: number; context: LoginContext }
-  >();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -110,7 +106,47 @@ export class AuthService {
     private readonly roleLookupService: RoleLookupService,
     private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
+    private readonly dragonflyService: DragonflyService,
   ) {}
+
+  /**
+   * Store 2FA pending login in Redis (multi-instance safe)
+   */
+  private async store2FAToken(
+    token: string,
+    data: { userId: string; expiresAt: number; context: LoginContext },
+  ): Promise<void> {
+    const key = `2fa:pending:${token}`;
+    await this.dragonflyService.set(key, data, {
+      ttl: this.PENDING_2FA_TTL,
+      nx: true, // Only set if key doesn't exist
+    });
+    this.logger.debug(`Stored 2FA token in Redis: ${key}`);
+  }
+
+  /**
+   * Retrieve 2FA pending login from Redis
+   */
+  private async get2FAToken(
+    token: string,
+  ): Promise<{ userId: string; expiresAt: number; context: LoginContext } | null> {
+    const key = `2fa:pending:${token}`;
+    const data = await this.dragonflyService.get<{
+      userId: string;
+      expiresAt: number;
+      context: LoginContext;
+    }>(key);
+    return data;
+  }
+
+  /**
+   * Delete 2FA pending login from Redis
+   */
+  private async delete2FAToken(token: string): Promise<void> {
+    const key = `2fa:pending:${token}`;
+    await this.dragonflyService.delete(key);
+    this.logger.debug(`Deleted 2FA token from Redis: ${key}`);
+  }
 
   /**
    * Register a new user
@@ -338,8 +374,8 @@ export class AuthService {
       // Generate temporary token for 2FA verification
       const tempToken = this.generateTemporary2FAToken();
 
-      // Store pending 2FA login (expires in 5 minutes)
-      this.pending2FALogins.set(tempToken, {
+      // Store pending 2FA login in Redis (multi-instance safe)
+      await this.store2FAToken(tempToken, {
         userId: user.id,
         expiresAt: Date.now() + 5 * 60 * 1000,
         context,
@@ -527,7 +563,8 @@ export class AuthService {
     if (authUser.twoFactorEnabled) {
       const tempToken = this.generateTemporary2FAToken();
 
-      this.pending2FALogins.set(tempToken, {
+      // Store pending 2FA login in Redis (multi-instance safe)
+      await this.store2FAToken(tempToken, {
         userId: authUser.id,
         expiresAt: Date.now() + 5 * 60 * 1000,
         context,
@@ -560,10 +597,11 @@ export class AuthService {
     code: string,
     context: LoginContext,
   ): Promise<TwoFactorLoginResult> {
-    const pending = this.pending2FALogins.get(tempToken);
+    // Retrieve pending 2FA login from Redis
+    const pending = await this.get2FAToken(tempToken);
 
     if (!pending || pending.expiresAt < Date.now()) {
-      this.pending2FALogins.delete(tempToken);
+      await this.delete2FAToken(tempToken);
       throw new UnauthorizedException('Two-factor session expired');
     }
 
@@ -584,8 +622,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid two-factor code');
     }
 
-    // Clean up pending login
-    this.pending2FALogins.delete(tempToken);
+    // Clean up pending login from Redis
+    await this.delete2FAToken(tempToken);
 
     // Get user for token generation
     const user = await this.getUserById(pending.userId);

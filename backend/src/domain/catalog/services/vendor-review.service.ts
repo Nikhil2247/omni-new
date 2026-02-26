@@ -18,6 +18,33 @@ import type {
 export class VendorReviewService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Update vendor rating atomically to prevent race conditions
+   * Uses database-level aggregation in a single query
+   */
+  private async updateVendorRatingAtomic(vendorProfileId: string): Promise<void> {
+    await this.prisma.$executeRaw`
+      UPDATE catalog."vendor_profiles"
+      SET
+        "average_rating" = (
+          SELECT AVG(rating)::numeric(3,2)
+          FROM catalog."vendor_reviews"
+          WHERE "vendor_profile_id" = ${vendorProfileId}
+            AND status = 'APPROVED'
+            AND "deleted_at" IS NULL
+        ),
+        "total_reviews" = (
+          SELECT COUNT(*)::integer
+          FROM catalog."vendor_reviews"
+          WHERE "vendor_profile_id" = ${vendorProfileId}
+            AND status = 'APPROVED'
+            AND "deleted_at" IS NULL
+        ),
+        "updated_at" = NOW()
+      WHERE id = ${vendorProfileId}
+    `;
+  }
+
   async create(userId: string, dto: CreateVendorReviewDto) {
     return this.prisma.vendorReview.create({
       data: {
@@ -128,7 +155,7 @@ export class VendorReviewService {
     if (review.vendorProfileId !== vendorProfile.id)
       throw new ForbiddenException('Not allowed');
 
-    return this.prisma.vendorReview.update({
+    const updated = await this.prisma.vendorReview.update({
       where: { id: reviewId },
       data: {
         reviewNotes: dto.response,
@@ -137,5 +164,10 @@ export class VendorReviewService {
         status: 'APPROVED',
       },
     });
+
+    // Update vendor rating atomically (prevents race conditions)
+    await this.updateVendorRatingAtomic(vendorProfile.id);
+
+    return updated;
   }
 }

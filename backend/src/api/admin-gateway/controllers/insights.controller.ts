@@ -7,6 +7,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Query,
   Param,
   ParseUUIDPipe,
@@ -18,6 +20,16 @@ import {
   UserEngagementService,
   VendorMetricsService,
 } from 'src/domain';
+import { FunnelAnalyticsService } from '../../../domain/insights/services/funnel-analytics.service';
+import { AutomatedCountsService } from '../../../domain/insights/services/automated-counts.service';
+import { ComprehensiveMetricsService } from '../../../domain/insights/services/comprehensive-metrics.service';
+import {
+  TrackFunnelEventDto,
+  AnalyzeFunnelDto,
+  GetFunnelTrendsDto,
+  GetTopDropOffPointsDto,
+  GetUserJourneyDto,
+} from '../../../domain/insights/dto';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../core/auth/guards/roles.guard';
 import { AdminOnly } from '../../../core/auth/decorators/roles.decorator';
@@ -50,6 +62,9 @@ export class InsightsController {
     private readonly userEngagement: UserEngagementService,
     private readonly vendorMetrics: VendorMetricsService,
     private readonly platformMetrics: PlatformMetricsService,
+    private readonly funnelAnalytics: FunnelAnalyticsService,
+    private readonly automatedCounts: AutomatedCountsService,
+    private readonly comprehensiveMetrics: ComprehensiveMetricsService,
   ) {}
 
   // ============================================================================
@@ -80,6 +95,60 @@ export class InsightsController {
   @Get('real-time')
   async getRealTimeStats() {
     return this.aggregator.getRealTimeStats();
+  }
+
+  // ============================================================================
+  // AUTOMATED COUNTS ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Get all platform counts (cached, fast)
+   * Perfect for displaying quick stats on frontend
+   */
+  @Get('counts')
+  async getAllCounts() {
+    return this.automatedCounts.getCounts();
+  }
+
+  /**
+   * Get funnel conversion rates
+   */
+  @Get('counts/funnels/conversion-rates')
+  async getFunnelConversionRates() {
+    return this.automatedCounts.getFunnelConversionRates();
+  }
+
+  /**
+   * Get count for a specific entity
+   */
+  @Get('counts/:entity')
+  async getEntityCount(
+    @Param('entity')
+    entity:
+      | 'users'
+      | 'vendors'
+      | 'leads'
+      | 'events'
+      | 'categories'
+      | 'services'
+      | 'portfolios'
+      | 'reviews',
+  ) {
+    const count = await this.automatedCounts.getEntityCount(entity);
+    return { entity, count };
+  }
+
+  /**
+   * Force refresh all counts (admin only)
+   */
+  @Get('counts/refresh')
+  async refreshCounts() {
+    const counts = await this.automatedCounts.refreshCounts();
+    return {
+      success: true,
+      message: 'Counts refreshed successfully',
+      counts,
+    };
   }
 
   // ============================================================================
@@ -304,6 +373,84 @@ export class InsightsController {
     );
 
     return Object.fromEntries(comparisons);
+  }
+
+  // ============================================================================
+  // FUNNEL ANALYTICS ENDPOINTS
+  // ============================================================================
+
+  /**
+   * Get all available funnels
+   */
+  @Get('funnels')
+  async getFunnels() {
+    return Object.values(this.funnelAnalytics.FUNNELS);
+  }
+
+  /**
+   * Track a funnel event (public endpoint - no admin guard needed)
+   * Note: This should be moved to a public controller for frontend tracking
+   */
+  @Post('funnels/track')
+  async trackFunnelEvent(@Body() dto: TrackFunnelEventDto) {
+    await this.funnelAnalytics.trackEvent(dto);
+    return { success: true };
+  }
+
+  /**
+   * Analyze funnel performance
+   */
+  @Get('funnels/:funnelName/analysis')
+  async analyzeFunnel(
+    @Param('funnelName') funnelName: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return this.funnelAnalytics.analyzeFunnel(funnelName, start, end);
+  }
+
+  /**
+   * Get funnel conversion trends
+   */
+  @Get('funnels/:funnelName/trends')
+  async getFunnelTrends(
+    @Param('funnelName') funnelName: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('interval') interval?: 'day' | 'week' | 'month',
+  ) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return this.funnelAnalytics.getFunnelTrends(
+      funnelName,
+      start,
+      end,
+      interval || 'day',
+    );
+  }
+
+  /**
+   * Get top drop-off points across all funnels
+   */
+  @Get('funnels/dropoffs')
+  async getTopDropOffPoints(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('limit') limit?: number,
+  ) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    return this.funnelAnalytics.getTopDropOffPoints(start, end, limit || 10);
+  }
+
+  /**
+   * Get user journey for a specific session
+   */
+  @Get('funnels/journey/:sessionId')
+  async getUserJourney(@Param('sessionId') sessionId: string) {
+    return this.funnelAnalytics.getUserJourney(sessionId);
   }
 
   // ============================================================================

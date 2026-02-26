@@ -9,6 +9,7 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
 import { Readable } from 'stream';
+import { CircuitBreakerService } from '../resilience/circuit-breaker.service';
 
 export interface BucketPolicy {
   Version: string;
@@ -57,7 +58,10 @@ export class MinioService implements OnModuleInit {
   private presignClient?: Minio.Client;
   private readonly defaultBucket: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly circuitBreaker: CircuitBreakerService,
+  ) {
     this.defaultBucket = this.configService.get<string>(
       'MINIO_DEFAULT_BUCKET',
       'omnicassion',
@@ -235,30 +239,50 @@ export class MinioService implements OnModuleInit {
   ): Promise<UploadResult> {
     const targetBucket = bucket || this.defaultBucket;
 
-    try {
-      const metaData: Record<string, string> = {
-        'Content-Type': options?.contentType || 'application/octet-stream',
-        ...options?.metadata,
-      };
+    // Wrap upload with circuit breaker
+    return this.circuitBreaker.execute(
+      {
+        name: 'minio-storage',
+        failureThreshold: 5,
+        successThreshold: 2,
+        timeout: 60000, // 1 minute
+        volumeThreshold: 10,
+        failureRateThreshold: 50,
+      },
+      async () => {
+        try {
+          const metaData: Record<string, string> = {
+            'Content-Type': options?.contentType || 'application/octet-stream',
+            ...options?.metadata,
+          };
 
-      const result = await this.client.putObject(
-        targetBucket,
-        objectName,
-        file,
-        size,
-        metaData,
-      );
+          const result = await this.client.putObject(
+            targetBucket,
+            objectName,
+            file,
+            size,
+            metaData,
+          );
 
-      this.logger.debug(`File uploaded: ${targetBucket}/${objectName}`);
+          this.logger.debug(`File uploaded: ${targetBucket}/${objectName}`);
 
-      return {
-        ...result,
-        versionId: result.versionId || undefined,
-      };
-    } catch (error) {
-      this.logger.error(`Failed to upload file: ${objectName}`, error);
-      throw error;
-    }
+          return {
+            ...result,
+            versionId: result.versionId || undefined,
+          };
+        } catch (error) {
+          this.logger.error(`Failed to upload file: ${objectName}`, error);
+          throw error;
+        }
+      },
+      // Fallback: log and throw error when storage is unavailable
+      async () => {
+        this.logger.error(
+          `MinIO circuit breaker OPEN. Upload failed for ${objectName}`,
+        );
+        throw new Error('Storage service temporarily unavailable');
+      },
+    );
   }
 
   async uploadStream(

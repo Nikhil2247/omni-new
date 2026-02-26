@@ -8,6 +8,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MeiliSearch, Index, SearchParams, Settings } from 'meilisearch';
+import { CircuitBreakerService } from '../resilience/circuit-breaker.service';
 
 export interface IndexConfig {
   primaryKey: string;
@@ -56,7 +57,10 @@ export class MeilisearchService implements OnModuleInit {
   private client: MeiliSearch;
   private readonly indexPrefix: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly circuitBreaker: CircuitBreakerService,
+  ) {
     this.indexPrefix = this.configService.get<string>(
       'MEILISEARCH_INDEX_PREFIX',
       'omni_',
@@ -360,36 +364,66 @@ export class MeilisearchService implements OnModuleInit {
     query: string,
     options?: SearchOptions,
   ): Promise<SearchResult<T>> {
-    const index = this.getIndex(indexName);
+    // Wrap search with circuit breaker
+    return this.circuitBreaker.execute(
+      {
+        name: 'meilisearch',
+        failureThreshold: 5,
+        successThreshold: 2,
+        timeout: 30000, // 30 seconds
+        volumeThreshold: 10,
+        failureRateThreshold: 50,
+      },
+      async () => {
+        const index = this.getIndex(indexName);
 
-    const page = options?.page ?? 1;
-    const hitsPerPage = options?.hitsPerPage ?? 20;
+        const page = options?.page ?? 1;
+        const hitsPerPage = options?.hitsPerPage ?? 20;
 
-    const searchParams: SearchParams = {
-      ...options,
-      page,
-      hitsPerPage,
-    };
+        const searchParams: SearchParams = {
+          ...options,
+          page,
+          hitsPerPage,
+        };
 
-    try {
-      const response = (await index.search(query, searchParams)) as any;
+        try {
+          const response = (await index.search(query, searchParams)) as any;
 
-      return {
-        hits: response.hits as T[],
-        query: response.query,
-        processingTimeMs: response.processingTimeMs,
-        totalHits: response.estimatedTotalHits || response.hits.length,
-        page,
-        hitsPerPage,
-        totalPages: Math.ceil(
-          (response.estimatedTotalHits || response.hits.length) / hitsPerPage,
-        ),
-        facetDistribution: response.facetDistribution,
-      };
-    } catch (error) {
-      this.logger.error(`Search failed in ${indexName}`, error);
-      throw error;
-    }
+          return {
+            hits: response.hits as T[],
+            query: response.query,
+            processingTimeMs: response.processingTimeMs,
+            totalHits: response.estimatedTotalHits || response.hits.length,
+            page,
+            hitsPerPage,
+            totalPages: Math.ceil(
+              (response.estimatedTotalHits || response.hits.length) /
+                hitsPerPage,
+            ),
+            facetDistribution: response.facetDistribution,
+          };
+        } catch (error) {
+          this.logger.error(`Search failed in ${indexName}`, error);
+          throw error;
+        }
+      },
+      // Fallback: return empty results when search is unavailable
+      async () => {
+        this.logger.warn(
+          `Meilisearch circuit breaker OPEN for ${indexName}. Returning empty results.`,
+        );
+        return {
+          hits: [],
+          query,
+          processingTimeMs: 0,
+          totalHits: 0,
+          page: options?.page ?? 1,
+          hitsPerPage: options?.hitsPerPage ?? 20,
+          totalPages: 0,
+          facetDistribution: {},
+        };
+      },
+    );
   }
 
   async searchWithFilters<T>(

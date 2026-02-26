@@ -115,12 +115,64 @@ export class VendorProfileRepository extends BaseRepository<
       orderBy.createdAt = sortOrder;
     }
 
-    // Include related data
+    // Include related data (optimized to prevent N+1 queries)
     const include: Prisma.VendorProfileInclude = {
-      category: true,
-      address: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          icon: true,
+        },
+      },
+      address: {
+        select: {
+          id: true,
+          addressLine1: true,
+          addressLine2: true,
+          postalCode: true,
+          latitude: true,
+          longitude: true,
+          city: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
       serviceAreas: {
         take: 5,
+        select: {
+          id: true,
+          cityId: true,
+        },
+      },
+      services: {
+        take: 10,
+        where: {
+          isActive: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          startingPrice: true,
+          pricingType: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+      portfolios: {
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
       },
     };
 
@@ -195,8 +247,46 @@ export class VendorProfileRepository extends BaseRepository<
       },
       take: limit,
       include: {
-        category: true,
-        address: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            icon: true,
+          },
+        },
+        address: {
+          select: {
+            id: true,
+            addressLine1: true,
+            addressLine2: true,
+            postalCode: true,
+            city: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        services: {
+          take: 5,
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            startingPrice: true,
+            pricingType: true,
+          },
+        },
+        portfolios: {
+          take: 3,
+          select: {
+            id: true,
+            title: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
   }
@@ -299,12 +389,54 @@ export class VendorProfileRepository extends BaseRepository<
       },
       take: limit,
       include: {
-        category: true,
-        address: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            icon: true,
+          },
+        },
+        address: {
+          select: {
+            id: true,
+            addressLine1: true,
+            addressLine2: true,
+            postalCode: true,
+            city: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
         serviceAreas: {
           where: {
             cityId,
           },
+          select: {
+            id: true,
+            cityId: true,
+          },
+        },
+        services: {
+          take: 5,
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            startingPrice: true,
+            pricingType: true,
+          },
+        },
+        portfolios: {
+          take: 3,
+          select: {
+            id: true,
+            title: true,
+          },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });

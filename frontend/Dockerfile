@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # ===========================================
 # Omnicassion Frontend - Multi-stage Dockerfile
 # ===========================================
@@ -13,7 +14,7 @@ RUN apk add --no-cache libc6-compat
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund
 
 # Stage 2: Builder
 FROM node:22-alpine AS builder
