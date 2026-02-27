@@ -11,7 +11,10 @@ import {
   useGenerateSlug,
   useUploadProfilePhoto,
   useDeleteProfilePhoto,
+  useUploadProfileBanner,
+  useDeleteProfileBanner,
 } from '@/hooks/queries/use-business'
+import { useCities } from '@/hooks/queries/use-lookups'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -121,9 +124,14 @@ export default function BusinessProfilePage() {
   const generateSlug = useGenerateSlug()
   const uploadPhoto = useUploadProfilePhoto()
   const deletePhoto = useDeleteProfilePhoto()
+  const uploadBanner = useUploadProfileBanner()
+  const deleteBanner = useDeleteProfileBanner()
+  const { data: cities = [] } = useCities()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const createPhotoInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+  const createBannerInputRef = useRef<HTMLInputElement>(null)
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showManageDialog, setShowManageDialog] = useState(false)
@@ -131,6 +139,8 @@ export default function BusinessProfilePage() {
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
   const [createPhotoFile, setCreatePhotoFile] = useState<File | null>(null)
   const [createPhotoPreviewUrl, setCreatePhotoPreviewUrl] = useState('')
+  const [createBannerFile, setCreateBannerFile] = useState<File | null>(null)
+  const [createBannerPreviewUrl, setCreateBannerPreviewUrl] = useState('')
   const [formData, setFormData] = useState({
     businessName: '',
     slug: '',
@@ -141,7 +151,9 @@ export default function BusinessProfilePage() {
     contactPhone: '',
     website: '',
     serviceRadius: '',
+    serviceAreaCityIds: [] as string[],
   })
+  const [selectedServiceCityId, setSelectedServiceCityId] = useState('')
 
   useEffect(() => {
     if (!profile) return
@@ -155,6 +167,7 @@ export default function BusinessProfilePage() {
       contactPhone: profile.contactPhone || '',
       website: profile.website || '',
       serviceRadius: profile.serviceRadius?.toString() || '',
+      serviceAreaCityIds: (profile.serviceAreas || []).map((serviceArea) => serviceArea.cityId),
     })
   }, [profile])
 
@@ -170,8 +183,12 @@ export default function BusinessProfilePage() {
       if (createPhotoPreviewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(createPhotoPreviewUrl)
       }
+
+      if (createBannerPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(createBannerPreviewUrl)
+      }
     }
-  }, [createPhotoPreviewUrl])
+  }, [createPhotoPreviewUrl, createBannerPreviewUrl])
 
   const handleGenerateSlug = async () => {
     if (!formData.businessName) return
@@ -208,6 +225,34 @@ export default function BusinessProfilePage() {
     }
   }
 
+  const handleCreateBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Banner size must be less than 15MB')
+      return
+    }
+
+    const localPreview = URL.createObjectURL(file)
+    setCreateBannerPreviewUrl((prev) => {
+      if (prev.startsWith('blob:')) {
+        URL.revokeObjectURL(prev)
+      }
+      return localPreview
+    })
+    setCreateBannerFile(file)
+
+    if (createBannerInputRef.current) {
+      createBannerInputRef.current.value = ''
+    }
+  }
+
   const handleCreate = async () => {
     try {
       await createProfile.mutateAsync({
@@ -220,15 +265,27 @@ export default function BusinessProfilePage() {
         contactPhone: formData.contactPhone || undefined,
         website: formData.website || undefined,
         serviceRadius: formData.serviceRadius ? parseInt(formData.serviceRadius, 10) : undefined,
+        serviceAreaCityIds: formData.serviceAreaCityIds.length ? formData.serviceAreaCityIds : undefined,
       })
 
       if (createPhotoFile) {
         await uploadPhoto.mutateAsync(createPhotoFile)
       }
 
+      if (createBannerFile) {
+        await uploadBanner.mutateAsync(createBannerFile)
+      }
+
       setShowCreateDialog(false)
       setCreatePhotoFile(null)
+      setCreateBannerFile(null)
       setCreatePhotoPreviewUrl((prev) => {
+        if (prev.startsWith('blob:')) {
+          URL.revokeObjectURL(prev)
+        }
+        return ''
+      })
+      setCreateBannerPreviewUrl((prev) => {
         if (prev.startsWith('blob:')) {
           URL.revokeObjectURL(prev)
         }
@@ -252,6 +309,7 @@ export default function BusinessProfilePage() {
         contactPhone: formData.contactPhone || undefined,
         website: formData.website || undefined,
         serviceRadius: formData.serviceRadius ? parseInt(formData.serviceRadius, 10) : undefined,
+        serviceAreaCityIds: formData.serviceAreaCityIds,
       },
       {
         onSuccess: () => {
@@ -284,11 +342,59 @@ export default function BusinessProfilePage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Banner size must be less than 15MB')
+      return
+    }
+
+    uploadBanner.mutate(file, {
+      onSuccess: () => toast.success('Profile banner updated'),
+      onError: (uploadError: any) => toast.error(uploadError?.message || 'Failed to upload banner'),
+    })
+
+    if (bannerInputRef.current) bannerInputRef.current.value = ''
+  }
+
   const handleDeletePhoto = () => {
     deletePhoto.mutate(undefined, {
       onSuccess: () => toast.success('Profile photo deleted'),
       onError: (deleteError: any) => toast.error(deleteError?.message || 'Failed to delete photo'),
     })
+  }
+
+  const handleDeleteBanner = () => {
+    deleteBanner.mutate(undefined, {
+      onSuccess: () => toast.success('Profile banner deleted'),
+      onError: (deleteError: any) => toast.error(deleteError?.message || 'Failed to delete banner'),
+    })
+  }
+
+  const addServiceCity = () => {
+    if (!selectedServiceCityId) return
+
+    setFormData((prev) => ({
+      ...prev,
+      serviceAreaCityIds: prev.serviceAreaCityIds.includes(selectedServiceCityId)
+        ? prev.serviceAreaCityIds
+        : [...prev.serviceAreaCityIds, selectedServiceCityId],
+    }))
+    setSelectedServiceCityId('')
+  }
+
+  const removeServiceCity = (cityId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      serviceAreaCityIds: prev.serviceAreaCityIds.filter((id) => id !== cityId),
+    }))
   }
 
   const portfolios = profile?.portfolios || []
@@ -381,6 +487,14 @@ export default function BusinessProfilePage() {
                 className="hidden"
               />
 
+              <input
+                ref={createBannerInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleCreateBannerSelect}
+                className="hidden"
+              />
+
               <div className="space-y-2">
                 <Label>Profile Photo</Label>
                 <div className="flex flex-wrap items-center gap-3">
@@ -399,6 +513,32 @@ export default function BusinessProfilePage() {
                       alt="Profile preview"
                       width={224}
                       height={224}
+                      unoptimized={true}
+                      priority={true}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Profile Banner</Label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button type="button" variant="outline" onClick={() => createBannerInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    {createBannerFile ? 'Change Banner' : 'Upload Banner'}
+                  </Button>
+                  {createBannerFile && (
+                    <span className="text-xs text-muted-foreground">{createBannerFile.name}</span>
+                  )}
+                </div>
+                {createBannerPreviewUrl && (
+                  <div className="h-32 w-full overflow-hidden rounded-xl border bg-muted">
+                    <NextImage
+                      src={createBannerPreviewUrl}
+                      alt="Banner preview"
+                      width={1200}
+                      height={320}
                       unoptimized={true}
                       priority={true}
                       className="h-full w-full object-cover"
@@ -454,12 +594,45 @@ export default function BusinessProfilePage() {
                   <Input type="number" value={formData.serviceRadius} onChange={(e) => setFormData(prev => ({ ...prev, serviceRadius: e.target.value }))} />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label>Service Cities</Label>
+                <div className="flex gap-2">
+                  <Select value={selectedServiceCityId} onValueChange={setSelectedServiceCityId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cities.map((city) => (
+                        <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" variant="outline" onClick={addServiceCity} disabled={!selectedServiceCityId}>
+                    Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.serviceAreaCityIds.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">No service cities selected</span>
+                  ) : (
+                    formData.serviceAreaCityIds.map((cityId) => (
+                      <Badge key={cityId} variant="secondary" className="gap-1">
+                        {cityNameById.get(cityId) || cityId}
+                        <button type="button" onClick={() => removeServiceCity(cityId)} aria-label={`Remove ${cityNameById.get(cityId) || cityId}`}>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
-              <Button onClick={handleCreate} disabled={createProfile.isPending || uploadPhoto.isPending || !formData.businessName}>
-                {createProfile.isPending || uploadPhoto.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              <Button onClick={handleCreate} disabled={createProfile.isPending || uploadPhoto.isPending || uploadBanner.isPending || !formData.businessName}>
+                {createProfile.isPending || uploadPhoto.isPending || uploadBanner.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Create Profile
               </Button>
             </DialogFooter>
@@ -478,6 +651,15 @@ export default function BusinessProfilePage() {
   const profilePhotoViewUrl = profile.profilePhotoUrl
     ? getMinioViewUrl(profile.profilePhotoUrl) || profile.profilePhotoUrl
     : null
+  const bannerViewUrl = profile.bannerImageUrl
+    ? getMinioViewUrl(profile.bannerImageUrl) || profile.bannerImageUrl
+    : null
+  const cityNameById = new Map(cities.map((city) => [city.id, city.name]))
+  const serviceCityNames = (profile.serviceAreas || []).map((serviceArea) => ({
+    id: serviceArea.id,
+    cityId: serviceArea.cityId,
+    name: cityNameById.get(serviceArea.cityId) || serviceArea.cityId,
+  }))
 
   const tabs = [
     { id: 'portfolio' as const, label: 'Portfolio', icon: ImageIcon },
@@ -490,6 +672,20 @@ export default function BusinessProfilePage() {
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-4 py-8">
         <section className="pb-10">
+          {bannerViewUrl && (
+            <div className="mb-6 h-40 w-full overflow-hidden rounded-2xl border bg-muted sm:h-52">
+              <NextImage
+                src={bannerViewUrl}
+                alt={`${profile.businessName} banner`}
+                width={1600}
+                height={520}
+                unoptimized={true}
+                priority={true}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
+
           <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
             <div className="relative shrink-0">
               <div className="relative h-37.5 w-37.5 rounded-full p-0.75 md:h-42 md:w-42">
@@ -602,6 +798,14 @@ export default function BusinessProfilePage() {
                   </span>
                 )}
               </div>
+
+              {serviceCityNames.length > 0 && (
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                  {serviceCityNames.map((serviceCity) => (
+                    <Badge key={serviceCity.id} variant="secondary">{serviceCity.name}</Badge>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -847,6 +1051,7 @@ export default function BusinessProfilePage() {
           </DialogHeader>
 
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} className="hidden" />
+          <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBannerUpload} className="hidden" />
 
           <div className="space-y-4 py-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -857,6 +1062,18 @@ export default function BusinessProfilePage() {
               {profile.profilePhotoUrl && (
                 <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={handleDeletePhoto} disabled={deletePhoto.isPending}>
                   {deletePhoto.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                </Button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" onClick={() => bannerInputRef.current?.click()} disabled={uploadBanner.isPending}>
+                {uploadBanner.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                Upload / Change Banner
+              </Button>
+              {profile.bannerImageUrl && (
+                <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={handleDeleteBanner} disabled={deleteBanner.isPending}>
+                  {deleteBanner.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
               )}
             </div>
@@ -928,6 +1145,39 @@ export default function BusinessProfilePage() {
               <div className="space-y-2">
                 <Label>Service Radius (miles)</Label>
                 <Input type="number" value={formData.serviceRadius} onChange={(e) => setFormData(prev => ({ ...prev, serviceRadius: e.target.value }))} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Service Cities</Label>
+              <div className="flex gap-2">
+                <Select value={selectedServiceCityId} onValueChange={setSelectedServiceCityId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a city" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cities.map((city) => (
+                      <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" onClick={addServiceCity} disabled={!selectedServiceCityId}>
+                  Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {formData.serviceAreaCityIds.length === 0 ? (
+                  <span className="text-xs text-muted-foreground">No service cities selected</span>
+                ) : (
+                  formData.serviceAreaCityIds.map((cityId) => (
+                    <Badge key={cityId} variant="secondary" className="gap-1">
+                      {cityNameById.get(cityId) || cityId}
+                      <button type="button" onClick={() => removeServiceCity(cityId)} aria-label={`Remove ${cityNameById.get(cityId) || cityId}`}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))
+                )}
               </div>
             </div>
           </div>

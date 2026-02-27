@@ -12,6 +12,7 @@ export interface VendorProfile {
   tagline?: string | null
   description?: string | null
   profilePhotoUrl?: string | null
+  bannerImageUrl?: string | null
   contactPhone?: string | null
   contactEmail?: string | null
   website?: string | null
@@ -42,9 +43,17 @@ export interface VendorProfile {
     postalCode?: string
   }
   services?: VendorService[]
+  serviceAreas?: VendorServiceArea[]
   portfolios?: PortfolioItem[]
   badges?: VendorBadge[]
   eventHistory?: VendorEventHistory[]
+}
+
+export interface VendorServiceArea {
+  id: string
+  cityId: string
+  radiusMiles?: number | null
+  additionalFee?: number | null
 }
 
 export type EventVendorStatus = 'SHORTLISTED' | 'CONTACTED' | 'BOOKED' | 'CONFIRMED' | 'CANCELLED'
@@ -109,6 +118,7 @@ export interface CreateVendorProfileRequest {
   addressId?: string
   serviceRadius?: number
   serviceAreaCityIds?: string[]
+  bannerImageUrl?: string
 }
 
 export interface UpdateVendorProfileRequest extends Partial<CreateVendorProfileRequest> {

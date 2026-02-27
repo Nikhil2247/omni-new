@@ -91,6 +91,11 @@ export class CreateVendorProfileDto {
   @IsOptional()
   @IsString()
   profilePhotoUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Banner image URL' })
+  @IsOptional()
+  @IsString()
+  bannerImageUrl?: string;
 }
 
 // ============================================================================
@@ -340,6 +345,9 @@ export class VendorProfileResponseDto {
 
   @ApiPropertyOptional()
   profilePhotoUrl?: string | null;
+
+  @ApiPropertyOptional()
+  bannerImageUrl?: string | null;
 
   @ApiProperty({ enum: VendorStatus })
   status: VendorStatus;

@@ -229,4 +229,73 @@ export class ProfileController {
     const profile = await this.vendorProfileService.findByUserId(req.user.id);
     return this.vendorProfileService.deleteProfilePhoto(profile.id);
   }
+
+  /**
+   * Upload profile banner image
+   */
+  @Post('me/banner')
+  @Roles('BUSINESS_ADMIN')
+  @Audited({
+    action: 'UPLOAD_BANNER',
+    entityType: 'VendorProfile',
+    getEntityId: (_req, res) => res?.id,
+    includeRequestBody: false,
+    includeResponseBody: false,
+    severity: AuditSeverity.INFO,
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload profile banner image' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Banner image file (JPEG, PNG, WebP)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Banner uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid file' })
+  async uploadProfileBanner(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: any,
+  ): Promise<VendorProfileResponseDto> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const profile = await this.vendorProfileService.findByUserId(req.user.id);
+    return this.vendorProfileService.uploadBannerImage(
+      profile.id,
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+    );
+  }
+
+  /**
+   * Delete profile banner image
+   */
+  @Delete('me/banner')
+  @Roles('BUSINESS_ADMIN')
+  @Audited({
+    action: 'DELETE_BANNER',
+    entityType: 'VendorProfile',
+    getEntityId: (_req, res) => res?.id,
+    includeRequestBody: false,
+    includeResponseBody: false,
+    severity: AuditSeverity.INFO,
+  })
+  @ApiOperation({ summary: 'Delete profile banner image' })
+  @ApiResponse({ status: 200, description: 'Banner deleted successfully' })
+  async deleteProfileBanner(
+    @Request() req: any,
+  ): Promise<VendorProfileResponseDto> {
+    const profile = await this.vendorProfileService.findByUserId(req.user.id);
+    return this.vendorProfileService.deleteBannerImage(profile.id);
+  }
 }

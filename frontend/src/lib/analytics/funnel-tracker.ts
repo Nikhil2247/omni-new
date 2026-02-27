@@ -159,7 +159,7 @@ export class FunnelTracker {
     batchSize?: number;
     batchTimeout?: number;
   }) {
-    this.apiEndpoint = options?.apiEndpoint || '/api/admin/insights/funnels/track';
+    this.apiEndpoint = options?.apiEndpoint || '/admin/insights/funnels/track';
     this.userId = options?.userId;
     this.batchSize = options?.batchSize || 10;
     this.batchTimeout = options?.batchTimeout || 5000;

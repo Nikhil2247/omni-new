@@ -276,6 +276,7 @@ export class VendorProfileService {
         contactPhone: dto.contactPhone,
         website: dto.website,
         serviceRadius: dto.serviceRadius,
+        bannerImageUrl: dto.bannerImageUrl,
         address: dto.addressId ? { connect: { id: dto.addressId } } : undefined,
         status: 'ACTIVE',
         verifiedAt: new Date(),
@@ -491,6 +492,7 @@ export class VendorProfileService {
       slug: dto.slug,
       tagline: dto.tagline,
       description: dto.description,
+      bannerImageUrl: dto.bannerImageUrl,
       contactEmail: dto.contactEmail,
       contactPhone: dto.contactPhone,
       website: dto.website,
@@ -505,6 +507,21 @@ export class VendorProfileService {
 
     if (dto.addressId) {
       updateData.address = { connect: { id: dto.addressId } };
+    }
+
+    if (dto.serviceAreaCityIds !== undefined) {
+      const uniqueCityIds = Array.from(
+        new Set(
+          dto.serviceAreaCityIds
+            .map((cityId) => cityId.trim())
+            .filter((cityId) => cityId.length > 0),
+        ),
+      );
+
+      updateData.serviceAreas = {
+        deleteMany: {},
+        create: uniqueCityIds.map((cityId) => ({ cityId })),
+      };
     }
 
     const vendorProfile = await this.vendorProfileRepository.update(
@@ -777,6 +794,83 @@ export class VendorProfileService {
     });
 
     // Invalidate cache
+    await this.cacheAside.invalidate(`vendor:slug:${profile.slug}`);
+
+    return await this.enrichVendorProfile(updated as any);
+  }
+
+  /**
+   * Upload banner image for vendor
+   */
+  async uploadBannerImage(
+    id: string,
+    file: Buffer,
+    originalName: string,
+    mimeType: string,
+  ): Promise<VendorProfileResponseDto> {
+    this.logger.log(`Uploading banner image for vendor: ${id}`);
+
+    const profile = await this.findById(id, false);
+
+    if (profile.bannerImageUrl) {
+      try {
+        const existingPath = this.extractStoragePath(profile.bannerImageUrl);
+        if (existingPath) {
+          await this.uploadService.deleteFile(existingPath);
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to delete old banner image: ${error.message}`);
+      }
+    }
+
+    const uploadResult = await this.uploadService.uploadImage(
+      file,
+      originalName,
+      FileCategory.VENDOR_PROFILE,
+      mimeType,
+      {
+        customPath: `${FileCategory.VENDOR_PROFILE}/${id}/banner-${Date.now()}.webp`,
+        imageProcessing: {
+          convertToWebP: true,
+          quality: 82,
+          maxWidth: 1920,
+          maxHeight: 1080,
+        },
+      },
+    );
+
+    const updated = await this.vendorProfileRepository.update(id, {
+      bannerImageUrl: uploadResult.path,
+    });
+
+    await this.cacheAside.invalidate(`vendor:slug:${profile.slug}`);
+
+    return await this.enrichVendorProfile(updated as any);
+  }
+
+  /**
+   * Delete banner image for vendor
+   */
+  async deleteBannerImage(id: string): Promise<VendorProfileResponseDto> {
+    this.logger.log(`Deleting banner image for vendor: ${id}`);
+
+    const profile = await this.findById(id, false);
+
+    if (profile.bannerImageUrl) {
+      try {
+        const existingPath = this.extractStoragePath(profile.bannerImageUrl);
+        if (existingPath) {
+          await this.uploadService.deleteFile(existingPath);
+        }
+      } catch (error) {
+        this.logger.warn(`Failed to delete banner image: ${error.message}`);
+      }
+    }
+
+    const updated = await this.vendorProfileRepository.update(id, {
+      bannerImageUrl: null,
+    });
+
     await this.cacheAside.invalidate(`vendor:slug:${profile.slug}`);
 
     return await this.enrichVendorProfile(updated as any);

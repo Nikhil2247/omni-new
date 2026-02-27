@@ -132,6 +132,20 @@ export const businessService = {
     return data
   },
 
+  uploadProfileBanner: async (file: File): Promise<ApiResponse<VendorProfile>> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.PROFILE.BANNER, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
+
+  deleteProfileBanner: async (): Promise<ApiResponse<VendorProfile>> => {
+    const { data } = await apiClient.delete(API_ENDPOINTS.BUSINESS.PROFILE.BANNER)
+    return data
+  },
+
   // ==================== Portfolio ====================
   getPortfolio: async (vendorProfileId: string): Promise<ApiResponse<Portfolio[]>> => {
     const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.PORTFOLIO, { params: { vendorProfileId } })

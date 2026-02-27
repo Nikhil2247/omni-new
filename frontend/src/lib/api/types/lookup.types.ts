@@ -6,3 +6,9 @@ export interface EventTypeLookup {
   iconUrl?: string
   displayOrder: number
 }
+
+export interface CityLookup {
+  id: string
+  name: string
+  stateId: string
+}

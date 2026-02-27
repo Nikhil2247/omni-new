@@ -5,6 +5,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { insightsService } from '@/lib/api/services/insights.service';
 
 /**
@@ -83,6 +84,17 @@ async function fetchPlatformCounts(): Promise<PlatformCounts> {
  */
 async function fetchFunnelConversionRates(): Promise<FunnelConversionRates> {
   return insightsService.getFunnelConversionRates();
+}
+
+/**
+ * Force refresh all platform counts on backend
+ */
+async function refreshPlatformCounts(): Promise<{
+  success: boolean;
+  message: string;
+  counts: PlatformCounts;
+}> {
+  return insightsService.refreshCounts();
 }
 
 /**
@@ -201,6 +213,22 @@ export function useEntityCount(
     staleTime: 5 * 60 * 1000,
     refetchInterval: options?.refetchInterval || 5 * 60 * 1000,
     enabled: options?.enabled ?? true,
+  });
+}
+
+/**
+ * Hook: Force refresh counts and invalidate insights queries
+ */
+export function useRefreshPlatformCounts() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: refreshPlatformCounts,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['platform-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['funnel-conversion-rates'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+    },
   });
 }
 

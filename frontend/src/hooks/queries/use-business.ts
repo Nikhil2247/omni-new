@@ -125,6 +125,26 @@ export function useDeleteProfilePhoto() {
   })
 }
 
+export function useUploadProfileBanner() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => businessService.uploadProfileBanner(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.profile() })
+    },
+  })
+}
+
+export function useDeleteProfileBanner() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => businessService.deleteProfileBanner(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.profile() })
+    },
+  })
+}
+
 // ==================== Portfolio Hooks ====================
 export function useBusinessPortfolio(vendorProfileId: string) {
   return useQuery<Portfolio[]>({

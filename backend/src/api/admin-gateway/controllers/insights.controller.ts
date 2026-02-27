@@ -32,7 +32,11 @@ import {
 } from '../../../domain/insights/dto';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../core/auth/guards/roles.guard';
-import { AdminOnly } from '../../../core/auth/decorators/roles.decorator';
+import {
+  AdminOnly,
+  Roles,
+} from '../../../core/auth/decorators/roles.decorator';
+import { Public } from '../../../core/auth/decorators/public.decorator';
 
 // ============================================================================
 // DTOs
@@ -119,6 +123,19 @@ export class InsightsController {
   }
 
   /**
+   * Force refresh all counts (admin only)
+   */
+  @Get('counts/refresh')
+  async refreshCounts() {
+    const counts = await this.automatedCounts.refreshCounts();
+    return {
+      success: true,
+      message: 'Counts refreshed successfully',
+      counts,
+    };
+  }
+
+  /**
    * Get count for a specific entity
    */
   @Get('counts/:entity')
@@ -136,19 +153,6 @@ export class InsightsController {
   ) {
     const count = await this.automatedCounts.getEntityCount(entity);
     return { entity, count };
-  }
-
-  /**
-   * Force refresh all counts (admin only)
-   */
-  @Get('counts/refresh')
-  async refreshCounts() {
-    const counts = await this.automatedCounts.refreshCounts();
-    return {
-      success: true,
-      message: 'Counts refreshed successfully',
-      counts,
-    };
   }
 
   // ============================================================================
@@ -392,6 +396,8 @@ export class InsightsController {
    * Note: This should be moved to a public controller for frontend tracking
    */
   @Post('funnels/track')
+  @Public()
+  @Roles()
   async trackFunnelEvent(@Body() dto: TrackFunnelEventDto) {
     await this.funnelAnalytics.trackEvent(dto);
     return { success: true };

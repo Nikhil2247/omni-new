@@ -768,6 +768,7 @@ model VendorProfile {
   description     String?
   tagline         String?                           // Short business tagline
   profilePhotoUrl String?   @map("profile_photo_url")  // Business profile photo URL
+  bannerImageUrl  String?   @map("banner_image_url")   // Business profile banner image URL
 
   // Normalized Address reference
   addressId       String?   @map("address_id") @db.Uuid

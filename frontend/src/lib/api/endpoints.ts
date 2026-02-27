@@ -126,6 +126,7 @@ export const API_ENDPOINTS = {
       VERIFY: '/business/profile/me/verify',
       GENERATE_SLUG: '/business/profile/generate-slug',
       PHOTO: '/business/profile/me/photo',
+      BANNER: '/business/profile/me/banner',
     },
     PORTFOLIO: '/business/portfolio',
     PORTFOLIO_BY_ID: (id: string) => `/business/portfolio/${id}`,
@@ -269,6 +270,7 @@ export const API_ENDPOINTS = {
     },
     LOOKUPS: {
       EVENT_TYPES: '/user/lookups/event-types',
+      CITIES: '/user/lookups/cities',
     },
     EXPORT: {
       CHECKLIST_PDF: (id: string) => `/user/export/checklist/${id}/pdf`,

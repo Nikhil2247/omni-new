@@ -1,7 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { usePlatformCounts, useFunnelConversionRates, formatCount } from '@/hooks/queries/use-platform-counts'
+import {
+  usePlatformCounts,
+  useFunnelConversionRates,
+  useRefreshPlatformCounts,
+  formatCount,
+} from '@/hooks/queries/use-platform-counts'
 import { useAdminDashboard } from '@/hooks/queries/use-admin'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -45,8 +50,9 @@ import { cn } from '@/lib/utils'
 
 export default function AdminInsightsPage() {
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = usePlatformCounts()
-  const { data: funnelRates, isLoading: funnelLoading } = useFunnelConversionRates()
-  const { data: dashboard, isLoading: dashboardLoading } = useAdminDashboard()
+  const { data: funnelRates, refetch: refetchFunnelRates } = useFunnelConversionRates()
+  const { data: dashboard, isLoading: dashboardLoading, refetch: refetchDashboard } = useAdminDashboard()
+  const { mutateAsync: refreshCountsOnServer } = useRefreshPlatformCounts()
   const [dateRange, setDateRange] = React.useState<DateRangeValue>({
     startDate: startOfDay(subDays(new Date(), 29)),
     endDate: endOfDay(new Date()),
@@ -57,8 +63,12 @@ export default function AdminInsightsPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await refetchCounts()
-    setTimeout(() => setRefreshing(false), 1000)
+    try {
+      await refreshCountsOnServer()
+      await Promise.all([refetchCounts(), refetchFunnelRates(), refetchDashboard()])
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   if (isLoading) {
