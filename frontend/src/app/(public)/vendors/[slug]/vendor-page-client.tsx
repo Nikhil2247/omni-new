@@ -342,7 +342,7 @@ export default function VendorPageClient({
   if (error || !vendor) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto flex min-h-[60vh] max-w-[935px] flex-col items-center justify-center px-4 py-16">
+        <div className="mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center px-4 py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -412,22 +412,31 @@ export default function VendorPageClient({
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Instagram-style centered container */}
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        {/* Profile Header Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="pb-10"
-        >
-          <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
-            {/* Profile Avatar with Ring */}
-            <div className="relative shrink-0">
-              <div className="relative h-[150px] w-[150px] rounded-full p-[3px] md:h-[168px] md:w-[168px]">
-                {/* Gradient Ring */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary via-primary/80 to-primary/60" />
-                {/* Inner Container */}
-                <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-background">
+      {/* Banner + Avatar Header — LinkedIn-style */}
+      <div className="mx-auto max-w-5xl">
+        {/* Banner */}
+        <div className="relative h-40 w-full overflow-hidden rounded-b-lg bg-muted md:h-60">
+          {vendor.bannerImageUrl ? (
+            <Image
+              src={vendor.bannerImageUrl}
+              alt={`${vendor.businessName} banner`}
+              fill
+              unoptimized={true}
+              priority={true}
+              className="object-cover"
+            />
+          ) : (
+            <div className="h-full w-full bg-linear-to-br from-primary/30 via-primary/10 to-muted" />
+          )}
+        </div>
+
+        {/* Avatar + Actions row */}
+        <div className="px-4 md:px-6">
+          <div className="flex items-end justify-between">
+            {/* Avatar — overlaps banner */}
+            <div className="-mt-13 md:-mt-18">
+              <div className="relative">
+                <div className="relative h-26 w-26 overflow-hidden rounded-full border-4 border-background bg-background ring-2 ring-border md:h-36 md:w-36">
                   {vendor.profilePhotoUrl ? (
                     <Image
                       src={vendor.profilePhotoUrl}
@@ -443,129 +452,130 @@ export default function VendorPageClient({
                     </div>
                   )}
                 </div>
-              </div>
-              {/* Verified Badge */}
-              {isVerified && (
-                <div className="absolute -bottom-1 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary shadow-lg ring-2 ring-background">
-                  <Star className="h-4 w-4 fill-primary-foreground text-primary-foreground" />
-                </div>
-              )}
-            </div>
-
-            {/* Profile Info */}
-            <div className="flex-1 text-center md:text-left">
-              {/* Business Name & Actions Row */}
-              <div className="flex flex-col items-center gap-4 md:flex-row md:items-center">
-                <h1 className="text-xl font-normal text-foreground">
-                  {vendor.businessName}
-                </h1>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={handleMessageVendor}
-                    disabled={isCreatingConversation}
-                    size="sm"
-                    className="gap-1.5"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Message
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleFollow}
-                    className="gap-1.5"
-                  >
-                    {followStatus.data?.following ? (
-                      <UserCheck className="h-4 w-4" />
-                    ) : (
-                      <UserPlus className="h-4 w-4" />
-                    )}
-                    {followStatus.data?.following ? 'Following' : 'Follow'}
-                  </Button>
-                  {vendor.website && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(vendor.website || '#', '_blank')}
-                      className="gap-1.5"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Website
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Verified Badge */}
-              {isVerified && (
-                <Badge className="mt-3 gap-1.5 bg-primary/10 text-primary hover:bg-primary/20">
-                  <Star className="h-3 w-3 fill-primary" />
-                  Verified Vendor
-                </Badge>
-              )}
-
-              {/* Stats Row */}
-              <div className="mt-5 flex items-center justify-center gap-8 md:justify-start">
-                <div className="text-center md:text-left">
-                  <span className="font-semibold text-foreground">{eventsCount}</span>
-                  <span className="ml-1 text-muted-foreground">events</span>
-                </div>
-                <div className="text-center md:text-left">
-                  <span className="font-semibold text-foreground">
-                    {formatFollowers(vendor.followersCount ?? 0)}
-                  </span>
-                  <span className="ml-1 text-muted-foreground">followers</span>
-                </div>
-                <div className="text-center md:text-left">
-                  <span className="font-semibold text-foreground">{allMedia.length}</span>
-                  <span className="ml-1 text-muted-foreground">photos</span>
-                </div>
-                {avgRating && (
-                  <div className="flex items-center gap-1 text-center md:text-left">
-                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    <span className="font-semibold text-foreground">{avgRating}</span>
-                    <span className="text-muted-foreground">({vendorReviews.length})</span>
+                {/* Verified Badge */}
+                {isVerified && (
+                  <div className="absolute -bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-md ring-2 ring-background md:h-8 md:w-8">
+                    <Star className="h-3.5 w-3.5 fill-primary-foreground text-primary-foreground" />
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Business Name (Bold) */}
-              <p className="mt-4 font-semibold text-foreground">
-                {vendor.businessName}
-              </p>
-
-              {/* Category */}
-              {category?.name && (
-                <p className="text-sm text-muted-foreground">{category.name}</p>
-              )}
-
-              {/* Tagline/Bio */}
-              {vendor.tagline && (
-                <p className="mt-1 text-sm text-foreground">
-                  {vendor.tagline}
-                </p>
-              )}
-
-              {/* Location & Since */}
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground md:justify-start">
-                {address && (address.city || address.state) && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {[address.city, address.state].filter(Boolean).join(', ')}
-                  </span>
+            {/* Action buttons (top-right, aligned to bottom of avatar row) */}
+            <div className="flex items-center gap-2 pb-3">
+              <Button
+                onClick={handleMessageVendor}
+                disabled={isCreatingConversation}
+                size="sm"
+                className="gap-1.5"
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Message</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleFollow}
+                className="gap-1.5"
+              >
+                {followStatus.data?.following ? (
+                  <UserCheck className="h-4 w-4" />
+                ) : (
+                  <UserPlus className="h-4 w-4" />
                 )}
-                {memberSince && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Since {memberSince}
-                  </span>
-                )}
-              </div>
+                <span className="hidden sm:inline">
+                  {followStatus.data?.following ? 'Following' : 'Follow'}
+                </span>
+              </Button>
+              {vendor.website && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(vendor.website || '#', '_blank')}
+                  className="gap-1.5"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span className="hidden sm:inline">Website</span>
+                </Button>
+              )}
             </div>
           </div>
-        </motion.section>
 
-        {/* Tab Navigation */}
+          {/* Profile Info */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-3 pb-6"
+          >
+            {/* Name + Verified */}
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold text-foreground">{vendor.businessName}</h1>
+              {isVerified && (
+                <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/20">
+                  <Star className="h-3 w-3 fill-primary" />
+                  Verified
+                </Badge>
+              )}
+            </div>
+
+            {/* Category + Tagline */}
+            {(category?.name || vendor.tagline) && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {[category?.name, vendor.tagline].filter(Boolean).join(' · ')}
+              </p>
+            )}
+
+            {/* Location + Since */}
+            <div className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              {address && (address.city || address.state) && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {[address.city, address.state].filter(Boolean).join(', ')}
+                </span>
+              )}
+              {memberSince && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Since {memberSince}
+                </span>
+              )}
+            </div>
+
+            {/* Stats row */}
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
+              {(vendor.followersCount ?? 0) > 0 && (
+                <span className="font-semibold text-primary">
+                  {formatFollowers(vendor.followersCount ?? 0)}{' '}
+                  <span className="font-normal text-muted-foreground">followers</span>
+                </span>
+              )}
+              {eventsCount > 0 && (
+                <span>
+                  <span className="font-semibold text-foreground">{eventsCount}</span>
+                  <span className="ml-1 text-muted-foreground">events</span>
+                </span>
+              )}
+              {allMedia.length > 0 && (
+                <span>
+                  <span className="font-semibold text-foreground">{allMedia.length}</span>
+                  <span className="ml-1 text-muted-foreground">photos</span>
+                </span>
+              )}
+              {avgRating && (
+                <span className="flex items-center gap-1">
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  <span className="font-semibold text-foreground">{avgRating}</span>
+                  <span className="text-muted-foreground">({vendorReviews.length})</span>
+                </span>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="mx-auto max-w-5xl px-4 md:px-6">
+
         <div className="border-t">
           <div className="flex justify-center">
             {tabs.map((tab) => {
@@ -890,7 +900,7 @@ export default function VendorPageClient({
                   Write a Review
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[480px]">
+              <DialogContent className="sm:max-w-120">
                 <DialogHeader className="text-center sm:text-center">
                   <DialogTitle className="text-xl">Write a Review</DialogTitle>
                   <DialogDescription>
@@ -1159,29 +1169,35 @@ export default function VendorPageClient({
 function VendorDetailSkeleton() {
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[935px] px-4 py-8">
-        {/* Header Skeleton */}
-        <div className="flex flex-col items-center gap-8 pb-10 md:flex-row md:items-start">
-          <Skeleton className="h-[150px] w-[150px] rounded-full md:h-[168px] md:w-[168px]" />
-          <div className="flex-1 space-y-4 text-center md:text-left">
-            <div className="flex flex-col items-center gap-4 md:flex-row">
-              <Skeleton className="h-7 w-48" />
-              <div className="flex gap-2">
-                <Skeleton className="h-9 w-24" />
-                <Skeleton className="h-9 w-20" />
-              </div>
+      <div className="mx-auto max-w-5xl">
+        {/* Banner Skeleton */}
+        <Skeleton className="h-40 w-full rounded-b-lg md:h-60" />
+
+        <div className="px-4 md:px-6">
+          {/* Avatar + Actions row */}
+          <div className="flex items-end justify-between">
+            <Skeleton className="-mt-13 h-26 w-26 rounded-full border-4 border-background md:-mt-18 md:h-36 md:w-36" />
+            <div className="flex gap-2 pb-3">
+              <Skeleton className="h-9 w-24" />
+              <Skeleton className="h-9 w-20" />
             </div>
-            <div className="flex justify-center gap-8 md:justify-start">
-              <Skeleton className="h-5 w-20" />
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-5 w-20" />
+          </div>
+
+          {/* Profile info */}
+          <div className="mt-3 space-y-2 pb-6">
+            <Skeleton className="h-7 w-52" />
+            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-4 w-40" />
+            <div className="flex gap-4 pt-1">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-20" />
             </div>
-            <Skeleton className="mx-auto h-4 w-32 md:mx-0" />
-            <Skeleton className="mx-auto h-4 w-64 md:mx-0" />
-            <Skeleton className="mx-auto h-4 w-40 md:mx-0" />
           </div>
         </div>
+      </div>
 
+      <div className="mx-auto max-w-5xl px-4 md:px-6">
         {/* Tabs Skeleton */}
         <div className="border-t py-3">
           <div className="flex justify-center gap-8">

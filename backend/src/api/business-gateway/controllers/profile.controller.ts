@@ -38,6 +38,7 @@ import {
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../core/auth/guards/roles.guard';
 import { Roles } from '../../../core/auth/decorators/roles.decorator';
+import { CategoryLookupService } from '../../../core/lookup/category-lookup.service';
 import {
   AuditCreate,
   Audited,
@@ -50,7 +51,18 @@ import { AuditSeverity } from '../../../core/audit/audit.types';
 @Controller('profile')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProfileController {
-  constructor(private readonly vendorProfileService: VendorProfileService) {}
+  constructor(
+    private readonly vendorProfileService: VendorProfileService,
+    private readonly categoryLookupService: CategoryLookupService,
+  ) {}
+
+  @Get('categories')
+  @Roles('BUSINESS_ADMIN')
+  @ApiOperation({ summary: 'Get vendor categories for profile setup' })
+  @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
+  getCategories() {
+    return this.categoryLookupService.getAllCategories();
+  }
 
   /**
    * Create vendor profile for current user

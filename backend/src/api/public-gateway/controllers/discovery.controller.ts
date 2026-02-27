@@ -19,6 +19,7 @@ import {
   CurrentUserData,
 } from '../../../core/auth/decorators/current-user.decorator';
 import { MediaUrlNormalizerService } from '../services/media-url-normalizer.service';
+import { CategoryLookupService } from '../../../core/lookup/category-lookup.service';
 
 @Public()
 @Controller('discovery')
@@ -28,7 +29,13 @@ export class DiscoveryController {
     private readonly portfolioService: PortfolioService,
     private readonly vendorIndexer: VendorIndexer,
     private readonly mediaUrlNormalizer: MediaUrlNormalizerService,
+    private readonly categoryLookupService: CategoryLookupService,
   ) {}
+
+  @Get('categories')
+  getCategories() {
+    return this.categoryLookupService.getAllCategories();
+  }
 
   @Get('vendors')
   searchVendors(

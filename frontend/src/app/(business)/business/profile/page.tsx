@@ -124,7 +124,11 @@ export default function BusinessProfilePage() {
   const uploadBanner = useUploadProfileBanner()
   const deleteBanner = useDeleteProfileBanner()
   const { data: cities = [] } = useCities()
-  const { data: categories = [] } = useCategories()
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    refetch: refetchCategories,
+  } = useCategories()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const createPhotoInputRef = useRef<HTMLInputElement>(null)
@@ -139,6 +143,10 @@ export default function BusinessProfilePage() {
   const [createPhotoPreviewUrl, setCreatePhotoPreviewUrl] = useState('')
   const [createBannerFile, setCreateBannerFile] = useState<File | null>(null)
   const [createBannerPreviewUrl, setCreateBannerPreviewUrl] = useState('')
+  const [managePhotoFile, setManagePhotoFile] = useState<File | null>(null)
+  const [manageBannerFile, setManageBannerFile] = useState<File | null>(null)
+  const [managePhotoPreviewUrl, setManagePhotoPreviewUrl] = useState('')
+  const [manageBannerPreviewUrl, setManageBannerPreviewUrl] = useState('')
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [cropTarget, setCropTarget] = useState<CropTarget | null>(null)
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false)
@@ -188,8 +196,16 @@ export default function BusinessProfilePage() {
       if (createBannerPreviewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(createBannerPreviewUrl)
       }
+
+      if (managePhotoPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(managePhotoPreviewUrl)
+      }
+
+      if (manageBannerPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(manageBannerPreviewUrl)
+      }
     }
-  }, [createPhotoPreviewUrl, createBannerPreviewUrl])
+  }, [createPhotoPreviewUrl, createBannerPreviewUrl, managePhotoPreviewUrl, manageBannerPreviewUrl])
 
   const handleGenerateSlug = async () => {
     if (!formData.businessName) return
@@ -327,9 +343,9 @@ export default function BusinessProfilePage() {
     }
   }
 
-  const handleUpdate = () => {
-    updateProfile.mutate(
-      {
+  const handleUpdate = async () => {
+    try {
+      await updateProfile.mutateAsync({
         businessName: formData.businessName,
         slug: formData.slug || undefined,
         categoryId: formData.categoryId || undefined,
@@ -340,14 +356,23 @@ export default function BusinessProfilePage() {
         website: formData.website || undefined,
         serviceRadius: formData.serviceRadius ? parseInt(formData.serviceRadius, 10) : undefined,
         serviceAreaCityIds: formData.serviceAreaCityIds,
-      },
-      {
-        onSuccess: () => {
-          setShowManageDialog(false)
-          toast.success('Profile updated')
-        },
-      },
-    )
+      })
+
+      if (managePhotoFile) {
+        await uploadPhoto.mutateAsync(managePhotoFile)
+      }
+
+      if (manageBannerFile) {
+        await uploadBanner.mutateAsync(manageBannerFile)
+      }
+
+      setManagePhotoFile(null)
+      setManageBannerFile(null)
+      setShowManageDialog(false)
+      toast.success('Profile updated')
+    } catch (updateError: unknown) {
+      toast.error(getErrorMessage(updateError, 'Failed to update profile'))
+    }
   }
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -412,16 +437,26 @@ export default function BusinessProfilePage() {
       return
     }
 
-    URL.revokeObjectURL(previewUrl)
-
     if (cropTarget === 'managePhoto') {
-      await uploadPhoto.mutateAsync(processedFile)
-      toast.success('Profile photo updated')
+      setManagePhotoFile(processedFile)
+      setManagePhotoPreviewUrl((prev) => {
+        if (prev.startsWith('blob:')) {
+          URL.revokeObjectURL(prev)
+        }
+        return previewUrl
+      })
+      toast.success('Profile photo ready. Click Save Changes to upload.')
       return
     }
 
-    await uploadBanner.mutateAsync(processedFile)
-    toast.success('Profile banner updated')
+    setManageBannerFile(processedFile)
+    setManageBannerPreviewUrl((prev) => {
+      if (prev.startsWith('blob:')) {
+        URL.revokeObjectURL(prev)
+      }
+      return previewUrl
+    })
+    toast.success('Profile banner ready. Click Save Changes to upload.')
   }
 
   const handleCropOpenChange = (open: boolean) => {
@@ -480,6 +515,16 @@ export default function BusinessProfilePage() {
   const cityNameById = useMemo(
     () => new Map(cities.map((city) => [city.id, city.name])),
     [cities],
+  )
+
+  const activeCategories = useMemo(
+    () => categories.filter((category) => category.isActive !== false),
+    [categories],
+  )
+
+  const selectedCategory = useMemo(
+    () => categories.find((category) => category.id === formData.categoryId),
+    [categories, formData.categoryId],
   )
 
   if (isLoading) {
@@ -608,16 +653,28 @@ export default function BusinessProfilePage() {
 
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}>
+                <Select
+                  value={formData.categoryId || undefined}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
+                  disabled={categoriesLoading}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={categoriesLoading ? 'Loading categories...' : 'Select category'} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.filter((cat) => cat.isActive).map((cat) => (
+                    {activeCategories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {!categoriesLoading && activeCategories.length === 0 ? (
+                  <div className="flex items-center justify-between gap-2 rounded-md border border-dashed p-2">
+                    <p className="text-xs text-muted-foreground">No categories available right now.</p>
+                    <Button type="button" variant="outline" size="sm" onClick={() => refetchCategories()}>
+                      Retry
+                    </Button>
+                  </div>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -1107,8 +1164,29 @@ export default function BusinessProfilePage() {
         </section>
       </div>
 
-      <Dialog open={showManageDialog} onOpenChange={setShowManageDialog}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <Dialog
+        open={showManageDialog}
+        onOpenChange={(open) => {
+          setShowManageDialog(open)
+          if (!open) {
+            setManagePhotoFile(null)
+            setManageBannerFile(null)
+            setManagePhotoPreviewUrl((prev) => {
+              if (prev.startsWith('blob:')) {
+                URL.revokeObjectURL(prev)
+              }
+              return ''
+            })
+            setManageBannerPreviewUrl((prev) => {
+              if (prev.startsWith('blob:')) {
+                URL.revokeObjectURL(prev)
+              }
+              return ''
+            })
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Profile</DialogTitle>
             <DialogDescription>Edit all profile fields shown in your profile page.</DialogDescription>
@@ -1118,29 +1196,67 @@ export default function BusinessProfilePage() {
           <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBannerUpload} className="hidden" />
 
           <div className="space-y-4 py-2">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-xl border bg-muted/20 p-4">
+              <div className="mb-3">
+                <p className="text-sm font-semibold">Branding</p>
+                <p className="text-xs text-muted-foreground">Control how your profile appears publicly.</p>
+              </div>
+
+              <div className="mb-4 grid gap-3 sm:grid-cols-[120px_1fr]">
+                <div className="h-30 w-30 overflow-hidden rounded-full border bg-muted">
+                  <NextImage
+                    src={managePhotoPreviewUrl || profilePhotoViewUrl || '/images/placeholder-image.svg'}
+                    alt="Profile image preview"
+                    width={240}
+                    height={240}
+                    unoptimized={true}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="h-30 w-full overflow-hidden rounded-xl border bg-muted">
+                  <NextImage
+                    src={manageBannerPreviewUrl || bannerViewUrl || '/images/placeholder-image.svg'}
+                    alt="Banner image preview"
+                    width={1200}
+                    height={320}
+                    unoptimized={true}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploadPhoto.isPending}>
                 {uploadPhoto.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                 Upload / Change Photo
               </Button>
+              {managePhotoFile ? <span className="text-xs text-muted-foreground">{managePhotoFile.name}</span> : null}
               {profile.profilePhotoUrl && (
                 <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={handleDeletePhoto} disabled={deletePhoto.isPending}>
                   {deletePhoto.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
               )}
-            </div>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button variant="outline" onClick={() => bannerInputRef.current?.click()} disabled={uploadBanner.isPending}>
                 {uploadBanner.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                 Upload / Change Banner
               </Button>
+              {manageBannerFile ? <span className="text-xs text-muted-foreground">{manageBannerFile.name}</span> : null}
               {profile.bannerImageUrl && (
                 <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={handleDeleteBanner} disabled={deleteBanner.isPending}>
                   {deleteBanner.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
               )}
             </div>
+            </div>
+
+            <div className="rounded-xl border p-4">
+              <div className="mb-3">
+                <p className="text-sm font-semibold">Business Identity</p>
+                <p className="text-xs text-muted-foreground">Manage your public business details and category.</p>
+              </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -1161,26 +1277,45 @@ export default function BusinessProfilePage() {
                     {generateSlug.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Generate'}
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">Used in your public profile URL.</p>
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={formData.categoryId} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}>
+              <Select
+                value={formData.categoryId || undefined}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
+                disabled={categoriesLoading}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={categoriesLoading ? 'Loading categories...' : 'Select category'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.filter((cat) => cat.isActive).map((cat) => (
+                  {selectedCategory && selectedCategory.isActive === false ? (
+                    <SelectItem key={selectedCategory.id} value={selectedCategory.id}>
+                      {selectedCategory.name} (inactive)
+                    </SelectItem>
+                  ) : null}
+                  {activeCategories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {!categoriesLoading && activeCategories.length === 0 ? (
+                <div className="flex items-center justify-between gap-2 rounded-md border border-dashed p-2">
+                  <p className="text-xs text-muted-foreground">No categories available right now.</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => refetchCategories()}>
+                    Retry
+                  </Button>
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-2">
               <Label>Tagline</Label>
               <Input value={formData.tagline} onChange={(e) => setFormData(prev => ({ ...prev, tagline: e.target.value }))} placeholder="Add a short tagline" />
+              <p className="text-xs text-muted-foreground">Keep it concise and memorable.</p>
             </div>
 
             <div className="space-y-2">
@@ -1192,8 +1327,15 @@ export default function BusinessProfilePage() {
               />
               <p className="text-xs text-muted-foreground">You can paste a URL or use Upload / Change Banner for direct image upload.</p>
             </div>
+            </div>
 
             <Separator />
+
+            <div className="rounded-xl border p-4">
+              <div className="mb-3">
+                <p className="text-sm font-semibold">Contact & Coverage</p>
+                <p className="text-xs text-muted-foreground">Set customer contact info and service area details.</p>
+              </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -1249,6 +1391,7 @@ export default function BusinessProfilePage() {
                 )}
               </div>
             </div>
+            </div>
           </div>
 
           <DialogFooter>
@@ -1256,8 +1399,8 @@ export default function BusinessProfilePage() {
               <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button onClick={handleUpdate} disabled={updateProfile.isPending}>
-              {updateProfile.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            <Button onClick={handleUpdate} disabled={updateProfile.isPending || uploadPhoto.isPending || uploadBanner.isPending}>
+              {updateProfile.isPending || uploadPhoto.isPending || uploadBanner.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save Changes
             </Button>
           </DialogFooter>

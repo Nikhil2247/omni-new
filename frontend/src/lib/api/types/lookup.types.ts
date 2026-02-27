@@ -17,6 +17,9 @@ export interface CategoryLookup {
   id: string
   slug: string
   name: string
-  isActive: boolean
+  isActive?: boolean
+  displayOrder?: number
+  description?: string
+  iconUrl?: string
   parentId?: string | null
 }

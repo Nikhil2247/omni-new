@@ -26,6 +26,8 @@ export interface FileUploadProps {
   disabled?: boolean
   className?: string
   showPreview?: boolean
+  autoUpload?: boolean
+  uploadButtonLabel?: string
   children?: React.ReactNode
 }
 
@@ -48,10 +50,59 @@ export function FileUpload({
   disabled = false,
   className,
   showPreview = true,
+  autoUpload = true,
+  uploadButtonLabel = 'Upload Selected',
   children,
 }: FileUploadProps) {
   const [files, setFiles] = useState<UploadedFilePreview[]>([])
   const [isUploading, setIsUploading] = useState(false)
+
+  const uploadFiles = useCallback(
+    async (selectedFiles: File[]) => {
+      if (!selectedFiles.length) return
+
+      setIsUploading(true)
+
+      try {
+        setFiles((prev) =>
+          prev.map((filePreview) =>
+            selectedFiles.includes(filePreview.file)
+              ? { ...filePreview, status: 'uploading' as const, progress: 30, error: undefined }
+              : filePreview,
+          ),
+        )
+
+        await onUpload(selectedFiles)
+
+        setFiles((prev) =>
+          prev.map((filePreview) =>
+            selectedFiles.includes(filePreview.file)
+              ? { ...filePreview, status: 'success' as const, progress: 100, error: undefined }
+              : filePreview,
+          ),
+        )
+
+        setTimeout(() => {
+          setFiles((prev) => prev.filter((filePreview) => filePreview.status !== 'success'))
+        }, 2000)
+      } catch (error) {
+        setFiles((prev) =>
+          prev.map((filePreview) =>
+            selectedFiles.includes(filePreview.file)
+              ? {
+                  ...filePreview,
+                  status: 'error' as const,
+                  error: error instanceof Error ? error.message : 'Upload failed',
+                }
+              : filePreview,
+          ),
+        )
+      } finally {
+        setIsUploading(false)
+      }
+    },
+    [onUpload],
+  )
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -68,54 +119,23 @@ export function FileUpload({
       }))
 
       setFiles((prev) => [...prev, ...newFiles])
-      setIsUploading(true)
 
-      try {
-        // Update status to uploading
-        setFiles((prev) =>
-          prev.map((f) =>
-            newFiles.some((nf) => nf.file === f.file)
-              ? { ...f, status: 'uploading' as const, progress: 30 }
-              : f
-          )
-        )
-
-        await onUpload(acceptedFiles)
-
-        // Update status to success
-        setFiles((prev) =>
-          prev.map((f) =>
-            newFiles.some((nf) => nf.file === f.file)
-              ? { ...f, status: 'success' as const, progress: 100 }
-              : f
-          )
-        )
-
-        // Clear successful uploads after a delay
-        setTimeout(() => {
-          setFiles((prev) =>
-            prev.filter((f) => f.status !== 'success')
-          )
-        }, 2000)
-      } catch (error) {
-        // Update status to error
-        setFiles((prev) =>
-          prev.map((f) =>
-            newFiles.some((nf) => nf.file === f.file)
-              ? {
-                  ...f,
-                  status: 'error' as const,
-                  error: error instanceof Error ? error.message : 'Upload failed',
-                }
-              : f
-          )
-        )
-      } finally {
-        setIsUploading(false)
+      if (autoUpload) {
+        await uploadFiles(acceptedFiles)
       }
     },
-    [onUpload]
+    [autoUpload, uploadFiles]
   )
+
+  const hasPendingUploads = files.some((filePreview) => filePreview.status === 'pending' || filePreview.status === 'error')
+
+  const handleManualUpload = async () => {
+    const pendingFiles = files
+      .filter((filePreview) => filePreview.status === 'pending' || filePreview.status === 'error')
+      .map((filePreview) => filePreview.file)
+
+    await uploadFiles(pendingFiles)
+  }
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
@@ -185,6 +205,25 @@ export function FileUpload({
           </>
         )}
       </div>
+
+      {!autoUpload && hasPendingUploads && (
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            onClick={handleManualUpload}
+            disabled={disabled || isUploading}
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              uploadButtonLabel
+            )}
+          </Button>
+        </div>
+      )}
 
       {/* File previews */}
       {showPreview && files.length > 0 && (

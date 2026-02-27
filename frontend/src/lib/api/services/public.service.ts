@@ -47,6 +47,7 @@ const normalizeVendor = (vendor: VendorProfile): VendorProfile => {
   return {
     ...vendor,
     profilePhotoUrl: resolveMediaUrl(vendor.profilePhotoUrl) ?? vendor.profilePhotoUrl,
+    bannerImageUrl: resolveMediaUrl(vendor.bannerImageUrl) ?? vendor.bannerImageUrl,
     portfolios: Array.isArray(vendorWithPortfolios.portfolios)
       ? vendorWithPortfolios.portfolios.map((portfolio) => ({
           ...portfolio,

@@ -74,6 +74,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
     "/reset-password",
     "/verify-email",
   ].some((route) => pathname?.startsWith(route));
+  const isVendorSlugPage = Boolean(pathname?.match(/^\/vendors\/[^/]+$/));
 
   const guestNavItems = [
     { href: "/discover", label: "Discover", icon: Compass },
@@ -261,9 +262,11 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
         <main className="flex-1 pt-0 pb-20 md:ml-16 md:pb-0">{children}</main>
       </div>
-      <div className="md:ml-16 hidden md:block">
-        <PublicFooter />
-      </div>
+      {!isVendorSlugPage && (
+        <div className="md:ml-16 hidden md:block">
+          <PublicFooter />
+        </div>
+      )}
       {/* Mobile Bottom Navigation */}
       <BottomNav />
       <ChatbotWidget />

@@ -320,6 +320,8 @@ export default function MarketingContentNewPage() {
                   maxFiles={1}
                   maxSize={10 * 1024 * 1024}
                   multiple={false}
+                  autoUpload={false}
+                  uploadButtonLabel="Upload Featured Image"
                   disabled={isUploadingFeatured}
                 />
               </div>
@@ -382,6 +384,8 @@ export default function MarketingContentNewPage() {
                   maxFiles={1}
                   maxSize={10 * 1024 * 1024}
                   multiple={false}
+                  autoUpload={false}
+                  uploadButtonLabel="Upload Social Image"
                   disabled={isUploadingOg}
                 />
               </div>

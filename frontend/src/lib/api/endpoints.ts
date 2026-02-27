@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
       VENDOR: (slug: string) => `/public/discovery/vendors/${slug}`,
       FEATURED: '/public/discovery/featured',
       MEDIA: '/public/discovery/media',
+      CATEGORIES: '/public/discovery/categories',
       BY_CATEGORY: (categoryId: string) =>
         `/public/discovery/categories/${categoryId}/vendors`,
       BY_CITY: (cityId: string) => `/public/discovery/cities/${cityId}/vendors`,
@@ -119,6 +120,7 @@ export const API_ENDPOINTS = {
   BUSINESS: {
     PROFILE: {
       ME: '/business/profile/me',
+      CATEGORIES: '/business/profile/categories',
       CREATE: '/business/profile',
       VERIFY: '/business/profile/me/verify',
       GENERATE_SLUG: '/business/profile/generate-slug',
@@ -268,7 +270,6 @@ export const API_ENDPOINTS = {
     LOOKUPS: {
       EVENT_TYPES: '/user/lookups/event-types',
       CITIES: '/user/lookups/cities',
-      CATEGORIES: '/user/lookups/categories',
     },
     EXPORT: {
       CHECKLIST_PDF: (id: string) => `/user/export/checklist/${id}/pdf`,

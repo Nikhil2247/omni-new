@@ -23,6 +23,7 @@ export interface VendorProfile {
   tagline?: string
   description?: string
   profilePhotoUrl?: string
+  bannerImageUrl?: string
   contactEmail?: string
   contactPhone?: string
   website?: string

@@ -677,6 +677,8 @@ export default function BusinessPortfolioPage() {
               maxFiles={10}
               maxSize={25 * 1024 * 1024}
               multiple={true}
+              autoUpload={false}
+              uploadButtonLabel="Upload Selected Media"
               disabled={isUploading || !selectedAlbumId}
             />
 

@@ -16,6 +16,7 @@ import { TasksController } from './controllers/tasks.controller';
 import { MessagingController } from './controllers/messaging.controller';
 import { VendorReviewsController } from './controllers/vendor-reviews.controller';
 import { MediaTagsController } from './controllers/media-tags.controller';
+import { LookupsController } from './controllers/lookups.controller';
 import { CatalogModule } from '../../domain/catalog/catalog.module';
 import { LeadsModule } from '../../domain/leads/leads.module';
 import { OperationsModule } from '../../domain/operations/operations.module';
@@ -48,6 +49,7 @@ import { AuditService } from 'src/core/audit';
     MessagingController,
     VendorReviewsController,
     MediaTagsController,
+    LookupsController,
   ],
   providers: [NotificationService, AuditService],
 })
