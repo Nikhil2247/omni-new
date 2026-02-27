@@ -3,7 +3,6 @@
 import * as React from 'react'
 import {
   usePlatformCounts,
-  useFunnelConversionRates,
   useRefreshPlatformCounts,
   formatCount,
 } from '@/hooks/queries/use-platform-counts'
@@ -31,7 +30,6 @@ import {
   Clock,
   AlertCircle,
   BarChart3,
-  PieChart,
   LineChart,
   RefreshCw,
   Sparkles,
@@ -44,13 +42,11 @@ import {
   DateRangeSelector,
   type DateRangeValue,
 } from '@/components/charts'
-import { FunnelDashboard } from '@/components/analytics/FunnelDashboard'
 import { subDays, startOfDay, endOfDay } from 'date-fns'
 import { cn } from '@/lib/utils'
 
 export default function AdminInsightsPage() {
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = usePlatformCounts()
-  const { data: funnelRates, refetch: refetchFunnelRates } = useFunnelConversionRates()
   const { data: dashboard, isLoading: dashboardLoading, refetch: refetchDashboard } = useAdminDashboard()
   const { mutateAsync: refreshCountsOnServer } = useRefreshPlatformCounts()
   const [dateRange, setDateRange] = React.useState<DateRangeValue>({
@@ -65,7 +61,7 @@ export default function AdminInsightsPage() {
     setRefreshing(true)
     try {
       await refreshCountsOnServer()
-      await Promise.all([refetchCounts(), refetchFunnelRates(), refetchDashboard()])
+      await Promise.all([refetchCounts(), refetchDashboard()])
     } finally {
       setRefreshing(false)
     }
@@ -142,7 +138,7 @@ export default function AdminInsightsPage() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
           <TabsTrigger value="overview">
             <BarChart3 className="mr-2 h-4 w-4" />
             Overview
@@ -162,10 +158,6 @@ export default function AdminInsightsPage() {
           <TabsTrigger value="content">
             <FileText className="mr-2 h-4 w-4" />
             Content
-          </TabsTrigger>
-          <TabsTrigger value="funnels">
-            <PieChart className="mr-2 h-4 w-4" />
-            Funnels
           </TabsTrigger>
         </TabsList>
 
@@ -196,12 +188,6 @@ export default function AdminInsightsPage() {
         {/* Content Tab */}
         <TabsContent value="content" className="space-y-6">
           <ContentMetrics counts={counts} />
-        </TabsContent>
-
-        {/* Funnels Tab */}
-        <TabsContent value="funnels" className="space-y-6">
-          <FunnelMetrics counts={counts} funnelRates={funnelRates} />
-          <FunnelDashboard />
         </TabsContent>
       </Tabs>
     </div>
@@ -507,7 +493,7 @@ function ContentMetrics({ counts }: { counts: any }) {
       <StatCard
         title="Categories"
         value={formatCount(counts.totalCategories)}
-        icon={PieChart}
+        icon={FileText}
         color="blue"
       />
       <StatCard
@@ -529,39 +515,6 @@ function ContentMetrics({ counts }: { counts: any }) {
         icon={Star}
         color="yellow"
       />
-    </div>
-  )
-}
-
-function FunnelMetrics({ counts, funnelRates }: { counts: any; funnelRates: any }) {
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <FunnelCard
-          title="Vendor Discovery"
-          started={counts.vendorDiscoveryStarted}
-          completed={counts.vendorDiscoveryCompleted}
-          rate={funnelRates?.vendorDiscovery || 0}
-        />
-        <FunnelCard
-          title="User Signup"
-          started={counts.userSignupStarted}
-          completed={counts.userSignupCompleted}
-          rate={funnelRates?.userSignup || 0}
-        />
-        <FunnelCard
-          title="Vendor Onboarding"
-          started={counts.vendorOnboardingStarted}
-          completed={counts.vendorOnboardingCompleted}
-          rate={funnelRates?.vendorOnboarding || 0}
-        />
-        <FunnelCard
-          title="Event Planning"
-          started={counts.eventPlanningStarted}
-          completed={counts.eventPlanningCompleted}
-          rate={funnelRates?.eventPlanning || 0}
-        />
-      </div>
     </div>
   )
 }
@@ -807,45 +760,3 @@ function FunnelProgressBar({
   )
 }
 
-function FunnelCard({
-  title,
-  started,
-  completed,
-  rate,
-}: {
-  title: string
-  started: number
-  completed: number
-  rate: number
-}) {
-  const safeRate = rate ?? 0
-  const safeStarted = started ?? 0
-  const safeCompleted = completed ?? 0
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold">{safeRate.toFixed(1)}%</span>
-            <span className="text-sm text-muted-foreground">conversion</span>
-          </div>
-          <div className="space-y-1 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Started</span>
-              <span className="font-medium">{formatCount(safeStarted)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Completed</span>
-              <span className="font-medium">{formatCount(safeCompleted)}</span>
-            </div>
-          </div>
-          <Progress value={safeRate} className="h-2" />
-        </div>
-      </CardContent>
-    </Card>
-  )
-}

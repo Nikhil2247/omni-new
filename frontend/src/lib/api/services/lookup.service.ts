@@ -1,6 +1,6 @@
 import { apiClient } from '../client'
 import { API_ENDPOINTS } from '../endpoints'
-import type { CityLookup, EventTypeLookup } from '../types/lookup.types'
+import type { CategoryLookup, CityLookup, EventTypeLookup } from '../types/lookup.types'
 
 export const lookupService = {
   async getEventTypes() {
@@ -17,5 +17,13 @@ export const lookupService = {
     )
     const payload = response.data as unknown as { data?: CityLookup[] }
     return payload?.data ?? (response.data as CityLookup[])
+  },
+
+  async getCategories() {
+    const response = await apiClient.get<CategoryLookup[]>(
+      API_ENDPOINTS.USER.LOOKUPS.CATEGORIES,
+    )
+    const payload = response.data as unknown as { data?: CategoryLookup[] }
+    return payload?.data ?? (response.data as CategoryLookup[])
   },
 }

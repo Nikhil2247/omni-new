@@ -54,6 +54,11 @@ export interface VendorServiceArea {
   cityId: string
   radiusMiles?: number | null
   additionalFee?: number | null
+  city?: {
+    id: string
+    name: string
+    stateId?: string
+  } | null
 }
 
 export type EventVendorStatus = 'SHORTLISTED' | 'CONTACTED' | 'BOOKED' | 'CONFIRMED' | 'CANCELLED'

@@ -47,29 +47,9 @@ export interface PlatformCounts {
   totalProfileViews: number;
   totalMessages: number;
 
-  // Funnels (Last 30 Days)
-  vendorDiscoveryStarted: number;
-  vendorDiscoveryCompleted: number;
-  userSignupStarted: number;
-  userSignupCompleted: number;
-  vendorOnboardingStarted: number;
-  vendorOnboardingCompleted: number;
-  eventPlanningStarted: number;
-  eventPlanningCompleted: number;
-
   // System
   lastUpdated: string;
   updateDuration: number;
-}
-
-/**
- * Funnel conversion rates
- */
-export interface FunnelConversionRates {
-  vendorDiscovery: number;
-  userSignup: number;
-  vendorOnboarding: number;
-  eventPlanning: number;
 }
 
 /**
@@ -77,13 +57,6 @@ export interface FunnelConversionRates {
  */
 async function fetchPlatformCounts(): Promise<PlatformCounts> {
   return insightsService.getCounts();
-}
-
-/**
- * Fetch funnel conversion rates
- */
-async function fetchFunnelConversionRates(): Promise<FunnelConversionRates> {
-  return insightsService.getFunnelConversionRates();
 }
 
 /**
@@ -151,36 +124,6 @@ export function usePlatformCounts(options?: {
 }
 
 /**
- * Hook: Get funnel conversion rates
- *
- * @example
- * ```tsx
- * function FunnelStats() {
- *   const { data: rates } = useFunnelConversionRates();
- *
- *   return (
- *     <div>
- *       <p>Vendor Discovery: {rates.vendorDiscovery.toFixed(1)}%</p>
- *       <p>User Signup: {rates.userSignup.toFixed(1)}%</p>
- *     </div>
- *   );
- * }
- * ```
- */
-export function useFunnelConversionRates(options?: {
-  refetchInterval?: number;
-  enabled?: boolean;
-}) {
-  return useQuery({
-    queryKey: ['funnel-conversion-rates'],
-    queryFn: fetchFunnelConversionRates,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    refetchInterval: options?.refetchInterval || 10 * 60 * 1000,
-    enabled: options?.enabled ?? true,
-  });
-}
-
-/**
  * Hook: Get count for specific entity
  *
  * @example
@@ -226,7 +169,6 @@ export function useRefreshPlatformCounts() {
     mutationFn: refreshPlatformCounts,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['platform-counts'] });
-      queryClient.invalidateQueries({ queryKey: ['funnel-conversion-rates'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
     },
   });

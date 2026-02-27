@@ -1,6 +1,6 @@
 import { apiClient } from '../client';
 import { API_ENDPOINTS } from '../endpoints';
-import type { PlatformCounts, FunnelConversionRates } from '@/hooks/queries/use-platform-counts';
+import type { PlatformCounts } from '@/hooks/queries/use-platform-counts';
 
 /**
  * Admin Insights Service
@@ -12,14 +12,6 @@ export const insightsService = {
    */
   getCounts: async (): Promise<PlatformCounts> => {
     const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.INSIGHTS.COUNTS);
-    return data;
-  },
-
-  /**
-   * Get funnel conversion rates
-   */
-  getFunnelConversionRates: async (): Promise<FunnelConversionRates> => {
-    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.INSIGHTS.COUNTS_FUNNELS);
     return data;
   },
 
@@ -125,31 +117,4 @@ export const insightsService = {
     return data;
   },
 
-  /**
-   * Get available funnels
-   */
-  getFunnels: async () => {
-    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.INSIGHTS.FUNNELS);
-    return data;
-  },
-
-  /**
-   * Get funnel analysis
-   */
-  getFunnelAnalysis: async (funnelName: string, params: { startDate: string; endDate: string }) => {
-    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.INSIGHTS.FUNNEL_ANALYSIS(funnelName), {
-      params,
-    });
-    return data;
-  },
-
-  /**
-   * Get top drop-off points
-   */
-  getTopDropoffs: async (params: { startDate: string; endDate: string; limit?: number }) => {
-    const { data } = await apiClient.get(`${API_ENDPOINTS.ADMIN.INSIGHTS.FUNNELS}/dropoffs`, {
-      params,
-    });
-    return data;
-  },
 };

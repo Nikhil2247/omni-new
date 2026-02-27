@@ -27,7 +27,7 @@ const prisma = isAccelerate
 
 // Target categories (name -> slug)
 const TARGET_CATEGORIES = [
-  { name: 'Venues', slug: 'venues' },
+  { name: 'Venue', slug: 'venue' },
   { name: 'Entertainment', slug: 'entertainment' },
   { name: 'Photo & Videography', slug: 'photo-videography' },
   { name: 'Food & Catering', slug: 'food-catering' },
@@ -129,17 +129,27 @@ async function updateVendors() {
 
     // Step 2: Get all vendors
     const allVendors = await prisma.vendorProfile.findMany({
-      include: {
-        category: true,
+      select: {
+        id: true,
+        businessName: true,
+        categoryId: true,
+        category: {
+          select: {
+            name: true,
+          },
+        },
         portfolios: {
-          include: {
+          select: {
             mediaItems: {
-              orderBy: { sortOrder: 'asc' },
+              select: {
+                url: true,
+              },
+              where: { isApproved: true },
+              orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
               take: 1,
             },
           },
-          orderBy: { sortOrder: 'asc' },
-          take: 1,
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
         },
       },
     })
@@ -165,6 +175,7 @@ async function updateVendors() {
             await prisma.vendorProfile.update({
               where: { id: vendor.id },
               data: { categoryId: newCategoryId },
+              select: { id: true },
             })
             const targetCat = TARGET_CATEGORIES.find(c => c.slug === targetCategorySlug)
             console.log(`   🏷️ Mapped "${vendor.businessName}" to "${targetCat?.name}"`)
@@ -188,7 +199,7 @@ async function updateVendors() {
     let skippedCount = 0
 
     for (const vendor of allVendors) {
-      const firstMediaItem = vendor.portfolios[0]?.mediaItems[0]
+      const firstMediaItem = vendor.portfolios.find(portfolio => portfolio.mediaItems.length > 0)?.mediaItems[0]
 
       if (firstMediaItem && firstMediaItem.url) {
         if (isDryRun) {
@@ -198,6 +209,7 @@ async function updateVendors() {
           await prisma.vendorProfile.update({
             where: { id: vendor.id },
             data: { profilePhotoUrl: firstMediaItem.url },
+            select: { id: true },
           })
           console.log(`   📸 Updated "${vendor.businessName}" profile photo`)
           updatedCount++

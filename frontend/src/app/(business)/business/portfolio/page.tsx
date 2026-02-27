@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import NextImage from 'next/image'
 import {
   useBusinessProfile,
@@ -56,6 +56,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { FileUpload } from '@/components/ui/file-upload'
+import { ImageCropperDialog } from '@/components/common/image-cropper-dialog'
 import {
   Image as ImageIcon,
   Video,
@@ -73,6 +74,7 @@ import {
 } from 'lucide-react'
 import type { Portfolio, MediaItem } from '@/lib/api/types/business.types'
 import { getMinioViewUrl } from '@/lib/utils/minio'
+import { resizeImageFile } from '@/lib/utils/image-processing'
 
 type ViewMode = 'grid' | 'list'
 
@@ -111,6 +113,12 @@ export default function BusinessPortfolioPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadCaption, setUploadCaption] = useState('')
+  const [portfolioCropOpen, setPortfolioCropOpen] = useState(false)
+  const [portfolioCropFile, setPortfolioCropFile] = useState<File | null>(null)
+  const pendingSingleImageUploadRef = useRef<{
+    resolve: () => void
+    reject: (reason?: unknown) => void
+  } | null>(null)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -186,6 +194,66 @@ export default function BusinessPortfolioPage() {
     },
     [profile, selectedAlbumId, uploadImage, uploadMultipleImages]
   )
+
+  const handleUploadWithProcessing = useCallback(
+    async (files: File[]) => {
+      if (files.length === 1 && files[0].type.startsWith('image/')) {
+        return new Promise<void>((resolve, reject) => {
+          pendingSingleImageUploadRef.current = { resolve, reject }
+          setPortfolioCropFile(files[0])
+          setPortfolioCropOpen(true)
+        })
+      }
+
+      const processedFiles = await Promise.all(
+        files.map(async (file) => {
+          if (!file.type.startsWith('image/')) {
+            return file
+          }
+
+          return resizeImageFile(file, {
+            maxWidth: 1800,
+            maxHeight: 1800,
+          })
+        }),
+      )
+
+      await handleFileUpload(processedFiles)
+    },
+    [handleFileUpload],
+  )
+
+  const clearPortfolioCropState = () => {
+    setPortfolioCropOpen(false)
+    setPortfolioCropFile(null)
+  }
+
+  const handlePortfolioCropOpenChange = (open: boolean) => {
+    if (!open && pendingSingleImageUploadRef.current) {
+      pendingSingleImageUploadRef.current.resolve()
+      pendingSingleImageUploadRef.current = null
+      clearPortfolioCropState()
+      return
+    }
+
+    setPortfolioCropOpen(open)
+  }
+
+  const handlePortfolioCropConfirm = async (processedFile: File, previewUrl: string) => {
+    URL.revokeObjectURL(previewUrl)
+
+    const pending = pendingSingleImageUploadRef.current
+    pendingSingleImageUploadRef.current = null
+
+    try {
+      await handleFileUpload([processedFile])
+      pending?.resolve()
+    } catch (error) {
+      pending?.reject(error)
+    } finally {
+      clearPortfolioCropState()
+    }
+  }
 
   const handleCreate = () => {
     if (!profile) return
@@ -601,7 +669,7 @@ export default function BusinessPortfolioPage() {
               </p>
             </div>
             <FileUpload
-              onUpload={handleFileUpload}
+              onUpload={handleUploadWithProcessing}
               accept={{
                 'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif'],
                 'video/*': ['.mp4', '.webm'],
@@ -630,6 +698,19 @@ export default function BusinessPortfolioPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ImageCropperDialog
+        open={portfolioCropOpen}
+        file={portfolioCropFile}
+        title="Crop Portfolio Image"
+        description="Adjust and resize your portfolio image before upload."
+        aspect={1}
+        outputWidth={1200}
+        outputHeight={1200}
+        cropShape="rect"
+        onOpenChange={handlePortfolioCropOpenChange}
+        onConfirm={handlePortfolioCropConfirm}
+      />
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-lg">

@@ -9,6 +9,9 @@ import Script from 'next/script';
 import { GA_MEASUREMENT_ID, GOOGLE_ADS_ID } from '@/lib/analytics/gtag';
 
 const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-4219034590653073';
+const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+const UMAMI_SCRIPT_URL =
+  process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL || 'https://cloud.umami.is/script.js';
 
 export function AnalyticsProvider() {
   // Only load in production or if explicitly enabled
@@ -52,6 +55,15 @@ export function AnalyticsProvider() {
         crossOrigin="anonymous"
         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
       />
+
+      {UMAMI_WEBSITE_ID ? (
+        <Script
+          id="umami-analytics"
+          strategy="afterInteractive"
+          src={UMAMI_SCRIPT_URL}
+          data-website-id={UMAMI_WEBSITE_ID}
+        />
+      ) : null}
     </>
   );
 }

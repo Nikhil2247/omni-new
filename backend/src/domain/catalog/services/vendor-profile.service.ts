@@ -34,6 +34,15 @@ export class VendorProfileService {
   private readonly uuidRegex =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+  private normalizeOptionalString(value?: string | null): string | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
   constructor(
     private readonly vendorProfileRepository: VendorProfileRepository,
     private readonly eventEmitter: EventEmitter2,
@@ -276,7 +285,8 @@ export class VendorProfileService {
         contactPhone: dto.contactPhone,
         website: dto.website,
         serviceRadius: dto.serviceRadius,
-        bannerImageUrl: dto.bannerImageUrl,
+        profilePhotoUrl: this.normalizeOptionalString(dto.profilePhotoUrl),
+        bannerImageUrl: this.normalizeOptionalString(dto.bannerImageUrl),
         address: dto.addressId ? { connect: { id: dto.addressId } } : undefined,
         status: 'ACTIVE',
         verifiedAt: new Date(),
@@ -492,7 +502,8 @@ export class VendorProfileService {
       slug: dto.slug,
       tagline: dto.tagline,
       description: dto.description,
-      bannerImageUrl: dto.bannerImageUrl,
+      profilePhotoUrl: this.normalizeOptionalString(dto.profilePhotoUrl),
+      bannerImageUrl: this.normalizeOptionalString(dto.bannerImageUrl),
       contactEmail: dto.contactEmail,
       contactPhone: dto.contactPhone,
       website: dto.website,

@@ -69,7 +69,6 @@ export const API_ENDPOINTS = {
       DASHBOARD: '/admin/insights/dashboard',
       OVERVIEW: '/admin/insights/platform/overview',
       COUNTS: '/admin/insights/counts',
-      COUNTS_FUNNELS: '/admin/insights/counts/funnels/conversion-rates',
       COUNTS_ENTITY: (entity: string) => `/admin/insights/counts/${entity}`,
       COUNTS_REFRESH: '/admin/insights/counts/refresh',
       EXECUTIVE_SUMMARY: '/admin/insights/executive-summary',
@@ -80,8 +79,6 @@ export const API_ENDPOINTS = {
       ENGAGEMENT_TRENDS: '/admin/insights/engagement/trends',
       TOP_VENDORS: '/admin/insights/vendors/top',
       VENDOR_RANKINGS: '/admin/insights/vendors/rankings',
-      FUNNELS: '/admin/insights/funnels',
-      FUNNEL_ANALYSIS: (funnelName: string) => `/admin/insights/funnels/${funnelName}/analysis`,
     },
   },
   MARKETING: {
@@ -271,6 +268,7 @@ export const API_ENDPOINTS = {
     LOOKUPS: {
       EVENT_TYPES: '/user/lookups/event-types',
       CITIES: '/user/lookups/cities',
+      CATEGORIES: '/user/lookups/categories',
     },
     EXPORT: {
       CHECKLIST_PDF: (id: string) => `/user/export/checklist/${id}/pdf`,

@@ -12,3 +12,11 @@ export interface CityLookup {
   name: string
   stateId: string
 }
+
+export interface CategoryLookup {
+  id: string
+  slug: string
+  name: string
+  isActive: boolean
+  parentId?: string | null
+}

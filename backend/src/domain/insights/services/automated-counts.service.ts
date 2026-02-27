@@ -42,29 +42,9 @@ export interface PlatformCounts {
   totalProfileViews: number;
   totalMessages: number;
 
-  // Funnels (Last 30 Days)
-  vendorDiscoveryStarted: number;
-  vendorDiscoveryCompleted: number;
-  userSignupStarted: number;
-  userSignupCompleted: number;
-  vendorOnboardingStarted: number;
-  vendorOnboardingCompleted: number;
-  eventPlanningStarted: number;
-  eventPlanningCompleted: number;
-
   // System
   lastUpdated: Date;
   updateDuration: number; // milliseconds
-}
-
-/**
- * Funnel conversion rates
- */
-export interface FunnelConversionRates {
-  vendorDiscovery: number;
-  userSignup: number;
-  vendorOnboarding: number;
-  eventPlanning: number;
 }
 
 /**
@@ -76,7 +56,6 @@ export class AutomatedCountsService {
   private readonly logger = new Logger(AutomatedCountsService.name);
   private readonly CACHE_KEY = 'platform:counts';
   private readonly CACHE_TTL = 300; // 5 minutes
-  private readonly FUNNEL_CACHE_KEY = 'platform:funnel-rates';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -155,24 +134,6 @@ export class AutomatedCountsService {
   }
 
   /**
-   * Get funnel conversion rates
-   */
-  async getFunnelConversionRates(): Promise<FunnelConversionRates> {
-    const cached = await this.cache.get<FunnelConversionRates>(
-      this.FUNNEL_CACHE_KEY,
-    );
-    if (cached) {
-      return cached;
-    }
-
-    const counts = await this.getCounts();
-    const rates = this.buildFunnelConversionRates(counts);
-
-    await this.cache.set(this.FUNNEL_CACHE_KEY, rates, { ttl: this.CACHE_TTL });
-    return rates;
-  }
-
-  /**
    * Generate and cache all counts
    */
   private async generateAndCacheCounts(): Promise<PlatformCounts> {
@@ -186,7 +147,6 @@ export class AutomatedCountsService {
       eventCounts,
       contentCounts,
       engagementCounts,
-      funnelCounts,
     ] = await Promise.all([
       this.getUserCounts(),
       this.getVendorCounts(),
@@ -194,7 +154,6 @@ export class AutomatedCountsService {
       this.getEventCounts(),
       this.getContentCounts(),
       this.getEngagementCounts(),
-      this.getFunnelCounts(),
     ]);
 
     const counts: PlatformCounts = {
@@ -204,20 +163,12 @@ export class AutomatedCountsService {
       ...eventCounts,
       ...contentCounts,
       ...engagementCounts,
-      ...funnelCounts,
       lastUpdated: new Date(),
       updateDuration: Date.now() - startTime,
     };
 
-    const funnelRates = this.buildFunnelConversionRates(counts);
-
     // Cache for 5 minutes
-    await Promise.all([
-      this.cache.set(this.CACHE_KEY, counts, { ttl: this.CACHE_TTL }),
-      this.cache.set(this.FUNNEL_CACHE_KEY, funnelRates, {
-        ttl: this.CACHE_TTL,
-      }),
-    ]);
+    await this.cache.set(this.CACHE_KEY, counts, { ttl: this.CACHE_TTL });
 
     return counts;
   }
@@ -368,98 +319,6 @@ export class AutomatedCountsService {
       totalSearches,
       totalProfileViews,
       totalMessages,
-    };
-  }
-
-  /**
-   * Count funnel events (last 30 days)
-   */
-  private async getFunnelCounts() {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const [
-      vendorDiscoveryStarted,
-      vendorDiscoveryCompleted,
-      userSignupStarted,
-      userSignupCompleted,
-      vendorOnboardingStarted,
-      vendorOnboardingCompleted,
-      eventPlanningStarted,
-      eventPlanningCompleted,
-    ] = await Promise.all([
-      this.countUniqueFunnelSessions('vendor_discovery', 0, thirtyDaysAgo),
-      this.countUniqueFunnelSessions('vendor_discovery', 4, thirtyDaysAgo),
-      this.countUniqueFunnelSessions('user_signup', 0, thirtyDaysAgo),
-      this.countUniqueFunnelSessions('user_signup', 5, thirtyDaysAgo),
-      this.countUniqueFunnelSessions('vendor_onboarding', 0, thirtyDaysAgo),
-      this.countUniqueFunnelSessions('vendor_onboarding', 5, thirtyDaysAgo),
-      this.countUniqueFunnelSessions('event_planning', 0, thirtyDaysAgo),
-      this.countUniqueFunnelSessions('event_planning', 5, thirtyDaysAgo),
-    ]);
-
-    return {
-      vendorDiscoveryStarted,
-      vendorDiscoveryCompleted,
-      userSignupStarted,
-      userSignupCompleted,
-      vendorOnboardingStarted,
-      vendorOnboardingCompleted,
-      eventPlanningStarted,
-      eventPlanningCompleted,
-    };
-  }
-
-  private async countUniqueFunnelSessions(
-    funnelName: string,
-    stepIndex: number,
-    since: Date,
-  ): Promise<number> {
-    const sessions = await this.prisma.funnelEvent.groupBy({
-      by: ['sessionId'],
-      where: {
-        funnelName,
-        stepIndex,
-        timestamp: { gte: since },
-      },
-    });
-
-    return sessions.length;
-  }
-
-  private buildFunnelConversionRates(
-    counts: Pick<
-      PlatformCounts,
-      | 'vendorDiscoveryStarted'
-      | 'vendorDiscoveryCompleted'
-      | 'userSignupStarted'
-      | 'userSignupCompleted'
-      | 'vendorOnboardingStarted'
-      | 'vendorOnboardingCompleted'
-      | 'eventPlanningStarted'
-      | 'eventPlanningCompleted'
-    >,
-  ): FunnelConversionRates {
-    return {
-      vendorDiscovery:
-        counts.vendorDiscoveryStarted > 0
-          ? (counts.vendorDiscoveryCompleted / counts.vendorDiscoveryStarted) *
-            100
-          : 0,
-      userSignup:
-        counts.userSignupStarted > 0
-          ? (counts.userSignupCompleted / counts.userSignupStarted) * 100
-          : 0,
-      vendorOnboarding:
-        counts.vendorOnboardingStarted > 0
-          ? (counts.vendorOnboardingCompleted /
-              counts.vendorOnboardingStarted) *
-            100
-          : 0,
-      eventPlanning:
-        counts.eventPlanningStarted > 0
-          ? (counts.eventPlanningCompleted / counts.eventPlanningStarted) * 100
-          : 0,
     };
   }
 }

@@ -14,13 +14,13 @@ import {
   useUploadProfileBanner,
   useDeleteProfileBanner,
 } from '@/hooks/queries/use-business'
-import { useCities } from '@/hooks/queries/use-lookups'
+import { useCategories, useCities } from '@/hooks/queries/use-lookups'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
+import { ImageCropperDialog } from '@/components/common/image-cropper-dialog'
 import {
   Select,
   SelectContent,
@@ -45,7 +45,6 @@ import {
   Clock,
   Edit,
   ExternalLink,
-  Eye,
   Globe,
   ImageIcon,
   IndianRupee,
@@ -76,17 +75,6 @@ const statusConfig: Record<VendorStatus, { label: string; color: string; icon: E
   INACTIVE: { label: 'Inactive', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: AlertTriangle },
 }
 
-const CATEGORIES = [
-  { id: 'photography', name: 'Photography' },
-  { id: 'videography', name: 'Videography' },
-  { id: 'catering', name: 'Catering' },
-  { id: 'decoration', name: 'Decoration' },
-  { id: 'venue', name: 'Venue' },
-  { id: 'music-entertainment', name: 'Music & Entertainment' },
-  { id: 'florist', name: 'Florist' },
-  { id: 'makeup-hair', name: 'Makeup & Hair' },
-]
-
 const slugifyBusinessName = (value: string) =>
   value
     .toLowerCase()
@@ -97,6 +85,7 @@ const slugifyBusinessName = (value: string) =>
     .replace(/^-|-$/g, '')
 
 type TabId = 'portfolio' | 'events' | 'services' | 'badges'
+type CropTarget = 'createPhoto' | 'createBanner' | 'managePhoto' | 'manageBanner'
 
 const formatPrice = (price?: number | null) => {
   if (!price) return null
@@ -116,6 +105,14 @@ const formatDate = (date?: string | null) => {
   })
 }
 
+const containsHtml = (value?: string | null) => {
+  if (!value) return false
+  return /<[^>]+>/.test(value)
+}
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback
+
 export default function BusinessProfilePage() {
   const { data: profile, isLoading, error } = useBusinessProfile()
   const createProfile = useCreateBusinessProfile()
@@ -127,6 +124,7 @@ export default function BusinessProfilePage() {
   const uploadBanner = useUploadProfileBanner()
   const deleteBanner = useDeleteProfileBanner()
   const { data: cities = [] } = useCities()
+  const { data: categories = [] } = useCategories()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const createPhotoInputRef = useRef<HTMLInputElement>(null)
@@ -141,12 +139,15 @@ export default function BusinessProfilePage() {
   const [createPhotoPreviewUrl, setCreatePhotoPreviewUrl] = useState('')
   const [createBannerFile, setCreateBannerFile] = useState<File | null>(null)
   const [createBannerPreviewUrl, setCreateBannerPreviewUrl] = useState('')
+  const [cropFile, setCropFile] = useState<File | null>(null)
+  const [cropTarget, setCropTarget] = useState<CropTarget | null>(null)
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false)
   const [formData, setFormData] = useState({
     businessName: '',
     slug: '',
     categoryId: '',
     tagline: '',
-    description: '',
+    bannerImageUrl: '',
     contactEmail: '',
     contactPhone: '',
     website: '',
@@ -162,7 +163,7 @@ export default function BusinessProfilePage() {
       slug: profile.slug || '',
       categoryId: profile.categoryId || '',
       tagline: profile.tagline || '',
-      description: profile.description || '',
+      bannerImageUrl: profile.bannerImageUrl || '',
       contactEmail: profile.contactEmail || '',
       contactPhone: profile.contactPhone || '',
       website: profile.website || '',
@@ -197,28 +198,74 @@ export default function BusinessProfilePage() {
     setFormData(prev => ({ ...prev, slug: result.slug }))
   }
 
-  const handleCreatePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const cropConfigByTarget: Record<CropTarget, {
+    title: string
+    description: string
+    aspect: number
+    outputWidth: number
+    outputHeight: number
+    cropShape: 'rect' | 'round'
+  }> = {
+    createPhoto: {
+      title: 'Crop Profile Photo',
+      description: 'Adjust and resize your profile photo before upload.',
+      aspect: 1,
+      outputWidth: 800,
+      outputHeight: 800,
+      cropShape: 'round',
+    },
+    managePhoto: {
+      title: 'Crop Profile Photo',
+      description: 'Adjust and resize your profile photo before upload.',
+      aspect: 1,
+      outputWidth: 800,
+      outputHeight: 800,
+      cropShape: 'round',
+    },
+    createBanner: {
+      title: 'Crop Profile Banner',
+      description: 'Adjust and resize your banner image before upload.',
+      aspect: 1500 / 400,
+      outputWidth: 1500,
+      outputHeight: 400,
+      cropShape: 'rect',
+    },
+    manageBanner: {
+      title: 'Crop Profile Banner',
+      description: 'Adjust and resize your banner image before upload.',
+      aspect: 1500 / 400,
+      outputWidth: 1500,
+      outputHeight: 400,
+      cropShape: 'rect',
+    },
+  }
 
+  const beginCropFlow = (
+    file: File,
+    target: CropTarget,
+    maxSize: number,
+    sizeErrorMessage: string,
+  ) => {
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file')
       return
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB')
+    if (file.size > maxSize) {
+      toast.error(sizeErrorMessage)
       return
     }
 
-    const localPreview = URL.createObjectURL(file)
-    setCreatePhotoPreviewUrl((prev) => {
-      if (prev.startsWith('blob:')) {
-        URL.revokeObjectURL(prev)
-      }
-      return localPreview
-    })
-    setCreatePhotoFile(file)
+    setCropFile(file)
+    setCropTarget(target)
+    setIsCropDialogOpen(true)
+  }
+
+  const handleCreatePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    beginCropFlow(file, 'createPhoto', 10 * 1024 * 1024, 'File size must be less than 10MB')
 
     if (createPhotoInputRef.current) {
       createPhotoInputRef.current.value = ''
@@ -229,24 +276,7 @@ export default function BusinessProfilePage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
-      return
-    }
-
-    if (file.size > 15 * 1024 * 1024) {
-      toast.error('Banner size must be less than 15MB')
-      return
-    }
-
-    const localPreview = URL.createObjectURL(file)
-    setCreateBannerPreviewUrl((prev) => {
-      if (prev.startsWith('blob:')) {
-        URL.revokeObjectURL(prev)
-      }
-      return localPreview
-    })
-    setCreateBannerFile(file)
+    beginCropFlow(file, 'createBanner', 15 * 1024 * 1024, 'Banner size must be less than 15MB')
 
     if (createBannerInputRef.current) {
       createBannerInputRef.current.value = ''
@@ -260,7 +290,7 @@ export default function BusinessProfilePage() {
         slug: formData.slug.trim() || undefined,
         categoryId: formData.categoryId || undefined,
         tagline: formData.tagline || undefined,
-        description: formData.description || undefined,
+        bannerImageUrl: formData.bannerImageUrl.trim() || undefined,
         contactEmail: formData.contactEmail || undefined,
         contactPhone: formData.contactPhone || undefined,
         website: formData.website || undefined,
@@ -292,8 +322,8 @@ export default function BusinessProfilePage() {
         return ''
       })
       toast.success('Business profile created')
-    } catch (createError: any) {
-      toast.error(createError?.message || 'Failed to create profile')
+    } catch (createError: unknown) {
+      toast.error(getErrorMessage(createError, 'Failed to create profile'))
     }
   }
 
@@ -304,7 +334,7 @@ export default function BusinessProfilePage() {
         slug: formData.slug || undefined,
         categoryId: formData.categoryId || undefined,
         tagline: formData.tagline || undefined,
-        description: formData.description || undefined,
+        bannerImageUrl: formData.bannerImageUrl.trim() || undefined,
         contactEmail: formData.contactEmail || undefined,
         contactPhone: formData.contactPhone || undefined,
         website: formData.website || undefined,
@@ -324,20 +354,7 @@ export default function BusinessProfilePage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
-      return
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB')
-      return
-    }
-
-    uploadPhoto.mutate(file, {
-      onSuccess: () => toast.success('Profile photo updated'),
-      onError: (uploadError: any) => toast.error(uploadError?.message || 'Failed to upload photo'),
-    })
+    beginCropFlow(file, 'managePhoto', 10 * 1024 * 1024, 'File size must be less than 10MB')
 
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -346,20 +363,7 @@ export default function BusinessProfilePage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
-      return
-    }
-
-    if (file.size > 15 * 1024 * 1024) {
-      toast.error('Banner size must be less than 15MB')
-      return
-    }
-
-    uploadBanner.mutate(file, {
-      onSuccess: () => toast.success('Profile banner updated'),
-      onError: (uploadError: any) => toast.error(uploadError?.message || 'Failed to upload banner'),
-    })
+    beginCropFlow(file, 'manageBanner', 15 * 1024 * 1024, 'Banner size must be less than 15MB')
 
     if (bannerInputRef.current) bannerInputRef.current.value = ''
   }
@@ -367,15 +371,65 @@ export default function BusinessProfilePage() {
   const handleDeletePhoto = () => {
     deletePhoto.mutate(undefined, {
       onSuccess: () => toast.success('Profile photo deleted'),
-      onError: (deleteError: any) => toast.error(deleteError?.message || 'Failed to delete photo'),
+      onError: (deleteError: unknown) =>
+        toast.error(getErrorMessage(deleteError, 'Failed to delete photo')),
     })
   }
 
   const handleDeleteBanner = () => {
     deleteBanner.mutate(undefined, {
       onSuccess: () => toast.success('Profile banner deleted'),
-      onError: (deleteError: any) => toast.error(deleteError?.message || 'Failed to delete banner'),
+      onError: (deleteError: unknown) =>
+        toast.error(getErrorMessage(deleteError, 'Failed to delete banner')),
     })
+  }
+
+  const handleCropConfirm = async (processedFile: File, previewUrl: string) => {
+    if (!cropTarget) {
+      URL.revokeObjectURL(previewUrl)
+      return
+    }
+
+    if (cropTarget === 'createPhoto') {
+      setCreatePhotoPreviewUrl((prev) => {
+        if (prev.startsWith('blob:')) {
+          URL.revokeObjectURL(prev)
+        }
+        return previewUrl
+      })
+      setCreatePhotoFile(processedFile)
+      return
+    }
+
+    if (cropTarget === 'createBanner') {
+      setCreateBannerPreviewUrl((prev) => {
+        if (prev.startsWith('blob:')) {
+          URL.revokeObjectURL(prev)
+        }
+        return previewUrl
+      })
+      setCreateBannerFile(processedFile)
+      return
+    }
+
+    URL.revokeObjectURL(previewUrl)
+
+    if (cropTarget === 'managePhoto') {
+      await uploadPhoto.mutateAsync(processedFile)
+      toast.success('Profile photo updated')
+      return
+    }
+
+    await uploadBanner.mutateAsync(processedFile)
+    toast.success('Profile banner updated')
+  }
+
+  const handleCropOpenChange = (open: boolean) => {
+    setIsCropDialogOpen(open)
+    if (!open) {
+      setCropFile(null)
+      setCropTarget(null)
+    }
   }
 
   const addServiceCity = () => {
@@ -422,6 +476,11 @@ export default function BusinessProfilePage() {
       viewerThumbnailUrl: getMinioViewUrl(media.thumbnailUrl || media.cdnUrl || media.url || ''),
     }))
   }, [featuredPortfolio])
+
+  const cityNameById = useMemo(
+    () => new Map(cities.map((city) => [city.id, city.name])),
+    [cities],
+  )
 
   if (isLoading) {
     return (
@@ -554,7 +613,7 @@ export default function BusinessProfilePage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((cat) => (
+                    {categories.filter((cat) => cat.isActive).map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -567,8 +626,13 @@ export default function BusinessProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea rows={4} value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} placeholder="Describe your services..." />
+                <Label>Banner Image URL</Label>
+                <Input
+                  value={formData.bannerImageUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bannerImageUrl: e.target.value }))}
+                  placeholder="https://example.com/banner.webp"
+                />
+                <p className="text-xs text-muted-foreground">You can paste a URL or upload a banner using the upload button above.</p>
               </div>
 
               <Separator />
@@ -654,12 +718,12 @@ export default function BusinessProfilePage() {
   const bannerViewUrl = profile.bannerImageUrl
     ? getMinioViewUrl(profile.bannerImageUrl) || profile.bannerImageUrl
     : null
-  const cityNameById = new Map(cities.map((city) => [city.id, city.name]))
   const serviceCityNames = (profile.serviceAreas || []).map((serviceArea) => ({
     id: serviceArea.id,
     cityId: serviceArea.cityId,
-    name: cityNameById.get(serviceArea.cityId) || serviceArea.cityId,
+    name: serviceArea.city?.name || cityNameById.get(serviceArea.cityId) || serviceArea.cityId,
   }))
+  const showPlainDescription = !!profile.description && !containsHtml(profile.description)
 
   const tabs = [
     { id: 'portfolio' as const, label: 'Portfolio', icon: ImageIcon },
@@ -768,7 +832,7 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
 
-              {profile.description && (
+              {showPlainDescription && (
                 <p className="mt-5 whitespace-pre-wrap text-sm text-foreground/90">{profile.description}</p>
               )}
 
@@ -1107,7 +1171,7 @@ export default function BusinessProfilePage() {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((cat) => (
+                  {categories.filter((cat) => cat.isActive).map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -1120,8 +1184,13 @@ export default function BusinessProfilePage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea rows={4} value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} />
+              <Label>Banner Image URL</Label>
+              <Input
+                value={formData.bannerImageUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, bannerImageUrl: e.target.value }))}
+                placeholder="https://example.com/banner.webp"
+              />
+              <p className="text-xs text-muted-foreground">You can paste a URL or use Upload / Change Banner for direct image upload.</p>
             </div>
 
             <Separator />
@@ -1194,6 +1263,19 @@ export default function BusinessProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ImageCropperDialog
+        open={isCropDialogOpen}
+        file={cropFile}
+        title={cropTarget ? cropConfigByTarget[cropTarget].title : 'Crop Image'}
+        description={cropTarget ? cropConfigByTarget[cropTarget].description : undefined}
+        aspect={cropTarget ? cropConfigByTarget[cropTarget].aspect : 1}
+        outputWidth={cropTarget ? cropConfigByTarget[cropTarget].outputWidth : 800}
+        outputHeight={cropTarget ? cropConfigByTarget[cropTarget].outputHeight : 800}
+        cropShape={cropTarget ? cropConfigByTarget[cropTarget].cropShape : 'rect'}
+        onOpenChange={handleCropOpenChange}
+        onConfirm={handleCropConfirm}
+      />
     </main>
   )
 }
