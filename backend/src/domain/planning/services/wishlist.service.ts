@@ -47,32 +47,24 @@ export class WishlistService {
       throw new NotFoundException('Wishlist not found');
     }
 
-    // Enrich items with vendor profile details
-    if (wishlist.items && wishlist.items.length > 0) {
-      const vendorIds = wishlist.items.map((item) => item.vendorProfileId);
-      const vendors = await this.prisma.vendorProfile.findMany({
-        where: { id: { in: vendorIds } },
-        select: {
-          id: true,
-          businessName: true,
-          slug: true,
-          categoryId: true,
-          tagline: true,
-        },
-      });
-
-      const vendorMap = new Map(vendors.map((v) => [v.id, v]));
-
-      return {
-        ...wishlist,
-        items: wishlist.items.map((item) => ({
-          ...item,
-          vendor: vendorMap.get(item.vendorProfileId) || null,
-        })),
-      };
+    if (!wishlist.items.length) {
+      return { ...wishlist, items: [] };
     }
 
-    return wishlist;
+    const vendorIds = wishlist.items.map((item) => item.vendorProfileId);
+    const vendors = await this.prisma.vendorProfile.findMany({
+      where: { id: { in: vendorIds } },
+      select: { id: true, businessName: true, slug: true, tagline: true, categoryId: true },
+    });
+    const vendorMap = new Map(vendors.map((v) => [v.id, v]));
+
+    return {
+      ...wishlist,
+      items: wishlist.items.map((item) => ({
+        ...item,
+        vendor: vendorMap.get(item.vendorProfileId) ?? null,
+      })),
+    };
   }
 
   async findByUserId(userId: string): Promise<Wishlist[]> {

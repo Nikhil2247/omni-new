@@ -12,6 +12,8 @@ import {
 import { TimelineService } from '../../../domain/planning/services/timeline.service';
 import {
   CreateTimelineDto,
+  CreateTimelineItemDto,
+  UpdateTimelineDto,
   UpdateTimelineItemDto,
 } from '../../../domain/planning/dto/timeline.dto';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
@@ -42,7 +44,7 @@ export class TimelineController {
   @Put(':id')
   update(
     @Param('id') id: string,
-    @Body() dto: { name?: string; eventDate?: string },
+    @Body() dto: UpdateTimelineDto,
   ) {
     return this.timelineService.update(id, dto);
   }
@@ -58,12 +60,7 @@ export class TimelineController {
   addItem(
     @Param('id') timelineId: string,
     @Body()
-    item: {
-      title: string;
-      description?: string;
-      scheduledTime: string;
-      duration?: number;
-    },
+    item: CreateTimelineItemDto,
   ) {
     return this.timelineService.addItem(timelineId, item);
   }

@@ -17,8 +17,9 @@ export enum SearchType {
 }
 
 export class GlobalSearchDto {
+  @IsOptional()
   @IsString()
-  q: string;
+  q?: string;
 
   @IsOptional()
   @IsEnum(SearchType)
@@ -83,8 +84,9 @@ export class GlobalSearchDto {
 }
 
 export class QuickSearchDto {
+  @IsOptional()
   @IsString()
-  q: string;
+  q?: string;
 
   @IsOptional()
   @Type(() => Number)
@@ -95,8 +97,9 @@ export class QuickSearchDto {
 }
 
 export class SearchSuggestionsDto {
+  @IsOptional()
   @IsString()
-  q: string;
+  q?: string;
 
   @IsOptional()
   @Type(() => Number)

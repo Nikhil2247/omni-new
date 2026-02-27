@@ -59,6 +59,18 @@ export class CreateTimelineDto {
   items?: CreateTimelineItemDto[];
 }
 
+export class UpdateTimelineDto {
+  @ApiPropertyOptional({ description: 'Timeline name' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'Event date (ISO 8601)' })
+  @IsOptional()
+  @IsDateString()
+  eventDate?: string;
+}
+
 export class UpdateTimelineItemDto {
   @ApiPropertyOptional({ description: 'Title' })
   @IsOptional()

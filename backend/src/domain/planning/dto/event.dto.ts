@@ -135,11 +135,11 @@ export class EventResponseDto {
   updatedAt: Date;
 
   // Relations
-  eventType?: any;
-  address?: any;
-  checklist?: any;
-  budget?: any;
-  guestList?: any;
-  timeline?: any;
-  vendors?: any[];
+  eventType?: unknown;
+  address?: unknown;
+  checklist?: unknown;
+  budget?: unknown;
+  guestList?: unknown;
+  timeline?: unknown;
+  vendors?: unknown[];
 }

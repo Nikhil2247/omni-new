@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import {
   UploadService,
   FileCategory,
@@ -12,13 +13,33 @@ interface PresignedUploadRequest {
   expiresIn?: number;
 }
 
+interface PresignedUploadResponse {
+  uploadUrl: string;
+  filePath: string;
+  fileUrl: string;
+}
+
 @Public()
 @Controller('upload')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post('presigned')
-  async getPresignedUpload(@Body() body: PresignedUploadRequest) {
+  @ApiOperation({ summary: 'Get a presigned URL for direct browser upload' })
+  @ApiResponse({
+    status: 200,
+    description: 'Presigned upload URL with file paths',
+    schema: {
+      example: {
+        uploadUrl: 'https://minio.example.com/bucket/path?signature=...',
+        filePath: 'media/2026/02/1234567890-uuid.png',
+        fileUrl: 'https://cdn.example.com/media/2026/02/1234567890-uuid.png',
+      },
+    },
+  })
+  async getPresignedUpload(
+    @Body() body: PresignedUploadRequest,
+  ): Promise<PresignedUploadResponse> {
     const filename = body?.filename?.trim();
     const mimeType = body?.mimeType?.trim();
     const category = (body?.category || FileCategory.MEDIA) as FileCategory;

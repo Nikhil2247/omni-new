@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { DisputeService } from '../../../domain/operations/services/dispute.service';
+import { CreateDisputeDto } from '../../../domain/operations/dto/dispute.dto';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../core/auth/guards/roles.guard';
 import { OpsAccess } from '../../../core/auth/decorators/roles.decorator';
@@ -20,7 +21,7 @@ export class DisputesController {
   constructor(private readonly disputeService: DisputeService) {}
 
   @Post()
-  create(@Body() dto: any) {
+  create(@Body() dto: CreateDisputeDto) {
     return this.disputeService.create(dto);
   }
 

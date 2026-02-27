@@ -12,7 +12,11 @@ export interface NotificationListParams {
 
 export const notificationService = {
   list: async (params: NotificationListParams = {}): Promise<NotificationListResponse> => {
-    const { data } = await apiClient.get(API_ENDPOINTS.USER.NOTIFICATIONS.LIST, { params })
+    const queryParams = {
+      ...params,
+      ...(params.types && { types: params.types.join(',') }),
+    }
+    const { data } = await apiClient.get(API_ENDPOINTS.USER.NOTIFICATIONS.LIST, { params: queryParams })
     return data?.data || data
   },
   unreadCount: async (): Promise<{ count: number }> => {

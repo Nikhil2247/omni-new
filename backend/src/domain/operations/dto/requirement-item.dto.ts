@@ -15,21 +15,28 @@ import {
 import { RequirementStatus } from './requirement-sheet.dto';
 
 export class CreateRequirementItemDto {
-  @ApiProperty({ description: 'Category' })
+  @ApiProperty({ description: 'Category', example: 'Photography' })
   @IsString()
   category: string;
 
-  @ApiProperty({ description: 'Description' })
+  @ApiProperty({
+    description: 'Description',
+    example: '1 Professional Photographer with editing',
+  })
   @IsString()
   description: string;
 
-  @ApiPropertyOptional({ description: 'Quantity', default: 1 })
+  @ApiPropertyOptional({ description: 'Quantity', example: 1, default: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
   quantity?: number;
 
-  @ApiPropertyOptional({ description: 'Estimated budget', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Estimated budget',
+    example: 5000.0,
+    nullable: true,
+  })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)

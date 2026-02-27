@@ -113,7 +113,7 @@ export class EventService {
         venueName: dto.venue,
         guestCount: dto.expectedGuests,
         address: dto.addressId ? { connect: { id: dto.addressId } } : undefined,
-        status: dto.status as any,
+        status: dto.status,
       },
       {
         eventType: true,
@@ -156,7 +156,7 @@ export class EventService {
 
     if (partnerIds.length === 0) return [userId];
 
-    return Array.from(new Set(partnerIds));
+    return Array.from(new Set([userId, ...partnerIds]));
   }
 
   private async enrichEventsWithPlanningStats(events: Event[]) {

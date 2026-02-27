@@ -19,7 +19,7 @@ export class SystemConfigController {
       maintenanceMode: config.maintenanceMode,
       registrationEnabled: config.registrationEnabled,
       allowVendorOnboarding: config.allowVendorOnboarding,
-      supportEmail: config.supportEmail ?? undefined,
+      supportEmail: config.supportEmail ?? null,
       environment: process.env.NODE_ENV ?? 'development',
     };
   }
@@ -34,7 +34,7 @@ export class SystemConfigController {
       maintenanceMode: config.maintenanceMode,
       registrationEnabled: config.registrationEnabled,
       allowVendorOnboarding: config.allowVendorOnboarding,
-      supportEmail: config.supportEmail ?? undefined,
+      supportEmail: config.supportEmail ?? null,
       environment: process.env.NODE_ENV ?? 'development',
     };
   }

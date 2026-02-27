@@ -92,8 +92,18 @@ export function CreateEventForm() {
       toast.success('Event created successfully.')
       form.reset()
       router.push(`/events/${response.id}`)
-    } catch (error) {
-      toast.error('Failed to create event. Please try again.')
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string; error?: string } } }
+      const serverMessage = axiosError?.response?.data?.message
+      const serverError = axiosError?.response?.data?.error
+
+      if (serverError === 'EmailNotVerified') {
+        toast.error('Please verify your email address before creating an event.')
+      } else if (serverMessage) {
+        toast.error(serverMessage)
+      } else {
+        toast.error('Failed to create event. Please try again.')
+      }
     }
   }
 

@@ -14,13 +14,11 @@ export interface VibeQuizSelection {
 }
 
 export interface VibeQuizResult {
+  id: string
   userId: string
-  selections: VibeQuizSelection[]
-  preferences: {
-    styles: string[]
-    colors: string[]
-    categories: string[]
-  }
+  topStyles: string[]
+  topColors: string[]
+  topCategories: string[]
   completedAt: string
 }
 
@@ -35,7 +33,7 @@ export interface WeddingPartner {
   email?: string
   phone?: string
   isOwner: boolean
-  inviteStatus: 'PENDING' | 'ACCEPTED' | 'DECLINED'
+  inviteStatus: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED'
   invitedAt?: string
   acceptedAt?: string
 }

@@ -250,10 +250,21 @@ export class PortfolioService {
         where,
         include: {
           portfolio: {
-            include: {
+            select: {
+              id: true,
               vendorProfile: {
-                include: {
-                  category: true,
+                select: {
+                  id: true,
+                  slug: true,
+                  businessName: true,
+                  categoryId: true,
+                  category: {
+                    select: {
+                      id: true,
+                      name: true,
+                      slug: true,
+                    },
+                  },
                 },
               },
             },

@@ -274,6 +274,30 @@ export interface BusinessLead {
   }
 }
 
+// Accept Lead Response - Active Event created from lead conversion
+export interface AcceptLeadResponse {
+  id: string
+  origin: string
+  convertedFromLeadId?: string | null
+  referenceImageId?: string | null
+  clientName: string
+  clientPhone?: string | null
+  clientEmail?: string | null
+  eventDate?: string | null
+  eventEndDate?: string | null
+  eventType: string
+  venueName?: string | null
+  venueAddressId?: string | null
+  totalBudget?: number | null
+  totalSpend: number
+  opsAdminId?: string | null
+  opsManagerId?: string | null
+  status: string
+  createdAt: string
+  updatedAt: string
+  completedAt?: string | null
+}
+
 // Business Review
 export interface BusinessReview {
   id: string
@@ -455,6 +479,7 @@ export type LeadStatus =
   | 'NEGOTIATING'
   | 'WON'
   | 'LOST'
+  | 'ARCHIVED'
 
 // Task Status Options
 export type TaskStatus =

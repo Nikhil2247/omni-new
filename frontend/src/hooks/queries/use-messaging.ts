@@ -187,13 +187,22 @@ export function useSendMessage(scope: MessagingScope, conversationId: string) {
       queryClient.setQueryData<PaginatedResponse<Message>>(key, (existing) => {
         const normalized = normalizePaginated(existing)
         if (!normalized) return existing
-        const next = normalized.data.map((item) =>
+        // Replace optimistic temp message with real message, then deduplicate.
+        // Race condition: WebSocket may have already appended the real message before
+        // onSuccess fires, causing TEMP→realMsg map to produce [M1, M2, realMsg, realMsg].
+        const mapped = normalized.data.map((item) =>
           item.id === context?.tempId ? message : item
         )
-        if (next.some((item) => item.id === message.id)) {
-          return { ...normalized, data: next }
+        const seen = new Set<string>()
+        const deduped = mapped.filter((item) => {
+          if (seen.has(item.id)) return false
+          seen.add(item.id)
+          return true
+        })
+        if (deduped.some((item) => item.id === message.id)) {
+          return { ...normalized, data: deduped }
         }
-        return { ...normalized, data: [...next, message] }
+        return { ...normalized, data: [...deduped, message] }
       })
       queryClient.setQueriesData<PaginatedResponse<Conversation>>(
         { queryKey: messagingKeys.conversationsRoot(scope) },

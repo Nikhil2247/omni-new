@@ -50,10 +50,13 @@ export class ConversationService {
       );
     }
 
-    const [userRole, participantRole] = await Promise.all([
-      this.resolveParticipantRole(userId),
-      this.resolveParticipantRole(participantUserId),
-    ]);
+    const vendorProfiles = await this.prisma.vendorProfile.findMany({
+      where: { userId: { in: [userId, participantUserId] } },
+      select: { userId: true },
+    });
+    const vendorUserIds = new Set(vendorProfiles.map(v => v.userId));
+    const userRole = vendorUserIds.has(userId) ? 'VENDOR' : 'PLANNER';
+    const participantRole = vendorUserIds.has(participantUserId) ? 'VENDOR' : 'PLANNER';
 
     const existing =
       await this.conversationRepository.findDirectConversationByUsers(
@@ -257,14 +260,4 @@ export class ConversationService {
     });
   }
 
-  private async resolveParticipantRole(
-    userId: string,
-  ): Promise<ParticipantRole> {
-    const vendorProfile = await this.prisma.vendorProfile.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
-
-    return vendorProfile ? 'VENDOR' : 'PLANNER';
-  }
 }

@@ -181,7 +181,7 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialConversationId = searchParams.get('conversationId')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -230,9 +230,15 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
   )
 
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations
+    const seen = new Set<string>()
+    const deduped = conversations.filter((conv) => {
+      if (seen.has(conv.id)) return false
+      seen.add(conv.id)
+      return true
+    })
+    if (!searchQuery.trim()) return deduped
     const query = searchQuery.toLowerCase()
-    return conversations.filter((conv) => {
+    return deduped.filter((conv) => {
       const title = getConversationTitle(conv, user?.id).toLowerCase()
       const lastMessage = conv.messages?.[0]?.content?.toLowerCase() || ''
       return title.includes(query) || lastMessage.includes(query)
@@ -267,13 +273,20 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    }
   }, [])
 
   const scrollToMessage = useCallback((messageId: string) => {
     const element = document.getElementById(`message-${messageId}`)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const container = messagesContainerRef.current
+    if (element && container) {
+      const elementTop = element.offsetTop
+      const elementHeight = element.offsetHeight
+      const containerHeight = container.clientHeight
+      container.scrollTop = elementTop - containerHeight / 2 + elementHeight / 2
       element.classList.add('bg-primary/20')
       setTimeout(() => element.classList.remove('bg-primary/20'), 2000)
     }
@@ -738,6 +751,7 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
 
             {/* Messages */}
             <div
+              ref={messagesContainerRef}
               className="flex-1 overflow-y-auto"
               style={{
                 backgroundImage: `linear-gradient(to bottom, hsl(var(--muted)/0.3), hsl(var(--muted)/0.3))`,
@@ -806,8 +820,6 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
 
                     {/* Typing Indicator */}
                     {typingLabel && <TypingIndicator />}
-
-                    <div ref={messagesEndRef} />
                   </div>
                 )}
               </div>

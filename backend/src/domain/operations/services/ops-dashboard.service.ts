@@ -84,22 +84,36 @@ export class OpsDashboardService {
   }
 
   private async getKycMetrics() {
-    const [pending, underReview, approved, rejected] = await Promise.all([
-      this.prisma.vendorKYC.count({ where: { status: 'PENDING' } }),
-      this.prisma.vendorKYC.count({ where: { status: 'UNDER_REVIEW' } }),
-      this.prisma.vendorKYC.count({ where: { status: 'APPROVED' } }),
-      this.prisma.vendorKYC.count({ where: { status: 'REJECTED' } }),
-    ]);
+    const kycCounts = await this.prisma.vendorKYC.groupBy({
+      by: ['status'],
+      _count: { _all: true },
+    });
+
+    const countByStatus = Object.fromEntries(
+      kycCounts.map(m => [m.status, m._count._all])
+    );
+
+    const pending = countByStatus['PENDING'] ?? 0;
+    const underReview = countByStatus['UNDER_REVIEW'] ?? 0;
+    const approved = countByStatus['APPROVED'] ?? 0;
+    const rejected = countByStatus['REJECTED'] ?? 0;
 
     return { pending, underReview, approved, rejected };
   }
 
   private async getDisputeMetrics() {
-    const [open, investigating, resolved] = await Promise.all([
-      this.prisma.dispute.count({ where: { status: 'OPEN' } }),
-      this.prisma.dispute.count({ where: { status: 'INVESTIGATING' } }),
-      this.prisma.dispute.count({ where: { status: 'RESOLVED' } }),
-    ]);
+    const disputeCounts = await this.prisma.dispute.groupBy({
+      by: ['status'],
+      _count: { _all: true },
+    });
+
+    const countByStatus = Object.fromEntries(
+      disputeCounts.map(m => [m.status, m._count._all])
+    );
+
+    const open = countByStatus['OPEN'] ?? 0;
+    const investigating = countByStatus['INVESTIGATING'] ?? 0;
+    const resolved = countByStatus['RESOLVED'] ?? 0;
 
     return { open, investigating, resolved };
   }
@@ -121,10 +135,18 @@ export class OpsDashboardService {
   }
 
   private async getTaskMetrics() {
-    const totalAssigned = await this.prisma.operationalTask.count();
-    const completed = await this.prisma.operationalTask.count({
-      where: { status: 'COMPLETED' },
+    const taskCounts = await this.prisma.operationalTask.groupBy({
+      by: ['status'],
+      _count: { _all: true },
     });
+
+    const countByStatus = Object.fromEntries(
+      taskCounts.map(m => [m.status, m._count._all])
+    );
+
+    const totalAssigned = taskCounts.reduce((sum, item) => sum + item._count._all, 0);
+    const completed = countByStatus['COMPLETED'] ?? 0;
+
     const overdue = await this.prisma.operationalTask.count({
       where: {
         dueDate: { lt: new Date() },

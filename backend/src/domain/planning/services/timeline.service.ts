@@ -4,10 +4,20 @@
 
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Timeline } from '@prisma/client';
+import { Prisma, Timeline } from '@prisma/client';
 import { TimelineRepository } from '../repositories/timeline.repository';
 import { CreateTimelineDto } from '../dto/create-timeline.dto';
 import { randomUUID } from 'crypto';
+
+export interface TimelineItem {
+  id: string;
+  title: string;
+  description?: string;
+  scheduledTime: string;
+  duration?: number;
+  isCompleted: boolean;
+  completedAt?: Date;
+}
 
 @Injectable()
 export class TimelineService {
@@ -61,7 +71,7 @@ export class TimelineService {
     dto: { name?: string; eventDate?: string },
   ): Promise<Timeline> {
     await this.findById(id);
-    const updateData: any = {};
+    const updateData: Record<string, string | Date> = {};
     if (dto.name) updateData.name = dto.name;
     if (dto.eventDate) updateData.date = new Date(dto.eventDate);
 
@@ -99,7 +109,7 @@ export class TimelineService {
     items.push(newItem);
 
     await this.timelineRepository.update(timelineId, {
-      items,
+      items: items as unknown as Prisma.InputJsonValue,
     });
 
     return newItem;
@@ -117,14 +127,18 @@ export class TimelineService {
     },
   ) {
     const timeline = await this.findById(timelineId);
-    const items = Array.isArray(timeline.items) ? [...timeline.items] : [];
-    const itemIndex = items.findIndex((item: any) => item.id === itemId);
+    const items = Array.isArray(timeline.items)
+      ? ([...timeline.items] as unknown as TimelineItem[])
+      : [];
+    const itemIndex = items.findIndex(
+      (item: TimelineItem) => item.id === itemId,
+    );
 
     if (itemIndex === -1) {
       throw new NotFoundException('Timeline item not found');
     }
 
-    const currentItem = items[itemIndex] as any;
+    const currentItem = items[itemIndex];
     items[itemIndex] = {
       ...currentItem,
       ...updates,
@@ -134,29 +148,33 @@ export class TimelineService {
           : currentItem.completedAt,
     };
 
-    await this.timelineRepository.update(timelineId, { items });
+    await this.timelineRepository.update(timelineId, { items: items as unknown as Prisma.InputJsonValue });
     return items[itemIndex];
   }
 
   async removeItem(timelineId: string, itemId: string) {
     const timeline = await this.findById(timelineId);
-    const items = Array.isArray(timeline.items) ? [...timeline.items] : [];
-    const filteredItems = items.filter((item: any) => item.id !== itemId);
+    const items = Array.isArray(timeline.items)
+      ? ([...timeline.items] as unknown as TimelineItem[])
+      : [];
+    const filteredItems = items.filter((item: TimelineItem) => item.id !== itemId);
 
     if (filteredItems.length === items.length) {
       throw new NotFoundException('Timeline item not found');
     }
 
-    await this.timelineRepository.update(timelineId, { items: filteredItems });
+    await this.timelineRepository.update(timelineId, { items: filteredItems as unknown as Prisma.InputJsonValue });
     return { success: true };
   }
 
   async getUpcomingItems(timelineId: string) {
     const timeline = await this.findById(timelineId);
     const now = new Date();
-    const items = Array.isArray(timeline.items) ? timeline.items : [];
+    const items = Array.isArray(timeline.items)
+      ? (timeline.items as unknown as TimelineItem[])
+      : [];
 
-    return items.filter((item: any) => {
+    return items.filter((item: TimelineItem) => {
       if (!item?.scheduledTime) return false;
       return new Date(item.scheduledTime) >= now;
     });

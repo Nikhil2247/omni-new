@@ -610,12 +610,14 @@ export class VendorMetricsService {
   ): Promise<Map<string, VendorPerformanceSummary>> {
     const comparisons = new Map<string, VendorPerformanceSummary>();
 
-    for (const vendorId of vendorIds) {
-      const summary = await this.getVendorSummary(vendorId, days);
+    const summaries = await Promise.all(
+      vendorIds.map(id => this.getVendorSummary(id, days))
+    );
+    summaries.forEach((summary, index) => {
       if (summary) {
-        comparisons.set(vendorId, summary);
+        comparisons.set(vendorIds[index], summary);
       }
-    }
+    });
 
     return comparisons;
   }

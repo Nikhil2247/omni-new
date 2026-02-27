@@ -15,6 +15,7 @@ import type {
   CreateServiceRequest,
   UpdateServiceRequest,
   BusinessLead,
+  AcceptLeadResponse,
   BusinessReview,
   BusinessAnalyticsSummary,
   BusinessMetrics,
@@ -22,6 +23,7 @@ import type {
   BusinessTask,
   BlockedDate,
   CreateBlockedDateRequest,
+  LeadStatus,
 } from '../types/business.types'
 import type { Timeline } from '../types/timeline.types'
 import type { UploadedFile } from './upload.service'
@@ -346,7 +348,7 @@ export const businessService = {
     return data
   },
 
-  updateLeadStatus: async (id: string, status: string): Promise<ApiResponse<BusinessLead>> => {
+  updateLeadStatus: async (id: string, status: LeadStatus): Promise<ApiResponse<BusinessLead>> => {
     const { data } = await apiClient.put(API_ENDPOINTS.BUSINESS.LEAD_STATUS(id), { status })
     return data
   },
@@ -354,7 +356,7 @@ export const businessService = {
   acceptLead: async (
     id: string,
     payload?: { venueName?: string; venueAddressId?: string; totalBudget?: number },
-  ) => {
+  ): Promise<ApiResponse<AcceptLeadResponse>> => {
     const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.LEAD_ACCEPT(id), payload || {})
     return data
   },

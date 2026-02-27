@@ -352,6 +352,7 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, type])
+  @@index([userId, createdAt])
   @@index([createdAt])
   @@map("notifications")
   @@schema("public")
@@ -1237,6 +1238,7 @@ model Lead {
   statusHistory   LeadStatusHistory[]
 
   // Primary indexes
+  @@index([vendorProfileId])
   @@index([vendorProfileId, status])
   @@index([plannerId])
   @@index([createdAt])
@@ -1640,6 +1642,7 @@ model Checklist {
   event     Event     @relation(fields: [eventId], references: [id])
   items     ChecklistItem[]
 
+  @@index([eventId])
   @@map("checklists")
   @@schema("planning")
 }
@@ -1751,6 +1754,7 @@ model Timeline {
 
   event     Event    @relation(fields: [eventId], references: [id])
 
+  @@index([eventId])
   @@map("timelines")
   @@schema("planning")
 }
@@ -1784,6 +1788,7 @@ model WishlistItem {
   wishlist        Wishlist  @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
 
   @@unique([wishlistId, vendorProfileId])
+  @@index([vendorProfileId])
   @@map("wishlist_items")
   @@schema("planning")
 }

@@ -3,16 +3,6 @@ import { apiClient } from '../client'
 import { API_ENDPOINTS } from '../endpoints'
 import type { CreateTimelineInput, Timeline, TimelineItem } from '../types/timeline.types'
 
-function parseTimelineItems(items: string | TimelineItem[]): TimelineItem[] {
-  try {
-    if (typeof items === 'string') {
-      return JSON.parse(items)
-    }
-    return Array.isArray(items) ? items : []
-  } catch {
-    return []
-  }
-}
 
 export const timelineService = {
   async getByEvent(eventId: string) {
@@ -26,15 +16,7 @@ export const timelineService = {
       const data = response.data?.data || response.data
       
       if (!data) return null
-      
-      // Parse items if it's a JSON string
-      if (typeof data.items === 'string') {
-        return {
-          ...data,
-          items: parseTimelineItems(data.items)
-        }
-      }
-      
+
       return data
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -54,15 +36,7 @@ export const timelineService = {
     const data = response.data?.data || response.data
     
     if (!data) return null
-    
-    // Parse items if it's a JSON string
-    if (typeof data.items === 'string') {
-      return {
-        ...data,
-        items: parseTimelineItems(data.items)
-      }
-    }
-    
+
     return data
   },
 
@@ -77,14 +51,7 @@ export const timelineService = {
     )
     
     const data = response.data?.data || response.data
-    
-    if (typeof data.items === 'string') {
-      return {
-        ...data,
-        items: parseTimelineItems(data.items)
-      }
-    }
-    
+
     return data
   },
 

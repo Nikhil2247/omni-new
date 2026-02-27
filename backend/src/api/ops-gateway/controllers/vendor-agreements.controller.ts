@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { VendorAgreementService } from '../../../domain/operations/services/vendor-agreement.service';
 import {
@@ -44,10 +45,7 @@ export class VendorAgreementsController {
   }
 
   @Get()
-  findByActiveEvent(@Query('activeEventId') activeEventId: string) {
-    if (!activeEventId) {
-      return [];
-    }
+  findByActiveEvent(@Query('activeEventId', new ParseUUIDPipe()) activeEventId: string) {
     return this.vendorAgreementService.findByActiveEvent(activeEventId);
   }
 

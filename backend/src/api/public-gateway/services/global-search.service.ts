@@ -91,7 +91,7 @@ export class GlobalSearchService {
   async quickSearch(dto: QuickSearchDto): Promise<SearchResultItem[]> {
     try {
       const limit = dto.limit ?? 5;
-      const vendors = await this.vendorIndexer.searchVendors(dto.q, {
+      const vendors = await this.vendorIndexer.searchVendors(dto.q ?? '', {
         hitsPerPage: limit,
       });
 
@@ -129,7 +129,7 @@ export class GlobalSearchService {
     try {
       const limit = dto.limit ?? 8;
       const suggestions = await this.vendorIndexer.getVendorSuggestions(
-        dto.q,
+        dto.q ?? '',
         limit,
       );
 
@@ -163,7 +163,7 @@ export class GlobalSearchService {
             | 'minPrice'
             | undefined);
 
-    const result = await this.vendorIndexer.searchVendors(dto.q, {
+    const result = await this.vendorIndexer.searchVendors(dto.q ?? '', {
       page: dto.page,
       hitsPerPage: dto.limit,
       categoryId: dto.categoryId,
@@ -192,7 +192,7 @@ export class GlobalSearchService {
         _matchScore: hit._matchScore,
       })),
       meta: {
-        query: dto.q,
+        query: dto.q ?? '',
         totalResults: result.totalHits,
         page: dto.page || 1,
         limit: dto.limit || 20,
@@ -217,7 +217,7 @@ export class GlobalSearchService {
     return {
       results: [],
       meta: {
-        query: dto.q,
+        query: dto.q ?? '',
         totalResults: 0,
         page: dto.page || 1,
         limit: dto.limit || 20,
@@ -241,7 +241,7 @@ export class GlobalSearchService {
     return {
       results: [],
       meta: {
-        query: dto.q,
+        query: dto.q ?? '',
         totalResults: 0,
         page: dto.page || 1,
         limit: dto.limit || 20,

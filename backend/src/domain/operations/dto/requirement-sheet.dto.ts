@@ -23,43 +23,11 @@ export enum RequirementStatus {
   FULFILLED = 'FULFILLED',
 }
 
+import { CreateRequirementItemDto } from './requirement-item.dto';
+
 // ============================================================================
 // CREATE DTOs
 // ============================================================================
-
-export class CreateRequirementItemDto {
-  @ApiProperty({ description: 'Category', example: 'Photography' })
-  @IsString()
-  category: string;
-
-  @ApiProperty({
-    description: 'Description',
-    example: '1 Professional Photographer with editing',
-  })
-  @IsString()
-  description: string;
-
-  @ApiPropertyOptional({ description: 'Quantity', example: 1, default: 1 })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  quantity?: number;
-
-  @ApiPropertyOptional({
-    description: 'Estimated budget',
-    example: 5000.0,
-    nullable: true,
-  })
-  @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  estimatedBudget?: number;
-
-  @ApiPropertyOptional({ description: 'Notes', nullable: true })
-  @IsOptional()
-  @IsString()
-  notes?: string;
-}
 
 export class CreateRequirementSheetDto {
   @ApiProperty({ description: 'Active event ID' })

@@ -15,6 +15,8 @@ import {
   CreateGuestlistDto,
   CreateGuestDto,
   UpdateGuestDto,
+  UpdateGuestlistDto,
+  UpdateRSVPDto,
 } from '../dto/guestlist.dto';
 
 @Injectable()
@@ -73,14 +75,15 @@ export class GuestlistService {
     this.eventEmitter.emit('guestlist.deleted', { guestlistId: id });
   }
 
-  async update(id: string, dto: any): Promise<Guestlist> {
-    await this.findById(id);
-    const updated = await this.guestlistRepository.update(id, dto);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async update(id: string, _dto: UpdateGuestlistDto): Promise<Guestlist> {
+    // Guestlist schema has no user-updatable fields; return existing record
+    const existing = await this.findById(id);
     this.eventEmitter.emit('guestlist.updated', { guestlistId: id });
-    return updated;
+    return existing;
   }
 
-  async updateRSVP(guestId: string, dto: any): Promise<Guest> {
+  async updateRSVP(guestId: string, dto: UpdateRSVPDto): Promise<Guest> {
     const guest = await this.guestlistRepository.findGuestById(guestId);
     if (!guest) {
       throw new NotFoundException('Guest not found');
@@ -126,17 +129,25 @@ export class GuestlistService {
       throw new NotFoundException('Guest not found');
     }
 
-    const updated = await this.guestlistRepository.updateGuest(guestId, {
+    const updateData: Record<string, unknown> = {
       firstName: dto.firstName,
       lastName: dto.lastName,
       email: dto.email,
       phone: dto.phone,
-      rsvpStatus: dto.rsvpStatus as any,
       plusOne: dto.plusOne,
       tableNumber: dto.tableNumber,
       dietaryReq: dto.dietaryReq,
       notes: dto.notes,
-    });
+    };
+
+    if (dto.rsvpStatus !== undefined) {
+      updateData.rsvpStatus = dto.rsvpStatus;
+    }
+
+    const updated = await this.guestlistRepository.updateGuest(
+      guestId,
+      updateData,
+    );
 
     if (dto.rsvpStatus && dto.rsvpStatus !== guest.rsvpStatus) {
       this.eventEmitter.emit('guest.rsvp-updated', {
