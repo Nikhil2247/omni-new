@@ -12,7 +12,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
-import * as csurf from 'csurf';
+// csurf removed — JWT Bearer-token API does not require CSRF protection
 import { AppModule } from './app.module';
 import { createRedisIoAdapter } from './infrastructure/websockets/redis-io.adapter';
 import { IdempotencyInterceptor } from './infrastructure/idempotency/idempotency.interceptor';
@@ -169,26 +169,13 @@ async function bootstrap() {
   // CSRF PROTECTION
   // ===========================================================================
 
-  // Cookie parser (required for CSRF)
+  // Cookie parser (used for cookie-based session reading)
   app.use(cookieParser());
 
-  // CSRF protection for state-changing operations
-  // Disabled in development for easier API testing
-  const enableCsrf = configService.get('NODE_ENV') === 'production';
-  if (enableCsrf) {
-    app.use(
-      csurf({
-        cookie: {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'strict',
-        },
-      }),
-    );
-    logger.log('CSRF protection enabled');
-  } else {
-    logger.warn('CSRF protection disabled (development mode)');
-  }
+  // CSRF protection is NOT applicable for a stateless JWT API.
+  // CSRF attacks exploit cookie-based session auth; this API uses
+  // Authorization: Bearer headers which cannot be sent cross-origin.
+  logger.log('CSRF protection skipped — stateless JWT API');
 
   // ===========================================================================
   // VALIDATION CONFIGURATION (ADR-011)
