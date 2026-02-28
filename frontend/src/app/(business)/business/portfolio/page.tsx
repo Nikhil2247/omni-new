@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import NextImage from 'next/image'
+import { trackDashboard } from '@/lib/analytics/umami'
 import {
   useBusinessProfile,
   useBusinessPortfolio,
@@ -79,6 +80,10 @@ import { resizeImageFile } from '@/lib/utils/image-processing'
 type ViewMode = 'grid' | 'list'
 
 export default function BusinessPortfolioPage() {
+  useEffect(() => {
+    trackDashboard.sectionView('portfolio', 'vendor')
+  }, [])
+
   const { data: profile, isLoading: profileLoading } = useBusinessProfile()
   const { data: portfolio, isLoading: portfolioLoading } = useBusinessPortfolio(profile?.id || '')
   const createPortfolio = useCreatePortfolioItem()

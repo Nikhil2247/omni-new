@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, useInView } from 'framer-motion'
 import Lenis from 'lenis'
 import { usePublicMediaFeed } from '@/hooks/queries/use-public-vendors'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { MasonryGrid } from '@/components/features/vendors/masonry-grid'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -123,14 +124,14 @@ function InspirationGrid({
   if (mediaLoading && page === 1) {
     const heights = [280, 320, 240, 360, 300, 260, 340, 280, 320, 380, 260, 300]
     return (
-      <div className="columns-1 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 lg:gap-5">
+      <div className="columns-1 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-1.5 sm:gap-2">
         {heights.map((height, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: i * 0.04 }}
-            className="break-inside-avoid mb-3 sm:mb-4 lg:mb-5"
+            className="break-inside-avoid mb-1.5 sm:mb-2"
           >
             <Skeleton
               className="w-full rounded-xl sm:rounded-2xl"
@@ -185,6 +186,11 @@ function DiscoverPageContent() {
   useSmoothScroll()
 
   useEffect(() => {
+    trackDashboard.sectionView('discover', 'user')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     setSearchQuery(queryParam)
   }, [queryParam])
 
@@ -199,7 +205,7 @@ function DiscoverPageContent() {
     <main className="min-h-screen bg-background">
       {/* Compact Header */}
       <section className="border-b bg-muted/20 py-3 lg:py-4">
-        <div className="mx-auto max-w-8xl px-6">
+        <div className="mx-auto max-w-8xl px-2">
           {/* Search Bar */}
           <FadeIn delay={0.05} className="max-w-6xl">
             <div className="relative flex items-center bg-background border border-border rounded-full shadow-sm p-1.5 transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30">
@@ -221,7 +227,7 @@ function DiscoverPageContent() {
       </section>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-8xl px-6 py-8 lg:py-10">
+      <div className="mx-auto max-w-8xl px-2 py-4 lg:py-10">
         <InspirationGrid
           key={queryParam}
           query={queryParam}

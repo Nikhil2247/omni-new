@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-export function WishlistDetail({ wishlistId }: { wishlistId: string }) {
+export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishlistId: string; basePath?: string }) {
   const { data: wishlist, isLoading, error } = useWishlist(wishlistId)
   const deleteItem = useDeleteWishlistItem()
 
@@ -53,7 +53,7 @@ export function WishlistDetail({ wishlistId }: { wishlistId: string }) {
   if (error || !wishlist) {
     return (
       <div className="space-y-6">
-        <Link href="/wishlists" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link href={basePath} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Back to wishlists
         </Link>
@@ -75,7 +75,7 @@ export function WishlistDetail({ wishlistId }: { wishlistId: string }) {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <Link href="/wishlists" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2">
+          <Link href={basePath} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2">
             <ArrowLeft className="h-4 w-4" />
             Back to wishlists
           </Link>

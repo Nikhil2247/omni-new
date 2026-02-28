@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { Role, ROLE_LABELS } from '@/config/roles';
+import { trackDashboard } from '@/lib/analytics/umami';
 import {
   Users,
   DollarSign,
@@ -21,6 +23,10 @@ import {
 export default function SalesDashboardPage() {
   const { user } = useAuthStore();
   const roleLabel = user?.role ? ROLE_LABELS[user.role as Role] : '';
+
+  useEffect(() => {
+    trackDashboard.view('sales')
+  }, [])
 
   return (
     <div className="space-y-6">

@@ -1,13 +1,19 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useVendorsByCategory } from '@/hooks/queries/use-public-vendors'
 import { VendorCard } from '@/components/features/vendors/vendor-card'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 export default function VendorsByCategoryPage() {
   const params = useParams()
   const category = params.category as string
   const { data, isLoading, error } = useVendorsByCategory(category, 24)
+
+  useEffect(() => {
+    trackDashboard.sectionView(`vendors-category-${category}`, 'user')
+  }, [category])
 
   return (
     <main className="mx-auto max-w-6xl space-y-6 p-6">

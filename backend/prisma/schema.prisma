@@ -87,6 +87,7 @@ model User {
   messageReactions MessageReaction[]
   messageReceipts MessageReceipt[]
   messageDeletions MessageDeletion[]
+  blogPosts       BlogPost[]
 
   @@index([email])
   @@index([status])
@@ -2644,6 +2645,7 @@ model BlogPost {
 
   // Author (links to User model directly)
   authorId            String           @map("author_id") @db.Uuid
+  author              User             @relation(fields: [authorId], references: [id])
 
   // Category & Tags
   categoryId          String?          @map("category_id") @db.Uuid

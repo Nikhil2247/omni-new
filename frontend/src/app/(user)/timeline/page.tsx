@@ -10,6 +10,7 @@ import { useEvents } from '@/hooks/queries/use-events'
 import { useTimeline } from '@/hooks/queries/use-timeline'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 function getDaysUntil(date: string): number {
   const eventDate = new Date(date)
@@ -157,6 +158,8 @@ export default function TimelinePage() {
       router.replace(`/events/${events[0].id}/timeline`)
     }
   }, [events, router])
+
+  useEffect(() => { trackDashboard.sectionView('timeline', 'user') }, [])
 
   if (isLoading) {
     return (

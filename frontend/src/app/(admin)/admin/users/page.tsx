@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { Search, UserX } from 'lucide-react'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,6 +23,11 @@ export default function AdminUsersPage() {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    trackDashboard.sectionView('admin-users', 'admin')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     setCurrentPage(1)

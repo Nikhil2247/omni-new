@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search, FileText } from 'lucide-react'
 import { useAdminAudit } from '@/hooks/queries/use-admin'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,6 +16,11 @@ export default function AdminAuditPage() {
   const [entityType, setEntityType] = useState('')
   const [userId, setUserId] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    trackDashboard.sectionView('admin-audit', 'admin')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     setCurrentPage(1)

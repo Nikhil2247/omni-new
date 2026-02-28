@@ -1,14 +1,18 @@
 'use client'
 
+import { useEffect } from 'react'
 import { EventsList } from '@/components/features/events/events-list'
 import { useEvents } from '@/hooks/queries/use-events'
 import { Card } from '@/components/ui/card'
 import { Calendar, Sparkles, CheckCircle2, Clock } from 'lucide-react'
 import { useMemo } from 'react'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 export default function EventsPage() {
   const { data } = useEvents()
   const events = data?.data ?? []
+
+  useEffect(() => { trackDashboard.sectionView('events', 'user') }, [])
 
   const stats = useMemo(() => {
     const total = events.length

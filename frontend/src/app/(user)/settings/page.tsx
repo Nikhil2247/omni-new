@@ -1,9 +1,15 @@
 'use client'
 
+import { useEffect } from 'react'
 import { Heart, User, Bell, Shield } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 export default function UserSettingsPage() {
+  useEffect(() => {
+    trackDashboard.sectionView('settings', 'user')
+  }, [])
+
   return (
     <div className="space-y-6">
       <div>

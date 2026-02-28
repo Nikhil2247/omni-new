@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import NextImage from 'next/image'
 import axios from 'axios'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { trackQuote } from '@/lib/analytics/umami'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -58,6 +59,10 @@ export default function QuotePage() {
   const vendorId = vendorIdParam ?? vendorData?.id
   const vendorName = vendorNameParam ?? vendorData?.businessName ?? 'Selected vendor'
 
+  useEffect(() => {
+    if (vendorId) trackQuote.start(vendorId, 'quote-page')
+  }, [vendorId])
+
   const [status, setStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const form = useForm<QuoteFormValues>({
@@ -107,6 +112,7 @@ export default function QuotePage() {
       })
 
       setStatus({ type: 'success', text: 'Quote request sent. Our ops team will reach out shortly.' })
+      if (vendorId) trackQuote.submit(vendorId, values.eventType)
       form.reset()
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {

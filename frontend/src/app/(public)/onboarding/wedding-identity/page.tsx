@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { trackOnboarding } from '@/lib/analytics/umami'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -64,6 +65,10 @@ export default function WeddingIdentityPage() {
   const router = useRouter()
   const [step, setStep] = useState<'create' | 'invite'>('create')
   const [inviteSent, setInviteSent] = useState(false)
+
+  useEffect(() => {
+    trackOnboarding.stepComplete(2, 'wedding-identity', 'user')
+  }, [])
 
   const { data: weddingIdentity, isLoading } = useWeddingIdentity()
   const createIdentity = useCreateWeddingIdentity()

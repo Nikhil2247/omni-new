@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { RoleGuard } from '@/components/auth'
 import { useAuthStore } from '@/store/auth-store'
 import { Role, ROLE_LABELS, ROLES } from '@/config/roles'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { useBlogPosts, useMarketingCampaigns, useMarketingMedia, useMarketingPromotions } from '@/hooks/queries/use-marketing'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,6 +15,10 @@ import { FileText, Image, Eye, Megaphone, PenLine, BarChart3 } from 'lucide-reac
 export default function MarketingDashboardPage() {
   const { user } = useAuthStore()
   const roleLabel = user?.role ? ROLE_LABELS[user.role as Role] : ''
+
+  useEffect(() => {
+    trackDashboard.view('marketing')
+  }, [])
 
   const { data: posts, isLoading: postsLoading } = useBlogPosts({ page: 1, limit: 5 })
   const { data: campaigns, isLoading: campaignsLoading } = useMarketingCampaigns()

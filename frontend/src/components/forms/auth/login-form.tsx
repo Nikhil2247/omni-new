@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { trackAuth } from '@/lib/analytics/umami'
 
 declare global {
   interface Window {
@@ -84,6 +85,7 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
               return
             }
 
+            trackAuth.signIn('google')
             toast.success('Welcome back!')
           } catch (error: any) {
             toast.error(
@@ -155,6 +157,7 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
         toast.info('Two-factor authentication required.')
         return
       }
+      trackAuth.signIn('email')
       toast.success('Welcome back!')
     } catch (error: any) {
       toast.error(

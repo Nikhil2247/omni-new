@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
+import { trackOnboarding } from '@/lib/analytics/umami'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, Sparkles, ArrowRight, Loader2 } from 'lucide-react'
 import { useVibeQuizImages, useSubmitVibeQuiz, useVibeQuizStatus } from '@/hooks/queries/use-onboarding'
@@ -22,6 +23,10 @@ export default function VibeQuizPage() {
   const router = useRouter()
   const [selectedImages, setSelectedImages] = useState<string[]>([])
   const setOnboardingComplete = useAuthStore((state) => state.setOnboardingComplete)
+
+  useEffect(() => {
+    trackOnboarding.stepComplete(1, 'vibe-quiz', 'user')
+  }, [])
 
   const { data: imagesData, isLoading: imagesLoading, error: imagesError } = useVibeQuizImages()
   const { data: quizStatus, isLoading: statusLoading } = useVibeQuizStatus()

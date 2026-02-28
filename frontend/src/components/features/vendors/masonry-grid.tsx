@@ -35,7 +35,7 @@ function AnimatedMasonryItem({
         ease
       }}
       style={{ willChange: 'opacity, transform' }}
-      className="break-inside-avoid mb-3 sm:mb-4 lg:mb-5"
+      className="break-inside-avoid mb-1.5 sm:mb-2"
     >
       {children}
     </motion.div>
@@ -47,14 +47,14 @@ function LoadingSkeleton() {
   const heights = [280, 320, 240, 360, 300, 260, 340, 280, 320, 380, 260, 300]
 
   return (
-    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 lg:gap-5">
+    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-1.5 sm:gap-2">
       {heights.map((height, i) => (
         <motion.div
           key={i}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: i * 0.04 }}
-          className="break-inside-avoid mb-3 sm:mb-4 lg:mb-5"
+          className="break-inside-avoid mb-1.5 sm:mb-2"
         >
           <Skeleton
             className="w-full rounded-xl sm:rounded-2xl"
@@ -83,7 +83,7 @@ export function MasonryGrid({
   }
 
   return (
-    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 lg:gap-5">
+    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-1.5 sm:gap-2">
       {items.map((item, index) => (
         <AnimatedMasonryItem key={item.id} index={index}>
           <PortfolioMediaCard item={item} />

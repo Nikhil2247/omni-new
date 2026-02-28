@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessTasks, useUpdateTaskStatus, useSubmitTaskProof } from '@/hooks/queries/use-business'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -58,6 +59,10 @@ const priorityConfig: Record<string, { label: string; color: string }> = {
 }
 
 export default function BusinessTasksPage() {
+  useEffect(() => {
+    trackDashboard.sectionView('tasks', 'vendor')
+  }, [])
+
   const { data: profile, isLoading: profileLoading } = useBusinessProfile()
   const { data: tasks, isLoading: tasksLoading } = useBusinessTasks(profile?.id || '')
   const updateTaskStatus = useUpdateTaskStatus()

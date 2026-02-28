@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
+import { trackDashboard } from '@/lib/analytics/umami'
 import {
   useBusinessProfile,
   useBusinessAgreements,
@@ -70,6 +71,10 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
 }
 
 export default function BusinessAgreementsPage() {
+  useEffect(() => {
+    trackDashboard.sectionView('agreements', 'vendor')
+  }, [])
+
   const { data: profile, isLoading: profileLoading } = useBusinessProfile()
   const { data: agreements, isLoading: agreementsLoading } = useBusinessAgreements(profile?.id || '')
   const acceptAgreement = useAcceptAgreement()

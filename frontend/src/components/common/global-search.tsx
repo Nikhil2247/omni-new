@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import NextImage from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, X, Loader2, MapPin, Tag, ArrowRight } from "lucide-react";
@@ -24,10 +25,36 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [isMounted, setIsMounted] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   const debouncedQuery = useDebounce(query, 300);
+
+  // Set mounted state for SSR safety
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Update dropdown position
+  const updateDropdownPosition = useCallback(() => {
+    if (searchRef.current) {
+      const rect = searchRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, []);
+
+  // Update position when opening dropdown
+  useEffect(() => {
+    if (isOpen) {
+      updateDropdownPosition();
+    }
+  }, [isOpen, updateDropdownPosition]);
 
   // Don't show search on home page unless explicitly allowed
   const isHomePage = pathname === "/";
@@ -74,6 +101,31 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Close dropdown on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isOpen) {
+        setIsOpen(false);
+        setSelectedIndex(-1);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isOpen]);
+
+  // Update position on resize
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleResize = () => {
+      updateDropdownPosition();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isOpen, updateDropdownPosition]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -213,11 +265,18 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
         </div>
       </div>
 
-      {/* Search Results Dropdown */}
-      {isOpen && (query.length >= 2) && (suggestions.length > 0 || results.length > 0) && (
-        <div 
+      {/* Search Results Dropdown - Rendered via Portal */}
+      {isMounted && isOpen && (query.length >= 2) && (suggestions.length > 0 || results.length > 0) && createPortal(
+        <div
           onWheel={handleDropdownScroll}
-          className="absolute top-full left-0 right-0 z-50 mt-2 max-h-96 overflow-y-auto overscroll-contain rounded-lg border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:hover:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500"
+          style={{
+            position: 'absolute',
+            top: `${dropdownPosition.top + 8}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+            zIndex: 9999,
+          }}
+          className="max-h-96 overflow-y-auto overscroll-contain rounded-lg border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-thumb]:hover:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:hover:bg-gray-500"
         >
           {/* Suggestions */}
           {suggestions.length > 0 && (
@@ -318,16 +377,27 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* No Results */}
-      {isOpen && query.length >= 2 && !isLoading && suggestions.length === 0 && results.length === 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-2 rounded-lg border bg-popover p-4 shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2">
+      {/* No Results - Rendered via Portal */}
+      {isMounted && isOpen && query.length >= 2 && !isLoading && suggestions.length === 0 && results.length === 0 && createPortal(
+        <div
+          style={{
+            position: 'absolute',
+            top: `${dropdownPosition.top + 8}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+            zIndex: 9999,
+          }}
+          className="rounded-lg border bg-popover p-4 shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
+        >
           <p className="text-center text-sm text-muted-foreground">
             No results found for &quot;{query}&quot;
           </p>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

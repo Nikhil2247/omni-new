@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
+import { trackDashboard } from '@/lib/analytics/umami'
 import {
   Activity,
   ArrowUpRight,
@@ -37,6 +39,10 @@ import { cn } from '@/lib/utils'
 export default function SystemDashboardPage() {
   const { data, isLoading } = useAdminDashboard()
   const { data: auditData, isLoading: auditLoading } = useAdminAudit({ page: 1, limit: 5 })
+
+  useEffect(() => {
+    trackDashboard.view('system')
+  }, [])
 
   if (isLoading) {
     return (

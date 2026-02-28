@@ -506,61 +506,41 @@ function HeroSection() {
 
       <motion.div
         style={{ y: heroTextY, opacity: heroOpacity, scale: heroScale }}
-        className="relative z-20 mx-auto max-w-5xl px-6 text-center"
+        className="relative z-30 mx-auto max-w-5xl px-6 text-center"
       >
         <motion.h1
           initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 1, delay: 0.2, ease }}
-          className="font-serif text-4xl leading-tight font-bold tracking-tight text-white drop-shadow-sm sm:text-5xl lg:text-6xl xl:text-7xl"
+          className="font-serif text-4xl leading-tight font-bold tracking-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl"
         >
-          Your dream event
-          <br />
-          <span className="from-primary bg-linear-to-r via-purple-600 to-pink-600 bg-clip-text text-transparent">
-            starts here
-          </span>
+          Discover the Best Events and Services
         </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3, ease }}
+          className="mx-auto mt-4 max-w-2xl text-lg text-white/90 sm:text-xl"
+        >
+          Find the perfect venue, vendors, and planners for your next event.
+        </motion.p>
 
         {/* Global Search */}
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.4, ease }}
-          className="relative z-50 mx-auto mt-6 max-w-3xl rounded-2xl bg-black/25 p-2 backdrop-blur-sm sm:mt-8 sm:p-3"
+          transition={{ duration: 0.8, delay: 0.5, ease }}
+          className="relative z-[100] mx-auto mt-8 max-w-2xl"
         >
           <GlobalSearch
-            placeholder="Search for photographers, venues, caterers..."
+            placeholder="Search vendors..."
             className="max-w-none"
             showOnHomePage={true}
           />
-
-          <p className="mt-3 text-sm text-white/80">
-            Popular: <button className="mx-1 text-sky-300 hover:underline">Wedding Venues</button> •
-            <button className="mx-1 text-sky-300 hover:underline">Photographers</button> •
-            <button className="mx-1 text-sky-300 hover:underline">Caterers in Mumbai</button>
-          </p>
         </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7, ease }}
-          className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm sm:mt-10 sm:gap-8"
-        >
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-            <span className="text-white/85">
-              <strong className="font-semibold text-white">10,000+</strong> Verified Vendors
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-amber-500" />
-            <span className="text-white/85">
-              <strong className="font-semibold text-white">50,000+</strong> Happy Events
-            </span>
-          </div>
-        </motion.div>
+  
       </motion.div>
 
       {/* Scroll arrow */}

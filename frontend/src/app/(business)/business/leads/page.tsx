@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessLeads, useAcceptLead, useUpdateLeadStatus } from '@/hooks/queries/use-business'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +38,7 @@ import {
 } from 'lucide-react'
 import type { BusinessLead, LeadStatus } from '@/lib/api/types/business.types'
 import { toast } from 'sonner'
+
 
 const LEAD_STATUSES = [
   { value: 'ALL', label: 'All Leads' },
@@ -110,6 +112,10 @@ const getTimeAgo = (dateString: string) => {
 export default function BusinessLeadsPage() {
   const router = useRouter()
   const { data: leads = [], isLoading, error, refetch } = useBusinessLeads({ page: 1, limit: 100 })
+
+  useEffect(() => {
+    trackDashboard.sectionView('leads', 'vendor')
+  }, [])
   const acceptLead = useAcceptLead()
   const updateStatus = useUpdateLeadStatus()
 

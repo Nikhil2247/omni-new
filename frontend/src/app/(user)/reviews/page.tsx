@@ -1,12 +1,18 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useMyVendorReviews } from '@/hooks/queries/use-vendor-reviews'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Star } from 'lucide-react'
 
 export default function ReviewsPage() {
   const { data: reviews = [], isLoading } = useMyVendorReviews()
+
+  useEffect(() => {
+    trackDashboard.sectionView('reviews', 'user')
+  }, [])
 
   return (
     <div className="space-y-6">

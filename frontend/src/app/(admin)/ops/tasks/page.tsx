@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useOpsOperationalTasks, useUpdateTaskStatus, useDeleteOperationalTask } from '@/hooks/queries/use-ops'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -53,6 +54,10 @@ export default function OpsTasksPage() {
   const { data: tasks, isLoading, error } = useOpsOperationalTasks()
   const updateStatus = useUpdateTaskStatus()
   const deleteTask = useDeleteOperationalTask()
+
+  useEffect(() => {
+    trackDashboard.sectionView('ops-tasks', 'ops')
+  }, [])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')

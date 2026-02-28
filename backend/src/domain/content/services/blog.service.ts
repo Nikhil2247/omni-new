@@ -129,7 +129,7 @@ export class BlogService {
         ogImage: normalizedOgImage,
         featuredImage: normalizedFeaturedImage,
         featuredImageAlt: dto.featuredImageAlt,
-        authorId,
+        author: { connect: { id: authorId } },
         category: dto.categoryId
           ? { connect: { id: dto.categoryId } }
           : undefined,

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle2, AlertCircle, Loader2, Mail } from 'lucide-react'
 import { toast } from 'sonner'
+import { trackAuth } from '@/lib/analytics/umami'
 
 interface VerifyEmailFormProps {
   token: string
@@ -24,6 +25,7 @@ export function VerifyEmailForm({ token }: VerifyEmailFormProps) {
   const handleVerify = async () => {
     try {
       await verifyMutation.mutateAsync({ token })
+      trackAuth.emailVerified()
       toast.success('Email verified. Redirecting to login...')
       setTimeout(() => router.push('/login'), 3000)
     } catch (error: any) {

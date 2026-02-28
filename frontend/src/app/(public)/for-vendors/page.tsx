@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
+import { trackDashboard } from '@/lib/analytics/umami'
 import {
   motion,
   useScroll,
@@ -866,6 +867,10 @@ function CTASection() {
 
 export default function ForVendorsPage() {
   useSmoothScroll()
+
+  useEffect(() => {
+    trackDashboard.sectionView('for-vendors', 'vendor')
+  }, [])
 
   return (
     <>

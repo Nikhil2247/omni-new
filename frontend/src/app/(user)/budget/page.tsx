@@ -10,6 +10,7 @@ import { DollarSign, Calendar, ChevronRight, Plus, TrendingUp, TrendingDown, Wal
 import { useEvents } from '@/hooks/queries/use-events'
 import type { EventSummary } from '@/lib/api/types/event.types'
 import Link from 'next/link'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-IN', {
@@ -60,6 +61,8 @@ export default function BudgetPage() {
       router.replace(`/events/${eventsWithBudget[0].id}/budget`)
     }
   }, [eventsWithBudget, router])
+
+  useEffect(() => { trackDashboard.sectionView('budget', 'user') }, [])
 
   if (isLoading) {
     return (

@@ -11,6 +11,7 @@ import { CheckSquare, Calendar, ChevronRight, Plus, ListChecks, Target, Trending
 import { useEvents } from '@/hooks/queries/use-events'
 import { Progress } from '@/components/ui/progress'
 import type { EventSummary } from '@/lib/api/types/event.types'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -43,6 +44,8 @@ export default function ChecklistPage() {
       router.replace(`/events/${eventsWithChecklist[0].id}/checklist`)
     }
   }, [eventsWithChecklist, router])
+
+  useEffect(() => { trackDashboard.sectionView('checklist', 'user') }, [])
 
   if (isLoading) {
     return (

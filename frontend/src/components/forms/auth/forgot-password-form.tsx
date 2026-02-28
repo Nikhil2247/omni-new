@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, CheckCircle2, Send } from 'lucide-react'
 import { toast } from 'sonner'
+import { trackAuth } from '@/lib/analytics/umami'
 
 export function ForgotPasswordForm() {
   const resetMutation = useRequestPasswordReset()
@@ -17,6 +18,7 @@ export function ForgotPasswordForm() {
     event.preventDefault()
     try {
       await resetMutation.mutateAsync({ email })
+      trackAuth.passwordReset()
       toast.success('If an account exists, a reset link has been sent.')
     } catch (error: any) {
       toast.error(

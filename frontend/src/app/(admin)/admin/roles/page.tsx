@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, ShieldOff, Trash2 } from 'lucide-react'
 import { useAdminRoles, useCreateRole, useDeleteRole } from '@/hooks/queries/use-admin'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,6 +19,10 @@ export default function AdminRolesPage() {
   const [name, setName] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [description, setDescription] = useState('')
+
+  useEffect(() => {
+    trackDashboard.sectionView('admin-roles', 'admin')
+  }, [])
 
   const handleCreate = () => {
     if (!name || !displayName) return

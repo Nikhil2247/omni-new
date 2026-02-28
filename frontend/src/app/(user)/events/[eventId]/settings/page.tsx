@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -36,6 +37,10 @@ export default function EventSettingsPage() {
   const { data, isLoading, error } = useEvent(eventId ?? '')
   const updateEvent = useUpdateEvent(eventId ?? '')
   const deleteEvent = useDeleteEvent()
+
+  useEffect(() => {
+    if (eventId) trackDashboard.sectionView('event-settings', 'user')
+  }, [eventId])
 
   const form = useForm<EventSettingsValues>({
     resolver: zodResolver(eventSettingsSchema),

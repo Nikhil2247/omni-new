@@ -1,12 +1,14 @@
 'use client'
 
 import { useForm } from 'react-hook-form'
+import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useRouter } from 'next/navigation'
 import { useCreateEvent } from '@/hooks/queries/use-events'
 import { useEventTypes } from '@/hooks/queries/use-lookups'
 import { useUserAddresses } from '@/hooks/queries/use-user-profile'
+import { trackEventPlanning } from '@/lib/analytics/umami'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { toast } from 'sonner'
@@ -77,6 +79,9 @@ export function CreateEventForm() {
     },
   })
 
+  // Track form start on mount
+  useEffect(() => { trackEventPlanning.createStart() }, [])
+
   const onSubmit = async (values: CreateEventFormValues) => {
     try {
       const response = await createEvent.mutateAsync({
@@ -90,6 +95,7 @@ export function CreateEventForm() {
       })
 
       toast.success('Event created successfully.')
+      trackEventPlanning.activate(response.id, values.eventTypeId)
       form.reset()
       router.push(`/events/${response.id}`)
     } catch (error: unknown) {

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import NextImage from 'next/image'
 import { useParams } from 'next/navigation'
+import { trackContent } from '@/lib/analytics/umami'
 import { useDropzone } from 'react-dropzone'
 import { format } from 'date-fns'
 import {
@@ -35,6 +36,10 @@ export default function GuestUploadPage() {
   const { data: settings, isLoading, error } = useMemorySettings(eventCode)
   const { data: gallery } = usePublicGallery(eventCode)
   const uploadMutation = useUploadGuestPhoto(eventCode)
+
+  useEffect(() => {
+    trackContent.articleView(`guest-${eventCode}`, 'Guest Upload')
+  }, [eventCode])
 
   const [uploaderName, setUploaderName] = useState('')
   const [caption, setCaption] = useState('')

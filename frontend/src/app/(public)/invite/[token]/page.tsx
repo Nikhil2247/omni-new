@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { trackOnboarding } from '@/lib/analytics/umami'
 import { Heart, CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
 import { useAcceptPartnerInvite } from '@/hooks/queries/use-onboarding'
 import { useAuthStore } from '@/store/auth-store'
@@ -16,6 +17,10 @@ export default function AcceptInvitePage() {
   const { isAuthenticated, hasHydrated } = useAuthStore()
   const logout = useAuthStore((state) => state.logout)
   const acceptInvite = useAcceptPartnerInvite()
+
+  useEffect(() => {
+    trackOnboarding.stepComplete(1, 'accept-invite')
+  }, [])
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')

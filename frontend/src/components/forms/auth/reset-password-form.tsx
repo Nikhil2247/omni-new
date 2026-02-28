@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Lock, CheckCircle2, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { trackAuth } from '@/lib/analytics/umami'
 
 interface ResetPasswordFormProps {
   token: string
@@ -51,6 +52,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     
     try {
       await resetMutation.mutateAsync({ token, newPassword: password })
+      trackAuth.passwordReset()
       toast.success('Password updated. Redirecting to login...')
       setTimeout(() => router.push('/login'), 2000)
     } catch (error: any) {

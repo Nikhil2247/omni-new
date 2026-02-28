@@ -1,7 +1,8 @@
 'use client'
 
+import { useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { useEvents } from '@/hooks/queries/use-events'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +11,10 @@ import { Calendar, CheckSquare, Clock3, Images, PlusCircle, Sparkles, Users, Wal
 
 export default function UserToolsPage() {
   const { data, isLoading } = useEvents({ page: 1, limit: 10 })
+
+  useEffect(() => {
+    trackDashboard.sectionView('tools', 'user')
+  }, [])
   const events = data?.data ?? []
   const firstEventId = events[0]?.id
 

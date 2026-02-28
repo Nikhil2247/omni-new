@@ -12,7 +12,6 @@ import { useAuthStore } from '@/store/auth-store'
 import { WishlistPickerDialog } from '@/components/common/wishlist-picker-dialog'
 import { useAddWishlistItem, useCreateWishlist, useWishlistMine, wishlistKeys } from '@/hooks/queries/use-wishlists'
 import { useMediaItemTags } from '@/hooks/queries/use-media-tags'
-import { Button } from '@/components/ui/button'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 
 interface PortfolioMediaCardProps {
@@ -108,56 +107,47 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
         />
       </Link>
       
+      {/* Heart button — always visible, top-right corner */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); handleSave() }}
+        disabled={isSaved || isSaving}
+        className="absolute top-2 right-2 z-10 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/90 shadow-sm backdrop-blur-sm flex items-center justify-center transition hover:bg-white hover:scale-110"
+        aria-label={isSaved ? 'Saved to wishlist' : 'Save to wishlist'}
+      >
+        <Heart className={isSaved ? 'h-3.5 w-3.5 sm:h-4 sm:w-4 fill-primary text-primary' : 'h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground'} />
+      </button>
+
       {/* Overlay - Always visible on mobile, fade in on hover for desktop */}
       <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 via-black/60 to-transparent p-3 sm:p-4 text-white transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div className="flex flex-col gap-1">
           {/* Text Content */}
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] sm:text-xs uppercase tracking-wider text-white/80 mb-0.5 sm:mb-1">
-              {item.vendor.categoryName ?? 'Featured'}
+          <p className="text-[10px] sm:text-xs uppercase tracking-wider text-white/80">
+            {item.vendor.categoryName ?? 'Featured'}
+          </p>
+          <Link 
+            href={`/vendors/${item.vendor.slug}`} 
+            className="block text-xs sm:text-sm font-semibold hover:underline line-clamp-1"
+          >
+            {item.vendor.businessName || 'View Vendor'}
+          </Link>
+          {item.caption && (
+            <p className="text-[10px] sm:text-xs text-white/90 line-clamp-2">
+              {item.caption}
             </p>
-            <Link 
-              href={`/vendors/${item.vendor.slug}`} 
-              className="block text-xs sm:text-sm font-semibold hover:underline line-clamp-1 mb-1"
-            >
-              {item.vendor.businessName || 'View Vendor'}
-            </Link>
-            {item.caption && (
-              <p className="text-[10px] sm:text-xs text-white/90 line-clamp-2 mb-2">
-                {item.caption}
-              </p>
-            )}
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {tags.slice(0, 3).map((tag) => (
-                  <span 
-                    key={tag.id} 
-                    className="rounded-full bg-white/20 backdrop-blur-sm px-2 py-0.5 text-[9px] sm:text-[10px] font-medium"
-                  >
-                    #{tag.tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <Button
-              type="button"
-              size="icon"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleSave()
-              }}
-              disabled={isSaved || isSaving}
-              className="h-7 w-7 sm:h-8 sm:w-8 bg-white/90 hover:bg-white backdrop-blur-sm"
-              aria-label={isSaved ? 'Saved to wishlist' : 'Save to wishlist'}
-            >
-              <Heart className={isSaved ? 'h-3.5 w-3.5 sm:h-4 sm:w-4 fill-primary text-primary' : 'h-3.5 w-3.5 sm:h-4 sm:w-4'} />
-            </Button>
-          </div>
+          )}
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {tags.slice(0, 3).map((tag) => (
+                <span 
+                  key={tag.id} 
+                  className="rounded-full bg-white/20 backdrop-blur-sm px-2 py-0.5 text-[9px] sm:text-[10px] font-medium"
+                >
+                  #{tag.tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <WishlistPickerDialog

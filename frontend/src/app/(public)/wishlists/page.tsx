@@ -1,14 +1,18 @@
 "use client";
 
+import { useEffect } from 'react';
 import { WishlistList } from "@/components/features/events/wishlist-list";
 import { useAuthStore } from "@/store/auth-store";
 import { useWishlistMine } from "@/hooks/queries/use-wishlists";
 import { Heart } from "lucide-react";
+import { trackDashboard } from '@/lib/analytics/umami';
 
 export default function WishlistsPage() {
   const { user } = useAuthStore();
   const userId = user?.id;
   const { data: wishlists = [] } = useWishlistMine(Boolean(userId));
+
+  useEffect(() => { trackDashboard.sectionView('wishlists', 'user') }, []);
 
   const wishlistArray = Array.isArray(wishlists) ? wishlists : (wishlists?.data ?? []);
   const totalItems = wishlistArray.reduce((total, list) => total + (list.items?.length ?? 0), 0);

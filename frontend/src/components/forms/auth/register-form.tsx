@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, Lock, User, CheckCircle2, Eye, EyeOff } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
+import { trackAuth } from '@/lib/analytics/umami'
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '' }
@@ -51,6 +52,7 @@ export function RegisterForm({ accountType = 'USER' }: RegisterFormProps) {
         lastName: lastName || undefined,
         accountType,
       })
+      trackAuth.signUp('email', accountType)
       toast.success('Account created. Check your email to verify.')
     } catch (error: any) {
       toast.error(

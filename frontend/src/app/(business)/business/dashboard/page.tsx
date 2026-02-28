@@ -1,8 +1,10 @@
 'use client'
 
+import { useEffect } from 'react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/auth-store'
+import { trackDashboard } from '@/lib/analytics/umami'
 import {
   useBusinessProfile,
   useBusinessAnalyticsSummary,
@@ -29,6 +31,10 @@ import {
 export default function BusinessDashboardPage() {
   const { user } = useAuthStore()
   const { data: profile, isLoading: profileLoading } = useBusinessProfile()
+
+  useEffect(() => {
+    trackDashboard.view('vendor')
+  }, [])
   const { data: summary, isLoading: summaryLoading } = useBusinessAnalyticsSummary(30)
   const { data: reviews } = useBusinessReviews()
   const { data: tasks } = useBusinessTasks(profile?.id || '')

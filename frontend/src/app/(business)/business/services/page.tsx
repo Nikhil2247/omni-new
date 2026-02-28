@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { trackDashboard } from '@/lib/analytics/umami';
 import {
   useBusinessProfile,
   useBusinessServices,
@@ -100,6 +101,10 @@ const fromMinutes = (minutes: number, unit: (typeof DURATION_UNITS)[number]["val
 };
 
 export default function BusinessServicesPage() {
+  useEffect(() => {
+    trackDashboard.sectionView('services', 'vendor')
+  }, [])
+
   const { data: profile, isLoading: profileLoading } = useBusinessProfile();
   const { data: services, isLoading: servicesLoading } = useBusinessServices(profile?.id || "");
   const createService = useCreateService();

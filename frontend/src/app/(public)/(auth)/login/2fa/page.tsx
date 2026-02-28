@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { trackAuth } from '@/lib/analytics/umami';
 import { TwoFactorForm } from '@/components/forms/auth/two-factor-form';
 import {
   Card,
@@ -20,6 +22,10 @@ export default function TwoFactorPage() {
   const params = useSearchParams();
   const token = params.get('token') || '';
   const returnUrl = getSafeReturnUrl(params.get('returnUrl'));
+
+  useEffect(() => {
+    trackAuth.signIn('2fa-pending')
+  }, [])
 
   return (
     <Card className="w-full border-border/60 bg-card/80 shadow-2xl shadow-primary/10 backdrop-blur">

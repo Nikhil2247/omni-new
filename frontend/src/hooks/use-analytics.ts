@@ -58,7 +58,7 @@ export function useAnalytics() {
   // ── Vendor view ────────────────────────────────────────────────────────────
   const trackVendorView = useCallback(
     (vendorId: string, vendorName?: string, category?: string) => {
-      gtag.trackVendorView(vendorId);
+      gtag.trackVendorView(vendorId, vendorName ?? '');
       trackVendor.view(vendorId, vendorName, category);
     },
     [],
@@ -67,7 +67,7 @@ export function useAnalytics() {
   // ── Quote / lead ───────────────────────────────────────────────────────────
   const trackQuoteRequest = useCallback(
     (vendorId: string, eventType?: string) => {
-      gtag.trackQuoteRequest(vendorId);
+      gtag.trackQuoteRequest(vendorId, eventType ?? '');
       trackQuote.submit(vendorId, eventType);
     },
     [],

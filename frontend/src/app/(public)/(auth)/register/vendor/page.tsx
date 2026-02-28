@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { trackDashboard } from '@/lib/analytics/umami';
 import { RegisterForm } from '@/components/forms/auth/register-form';
 import {
   Card,
@@ -18,6 +20,10 @@ import { Store } from 'lucide-react';
 export default function VendorRegisterPage() {
   const searchParams = useSearchParams();
   const returnUrl = getSafeReturnUrl(searchParams.get('returnUrl'));
+
+  useEffect(() => {
+    trackDashboard.sectionView('vendor-register', 'vendor')
+  }, [])
 
   return (
     <Card className="w-full border-border/60 bg-card/80 shadow-2xl shadow-primary/10 backdrop-blur">

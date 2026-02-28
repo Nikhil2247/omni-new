@@ -9,6 +9,7 @@ import { Users, Calendar, ChevronRight, Plus, UserCheck, UserX, Clock, Mail } fr
 import { useEvents } from '@/hooks/queries/use-events'
 import Link from 'next/link'
 import { Progress } from '@/components/ui/progress'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 export default function GuestlistPage() {
   const router = useRouter()
@@ -21,6 +22,8 @@ export default function GuestlistPage() {
       router.replace(`/events/${events[0].id}/guestlist`)
     }
   }, [events, router])
+
+  useEffect(() => { trackDashboard.sectionView('guestlist', 'user') }, [])
 
   if (isLoading) {
     return (

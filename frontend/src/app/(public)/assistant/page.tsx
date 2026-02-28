@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { trackContent } from '@/lib/analytics/umami'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bot,
@@ -238,6 +239,11 @@ export default function AssistantPage() {
   const [context, setContext] = useState<ChatbotContext>({})
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    trackContent.articleView('ai-assistant', 'AI')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Load messages from storage
   useEffect(() => {

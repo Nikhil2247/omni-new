@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { subDays, startOfDay, endOfDay } from 'date-fns'
 import { useAdminDashboard } from '@/hooks/queries/use-admin'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -28,6 +29,10 @@ import {
 } from '@/components/charts'
 
 export default function AdminDashboardPage() {
+  useEffect(() => {
+    trackDashboard.view('admin')
+  }, [])
+
   const [dateRange, setDateRange] = useState<DateRangeValue>({
     startDate: startOfDay(subDays(new Date(), 29)),
     endDate: endOfDay(new Date()),

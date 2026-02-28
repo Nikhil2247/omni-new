@@ -14,6 +14,8 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import type { BlogPost } from '@/lib/api/types/marketing.types'
+import { trackContent } from '@/lib/analytics/umami'
+import { usePageEngagement } from '@/hooks/use-umami'
 
 type BlogPostClientProps = {
   slug: string
@@ -57,6 +59,16 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
     enabled: !initialPost,
     initialData: initialPost ?? undefined,
   })
+
+  // Page engagement (scroll depth + time on page)
+  usePageEngagement(`blog:${slug}`)
+
+  // Track article view when post loads
+  useEffect(() => {
+    if (post?.slug) {
+      trackContent.articleView(post.slug, post.category?.name)
+    }
+  }, [post?.slug])
 
   const { processedContent, headings } = useMemo(() => {
     const rawContent = post?.content || ''
@@ -173,6 +185,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
           text: post?.excerpt ?? 'Check out this article',
           url,
         })
+        trackContent.articleShare(slug, 'native')
         toast.success('Share dialog opened.')
         return
       } catch (error: any) {
@@ -183,6 +196,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
     if (navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(url)
+        trackContent.articleShare(slug, 'clipboard')
         toast.success('Link copied to clipboard.')
       } catch {
         toast.error('Failed to copy link.')

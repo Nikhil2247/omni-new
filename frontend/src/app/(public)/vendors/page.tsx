@@ -3,6 +3,7 @@
 import { useState, useCallback, Suspense, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { trackDashboard } from '@/lib/analytics/umami';
 import { motion, useInView } from "framer-motion";
 import Lenis from "lenis";
 import { usePublicVendors, useFeaturedVendors } from "@/hooks/queries/use-public-vendors";
@@ -353,6 +354,12 @@ function VendorFilters({
 function VendorsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Track page view on mount
+  useEffect(() => {
+    trackDashboard.sectionView('vendors', 'user')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const queryParam = searchParams.get("query") ?? "";
   const categoryParam = searchParams.get("categoryId") ?? "";
   const sortByParam = (searchParams.get("sortBy") as SortByValue | null) ?? "viewCount";
@@ -424,65 +431,22 @@ function VendorsPageContent() {
 
   return (
     <main className="bg-background min-h-screen">
-      <section
-        className="relative border-b py-6 lg:py-8 overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #165EA6 0%, rgba(22,94,166,0.5) 60%, rgba(22,94,166,0) 100%)',
-        }}
-      >
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-sky-400/20 blur-[80px]" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-blue-300/10 blur-[80px]" />
+      {/* Compact Header — mirrors Discover page */}
+      <section className="border-b bg-muted/20 py-3 lg:py-4">
         <div className="mx-auto max-w-8xl px-6">
-          <FadeIn className="flex items-center justify-between gap-4">
-            <div className="w-full">
-              <h1 className="font-serif text-2xl font-bold text-white sm:text-3xl">Find your perfect team</h1>
-              {/* <p className="mt-1 text-sm text-white/70 sm:text-base">
-                Browse and filter vendors like an e-commerce catalog.
-              </p> */}
-
-              {/* Search moved to header so it's always visible */}
-              <div className="mt-3 max-w-md">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && applyFilters()}
-                    placeholder="Search vendors, services..."
-                    className="pl-9 h-9 bg-white/5 text-white placeholder:text-white/60"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-              <Button variant="outline" className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white lg:hidden" onClick={() => setMobileFiltersOpen(true)}>
-                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Filters
+          <FadeIn delay={0.05} className="max-w-6xl">
+            <div className="relative flex items-center bg-background border border-border rounded-full shadow-sm p-1.5 transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30">
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+                placeholder="Search vendors, services..."
+                className="h-9 border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
+              />
+              <Button onClick={applyFilters} className="h-9 w-9 shrink-0 rounded-full p-0" aria-label="Search">
+                <Search className="h-4 w-4" />
               </Button>
-
-              <SheetContent side="right" className="w-full max-w-sm p-0">
-                <SheetHeader>
-                  <SheetTitle>Filters</SheetTitle>
-                  <SheetDescription>Refine your vendor results</SheetDescription>
-                </SheetHeader>
-                <div className="px-4 pb-6">
-                  <VendorFilters
-                    selectedCategoryId={selectedCategoryId}
-                    setSelectedCategoryId={setSelectedCategoryId}
-                    sortBy={sortBy}
-                    setSortBy={setSortBy}
-                    sortOrder={sortOrder}
-                    setSortOrder={setSortOrder}
-                    categoryOptions={categoryOptions}
-                    activeFiltersCount={activeFiltersCount}
-                    onApply={applyFilters}
-                    onClear={clearFilters}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
+            </div>
           </FadeIn>
         </div>
       </section>
@@ -513,10 +477,32 @@ function VendorsPageContent() {
                 <p className="text-muted-foreground text-sm">Showing results</p>
                 <h2 className="font-serif text-xl font-semibold sm:text-2xl">{totalVendors} vendors</h2>
               </div>
-              <Button variant="outline" className="lg:hidden" onClick={() => setMobileFiltersOpen(true)}>
-                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Filters
-              </Button>
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <Button variant="outline" className="lg:hidden" onClick={() => setMobileFiltersOpen(true)}>
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Filters
+                </Button>
+                <SheetContent side="right" className="w-full max-w-sm p-0">
+                  <SheetHeader>
+                    <SheetTitle>Filters</SheetTitle>
+                    <SheetDescription>Refine your vendor results</SheetDescription>
+                  </SheetHeader>
+                  <div className="px-4 pb-6">
+                    <VendorFilters
+                      selectedCategoryId={selectedCategoryId}
+                      setSelectedCategoryId={setSelectedCategoryId}
+                      sortBy={sortBy}
+                      setSortBy={setSortBy}
+                      sortOrder={sortOrder}
+                      setSortOrder={setSortOrder}
+                      categoryOptions={categoryOptions}
+                      activeFiltersCount={activeFiltersCount}
+                      onApply={applyFilters}
+                      onClear={clearFilters}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
             </FadeIn>
 
             <VendorResults

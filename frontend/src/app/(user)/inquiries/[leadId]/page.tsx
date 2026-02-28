@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { useLeadDetail } from '@/hooks/queries/use-leads'
 import { useCreateUserVendorConversation } from '@/hooks/queries/use-messaging'
 import { Button } from '@/components/ui/button'
@@ -27,6 +29,10 @@ export default function InquiryDetailPage() {
   const { data, isLoading, error } = useLeadDetail(leadId ?? '')
   const router = useRouter()
   const { mutateAsync: createConversation, isPending: startingConversation } = useCreateUserVendorConversation()
+
+  useEffect(() => {
+    if (leadId) trackDashboard.sectionView('inquiry-detail', 'user')
+  }, [leadId])
 
   if (!leadId) {
     return <div className="text-sm text-muted-foreground">Loading inquiry...</div>

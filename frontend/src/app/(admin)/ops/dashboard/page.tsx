@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { ROLES, Role } from '@/config/roles';
+import { trackDashboard } from '@/lib/analytics/umami';
 import { OpsAdminDashboard } from './components/ops-admin-dashboard';
 import { OpsManagerDashboard } from './components/ops-manager-dashboard';
 import { OpsAssistantDashboard } from './components/ops-assistant-dashboard';
@@ -17,6 +19,10 @@ import { OpsAssistantDashboard } from './components/ops-assistant-dashboard';
 export default function OpsDashboardPage() {
   const { user } = useAuthStore();
   const userRole = user?.role as Role;
+
+  useEffect(() => {
+    trackDashboard.view('ops')
+  }, [])
 
   // Render role-specific dashboard
   switch (userRole) {

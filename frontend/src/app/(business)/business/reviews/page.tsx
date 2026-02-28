@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessReviews, useRespondToReview } from '@/hooks/queries/use-business'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +39,10 @@ import type { BusinessReview } from '@/lib/api/types/business.types'
 const ratingOptions = ['all', '5', '4', '3', '2', '1']
 
 export default function BusinessReviewsPage() {
+  useEffect(() => {
+    trackDashboard.sectionView('reviews', 'vendor')
+  }, [])
+
   const { data: profile, isLoading: profileLoading } = useBusinessProfile()
   const { data: reviews = [], isLoading: reviewsLoading } = useBusinessReviews()
   const respondToReview = useRespondToReview()

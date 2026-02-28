@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { Calendar, Heart, MessageSquare, Sparkles, Plus, Search, TrendingUp, CheckCircle2, Users } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
 import { useEvents } from '@/hooks/queries/use-events'
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 export default function UserDashboardPage() {
   const { user } = useAuthStore()
@@ -24,6 +25,9 @@ export default function UserDashboardPage() {
     limit: 6,
   })
   const { data: wishlists = [], isLoading: wishlistLoading } = useWishlistMine(Boolean(plannerId))
+
+  // Track dashboard view once on mount
+  useEffect(() => { trackDashboard.view('user') }, [])
 
   const upcomingEvents = useMemo(() => {
     const events = eventsData?.data ?? []

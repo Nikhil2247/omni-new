@@ -8,6 +8,7 @@ import { searchApi, type SearchResultItem, type GlobalSearchResponse } from "@/l
 import { MapPin, Tag, Loader2, Star } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { trackSearch } from "@/lib/analytics/umami";
 
 export default function SearchResultsPage() {
   const searchParams = useSearchParams();
@@ -28,6 +29,11 @@ export default function SearchResultsPage() {
       try {
         const data = await searchApi.search({ q: query });
         setResults(data);
+        if (data.results.length === 0) {
+          trackSearch.noResults(query);
+        } else {
+          trackSearch.perform(query, undefined, data.meta.totalResults);
+        }
       } catch (err) {
         console.error("Search failed:", err);
         setError("Failed to fetch search results. Please try again.");
@@ -80,8 +86,8 @@ export default function SearchResultsPage() {
             {/* Results Grid */}
             {results.results.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {results.results.map((result) => (
-                  <SearchResultCard key={result.id} result={result} />
+                {results.results.map((result, index) => (
+                  <SearchResultCard key={result.id} result={result} position={index + 1} />
                 ))}
               </div>
             ) : (
@@ -127,7 +133,8 @@ export default function SearchResultsPage() {
   );
 }
 
-function SearchResultCard({ result }: { result: SearchResultItem }) {
+function SearchResultCard({ result, position }: { result: SearchResultItem; position: number }) {
+  const query = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('q') ?? '';
   const getResultUrl = () => {
     if (result.type === "vendor" && result.slug) {
       return `/vendors/${result.slug}`;
@@ -138,6 +145,7 @@ function SearchResultCard({ result }: { result: SearchResultItem }) {
   return (
     <Link
       href={getResultUrl()}
+      onClick={() => trackSearch.resultClick(query, result.id, position)}
       className="group relative overflow-hidden rounded-lg border bg-card transition-all hover:shadow-lg hover:border-primary/50"
     >
       {/* Image */}

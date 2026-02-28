@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect } from 'react'
 import { useAuthStore } from '@/store/auth-store'
 import { useUserLeads } from '@/hooks/queries/use-leads'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { MessageSquare, Clock, CheckCircle2, XCircle, ChevronRight, Calendar, Send, Inbox } from 'lucide-react'
+import { trackDashboard } from '@/lib/analytics/umami'
 
 const statusConfig: Record<string, { color: string; bg: string; icon: React.ElementType }> = {
   pending: { color: 'text-yellow-600', bg: 'bg-yellow-500/10', icon: Clock },
@@ -25,6 +27,8 @@ export default function InquiriesPage() {
     page: 1,
     limit: 20,
   })
+
+  useEffect(() => { trackDashboard.sectionView('inquiries', 'user') }, [])
 
   if (!plannerId) {
     return <div className="text-sm text-muted-foreground">Loading inquiries...</div>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ElementType } from 'react'
 import Link from 'next/link'
 import NextImage from 'next/image'
+import { trackDashboard } from '@/lib/analytics/umami'
 import {
   useBusinessProfile,
   useCreateBusinessProfile,
@@ -114,6 +115,10 @@ const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
 
 export default function BusinessProfilePage() {
+  useEffect(() => {
+    trackDashboard.sectionView('profile', 'vendor')
+  }, [])
+
   const { data: profile, isLoading, error } = useBusinessProfile()
   const createProfile = useCreateBusinessProfile()
   const updateProfile = useUpdateBusinessProfile()

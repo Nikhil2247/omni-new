@@ -1,11 +1,17 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { WishlistDetail } from '@/components/features/events/wishlist-detail'
+import { trackWishlist } from '@/lib/analytics/umami'
 
 export default function WishlistDetailPage() {
   const params = useParams()
   const boardId = params.boardId as string
+
+  useEffect(() => {
+    if (boardId) trackWishlist.view(boardId)
+  }, [boardId])
 
   if (!boardId) {
     return null

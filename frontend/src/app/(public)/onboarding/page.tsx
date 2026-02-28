@@ -3,11 +3,16 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useOnboardingStatus } from '@/hooks/queries/use-onboarding'
+import { trackOnboarding } from '@/lib/analytics/umami'
 import { Loader2 } from 'lucide-react'
 
 export default function OnboardingPage() {
   const router = useRouter()
   const { data: status, isLoading } = useOnboardingStatus()
+
+  useEffect(() => {
+    trackOnboarding.start('user')
+  }, [])
 
   useEffect(() => {
     if (isLoading) return

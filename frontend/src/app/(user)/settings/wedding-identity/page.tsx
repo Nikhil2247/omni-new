@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { trackDashboard } from '@/lib/analytics/umami'
 import { format } from 'date-fns'
 import {
   Heart,
@@ -79,6 +80,10 @@ const formatDateSafe = (value?: string | Date) => {
 export default function WeddingIdentitySettingsPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [showInviteForm, setShowInviteForm] = useState(false)
+
+  useEffect(() => {
+    trackDashboard.sectionView('wedding-identity', 'user')
+  }, [])
 
   const { data: identity, isLoading, refetch } = useWeddingIdentity()
   const createIdentity = useCreateWeddingIdentity()

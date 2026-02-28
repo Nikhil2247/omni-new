@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -61,6 +61,8 @@ import {
 import type { VendorProfile as VendorProfileType } from '@/lib/api/types/business.types'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
 import { cn } from '@/lib/utils'
+import { trackVendor, trackMessages } from '@/lib/analytics/umami'
+import { usePageEngagement } from '@/hooks/use-umami'
 
 function MediaTagChips({ mediaItemId }: { mediaItemId: string }) {
   const { data: tags = [] } = useMediaItemTags(mediaItemId)
@@ -244,6 +246,16 @@ export default function VendorPageClient({
   const { mutateAsync: createConversation, isPending: isCreatingConversation } =
     useCreateUserVendorConversation()
 
+  // Track page engagement (scroll depth + time on page)
+  usePageEngagement(`vendor:${slug}`)
+
+  // Track vendor view when data loads
+  useEffect(() => {
+    if (vendor?.id) {
+      trackVendor.view(vendor.id, vendor.businessName, vendor.category?.name)
+    }
+  }, [vendor?.id])
+
   const isSaved =
     locallySaved ||
     (Array.isArray(wishlists) && wishlists.some((list) =>
@@ -256,6 +268,7 @@ export default function VendorPageClient({
       return
     }
     if (isSaved || isSaving) return
+    if (vendor?.id) trackVendor.shortlist(vendor.id)
     setDialogOpen(true)
   }
 
@@ -298,6 +311,7 @@ export default function VendorPageClient({
       router.push('/login')
       return
     }
+    trackMessages.conversationStart('vendor')
     const conversation = await createConversation(vendor.id)
     router.push(`/messages?conversationId=${conversation.id}`)
   }
@@ -330,6 +344,7 @@ export default function VendorPageClient({
       body: reviewForm.body || undefined,
     })
 
+    trackVendor.reviewSubmit(vendor.id, reviewForm.rating)
     setReviewForm({ rating: 5, title: '', body: '' })
     setReviewModalOpen(false)
     toast.success('Review submitted successfully!')

@@ -22,7 +22,7 @@ const wishlistSchema = z.object({
 
 type WishlistValues = z.infer<typeof wishlistSchema>
 
-export function WishlistList() {
+export function WishlistList({ basePath = '/wishlists' }: { basePath?: string } = {}) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const { user } = useAuthStore()
   const userId = user?.id
@@ -127,7 +127,7 @@ export function WishlistList() {
       {wishlistArray.length ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {wishlistArray.map((wishlist) => (
-            <Link key={wishlist.id} href={`/wishlists/${wishlist.id}`}>
+            <Link key={wishlist.id} href={`${basePath}/${wishlist.id}`}>
               <Card className="group h-full cursor-pointer overflow-hidden transition-shadow hover:shadow-md">
                 {/* Gradient header */}
                 <div className="relative h-20 bg-linear-to-br from-pink-500 via-purple-500 to-indigo-500">

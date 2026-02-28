@@ -179,6 +179,8 @@ export const trackInquiry = {
 
 export const trackEventPlanning = {
   createStart: () => trackEvent('event_planning:create_start'),
+  view: (eventId: string) =>
+    trackEvent('event_planning:view', { event_id: eventId }),
   typeSelected: (eventType: string) =>
     trackEvent('event_planning:type_selected', { event_type: eventType }),
   detailsComplete: (eventId: string) =>
@@ -383,7 +385,7 @@ export const trackError = {
 // ─── Dashboard events ─────────────────────────────────────────────────────────
 
 export const trackDashboard = {
-  view: (role: 'user' | 'vendor' | 'admin' | 'ops') =>
+  view: (role: 'user' | 'vendor' | 'admin' | 'ops' | 'marketing' | 'sales' | 'system') =>
     trackEvent('dashboard:view', { role }),
   sectionView: (section: string, role?: string) =>
     trackEvent('dashboard:section_view', { section, role }),

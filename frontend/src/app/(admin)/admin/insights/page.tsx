@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { trackDashboard } from '@/lib/analytics/umami'
 import {
   usePlatformCounts,
   useRefreshPlatformCounts,
@@ -49,6 +50,10 @@ export default function AdminInsightsPage() {
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = usePlatformCounts()
   const { data: dashboard, isLoading: dashboardLoading, refetch: refetchDashboard } = useAdminDashboard()
   const { mutateAsync: refreshCountsOnServer } = useRefreshPlatformCounts()
+
+  React.useEffect(() => {
+    trackDashboard.sectionView('admin-insights', 'admin')
+  }, [])
   const [dateRange, setDateRange] = React.useState<DateRangeValue>({
     startDate: startOfDay(subDays(new Date(), 29)),
     endDate: endOfDay(new Date()),
