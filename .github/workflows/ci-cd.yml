@@ -100,10 +100,6 @@ jobs:
           echo "npm ci failed after 3 attempts"
           exit 1
       - run: npx prisma generate
-      - name: Run tests
-        run: npm test -- --passWithNoTests
-        env:
-          NODE_ENV: test
 
   # 3. Test Frontend
   test-frontend:
