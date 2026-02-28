@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
-import { useBlogPosts } from '@/hooks/queries/use-marketing'
+import { Search, Send } from 'lucide-react'
+import { useBlogPosts, usePublishBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
 import { useAuthStore } from '@/store/auth-store'
 import { ROLES } from '@/config/roles'
@@ -26,6 +26,8 @@ export default function MarketingContentPage() {
   const { user } = useAuthStore()
   const isContentWriter = user?.role === ROLES.CONTENT_WRITER
   const [keyword, setKeyword] = useState('')
+  const [publishingId, setPublishingId] = useState<string | null>(null)
+  const publishMutation = usePublishBlogPost()
   const [status, setStatus] = useState<BlogStatus | 'all'>('all')
   const [categoryId, setCategoryId] = useState('all')
   const [tagId, setTagId] = useState('all')
@@ -166,9 +168,29 @@ export default function MarketingContentPage() {
                     <TableCell className="text-sm text-muted-foreground">{post.viewCount}</TableCell>
                     <TableCell>{formatDate(post.updatedAt)}</TableCell>
                     <TableCell className="text-right">
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/marketing/content/${post.id}`}>Open</Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        {!isContentWriter && post.status !== 'PUBLISHED' && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={publishingId === post.id}
+                            onClick={async () => {
+                              setPublishingId(post.id)
+                              try {
+                                await publishMutation.mutateAsync(post.id)
+                              } finally {
+                                setPublishingId(null)
+                              }
+                            }}
+                          >
+                            <Send className="mr-1.5 h-3.5 w-3.5" />
+                            {publishingId === post.id ? 'Publishing…' : 'Publish'}
+                          </Button>
+                        )}
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/marketing/content/${post.id}`}>Open</Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

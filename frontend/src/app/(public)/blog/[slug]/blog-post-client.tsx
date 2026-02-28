@@ -1,7 +1,7 @@
 'use client'
 
 import NextImage from 'next/image'
-import { Clock, Eye, Calendar, ArrowLeft, Share2, BookOpen } from 'lucide-react'
+import { Clock, Eye, Calendar, ArrowLeft, Share2, BookOpen, User } from 'lucide-react'
 import { usePublicBlogPost } from '@/hooks/queries/use-public-blog'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Badge } from '@/components/ui/badge'
@@ -271,6 +271,15 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
                 <span>{formatDate(post.publishedAt ?? post.updatedAt)}</span>
               </div>
               <Separator orientation="vertical" className="h-4" />
+              {(post.author?.firstName || post.author?.lastName) && (
+                <>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <User className="h-4 w-4" />
+                    <span>{[post.author.firstName, post.author.lastName].filter(Boolean).join(' ')}</span>
+                  </div>
+                  <Separator orientation="vertical" className="h-4" />
+                </>
+              )}
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Eye className="h-4 w-4" />
                 <span>{post.viewCount} views</span>
@@ -382,13 +391,14 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
           {/* Table of Contents Sidebar */}
           {headings.length > 0 && (
             <aside className="hidden xl:block w-72 shrink-0">
-              <div className="sticky top-24 space-y-4">
-                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm">
-                  <div className="flex items-center gap-2 mb-4">
+              <div className="sticky top-24 flex flex-col gap-4" style={{ maxHeight: 'calc(100vh - 7rem)' }}>
+                {/* TOC card — fills remaining space, nav scrolls */}
+                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm flex flex-col min-h-0 flex-1">
+                  <div className="flex items-center gap-2 mb-4 shrink-0">
                     <BookOpen className="h-5 w-5 text-primary" />
                     <h3 className="font-semibold text-sm uppercase tracking-wide">Table of Contents</h3>
                   </div>
-                  <nav className="space-y-1 max-h-[60vh] overflow-y-auto">
+                  <nav className="space-y-1 overflow-y-auto flex-1 pr-1">
                     {headings.map((heading) => (
                       <a
                         key={heading.id}
@@ -410,8 +420,8 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
                   </nav>
                 </div>
 
-                {/* Share Card */}
-                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm">
+                {/* Share + Stats — pinned at bottom, don't grow */}
+                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm shrink-0">
                   <h4 className="font-semibold text-sm mb-3">Share this article</h4>
                   <Button 
                     variant="outline" 
@@ -422,17 +432,15 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
                     <Share2 className="mr-2 h-4 w-4" />
                     Share
                   </Button>
-                </div>
-
-                {/* Reading Progress */}
-                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm">
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Reading time</span>
-                    <span className="font-medium">{post.readingTime} min</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Views</span>
-                    <span className="font-medium">{post.viewCount}</span>
+                  <div className="mt-4 pt-4 border-t space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Reading time</span>
+                      <span className="font-medium">{post.readingTime} min</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Views</span>
+                      <span className="font-medium">{post.viewCount}</span>
+                    </div>
                   </div>
                 </div>
               </div>

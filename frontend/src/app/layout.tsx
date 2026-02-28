@@ -70,6 +70,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* DNS Prefetch for external resources */}
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+        {/* Umami self-hosted server – swap with your actual server URL */}
+        {process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL && (
+          <link
+            rel="dns-prefetch"
+            href={new URL(process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL).origin}
+          />
+        )}
 
         {/* Unregister any existing service workers to clear cache issues */}
         <script

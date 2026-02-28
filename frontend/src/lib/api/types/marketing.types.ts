@@ -56,6 +56,7 @@ export interface BlogPost {
   updatedAt: string
   category?: BlogCategory | null
   tags?: BlogPostTag[]
+  author?: { id: string; firstName?: string | null; lastName?: string | null; email?: string | null } | null
 }
 
 export interface BlogCategory {

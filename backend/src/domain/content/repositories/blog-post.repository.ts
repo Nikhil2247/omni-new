@@ -40,6 +40,14 @@ export class BlogPostRepository extends BaseRepository<
             tag: true,
           },
         },
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
       },
     });
   }
@@ -83,6 +91,14 @@ export class BlogPostRepository extends BaseRepository<
         orderBy: { publishedAt: 'desc' },
         include: {
           category: true,
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
         },
       },
     );
