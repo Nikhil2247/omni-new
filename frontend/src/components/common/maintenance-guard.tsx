@@ -56,7 +56,7 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
     }
   }, [isSystemAdmin, logout, maintenanceMode, user])
 
-  return <MaintenanceScreen supportEmail={data?.supportEmail} />
+  return <MaintenanceScreen supportEmail={data?.supportEmail ?? undefined} />
 }
 
 function MaintenanceScreen({ supportEmail }: { supportEmail?: string }) {

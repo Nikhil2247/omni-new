@@ -35,7 +35,7 @@ import {
   ExternalLink,
   Inbox,
 } from 'lucide-react'
-import type { BusinessLead } from '@/lib/api/types/business.types'
+import type { BusinessLead, LeadStatus } from '@/lib/api/types/business.types'
 import { toast } from 'sonner'
 
 const LEAD_STATUSES = [
@@ -180,7 +180,7 @@ export default function BusinessLeadsPage() {
     }
   }
 
-  const handleUpdateStatus = async (lead: BusinessLead, newStatus: string) => {
+  const handleUpdateStatus = async (lead: BusinessLead, newStatus: LeadStatus) => {
     try {
       await updateStatus.mutateAsync({ id: lead.id, status: newStatus })
       toast.success(`Lead status updated to ${newStatus}`)

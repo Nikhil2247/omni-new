@@ -12,7 +12,7 @@ function hasUmami() {
 
 export function trackUmamiEvent(eventName: string, payload?: UmamiPayload) {
   if (!hasUmami()) return;
-  window.umami.track(eventName, payload);
+  window.umami?.track(eventName, payload);
 }
 
 export function trackFunnelStep(

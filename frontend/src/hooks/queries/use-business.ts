@@ -21,6 +21,7 @@ import type {
   BusinessTask,
   BlockedDate,
   CreateBlockedDateRequest,
+  LeadStatus,
 } from '@/lib/api/types/business.types'
 import type { Timeline } from '@/lib/api/types/timeline.types'
 
@@ -472,7 +473,7 @@ export function useBusinessLead(id: string) {
 export function useUpdateLeadStatus() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
+    mutationFn: ({ id, status }: { id: string; status: LeadStatus }) =>
       businessService.updateLeadStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: businessKeys.all })
