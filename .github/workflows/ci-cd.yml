@@ -240,6 +240,8 @@ jobs:
             NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || '' }}
             NEXT_PUBLIC_GOOGLE_ADS_ID=${{ vars.NEXT_PUBLIC_GOOGLE_ADS_ID || '' }}
             NEXT_PUBLIC_ADSENSE_CLIENT_ID=${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT_ID || '' }}
+            NEXT_PUBLIC_UMAMI_WEBSITE_ID=${{ vars.NEXT_PUBLIC_UMAMI_WEBSITE_ID || '16bd72af-4406-43f7-a8a4-7d49c26bd4c0' }}
+            NEXT_PUBLIC_UMAMI_SCRIPT_URL=${{ vars.NEXT_PUBLIC_UMAMI_SCRIPT_URL || 'http://umami-t044084gsgow8oscc084w8sw.187.77.188.200.sslip.io/script.js' }}
             NEXT_PUBLIC_APP_ENV=production
 
   # 6. Deploy to Production (App Only - Infrastructure deployed separately)
