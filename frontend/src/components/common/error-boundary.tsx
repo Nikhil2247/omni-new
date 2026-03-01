@@ -42,10 +42,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // Track error with Umami
     if (typeof window !== 'undefined') {
       import('@/lib/analytics/umami').then(({ trackError }) => {
-        trackError.boundary(error.message || error.toString(), {
-          componentStack: errorInfo.componentStack,
-          page: window.location.pathname,
-        })
+        trackError.jsError(error.message || error.toString(), errorInfo.componentStack ?? undefined)
       })
     }
 

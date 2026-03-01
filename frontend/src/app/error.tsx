@@ -18,11 +18,7 @@ export default function Error({
     console.error('Application error:', error)
 
     // Track error with Umami
-    trackError.boundary(error.message || error.toString(), {
-      digest: error.digest,
-      stack: error.stack,
-      page: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
-    })
+    trackError.jsError(error.message || error.toString(), error.stack)
 
     // TODO: Send to error tracking service (e.g., Sentry)
     // Sentry.captureException(error)

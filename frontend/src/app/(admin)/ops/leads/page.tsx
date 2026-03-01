@@ -80,7 +80,7 @@ export default function OpsLeadsPage() {
   const { track } = useUmami()
 
   useEffect(() => {
-    track('ops:leads:page_view', { totalLeads: leadsResponse?.leads?.length || 0 })
+    track('ops:leads:page_view', { totalLeads: leadsResponse?.data?.length || 0 })
   }, [leadsResponse, track])
 
   const [searchTerm, setSearchTerm] = useState('')

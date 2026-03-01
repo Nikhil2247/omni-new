@@ -15,11 +15,7 @@ export default function GlobalError({
     console.error('Global error:', error)
 
     // Track global error with Umami
-    trackError.global(error.message || error.toString(), {
-      digest: error.digest,
-      stack: error.stack,
-      fatal: true,
-    })
+    trackError.jsError(error.message || error.toString(), error.stack)
   }, [error])
 
   return (
