@@ -1,13 +1,20 @@
 'use client'
 
+import { useEffect } from 'react'
 import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
 import { useMarketingMedia } from '@/hooks/queries/use-marketing'
+import { useUmami } from '@/hooks/use-umami'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function MarketingMediaPage() {
   const { data, isLoading } = useMarketingMedia()
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('marketing:media:page_view', { totalMedia: data?.length || 0 })
+  }, [data, track])
 
   return (
     <RoleGuard allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]} redirectOnFail={true}>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { useAdminAudit } from '@/hooks/queries/use-admin'
+import { useUmami } from '@/hooks/use-umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 export default function SystemAuditPage() {
+  const { track } = useUmami()
   const [query, setQuery] = useState('')
   const [entityType, setEntityType] = useState('')
   const [userId, setUserId] = useState('')
@@ -19,6 +21,10 @@ export default function SystemAuditPage() {
   useEffect(() => {
     setCurrentPage(1)
   }, [query, entityType, userId])
+
+  useEffect(() => {
+    track('system:audit:page_view', { section: 'audit_logs' })
+  }, [track])
 
   const params = useMemo(
     () => ({

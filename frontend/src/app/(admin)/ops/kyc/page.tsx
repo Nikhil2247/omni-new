@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useOpsVendors, useOpsKycByVendor, useStartKycReview, useApproveKyc, useRejectKyc } from '@/hooks/queries/use-ops'
 import { useAuthStore } from '@/store/auth-store'
+import { useUmami } from '@/hooks/use-umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,6 +49,11 @@ export default function OpsKycPage() {
   const { user } = useAuthStore()
   const { data: vendors, isLoading: vendorsLoading, error: vendorsError } = useOpsVendors()
   const startReview = useStartKycReview()
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('ops:kyc:page_view', { section: 'kyc_management' })
+  }, [])
   const approveKyc = useApproveKyc()
   const rejectKyc = useRejectKyc()
 

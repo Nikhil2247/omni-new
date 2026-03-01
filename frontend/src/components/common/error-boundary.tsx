@@ -33,11 +33,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to error reporting service
     console.error('ErrorBoundary caught an error:', error, errorInfo)
-    
+
     this.setState({
       error,
       errorInfo,
     })
+
+    // Track error with Umami
+    if (typeof window !== 'undefined') {
+      import('@/lib/analytics/umami').then(({ trackError }) => {
+        trackError.boundary(error.message || error.toString(), {
+          componentStack: errorInfo.componentStack,
+          page: window.location.pathname,
+        })
+      })
+    }
 
     // TODO: Send to error tracking service (e.g., Sentry)
     // if (typeof window !== 'undefined') {

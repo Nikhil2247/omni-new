@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { trackError } from '@/lib/analytics/umami'
 
 export default function Error({
   error,
@@ -15,7 +16,14 @@ export default function Error({
   useEffect(() => {
     // Log the error to an error reporting service
     console.error('Application error:', error)
-    
+
+    // Track error with Umami
+    trackError.boundary(error.message || error.toString(), {
+      digest: error.digest,
+      stack: error.stack,
+      page: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+    })
+
     // TODO: Send to error tracking service (e.g., Sentry)
     // Sentry.captureException(error)
   }, [error])

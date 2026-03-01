@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useOpsVendors } from '@/hooks/queries/use-ops'
+import { useUmami } from '@/hooks/use-umami'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,11 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 export default function OpsVendorsPage() {
   const { data: vendors, isLoading, error } = useOpsVendors()
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('ops:vendors:page_view', { totalVendors: vendors?.length || 0 })
+  }, [vendors, track])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')

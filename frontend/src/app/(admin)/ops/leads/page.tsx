@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useUmami } from '@/hooks/use-umami'
 import { useOpsLeads } from '@/hooks/queries/use-leads'
 import { useLeadConversion, useOpsManagers } from '@/hooks/queries/use-ops'
 import { useAuthStore } from '@/store/auth-store'
@@ -76,6 +77,11 @@ export default function OpsLeadsPage() {
   const { data: leadsResponse, isLoading, error } = useOpsLeads()
   const { data: managersResponse } = useOpsManagers()
   const convertLead = useLeadConversion()
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('ops:leads:page_view', { totalLeads: leadsResponse?.leads?.length || 0 })
+  }, [leadsResponse, track])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')

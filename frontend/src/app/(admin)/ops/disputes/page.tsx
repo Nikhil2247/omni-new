@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { useOpsDisputes, useInvestigateDispute, useResolveDispute } from '@/hooks/queries/use-ops'
 import { useAuthStore } from '@/store/auth-store'
+import { useUmami } from '@/hooks/use-umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,7 +26,6 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { AlertTriangle, Calendar, Search, Eye, PlayCircle, CheckCircle } from 'lucide-react'
-import { useState } from 'react'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   OPEN: { label: 'Open', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
@@ -48,6 +49,11 @@ export default function OpsDisputesPage() {
   const { data: disputes, isLoading, error } = useOpsDisputes()
   const investigateDispute = useInvestigateDispute()
   const resolveDispute = useResolveDispute()
+  const { track, ui } = useUmami()
+
+  useEffect(() => {
+    track('ops:disputes:page_view', { section: 'disputes_management' })
+  }, [])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')

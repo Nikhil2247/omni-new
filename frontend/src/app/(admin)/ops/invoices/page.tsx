@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { useUmami } from '@/hooks/use-umami'
 import { format } from 'date-fns'
 import { FileText, DollarSign, Clock, CheckCircle, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, Eye, Receipt, XCircle, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -47,6 +48,12 @@ function formatCurrency(amount: number | string | null | undefined): string {
 }
 
 export default function OpsInvoicesPage() {
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('ops:invoices:page_view', { section: 'invoices_management' })
+  }, [track])
+
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)

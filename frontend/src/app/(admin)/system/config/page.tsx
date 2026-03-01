@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useSystemConfig, useUpdateSystemConfig } from '@/hooks/queries/use-admin'
+import { useUmami } from '@/hooks/use-umami'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,6 +13,11 @@ import { toast } from 'sonner'
 export default function SystemConfigPage() {
   const { data, isLoading } = useSystemConfig()
   const updateConfig = useUpdateSystemConfig()
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('system:config:page_view', { section: 'system_configuration' })
+  }, [track])
 
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [registrationEnabled, setRegistrationEnabled] = useState(false)

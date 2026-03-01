@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useAdminRoles, useCreateRole, useDeleteRole } from '@/hooks/queries/use-admin'
+import { useUmami } from '@/hooks/use-umami'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,11 @@ export default function SystemRolesPage() {
   const { data, isLoading } = useAdminRoles()
   const createRole = useCreateRole()
   const deleteRole = useDeleteRole()
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('system:roles:page_view', { totalRoles: data?.length || 0 })
+  }, [data, track])
 
   const [name, setName] = useState('')
   const [displayName, setDisplayName] = useState('')

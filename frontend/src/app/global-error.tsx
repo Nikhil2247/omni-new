@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { trackError } from '@/lib/analytics/umami'
 
 export default function GlobalError({
   error,
@@ -12,6 +13,13 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error('Global error:', error)
+
+    // Track global error with Umami
+    trackError.global(error.message || error.toString(), {
+      digest: error.digest,
+      stack: error.stack,
+      fatal: true,
+    })
   }, [error])
 
   return (

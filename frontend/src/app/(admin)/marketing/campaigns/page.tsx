@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect } from 'react'
 import { useMarketingCampaigns } from '@/hooks/queries/use-marketing'
+import { useUmami } from '@/hooks/use-umami'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -9,6 +11,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 export default function MarketingCampaignsPage() {
   const { data, isLoading } = useMarketingCampaigns()
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('marketing:campaigns:page_view', { totalCampaigns: data?.length || 0 })
+  }, [data, track])
 
   return (
     <div className="space-y-6">

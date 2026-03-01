@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { Search, Send } from 'lucide-react'
+import { useUmami } from '@/hooks/use-umami'
 import { useBlogPosts, usePublishBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
 import { useAuthStore } from '@/store/auth-store'
@@ -25,6 +26,7 @@ import type { BlogStatus } from '@/lib/api/types/marketing.types'
 export default function MarketingContentPage() {
   const { user } = useAuthStore()
   const isContentWriter = user?.role === ROLES.CONTENT_WRITER
+  const { track } = useUmami()
   const [keyword, setKeyword] = useState('')
   const [publishingId, setPublishingId] = useState<string | null>(null)
   const publishMutation = usePublishBlogPost()
@@ -52,6 +54,10 @@ export default function MarketingContentPage() {
   const { data, isLoading } = useBlogPosts(params)
   const { data: categories } = usePublicBlogCategories()
   const { data: tags } = usePublicBlogTags()
+
+  useEffect(() => {
+    track('marketing:content:page_view', { totalPosts: data?.data?.length || 0 })
+  }, [data, track])
 
   const categoryOptions = Array.isArray(categories)
     ? categories

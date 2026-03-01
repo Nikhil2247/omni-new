@@ -1,9 +1,17 @@
 'use client'
 
+import { useEffect } from 'react'
 import { User, Bell, Shield } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
+import { useUmami } from '@/hooks/use-umami'
 
 export default function BusinessSettingsPage() {
+  const { track } = useUmami()
+
+  useEffect(() => {
+    track('business:settings:page_view', { section: 'settings_overview' })
+  }, [track])
+
   return (
     <div className="space-y-6">
       <div>

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
+import { useUmami } from '@/hooks/use-umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 export default function SystemUsersPage() {
+  const { track } = useUmami()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
@@ -38,6 +40,10 @@ export default function SystemUsersPage() {
   )
 
   const { data, isLoading } = useAdminUsers(params)
+
+  useEffect(() => {
+    track('system:users:page_view', { totalUsers: data?.data?.length || 0 })
+  }, [data, track])
 
   return (
     <div className="space-y-6">

@@ -1,17 +1,24 @@
 'use client'
 
+import { useEffect } from 'react'
 import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
+import { useUmami } from '@/hooks/use-umami'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function MarketingAnalyticsPage() {
   const { data, isLoading } = useBlogPosts({ page: 1, limit: 50 })
+  const { track } = useUmami()
 
   const totalPosts = data?.data?.length ?? 0
   const published = data?.data?.filter((post) => post.status === 'PUBLISHED').length ?? 0
   const drafts = data?.data?.filter((post) => post.status === 'DRAFT').length ?? 0
+
+  useEffect(() => {
+    track('marketing:analytics:page_view', { totalPosts, published, drafts })
+  }, [totalPosts, published, drafts, track])
 
   return (
     <RoleGuard allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]} redirectOnFail={true}>

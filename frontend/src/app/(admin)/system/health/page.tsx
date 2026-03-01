@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useSystemHealth } from '@/hooks/queries/use-admin'
+import { useUmami } from '@/hooks/use-umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -116,8 +117,13 @@ function CircularProgress({
 
 export default function SystemHealthPage() {
   const { data, isLoading, refetch, isFetching, dataUpdatedAt } = useSystemHealth()
+  const { track } = useUmami()
   const [autoRefresh, setAutoRefresh] = useState(false)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+
+  useEffect(() => {
+    track('system:health:page_view', { section: 'system_health_monitor' })
+  }, [track])
 
   useEffect(() => {
     if (!autoRefresh) return
