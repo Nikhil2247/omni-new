@@ -5,32 +5,23 @@ import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '@/store/auth-store'
 import { notificationService, type NotificationListParams } from '@/lib/api/services/notification.service'
 import type { NotificationItem } from '@/lib/api/types/notification.types'
+import { getWebSocketConfig, isWebSocketEnabled } from '@/lib/websocket/config'
 
 interface NotificationReadEvent {
   notificationIds: string[] | 'all'
   unreadCount: number
 }
 
-const getWsBaseUrl = () => {
-  const wsUrl = process.env.NEXT_PUBLIC_WS_URL
-  if (wsUrl) return wsUrl
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
-  return apiUrl.replace(/\/api\/?$/, '')
-}
-
-const getSocketPath = () => process.env.NEXT_PUBLIC_SOCKET_PATH || '/api/socket.io'
-
 export const useNotifications = (params: NotificationListParams = {}) => {
   const { isAuthenticated, accessToken } = useAuthStore()
   const socketRef = useRef<Socket | null>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [connected, setConnected] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
 
-  const wsBaseUrl = useMemo(() => getWsBaseUrl(), [])
-  const socketPath = useMemo(() => getSocketPath(), [])
   const typesKey = useMemo(() => params.types?.join('|') ?? '', [params.types])
 
   useEffect(() => {
@@ -49,20 +40,69 @@ export const useNotifications = (params: NotificationListParams = {}) => {
   }, [isAuthenticated, params.page, params.limit, params.unreadOnly, params.includeDismissed, typesKey])
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return
+    // Skip WebSocket connection if disabled or not authenticated
+    if (!isWebSocketEnabled() || !isAuthenticated || !accessToken) {
+      return
+    }
 
-    const socket = io(`${wsBaseUrl}/notifications`, {
-      auth: { token: accessToken },
-      path: socketPath,
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
+    // Clear any existing reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+
+    // Get WebSocket configuration
+    const config = getWebSocketConfig('/notifications', accessToken)
+
+    // Create socket connection
+    const socket = io(config.url, {
+      ...config.options,
+      path: config.path,
     })
 
     socketRef.current = socket
 
-    socket.on('connect', () => setConnected(true))
-    socket.on('disconnect', () => setConnected(false))
+    // Connection event handlers
+    socket.on('connect', () => {
+      console.log('[Notifications] WebSocket connected')
+      setConnected(true)
+      setConnectionError(null)
+    })
 
+    socket.on('disconnect', (reason) => {
+      console.log('[Notifications] WebSocket disconnected:', reason)
+      setConnected(false)
+
+      // Don't show error for intentional disconnects
+      if (reason !== 'io client disconnect' && reason !== 'io server disconnect') {
+        setConnectionError('Connection lost. Attempting to reconnect...')
+      }
+    })
+
+    socket.on('connect_error', (error) => {
+      console.error('[Notifications] WebSocket connection error:', error)
+      setConnected(false)
+
+      // Set user-friendly error message
+      const errorMessage = error.message || 'Failed to connect to notification service'
+      setConnectionError(errorMessage)
+
+      // In development, provide more detailed error info
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Notifications] Connection details:', {
+          url: config.url,
+          path: config.path,
+          error: errorMessage,
+        })
+      }
+    })
+
+    socket.on('error', (error) => {
+      console.error('[Notifications] WebSocket error:', error)
+      setConnectionError('An error occurred with the notification service')
+    })
+
+    // Notification event handlers
     socket.on('notification', (payload: NotificationItem) => {
       setNotifications((prev) => [payload, ...prev])
       setUnreadCount((prev) => prev + 1)
@@ -78,11 +118,15 @@ export const useNotifications = (params: NotificationListParams = {}) => {
       }
     })
 
+    // Cleanup function
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
       socket.disconnect()
       socketRef.current = null
     }
-  }, [isAuthenticated, accessToken, wsBaseUrl, socketPath])
+  }, [isAuthenticated, accessToken])
 
   const markRead = async (notificationIds: string[]) => {
     if (!notificationIds.length) return
@@ -114,6 +158,7 @@ export const useNotifications = (params: NotificationListParams = {}) => {
     unreadCount,
     loading,
     connected,
+    connectionError,
     markRead,
     markAllRead,
     dismiss,

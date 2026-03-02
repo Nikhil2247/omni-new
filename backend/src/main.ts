@@ -62,7 +62,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // ===========================================================================
-  // WEBSOCKET REDIS ADAPTER (for horizontal scaling)
+  // WEBSOCKET ADAPTER CONFIGURATION
   // ===========================================================================
   const enableWebSocketRedis = configService.get<boolean>(
     'WEBSOCKET_REDIS_ADAPTER',
@@ -75,9 +75,17 @@ async function bootstrap() {
       logger.log('WebSocket Redis adapter enabled for horizontal scaling');
     } catch (error) {
       logger.warn(
-        'Failed to initialize WebSocket Redis adapter, using default adapter',
+        'Failed to initialize WebSocket Redis adapter, falling back to default',
       );
+      // Fallback to default Socket.IO adapter
+      const { IoAdapter } = await import('@nestjs/platform-socket.io');
+      app.useWebSocketAdapter(new IoAdapter(app));
     }
+  } else {
+    // Use default Socket.IO adapter for development
+    const { IoAdapter } = await import('@nestjs/platform-socket.io');
+    app.useWebSocketAdapter(new IoAdapter(app));
+    logger.log('WebSocket adapter initialized (Socket.IO)');
   }
 
   // ===========================================================================
@@ -120,10 +128,21 @@ async function bootstrap() {
     'https://backend.omnicassion.com',
   ];
 
+  const isDevelopment = configService.get('NODE_ENV') === 'development';
+
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
+
+      // In development, allow all localhost origins for easier debugging
+      if (isDevelopment && (
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:')
+      )) {
+        callback(null, true);
+        return;
+      }
 
       if (allowedOrigins.includes(origin)) {
         callback(null, true);

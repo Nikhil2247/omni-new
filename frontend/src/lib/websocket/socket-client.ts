@@ -5,9 +5,7 @@
 // ============================================================================
 
 import { io, Socket } from 'socket.io-client'
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001'
-const SOCKET_PATH = process.env.NEXT_PUBLIC_SOCKET_PATH || '/api/socket.io'
+import { getWebSocketConfig } from './config'
 
 export interface SocketConfig {
   namespace: string
@@ -43,19 +41,20 @@ export class SocketClient {
       return
     }
 
-    console.log(`[SocketClient] Connecting to ${SOCKET_URL}${this.config.namespace}`)
+    // Get WebSocket configuration using the centralized config utility
+    const wsConfig = getWebSocketConfig(this.config.namespace, token)
 
-    this.socket = io(`${SOCKET_URL}${this.config.namespace}`, {
-      auth: {
-        token,
-      },
-      path: SOCKET_PATH,
-      transports: ['websocket', 'polling'],
-      reconnection: this.config.reconnection,
-      reconnectionAttempts: this.config.reconnectionAttempts,
-      reconnectionDelay: this.config.reconnectionDelay,
-      autoConnect: this.config.autoConnect,
-      withCredentials: true,
+    console.log(`[SocketClient] Connecting to ${wsConfig.url}`)
+
+    // Merge configuration options
+    this.socket = io(wsConfig.url, {
+      ...wsConfig.options,
+      path: wsConfig.path,
+      // Override with user-provided config
+      reconnection: this.config.reconnection ?? wsConfig.options.reconnection,
+      reconnectionAttempts: this.config.reconnectionAttempts ?? wsConfig.options.reconnectionAttempts,
+      reconnectionDelay: this.config.reconnectionDelay ?? wsConfig.options.reconnectionDelay,
+      autoConnect: this.config.autoConnect ?? wsConfig.options.autoConnect,
     })
 
     this.setupEventHandlers()
