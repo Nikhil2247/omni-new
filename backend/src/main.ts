@@ -15,6 +15,7 @@ import * as cookieParser from 'cookie-parser';
 // csurf removed — JWT Bearer-token API does not require CSRF protection
 import { AppModule } from './app.module';
 import { createRedisIoAdapter } from './infrastructure/websockets/redis-io.adapter';
+import { CustomIoAdapter } from './infrastructure/websockets/custom-io.adapter';
 import { IdempotencyInterceptor } from './infrastructure/idempotency/idempotency.interceptor';
 import { IdempotencyService } from './infrastructure/idempotency/idempotency.service';
 import { EmailService } from './infrastructure/notifications/email.service';
@@ -82,10 +83,10 @@ async function bootstrap() {
       app.useWebSocketAdapter(new IoAdapter(app));
     }
   } else {
-    // Use default Socket.IO adapter for development
-    const { IoAdapter } = await import('@nestjs/platform-socket.io');
-    app.useWebSocketAdapter(new IoAdapter(app));
-    logger.log('WebSocket adapter initialized (Socket.IO)');
+    // Use custom Socket.IO adapter with path configuration
+    const customAdapter = new CustomIoAdapter(app, configService);
+    app.useWebSocketAdapter(customAdapter);
+    logger.log('WebSocket adapter initialized (Socket.IO) with custom path');
   }
 
   // ===========================================================================
