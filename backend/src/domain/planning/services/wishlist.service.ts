@@ -226,9 +226,9 @@ export class WishlistService {
 
     const item = await this.prisma.wishlistItem.create({
       data: {
-        wishlist: { connect: { id: wishlistId } },
-        vendorProfileId: vendorProfileId ?? null,
-        mediaItemId: mediaItemId ?? null,
+        wishlistId,
+        ...(vendorProfileId && { vendorProfileId }),
+        ...(mediaItemId && { mediaItemId }),
         notes,
       },
     });

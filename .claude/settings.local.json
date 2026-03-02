@@ -4,7 +4,8 @@
       "Bash(dir \"D:\\\\omnicassion\\\\omni-new\")",
       "Bash(dir:*)",
       "Bash(npx ts-node:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
