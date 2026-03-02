@@ -19,6 +19,8 @@ const getWsBaseUrl = () => {
   return apiUrl.replace(/\/api\/?$/, '')
 }
 
+const getSocketPath = () => process.env.NEXT_PUBLIC_SOCKET_PATH || '/api/socket.io'
+
 export const useNotifications = (params: NotificationListParams = {}) => {
   const { isAuthenticated, accessToken } = useAuthStore()
   const socketRef = useRef<Socket | null>(null)
@@ -28,6 +30,7 @@ export const useNotifications = (params: NotificationListParams = {}) => {
   const [connected, setConnected] = useState(false)
 
   const wsBaseUrl = useMemo(() => getWsBaseUrl(), [])
+  const socketPath = useMemo(() => getSocketPath(), [])
   const typesKey = useMemo(() => params.types?.join('|') ?? '', [params.types])
 
   useEffect(() => {
@@ -50,7 +53,9 @@ export const useNotifications = (params: NotificationListParams = {}) => {
 
     const socket = io(`${wsBaseUrl}/notifications`, {
       auth: { token: accessToken },
+      path: socketPath,
       transports: ['websocket', 'polling'],
+      withCredentials: true,
     })
 
     socketRef.current = socket
@@ -77,7 +82,7 @@ export const useNotifications = (params: NotificationListParams = {}) => {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [isAuthenticated, accessToken, wsBaseUrl])
+  }, [isAuthenticated, accessToken, wsBaseUrl, socketPath])
 
   const markRead = async (notificationIds: string[]) => {
     if (!notificationIds.length) return

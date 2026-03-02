@@ -2,6 +2,39 @@ import { apiClient } from '../client'
 import { API_ENDPOINTS } from '../endpoints'
 import type { CategoryLookup, CityLookup, EventTypeLookup } from '../types/lookup.types'
 
+const extractArray = <T>(payload: unknown, nestedKey?: string): T[] => {
+  if (Array.isArray(payload)) {
+    return payload as T[]
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return []
+  }
+
+  const record = payload as Record<string, unknown>
+  const directData = record.data
+
+  if (Array.isArray(directData)) {
+    return directData as T[]
+  }
+
+  if (nestedKey && directData && typeof directData === 'object') {
+    const nested = (directData as Record<string, unknown>)[nestedKey]
+    if (Array.isArray(nested)) {
+      return nested as T[]
+    }
+  }
+
+  if (nestedKey) {
+    const nested = record[nestedKey]
+    if (Array.isArray(nested)) {
+      return nested as T[]
+    }
+  }
+
+  return []
+}
+
 const normalizeCategories = (categories: CategoryLookup[]) =>
   categories
     .map((category) => ({
@@ -23,16 +56,14 @@ export const lookupService = {
     const response = await apiClient.get<EventTypeLookup[]>(
       API_ENDPOINTS.USER.LOOKUPS.EVENT_TYPES,
     )
-    const payload = response.data as unknown as { data?: EventTypeLookup[] }
-    return payload?.data ?? (response.data as EventTypeLookup[])
+    return extractArray<EventTypeLookup>(response.data, 'eventTypes')
   },
 
   async getCities() {
     const response = await apiClient.get<CityLookup[]>(
       API_ENDPOINTS.USER.LOOKUPS.CITIES,
     )
-    const payload = response.data as unknown as { data?: CityLookup[] }
-    return payload?.data ?? (response.data as CityLookup[])
+    return extractArray<CityLookup>(response.data, 'cities')
   },
 
   async getCategories() {
@@ -45,8 +76,7 @@ export const lookupService = {
     for (const endpoint of endpointCandidates) {
       try {
         const response = await apiClient.get<CategoryLookup[]>(endpoint)
-        const payload = response.data as unknown as { data?: CategoryLookup[] }
-        const categories = payload?.data ?? (response.data as CategoryLookup[])
+        const categories = extractArray<CategoryLookup>(response.data, 'categories')
 
         if (Array.isArray(categories) && categories.length > 0) {
           return normalizeCategories(categories)

@@ -20,7 +20,7 @@ interface PortfolioMediaCardProps {
 
 export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
   const router = useRouter()
-  const { user, isAuthenticated, hasHydrated } = useAuthStore()
+  const { user, hasHydrated } = useAuthStore()
   const userId = user?.id
   const queryClient = useQueryClient()
   const wishlistsQuery = useWishlistMine(Boolean(userId))
@@ -30,7 +30,6 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [locallySaved, setLocallySaved] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
 
   const previewUrl = item.cdnUrl || item.url
   const imageUrl = item.cdnUrl || getMinioViewUrl(previewUrl) || previewUrl
@@ -38,7 +37,7 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
   const isSaved =
     locallySaved ||
     (Array.isArray(wishlists) && wishlists.some((list) =>
-      list.items?.some((entry: { vendorProfileId?: string }) => entry.vendorProfileId === item.vendor.id)
+      list.items?.some((entry: { mediaItemId?: string | null }) => entry.mediaItemId === item.id)
     ))
 
   const handleSave = async () => {
@@ -74,7 +73,7 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
 
     try {
       setIsSaving(true)
-      await addItem.mutateAsync({ wishlistId: targetId, input: { vendorProfileId: item.vendor.id } })
+      await addItem.mutateAsync({ wishlistId: targetId, input: { mediaItemId: item.id } })
       await queryClient.invalidateQueries({ queryKey: wishlistKeys.byId(targetId) })
       await queryClient.invalidateQueries({ queryKey: wishlistKeys.mine() })
       setLocallySaved(true)
@@ -89,8 +88,6 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
   return (
     <div 
       className="group relative overflow-hidden rounded-xl sm:rounded-2xl border bg-card shadow-sm transition-all duration-300 hover:shadow-lg"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <Link
         href={`/vendors/${item.vendor.slug}`}

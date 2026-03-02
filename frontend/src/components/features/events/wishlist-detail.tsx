@@ -25,6 +25,8 @@ import {
   Heart,
   Calendar,
   Store,
+  ImageIcon,
+  Video,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -62,7 +64,7 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
             <Heart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h2 className="text-lg font-semibold">Unable to load wishlist</h2>
             <p className="text-sm text-muted-foreground mt-2">
-              This wishlist may have been deleted or you don't have access to it.
+              This wishlist may have been deleted or you don&apos;t have access to it.
             </p>
           </CardContent>
         </Card>
@@ -96,11 +98,11 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
         )}
       </div>
 
-      {/* Vendor list */}
+      {/* Wishlist items */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Saved Vendors</span>
+            <span>Saved Items</span>
             <Badge variant="secondary">{wishlist.items?.length ?? 0}</Badge>
           </CardTitle>
         </CardHeader>
@@ -108,9 +110,9 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
           {!wishlist.items || wishlist.items.length === 0 ? (
             <div className="text-center py-12">
               <Store className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-medium">No vendors saved yet</h3>
+              <h3 className="font-medium">No wishlist items saved yet</h3>
               <p className="text-sm text-muted-foreground mt-2 mb-4">
-                Browse vendors and save your favorites to this wishlist.
+                Save vendor profiles or portfolio media to see them here.
               </p>
               <Button asChild>
                 <Link href="/discover">Discover vendors</Link>
@@ -121,7 +123,28 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
               {wishlist.items.map((item) => (
                 <div key={item.id} className="py-4 flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    {item.vendor ? (
+                    {item.mediaItem ? (
+                      <>
+                        <div className="mb-1 flex items-center gap-2">
+                          {item.mediaItem.type === 'VIDEO' ? (
+                            <Video className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span className="font-medium">Saved portfolio media</span>
+                        </div>
+                        {item.mediaItem.caption && (
+                          <p className="text-sm text-muted-foreground truncate">
+                            {item.mediaItem.caption}
+                          </p>
+                        )}
+                        {item.mediaItem.vendor && (
+                          <p className="text-sm text-muted-foreground truncate">
+                            From {item.mediaItem.vendor.businessName}
+                          </p>
+                        )}
+                      </>
+                    ) : item.vendor ? (
                       <>
                         <Link
                           href={`/vendors/${item.vendor.slug}`}
@@ -146,6 +169,14 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    {item.mediaItem?.vendor && (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/vendors/${item.mediaItem.vendor.slug}`}>
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          View Vendor
+                        </Link>
+                      </Button>
+                    )}
                     {item.vendor && (
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/vendors/${item.vendor.slug}`}>
@@ -162,9 +193,9 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Remove vendor?</AlertDialogTitle>
+                          <AlertDialogTitle>Remove wishlist item?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will remove {item.vendor?.businessName || 'this vendor'} from your wishlist.
+                            This will remove {item.vendor?.businessName || item.mediaItem?.caption || 'this item'} from your wishlist.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

@@ -25,6 +25,24 @@ import { PrismaService } from '../../core/database/prisma.service';
 import { ConversationService } from '../../domain/messaging/services/conversation.service';
 import { MessagingMessageService } from '../../domain/messaging/services/message.service';
 
+const getAllowedCorsOrigins = (): string[] => {
+  const configuredOrigins = process.env.CORS_ORIGINS?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (configuredOrigins && configuredOrigins.length > 0) {
+    return configuredOrigins;
+  }
+
+  return [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://omnicassion.com',
+    'https://www.omnicassion.com',
+    'https://backend.omnicassion.com',
+  ];
+};
+
 // ============================================================================
 // TYPES AND INTERFACES
 // ============================================================================
@@ -180,7 +198,7 @@ export interface ReactionPayload {
         /^http:\/\/127\.0\.0\.1:\d+$/,
       ];
       // Check environment-based allowed origins (set via CORS_ORIGINS env var)
-      const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [];
+      const corsOrigins = getAllowedCorsOrigins();
       if (
         corsOrigins.includes(origin) ||
         allowedPatterns.some((pattern) => pattern.test(origin))

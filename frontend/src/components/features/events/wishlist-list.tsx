@@ -5,11 +5,11 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Plus, Heart, Sparkles, FolderHeart } from 'lucide-react'
+import { Plus, Heart, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
 import { useCreateWishlist, useWishlistMine } from '@/hooks/queries/use-wishlists'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -73,7 +73,7 @@ export function WishlistList({ basePath = '/wishlists' }: { basePath?: string } 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold">My Wishlists</h2>
-          <p className="text-sm text-muted-foreground">Save vendors you love and revisit them anytime.</p>
+          <p className="text-sm text-muted-foreground">Save vendor profiles and media you love, then revisit anytime.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 rounded-full bg-pink-500/10 px-4 py-2">
@@ -143,7 +143,7 @@ export function WishlistList({ basePath = '/wishlists' }: { basePath?: string } 
                   </h3>
                   <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                     <Sparkles className="h-4 w-4" />
-                    <span>{wishlist.items?.length ?? 0} vendors saved</span>
+                    <span>{wishlist.items?.length ?? 0} items saved</span>
                   </div>
 
                   {/* Preview dots */}
@@ -175,7 +175,7 @@ export function WishlistList({ basePath = '/wishlists' }: { basePath?: string } 
             </EmptyMedia>
             <EmptyTitle>Start Your Collection</EmptyTitle>
             <EmptyDescription>
-              Create your first wishlist to save and organize your favorite vendors.
+              Create your first wishlist to save and organize your favorite profiles and media.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

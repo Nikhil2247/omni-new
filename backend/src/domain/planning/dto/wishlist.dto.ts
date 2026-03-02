@@ -3,7 +3,13 @@
 // ============================================================================
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsUUID, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsBoolean,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateWishlistDto {
   @ApiProperty({ description: 'User ID' })
@@ -34,9 +40,21 @@ export class AddWishlistItemDto {
   @IsUUID()
   wishlistId?: string;
 
-  @ApiProperty({ description: 'Vendor profile ID' })
+  @ApiPropertyOptional({
+    description: 'Vendor profile ID (for profile wishlisting)',
+  })
+  @IsOptional()
+  @ValidateIf((dto: AddWishlistItemDto) => !dto.mediaItemId)
   @IsUUID()
-  vendorProfileId: string;
+  vendorProfileId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Media item ID (for portfolio/media wishlisting)',
+  })
+  @IsOptional()
+  @ValidateIf((dto: AddWishlistItemDto) => !dto.vendorProfileId)
+  @IsUUID()
+  mediaItemId?: string;
 
   @ApiPropertyOptional({ description: 'Notes', nullable: true })
   @IsOptional()

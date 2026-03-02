@@ -7,6 +7,7 @@
 import { io, Socket } from 'socket.io-client'
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001'
+const SOCKET_PATH = process.env.NEXT_PUBLIC_SOCKET_PATH || '/api/socket.io'
 
 export interface SocketConfig {
   namespace: string
@@ -48,14 +49,13 @@ export class SocketClient {
       auth: {
         token,
       },
-      query: {
-        token,
-      },
+      path: SOCKET_PATH,
       transports: ['websocket', 'polling'],
       reconnection: this.config.reconnection,
       reconnectionAttempts: this.config.reconnectionAttempts,
       reconnectionDelay: this.config.reconnectionDelay,
       autoConnect: this.config.autoConnect,
+      withCredentials: true,
     })
 
     this.setupEventHandlers()

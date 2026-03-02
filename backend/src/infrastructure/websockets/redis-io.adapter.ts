@@ -61,10 +61,28 @@ export class RedisIoAdapter extends IoAdapter {
   }
 
   createIOServer(port: number, options?: ServerOptions): Server {
+    const corsOrigins = this.configService
+      .get<string>('CORS_ORIGINS')
+      ?.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean) || [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://omnicassion.com',
+      'https://www.omnicassion.com',
+      'https://backend.omnicassion.com',
+    ];
+
+    const socketPath = this.configService.get<string>(
+      'SOCKET_IO_PATH',
+      '/api/socket.io',
+    );
+
     const server = super.createIOServer(port, {
       ...options,
+      path: socketPath,
       cors: {
-        origin: this.configService.get<string>('CORS_ORIGINS', '*').split(','),
+        origin: corsOrigins,
         credentials: true,
       },
       transports: ['websocket', 'polling'],

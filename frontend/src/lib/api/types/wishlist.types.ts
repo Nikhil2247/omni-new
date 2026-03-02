@@ -6,13 +6,27 @@ export interface WishlistItemVendor {
   tagline?: string | null
 }
 
+export interface WishlistItemMedia {
+  id: string
+  type: 'IMAGE' | 'VIDEO'
+  url: string
+  thumbnailUrl?: string | null
+  cdnUrl?: string | null
+  altText?: string | null
+  caption?: string | null
+  createdAt: string
+  vendor?: WishlistItemVendor | null
+}
+
 export interface WishlistItem {
   id: string
   wishlistId: string
-  vendorProfileId: string
+  vendorProfileId?: string | null
+  mediaItemId?: string | null
   notes?: string | null
   createdAt: string
   vendor?: WishlistItemVendor | null
+  mediaItem?: WishlistItemMedia | null
 }
 
 export interface Wishlist {
@@ -33,6 +47,7 @@ export interface CreateWishlistInput {
 }
 
 export interface AddWishlistItemInput {
-  vendorProfileId: string
+  vendorProfileId?: string
+  mediaItemId?: string
   notes?: string
 }

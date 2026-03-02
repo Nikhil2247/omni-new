@@ -41,6 +41,9 @@ services:
       - NEXT_PUBLIC_GA_MEASUREMENT_ID=${NEXT_PUBLIC_GA_MEASUREMENT_ID:-}
       - NEXT_PUBLIC_GOOGLE_ADS_ID=${NEXT_PUBLIC_GOOGLE_ADS_ID:-}
       - NEXT_PUBLIC_ADSENSE_CLIENT_ID=${NEXT_PUBLIC_ADSENSE_CLIENT_ID:-}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://backend.omnicassion.com/api}
+      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-https://backend.omnicassion.com}
+      - NEXT_PUBLIC_SOCKET_PATH=${NEXT_PUBLIC_SOCKET_PATH:-/api/socket.io}
       - NEXT_PUBLIC_MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-}
       - NEXT_PUBLIC_MINIO_BUCKET=${MINIO_DEFAULT_BUCKET:-omnicassion}
       - NEXT_PUBLIC_MEDIA_DELIVERY=${NEXT_PUBLIC_MEDIA_DELIVERY:-auto}
@@ -104,6 +107,8 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - FRONTEND_URL=${FRONTEND_URL}
       - CORS_ORIGIN=${CORS_ORIGIN}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://omnicassion.com,https://www.omnicassion.com,https://backend.omnicassion.com}
+      - SOCKET_IO_PATH=${SOCKET_IO_PATH:-/api/socket.io}
       # File Storage - connects to shared MinIO
       - MINIO_ENDPOINT=infra-minio
       - MINIO_PORT=9000

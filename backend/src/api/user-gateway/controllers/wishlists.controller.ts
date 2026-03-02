@@ -40,8 +40,8 @@ export class WishlistsController {
   }
 
   @Post(':id/items')
-  addVendor(@Param('id') id: string, @Body() dto: AddWishlistItemDto) {
-    return this.wishlistService.addVendor(id, dto.vendorProfileId, dto.notes);
+  addItem(@Param('id') id: string, @Body() dto: AddWishlistItemDto) {
+    return this.wishlistService.addItem(id, dto);
   }
 
   @Delete('items/:itemId')
