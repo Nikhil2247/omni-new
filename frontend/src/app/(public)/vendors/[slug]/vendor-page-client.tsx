@@ -259,7 +259,7 @@ export default function VendorPageClient({
   const isSaved =
     locallySaved ||
     (Array.isArray(wishlists) && wishlists.some((list) =>
-      list.items?.some((item: { vendorProfileId?: string }) => item.vendorProfileId === vendor?.id)
+      list.items?.some((item: { vendorProfileId?: string | null }) => item.vendorProfileId === vendor?.id)
     ))
 
   const handleSave = () => {

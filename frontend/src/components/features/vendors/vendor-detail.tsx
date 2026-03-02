@@ -32,7 +32,7 @@ export function VendorDetail({ slug }: VendorDetailProps) {
   const isSaved =
     locallySaved ||
     (Array.isArray(wishlists) && wishlists.some((list) =>
-      list.items?.some((item: { vendorProfileId?: string }) => item.vendorProfileId === data?.id)
+      list.items?.some((item: { vendorProfileId?: string | null }) => item.vendorProfileId === data?.id)
     ))
 
   const handleSave = async () => {
