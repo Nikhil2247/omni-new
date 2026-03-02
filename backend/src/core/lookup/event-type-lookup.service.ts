@@ -35,7 +35,6 @@ export class EventTypeLookupService implements OnModuleInit {
 
     try {
       const eventTypeRecords = await this.prisma.eventType.findMany({
-        where: { isActive: true },
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
       });
 

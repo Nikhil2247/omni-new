@@ -31,6 +31,7 @@ import {
   LogIn,
   Moon,
   Sun,
+  Bookmark,
 } from "lucide-react";
 import type { Role } from "@/config/roles";
 import { useRouter } from "next/navigation";
@@ -50,7 +51,8 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const { theme, setTheme } = useTheme();
   const settingsPath = getSettingsPath(user?.role as Role | undefined);
   const isLoggedInUser = hasHydrated && isAuthenticated && user?.role === ROLES.USER;
-  const isBusinessOrUser = user?.role === ROLES.BUSINESS_ADMIN || user?.role === ROLES.USER;
+  const isVendor = user?.role === ROLES.BUSINESS_ADMIN;
+  const isBusinessOrUser = isVendor || user?.role === ROLES.USER;
   const isUser = user?.role === ROLES.USER;
   const messagesPath = user?.role === ROLES.BUSINESS_ADMIN ? "/business-messages" : "/messages";
   const profilePath =
@@ -169,15 +171,15 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               );
             })}
 
-            {hasHydrated && isAuthenticated && isUser && (
+            {hasHydrated && isAuthenticated && (isUser || isVendor) && (
               <div className="pt-2">
                 <Link
-                  href="/wishlists"
+                  href={isVendor ? '/business/wishlists' : '/wishlists'}
                   className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"
-                  aria-label="Wishlist"
-                  title="Wishlist"
+                  aria-label={isVendor ? 'Wishlist Boards' : 'Wishlist'}
+                  title={isVendor ? 'Wishlist Boards' : 'Wishlist'}
                 >
-                  <Heart className="h-5 w-5" />
+                  {isVendor ? <Bookmark className="h-5 w-5" /> : <Heart className="h-5 w-5" />}
                 </Link>
               </div>
             )}

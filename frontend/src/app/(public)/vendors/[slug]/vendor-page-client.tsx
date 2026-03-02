@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { usePublicVendor, usePublicVendors } from '@/hooks/queries/use-public-vendors'
 import { useAuthStore } from '@/store/auth-store'
 import { WishlistPickerDialog } from '@/components/common/wishlist-picker-dialog'
+import { GetQuoteDialog } from '@/components/features/vendors/get-quote-dialog'
 import { VendorCard } from '@/components/features/vendors/vendor-card'
 import {
   useAddWishlistItem,
@@ -57,6 +58,9 @@ import {
   Clock,
   PenLine,
   Zap,
+  Eye,
+  Briefcase,
+  FileText,
 } from 'lucide-react'
 import type { VendorProfile as VendorProfileType } from '@/lib/api/types/business.types'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
@@ -234,6 +238,7 @@ export default function VendorPageClient({
   const addItem = useAddWishlistItem()
 
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [locallySaved, setLocallySaved] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -388,10 +393,9 @@ export default function VendorPageClient({
   // Get all media items from portfolios
   const allMedia = portfolios.flatMap((p) => p.mediaItems || [])
 
-  // Calculate member since year
-  const memberSince = vendor.createdAt
-    ? new Date(vendor.createdAt).getFullYear()
-    : null
+  // Calculate member since year (guard against invalid dates yielding NaN)
+  const _memberSinceRaw = vendor.createdAt ? new Date(vendor.createdAt).getFullYear() : null
+  const memberSince = _memberSinceRaw && !Number.isNaN(_memberSinceRaw) ? _memberSinceRaw : null
 
   // Get events count (using portfolios count as proxy)
   const eventHistory = ((vendor as any).eventHistory || []) as Array<{
@@ -476,41 +480,48 @@ export default function VendorPageClient({
               </div>
             </div>
 
-            {/* Action buttons (top-right, aligned to bottom of avatar row) */}
-            <div className="flex items-center gap-2 pb-3">
+            {/* Action buttons — icon-only */}
+            <div className="flex items-center gap-1.5 pb-3">
               <Button
                 onClick={handleMessageVendor}
                 disabled={isCreatingConversation}
-                size="sm"
-                className="gap-1.5"
+                size="icon"
+                title="Message"
+                className="h-9 w-9"
               >
                 <MessageSquare className="h-4 w-4" />
-                <span className="hidden sm:inline">Message</span>
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
+                title="Get Quote"
+                className="h-9 w-9"
+                onClick={() => setQuoteDialogOpen(true)}
+              >
+                <FileText className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={handleFollow}
-                className="gap-1.5"
+                title={followStatus.data?.following ? 'Following' : 'Follow'}
+                className="h-9 w-9"
               >
                 {followStatus.data?.following ? (
                   <UserCheck className="h-4 w-4" />
                 ) : (
                   <UserPlus className="h-4 w-4" />
                 )}
-                <span className="hidden sm:inline">
-                  {followStatus.data?.following ? 'Following' : 'Follow'}
-                </span>
               </Button>
               {vendor.website && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
+                  title="Website"
+                  className="h-9 w-9"
                   onClick={() => window.open(vendor.website || '#', '_blank')}
-                  className="gap-1.5"
                 >
                   <ExternalLink className="h-4 w-4" />
-                  <span className="hidden sm:inline">Website</span>
                 </Button>
               )}
             </div>
@@ -574,6 +585,20 @@ export default function VendorPageClient({
                 <span>
                   <span className="font-semibold text-foreground">{allMedia.length}</span>
                   <span className="ml-1 text-muted-foreground">photos</span>
+                </span>
+              )}
+              {(vendor.viewCount ?? 0) > 0 && (
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatFollowers(vendor.viewCount ?? 0)}</span>
+                  <span className="text-muted-foreground">views</span>
+                </span>
+              )}
+              {(vendor.leadCount ?? 0) > 0 && (
+                <span className="flex items-center gap-1">
+                  <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{vendor.leadCount}</span>
+                  <span className="text-muted-foreground">inquiries</span>
                 </span>
               )}
               {avgRating && (
@@ -1168,6 +1193,16 @@ export default function VendorPageClient({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Get Quote Dialog */}
+      {vendor && (
+        <GetQuoteDialog
+          open={quoteDialogOpen}
+          onOpenChange={setQuoteDialogOpen}
+          vendorId={vendor.id}
+          vendorName={vendor.businessName}
+        />
+      )}
 
       {/* Wishlist Dialog */}
       <WishlistPickerDialog

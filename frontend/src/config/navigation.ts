@@ -39,7 +39,6 @@ import {
   Star,
   Sparkles,
   HeartHandshake,
-  Bookmark,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -711,17 +710,6 @@ export const businessNav: NavGroup[] = [
         title: 'Reviews',
         href: '/business/reviews',
         icon: Heart,
-        roles: [ROLES.BUSINESS_ADMIN],
-      },
-    ],
-  },
-  {
-    title: 'Discover',
-    items: [
-      {
-        title: 'Wishlist Boards',
-        href: '/business/wishlists',
-        icon: Bookmark,
         roles: [ROLES.BUSINESS_ADMIN],
       },
     ],

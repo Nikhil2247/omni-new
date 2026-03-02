@@ -32,11 +32,13 @@ import { LeadsModule } from '../../domain/leads/leads.module';
 import { MessagingModule } from '../../domain/messaging/messaging.module';
 import { ExportModule } from '../../infrastructure/export/export.module';
 import { InsightsModule } from '../../domain/insights/insights.module';
+import { DatabaseModule } from '../../core/database/database.module';
 import { NotificationService } from 'src/infrastructure/notifications/notification.service';
 import { AuditService } from 'src/core/audit';
 
 @Module({
   imports: [
+    DatabaseModule,
     CatalogModule,
     PlanningModule,
     LeadsModule,

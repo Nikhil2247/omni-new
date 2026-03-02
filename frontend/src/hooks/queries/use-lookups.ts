@@ -12,6 +12,8 @@ export function useEventTypes() {
   return useQuery({
     queryKey: lookupKeys.eventTypes(),
     queryFn: () => lookupService.getEventTypes(),
+    staleTime: 5 * 60_000,
+    retry: 2,
   })
 }
 

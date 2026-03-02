@@ -5,6 +5,7 @@ import { UserAccess } from '../../../core/auth/decorators/roles.decorator';
 import { EventTypeLookupService } from '../../../core/lookup/event-type-lookup.service';
 import { CountryLookupService } from '../../../core/lookup/country-lookup.service';
 import { CategoryLookupService } from '../../../core/lookup/category-lookup.service';
+import { PrismaService } from '../../../core/database/prisma.service';
 
 @Controller('lookups')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -14,11 +15,31 @@ export class LookupsController {
     private readonly eventTypeLookupService: EventTypeLookupService,
     private readonly countryLookupService: CountryLookupService,
     private readonly categoryLookupService: CategoryLookupService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get('event-types')
-  getEventTypes() {
-    return this.eventTypeLookupService.getAllEventTypes();
+  async getEventTypes() {
+    let types = this.eventTypeLookupService.getAllEventTypes();
+    if (!types.length) {
+      await this.eventTypeLookupService.refresh();
+      types = this.eventTypeLookupService.getAllEventTypes();
+    }
+    // Final fallback: query DB directly if cache is still empty
+    if (!types.length) {
+      const rows = await this.prisma.eventType.findMany({
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      });
+      return rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        description: r.description ?? undefined,
+        iconUrl: r.icon ?? undefined,
+        displayOrder: r.sortOrder,
+      }));
+    }
+    return types;
   }
 
   @Get('cities')
