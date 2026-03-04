@@ -28,4 +28,5 @@ export interface PortfolioMediaSearchParams {
   cityId?: string
   page?: number
   limit?: number
+  orderBy?: 'random' | 'newest' | 'oldest'
 }

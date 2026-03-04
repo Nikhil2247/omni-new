@@ -2,9 +2,10 @@
 // LEADS MODULE - Leads Domain
 // ============================================================================
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DatabaseModule } from '../../core/database/database.module';
 import { MessagingModule } from '../messaging/messaging.module';
+import { CatalogModule } from '../catalog/catalog.module';
 
 // Services
 import { LeadService, MessageService } from './services';
@@ -16,7 +17,7 @@ import { LeadRepository, MessageRepository } from './repositories';
 import { LeadEventHandler } from './events';
 
 @Module({
-  imports: [DatabaseModule, MessagingModule],
+  imports: [DatabaseModule, MessagingModule, forwardRef(() => CatalogModule)],
   providers: [
     // Services
     LeadService,

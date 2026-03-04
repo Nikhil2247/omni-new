@@ -4,10 +4,14 @@
 
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../core/database/prisma.service';
+import { VendorBadgeService } from './vendor-badge.service';
 
 @Injectable()
 export class VendorFollowService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgeService: VendorBadgeService,
+  ) {}
 
   async toggle(userId: string, vendorProfileId: string) {
     const existing = await this.prisma.vendorFollow.findUnique({
@@ -28,7 +32,8 @@ export class VendorFollowService {
       },
     });
 
-    await this.awardFollowerBadges(vendorProfileId);
+    // Award badges for reaching follower milestones
+    await this.badgeService.awardFollowerBadges(vendorProfileId);
 
     return { following: true };
   }
@@ -41,42 +46,28 @@ export class VendorFollowService {
     return { following: Boolean(existing) };
   }
 
-  private async awardFollowerBadges(vendorProfileId: string) {
-    const followerCount = await this.prisma.vendorFollow.count({
-      where: { vendorProfileId },
+  /**
+   * Follow a vendor without toggling (used for auto-follow)
+   */
+  async follow(userId: string, vendorProfileId: string): Promise<boolean> {
+    const existing = await this.prisma.vendorFollow.findUnique({
+      where: { userId_vendorProfileId: { userId, vendorProfileId } },
     });
 
-    const definitions = await this.prisma.vendorBadgeDefinition.findMany({
-      where: {
-        metric: 'FOLLOWERS',
-        isActive: true,
-        threshold: { lte: followerCount },
+    if (existing) {
+      return false; // Already following
+    }
+
+    await this.prisma.vendorFollow.create({
+      data: {
+        user: { connect: { id: userId } },
+        vendor: { connect: { id: vendorProfileId } },
       },
     });
 
-    if (definitions.length === 0) return;
+    // Award badges for reaching follower milestones
+    await this.badgeService.awardFollowerBadges(vendorProfileId);
 
-    const definitionIds = definitions.map((definition) => definition.id);
-    const existing = await this.prisma.vendorBadge.findMany({
-      where: {
-        vendorProfileId,
-        badgeDefinitionId: { in: definitionIds },
-      },
-      select: { badgeDefinitionId: true },
-    });
-
-    const existingIds = new Set(
-      existing.map((badge) => badge.badgeDefinitionId),
-    );
-    const toCreate = definitionIds
-      .filter((id) => !existingIds.has(id))
-      .map((id) => ({ vendorProfileId, badgeDefinitionId: id }));
-
-    if (toCreate.length === 0) return;
-
-    await this.prisma.vendorBadge.createMany({
-      data: toCreate,
-      skipDuplicates: true,
-    });
+    return true;
   }
 }

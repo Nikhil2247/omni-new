@@ -251,6 +251,19 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
           {hasHydrated && !isAuthenticated && (
             <div className="mt-auto space-y-2 border-t px-2 py-3">
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"
+                aria-label="Toggle theme"
+                title="Toggle theme"
+              >
+                {mounted && theme === "dark" ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </button>
+
               <Link
                 href="/login"
                 className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"

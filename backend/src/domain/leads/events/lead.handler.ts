@@ -6,6 +6,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../core/database/prisma.service';
 import { NotificationService } from '../../../infrastructure/notifications/notification.service';
+import { VendorBadgeService } from '../../catalog/services/vendor-badge.service';
 import { NotificationType } from '@prisma/client';
 
 interface LeadCreatedPayload {
@@ -36,6 +37,7 @@ export class LeadEventHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
+    private readonly badgeService: VendorBadgeService,
   ) {}
 
   @OnEvent('lead.created')
@@ -100,6 +102,9 @@ export class LeadEventHandler {
         actionUrl: `/business/leads/${payload.leadId}`,
       });
     }
+
+    // Award badges for reaching lead milestones
+    await this.badgeService.awardLeadBadges(payload.vendorProfileId);
   }
 
   @OnEvent('lead.status-changed')

@@ -3,31 +3,54 @@
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { useSidebarStore } from '@/store/sidebar-store';
-import { Role, ROLE_LABELS } from '@/config/roles';
+import { Role, ROLE_LABELS, ROLES } from '@/config/roles';
+import { getSettingsPath } from '@/lib/utils/permissions';
 import {
-  Search,
   Settings,
   LogOut,
   User,
   Menu,
   Moon,
   Sun,
-  Command,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
 import { NotificationPopover } from '@/components/features/notifications/notification-popover';
+
+function getProfilePath(userRole: Role | undefined): string {
+  if (!userRole) return '/settings/profile';
+
+  switch (userRole) {
+    case ROLES.ADMIN_SYSTEM:
+    case ROLES.ADMIN:
+      return '/admin/settings/profile';
+    case ROLES.OPERATIONAL_ADMIN:
+    case ROLES.OPERATIONAL_MANAGER:
+    case ROLES.OPERATIONAL_ASSISTANT:
+      return '/ops/settings/profile';
+    case ROLES.MARKETING_MANAGER:
+    case ROLES.CONTENT_WRITER:
+      return '/marketing/settings/profile';
+    case ROLES.SALES_MANAGER:
+    case ROLES.SALES_REPRESENTATIVE:
+      return '/sales/settings/profile';
+    case ROLES.BUSINESS_ADMIN:
+      return '/business/settings/profile';
+    default:
+      return '/settings/profile';
+  }
+}
 
 export function Header() {
   const router = useRouter();
   const { user, logout, isAuthenticated, hasHydrated } = useAuthStore();
   const { toggle } = useSidebarStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   const userRole = user?.role as Role;
   const roleLabel = userRole ? ROLE_LABELS[userRole] : '';
+  const settingsPath = getSettingsPath(userRole);
+  const profilePath = getProfilePath(userRole);
 
   useEffect(() => {
     // Check initial theme
@@ -55,32 +78,8 @@ export function Header() {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* Search - Desktop */}
-      <div className="hidden flex-1 md:block">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            placeholder="Search... (Ctrl+K)"
-            className="h-10 w-full rounded-lg border bg-background pl-9 pr-4 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-          />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-            <Command className="h-3 w-3" />K
-          </kbd>
-        </div>
-      </div>
-
-      {/* Mobile search toggle */}
-      <button
-        onClick={() => setShowMobileSearch(!showMobileSearch)}
-        className="rounded-lg p-2 hover:bg-accent transition-colors md:hidden"
-        aria-label="Search"
-      >
-        <Search className="h-5 w-5" />
-      </button>
-
-      {/* Spacer for mobile */}
-      <div className="flex-1 md:hidden" />
+      {/* Spacer */}
+      <div className="flex-1" />
 
       {/* Actions */}
       <div className="flex items-center gap-1 sm:gap-2">
@@ -135,7 +134,7 @@ export function Header() {
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
-                        router.push('/dashboard/profile');
+                        router.push(profilePath);
                       }}
                       className="flex w-full items-center gap-3 rounded-md px-4 py-2 text-sm hover:bg-accent transition-colors"
                     >
@@ -145,7 +144,7 @@ export function Header() {
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
-                        router.push('/dashboard/settings');
+                        router.push(settingsPath);
                       }}
                       className="flex w-full items-center gap-3 rounded-md px-4 py-2 text-sm hover:bg-accent transition-colors"
                     >
@@ -169,25 +168,6 @@ export function Header() {
         )}
       </div>
 
-      {/* Mobile search overlay */}
-      {showMobileSearch && (
-        <div className="fixed inset-0 z-50 bg-background md:hidden">
-          <div className="flex h-16 items-center gap-4 border-b px-4">
-            <button
-              onClick={() => setShowMobileSearch(false)}
-              className="rounded-lg p-2 hover:bg-accent transition-colors"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <input
-              type="search"
-              placeholder="Search..."
-              autoFocus
-              className="flex-1 bg-transparent text-sm focus:outline-none"
-            />
-          </div>
-        </div>
-      )}
     </header>
   );
 }

@@ -182,6 +182,12 @@ export class PortfolioResponseDto {
   updatedAt: Date;
 }
 
+export enum PortfolioMediaOrderBy {
+  RANDOM = 'random',
+  NEWEST = 'newest',
+  OLDEST = 'oldest',
+}
+
 export class SearchPortfolioMediaDto {
   @ApiPropertyOptional({
     description: 'Search query (vendor name or description)',
@@ -213,6 +219,15 @@ export class SearchPortfolioMediaDto {
   @IsNumber()
   @Min(1)
   limit?: number = 24;
+
+  @ApiPropertyOptional({
+    description: 'Order by',
+    enum: PortfolioMediaOrderBy,
+    default: PortfolioMediaOrderBy.NEWEST,
+  })
+  @IsOptional()
+  @IsEnum(PortfolioMediaOrderBy)
+  orderBy?: PortfolioMediaOrderBy = PortfolioMediaOrderBy.NEWEST;
 }
 
 export class PortfolioMediaVendorDto {

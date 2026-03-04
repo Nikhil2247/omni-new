@@ -65,29 +65,31 @@ export function NotificationPopover({
 
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetContent side={sheetSide} className="p-0">
-        <SheetHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <SheetTitle>All notifications</SheetTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={markAllRead}
-                disabled={!hasUnread}
-              >
-                <Check className="mr-1 h-3.5 w-3.5" />
-                Mark read
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={dismissAll}
-                disabled={!notifications.length}
-              >
-                <Trash2 className="mr-1 h-3.5 w-3.5" />
-                Delete all
-              </Button>
-            </div>
+        <SheetHeader className="border-b px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between pr-8">
+            <SheetTitle className="text-lg">All notifications</SheetTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={markAllRead}
+              disabled={!hasUnread}
+              className="flex-1"
+            >
+              <Check className="mr-1.5 h-4 w-4" />
+              Mark All Read
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={dismissAll}
+              disabled={!notifications.length}
+              className="flex-1"
+            >
+              <Trash2 className="mr-1.5 h-4 w-4" />
+              Delete All
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground">
             {connected ? 'Live updates enabled' : 'Reconnecting...'}
@@ -146,11 +148,11 @@ function NotificationRow({
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2 text-xs"
+        className="h-8 px-3 text-xs shrink-0"
         onClick={() => onDelete(item.id)}
         aria-label="Delete notification"
       >
-        <X className="mr-1 h-3.5 w-3.5" />
+        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
         Delete
       </Button>
     </div>

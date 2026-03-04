@@ -29,6 +29,7 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
   const [isMounted, setIsMounted] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const debouncedQuery = useDebounce(query, 300);
 
@@ -89,10 +90,15 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
     fetchResults();
   }, [debouncedQuery]);
 
-  // Handle click outside
+  // Handle click outside - check both search input and dropdown (which is portaled)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isOutsideSearch = searchRef.current && !searchRef.current.contains(target);
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+
+      // Only close if click is outside BOTH the search input AND the dropdown
+      if (isOutsideSearch && isOutsideDropdown) {
         setIsOpen(false);
         setSelectedIndex(-1);
       }
@@ -143,12 +149,14 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
       e.preventDefault();
       if (selectedIndex >= 0) {
         if (selectedIndex < suggestions.length) {
-          // Selected a suggestion
-          handleSuggestionClick(suggestions[selectedIndex]);
+          // Selected a suggestion - create synthetic event
+          const syntheticEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
+          handleSuggestionClick(syntheticEvent, suggestions[selectedIndex]);
         } else {
           // Selected a result
           const resultIndex = selectedIndex - suggestions.length;
-          handleResultClick(results[resultIndex]);
+          const syntheticEvent = { preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent;
+          handleResultClick(syntheticEvent, results[resultIndex]);
         }
       } else {
         // No selection, go to full search results
@@ -167,28 +175,49 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
     setSelectedIndex(-1);
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
+  const handleSuggestionClick = (e: React.MouseEvent, suggestion: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     setQuery(suggestion);
     setIsOpen(false);
-    // Navigate to search results
-    router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+    // Use setTimeout to ensure state updates complete before navigation
+    const encodedSuggestion = encodeURIComponent(suggestion);
+    setTimeout(() => {
+      router.push(`/vendors?query=${encodedSuggestion}`);
+    }, 0);
   };
 
-  const handleResultClick = (result: SearchResultItem) => {
+  const handleResultClick = (e: React.MouseEvent, result: SearchResultItem) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsOpen(false);
     setQuery("");
-    
-    // Navigate based on result type
+
+    // Determine the navigation URL
+    let url: string;
     if (result.type === "vendor" && result.slug) {
-      router.push(`/vendors/${result.slug}`);
+      url = `/vendors/${result.slug}`;
+    } else if (result.type === "category" && result.slug) {
+      url = `/vendors?categoryId=${result.slug}`;
+    } else {
+      // Fallback to search
+      url = `/vendors?query=${encodeURIComponent(result.title)}`;
     }
+
+    // Use setTimeout to ensure navigation happens after state updates and event handling
+    setTimeout(() => {
+      router.push(url);
+    }, 0);
   };
 
   const handleViewAllResults = () => {
     if (query) {
-      router.push(`/search?q=${encodeURIComponent(query)}`);
+      const encodedQuery = encodeURIComponent(query);
       setIsOpen(false);
       setQuery("");
+      setTimeout(() => {
+        router.push(`/search?q=${encodedQuery}`);
+      }, 0);
     }
   };
 
@@ -268,6 +297,7 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
       {/* Search Results Dropdown - Rendered via Portal */}
       {isMounted && isOpen && (query.length >= 2) && (suggestions.length > 0 || results.length > 0) && createPortal(
         <div
+          ref={dropdownRef}
           onWheel={handleDropdownScroll}
           style={{
             position: 'absolute',
@@ -287,9 +317,12 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
               {suggestions.map((suggestion, index) => (
                 <button
                   key={suggestion}
-                  onClick={() => handleSuggestionClick(suggestion)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSuggestionClick(e, suggestion);
+                  }}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
+                    "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors cursor-pointer",
                     selectedIndex === index
                       ? "bg-accent text-accent-foreground"
                       : "hover:bg-accent/50"
@@ -313,9 +346,12 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
                 return (
                   <button
                     key={result.id}
-                    onClick={() => handleResultClick(result)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleResultClick(e, result);
+                    }}
                     className={cn(
-                      "flex w-full items-start gap-3 rounded-md p-3 text-left transition-colors",
+                      "flex w-full items-start gap-3 rounded-md p-3 text-left transition-colors cursor-pointer",
                       selectedIndex === itemIndex
                         ? "bg-accent text-accent-foreground"
                         : "hover:bg-accent/50"
@@ -370,7 +406,10 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
           {/* View All Results */}
           <div className="border-t p-2">
             <button
-              onClick={handleViewAllResults}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleViewAllResults();
+              }}
               className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-primary hover:bg-accent transition-colors"
             >
               <span>View all results for &quot;{query}&quot;</span>

@@ -206,10 +206,118 @@ export class PortfolioService {
     return this.findById(portfolioId);
   }
 
+  /**
+   * Get random media items using raw SQL for better performance
+   */
+  private async getRandomMediaItems(
+    where: Prisma.MediaItemWhereInput,
+    skip: number,
+    take: number,
+  ) {
+    // Build WHERE clause conditions
+    const conditions: string[] = ['mi."is_approved" = true', 'mi."type" = \'IMAGE\''];
+
+    // Add vendor profile conditions if needed
+    const vendorWhere = (where.portfolio as any)?.vendorProfile;
+    if (vendorWhere) {
+      conditions.push('vp."status" = \'ACTIVE\'');
+
+      if (vendorWhere.categoryId) {
+        conditions.push(`vp."category_id" = '${vendorWhere.categoryId}'`);
+      }
+
+      if (vendorWhere.serviceAreas?.some?.cityId) {
+        const cityId = vendorWhere.serviceAreas.some.cityId;
+        conditions.push(`EXISTS (SELECT 1 FROM "catalog"."service_areas" sa WHERE sa."vendor_profile_id" = vp."id" AND sa."city_id" = '${cityId}')`);
+      }
+
+      if (vendorWhere.OR) {
+        const orConditions = vendorWhere.OR.map((or: any) => {
+          if (or.businessName?.contains) {
+            return `vp."business_name" ILIKE '%${or.businessName.contains}%'`;
+          }
+          if (or.tagline?.contains) {
+            return `vp."tagline" ILIKE '%${or.tagline.contains}%'`;
+          }
+          if (or.description?.contains) {
+            return `vp."description" ILIKE '%${or.description.contains}%'`;
+          }
+          return null;
+        }).filter(Boolean);
+
+        if (orConditions.length > 0) {
+          conditions.push(`(${orConditions.join(' OR ')})`);
+        }
+      }
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    const query = `
+      SELECT
+        mi."id",
+        mi."portfolio_id" as "portfolioId",
+        mi."type",
+        mi."url",
+        mi."thumbnail_url" as "thumbnailUrl",
+        mi."cdn_url" as "cdnUrl",
+        mi."alt_text" as "altText",
+        mi."caption",
+        mi."width",
+        mi."height",
+        mi."created_at" as "createdAt",
+        p."id" as "portfolio_id",
+        vp."id" as "vendor_id",
+        vp."slug" as "vendor_slug",
+        vp."business_name" as "vendor_businessName",
+        vp."category_id" as "vendor_categoryId",
+        c."name" as "category_name"
+      FROM "catalog"."media_items" mi
+      INNER JOIN "catalog"."portfolios" p ON mi."portfolio_id" = p."id"
+      INNER JOIN "catalog"."vendor_profiles" vp ON p."vendor_profile_id" = vp."id"
+      LEFT JOIN "catalog"."categories" c ON vp."category_id" = c."id"
+      WHERE ${whereClause}
+      ORDER BY RANDOM()
+      OFFSET ${skip}
+      LIMIT ${take}
+    `;
+
+    const rawItems = await this.prisma.$queryRawUnsafe<any[]>(query);
+
+    // Transform to expected format
+    return rawItems.map((item) => ({
+      id: item.id,
+      portfolioId: item.portfolioId,
+      type: item.type,
+      url: item.url,
+      thumbnailUrl: item.thumbnailUrl,
+      cdnUrl: item.cdnUrl,
+      altText: item.altText,
+      caption: item.caption,
+      width: item.width,
+      height: item.height,
+      createdAt: item.createdAt,
+      portfolio: {
+        id: item.portfolio_id,
+        vendorProfile: {
+          id: item.vendor_id,
+          slug: item.vendor_slug,
+          businessName: item.vendor_businessName,
+          categoryId: item.vendor_categoryId,
+          category: item.category_name ? {
+            id: item.vendor_categoryId,
+            name: item.category_name,
+            slug: item.vendor_slug,
+          } : null,
+        },
+      },
+    }));
+  }
+
   async getPublicMediaFeed(
     dto: SearchPortfolioMediaDto,
   ): Promise<PaginatedResult<PortfolioMediaItemResponseDto>> {
-    const { query, categoryId, cityId, page = 1, limit = 24 } = dto;
+    const { query, categoryId, cityId, page = 1, limit = 24, orderBy = 'newest' } = dto;
 
     const vendorProfileWhere: Prisma.VendorProfileWhereInput = {
       status: 'ACTIVE',
@@ -243,37 +351,56 @@ export class PortfolioService {
 
     const skip = (page - 1) * limit;
 
+    // Determine order based on orderBy parameter
+    let orderByClause: Prisma.MediaItemOrderByWithRelationInput[] | undefined;
+    let useRawQuery = false;
+
+    switch (orderBy) {
+      case 'random':
+        useRawQuery = true;
+        break;
+      case 'oldest':
+        orderByClause = [{ createdAt: 'asc' }];
+        break;
+      case 'newest':
+      default:
+        orderByClause = [{ createdAt: 'desc' }];
+        break;
+    }
+
     // Run queries in parallel without transaction to avoid timeout
     const [total, items] = await Promise.all([
       this.prisma.mediaItem.count({ where }),
-      this.prisma.mediaItem.findMany({
-        where,
-        include: {
-          portfolio: {
-            select: {
-              id: true,
-              vendorProfile: {
+      useRawQuery
+        ? this.getRandomMediaItems(where, skip, limit)
+        : this.prisma.mediaItem.findMany({
+            where,
+            include: {
+              portfolio: {
                 select: {
                   id: true,
-                  slug: true,
-                  businessName: true,
-                  categoryId: true,
-                  category: {
+                  vendorProfile: {
                     select: {
                       id: true,
-                      name: true,
                       slug: true,
+                      businessName: true,
+                      categoryId: true,
+                      category: {
+                        select: {
+                          id: true,
+                          name: true,
+                          slug: true,
+                        },
+                      },
                     },
                   },
                 },
               },
             },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
+            orderBy: orderByClause,
+            skip,
+            take: limit,
+          }),
     ]);
 
     const data: PortfolioMediaItemResponseDto[] = items.map((item) => ({

@@ -105,13 +105,43 @@ export class RedisIoAdapter extends IoAdapter {
   }
 
   async close(): Promise<void> {
-    if (this.pubClient) {
-      await this.pubClient.quit();
-    }
-    if (this.subClient) {
-      await this.subClient.quit();
-    }
+    await Promise.all([
+      this.closeClient(this.subClient, 'sub'),
+      this.closeClient(this.pubClient, 'pub'),
+    ]);
     this.logger.log('Redis adapter connections closed');
+  }
+
+  private async closeClient(
+    client: RedisClientType | null,
+    label: string,
+  ): Promise<void> {
+    if (!client || !client.isOpen) {
+      return;
+    }
+
+    try {
+      await Promise.race([
+        client.quit(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} quit timeout`)), 2000),
+        ),
+      ]);
+    } catch (error) {
+      this.logger.warn(
+        `Redis ${label} client quit failed, forcing disconnect`,
+      );
+      try {
+        client.disconnect();
+      } catch {
+        // no-op: best effort during shutdown
+      }
+      this.logger.debug(
+        `Redis ${label} disconnect fallback used: ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
+    }
   }
 }
 

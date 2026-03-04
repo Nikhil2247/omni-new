@@ -6,6 +6,7 @@
 
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../core/database/database.module';
+import { NotificationsModule } from '../../infrastructure/notifications/notifications.module';
 
 // Services
 import { ConversationService, MessagingMessageService } from './services';
@@ -16,8 +17,11 @@ import {
   MessagingMessageRepository,
 } from './repositories';
 
+// Event Handlers
+import { MessagingEventHandler } from './events';
+
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, NotificationsModule],
   providers: [
     // Repositories
     ConversationRepository,
@@ -26,6 +30,9 @@ import {
     // Services
     ConversationService,
     MessagingMessageService,
+
+    // Event Handlers
+    MessagingEventHandler,
   ],
   exports: [
     ConversationService,

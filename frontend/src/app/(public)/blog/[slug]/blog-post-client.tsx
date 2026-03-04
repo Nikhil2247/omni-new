@@ -316,7 +316,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
 
       {/* Main Content */}
       <main className="mx-auto w-full max-w-8xl px-6 py-12 overflow-x-hidden">
-        <div className="flex gap-12">
+        <div className="flex gap-12 items-start">
           {/* Article Content */}
           <div className="flex-1 min-w-0">
             {/* Featured Image */}
@@ -404,15 +404,15 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
 
           {/* Table of Contents Sidebar */}
           {headings.length > 0 && (
-            <aside className="hidden xl:block w-72 shrink-0">
-              <div className="sticky top-24 flex flex-col gap-4" style={{ maxHeight: 'calc(100vh - 7rem)' }}>
+            <aside className="hidden xl:block w-72 shrink-0 relative">
+              <div className="sticky top-24 flex flex-col gap-4 max-h-[calc(100vh-7rem)]">
                 {/* TOC card — fills remaining space, nav scrolls */}
-                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm flex flex-col min-h-0 flex-1">
+                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm flex flex-col min-h-0 flex-1 overflow-hidden">
                   <div className="flex items-center gap-2 mb-4 shrink-0">
                     <BookOpen className="h-5 w-5 text-primary" />
                     <h3 className="font-semibold text-sm uppercase tracking-wide">Table of Contents</h3>
                   </div>
-                  <nav className="space-y-1 overflow-y-auto flex-1 pr-1">
+                  <nav className="space-y-1 overflow-y-auto flex-1 pr-1 scrollbar-thin scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40">
                     {headings.map((heading) => (
                       <a
                         key={heading.id}
@@ -437,9 +437,9 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
                 {/* Share + Stats — pinned at bottom, don't grow */}
                 <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm shrink-0">
                   <h4 className="font-semibold text-sm mb-3">Share this article</h4>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleShare}
                     className="w-full"
                   >

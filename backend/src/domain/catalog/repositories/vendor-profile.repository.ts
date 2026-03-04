@@ -91,9 +91,18 @@ export class VendorProfileRepository extends BaseRepository<
       ];
     }
 
-    // Filter by category
+    // Filter by category (supports both UUID and slug)
     if (categoryId) {
-      where.categoryId = categoryId;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isUuid = uuidRegex.test(categoryId);
+
+      if (isUuid) {
+        where.categoryId = categoryId;
+      } else {
+        // It's a slug, so filter by category.slug
+        where.category = { slug: categoryId };
+      }
     }
 
     // Filter by service area (city)

@@ -3,7 +3,7 @@
 import { useState, useCallback, Suspense, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { trackDashboard } from '@/lib/analytics/umami';
+import { trackDashboard } from "@/lib/analytics/umami";
 import { motion, useInView } from "framer-motion";
 import Lenis from "lenis";
 import { usePublicVendors, useFeaturedVendors } from "@/hooks/queries/use-public-vendors";
@@ -278,9 +278,17 @@ function VendorFilters({
   }, [selectedCategoryId, sortBy, sortOrder, autoApply, onApply]);
 
   return (
-    <div className="h-full rounded-2xl border border-[#165EA6]/20 p-4 sm:p-5" style={{ background: 'linear-gradient(160deg, #165EA6/5 0%, rgba(22,94,166,0.06) 100%)', backgroundColor: 'rgba(22,94,166,0.05)' }}>
+    <div
+      className="h-full rounded-2xl border border-[#165EA6]/20 p-4 sm:p-5"
+      style={{
+        background: "linear-gradient(160deg, #165EA6/5 0%, rgba(22,94,166,0.06) 100%)",
+        backgroundColor: "rgba(22,94,166,0.05)",
+      }}
+    >
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-serif text-lg font-semibold" style={{ color: '#165EA6' }}>Filters</h2>
+        <h2 className="font-serif text-lg font-semibold" style={{ color: "#165EA6" }}>
+          Filters
+        </h2>
         {activeFiltersCount > 0 && (
           <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-semibold">
             {activeFiltersCount} active
@@ -327,7 +335,10 @@ function VendorFilters({
 
         <div>
           <label className="mb-2 block text-sm font-medium">Order</label>
-          <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOrderValue)}>
+          <Select
+            value={sortOrder}
+            onValueChange={(value) => setSortOrder(value as SortOrderValue)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -357,9 +368,9 @@ function VendorsPageContent() {
 
   // Track page view on mount
   useEffect(() => {
-    trackDashboard.sectionView('vendors', 'user')
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    trackDashboard.sectionView("vendors", "user");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const queryParam = searchParams.get("query") ?? "";
   const categoryParam = searchParams.get("categoryId") ?? "";
   const sortByParam = (searchParams.get("sortBy") as SortByValue | null) ?? "viewCount";
@@ -381,8 +392,9 @@ function VendorsPageContent() {
 
     const map = new Map<string, string>();
     featuredVendors.forEach((vendor) => {
-      if (vendor.category?.id && vendor.category?.name) {
-        map.set(vendor.category.id, vendor.category.name);
+      // Use slug as the id since the backend supports slug-based filtering
+      if (vendor.category?.slug && vendor.category?.name) {
+        map.set(vendor.category.slug, vendor.category.name);
       }
     });
 
@@ -432,10 +444,10 @@ function VendorsPageContent() {
   return (
     <main className="bg-background min-h-screen">
       {/* Compact Header — mirrors Discover page */}
-      <section className="border-b bg-muted/20 py-3 lg:py-4">
-        <div className="mx-auto max-w-8xl px-6">
+      <section className="bg-muted/20 border-b py-3 lg:py-4">
+        <div className="max-w-8xl mx-auto px-6">
           <FadeIn delay={0.05} className="max-w-6xl">
-            <div className="relative flex items-center bg-background border border-border rounded-full shadow-sm p-1.5 transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30">
+            <div className="bg-background border-border focus-within:ring-primary/20 focus-within:border-primary/30 relative flex items-center rounded-full border p-1.5 shadow-sm transition-shadow focus-within:ring-2 hover:shadow-md">
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -443,7 +455,11 @@ function VendorsPageContent() {
                 placeholder="Search vendors, services..."
                 className="h-9 border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
               />
-              <Button onClick={applyFilters} className="h-9 w-9 shrink-0 rounded-full p-0" aria-label="Search">
+              <Button
+                onClick={applyFilters}
+                className="h-9 w-9 shrink-0 rounded-full p-0"
+                aria-label="Search"
+              >
                 <Search className="h-4 w-4" />
               </Button>
             </div>
@@ -451,10 +467,10 @@ function VendorsPageContent() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-8xl px-6 py-8 lg:py-10">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8 lg:items-start">
-          <aside className="hidden lg:block self-start sticky top-6">
-            <div className="max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40 pr-1">
+      <div className="max-w-8xl mx-auto px-6 py-8 lg:py-10">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
+          <aside className="sticky top-6 hidden self-start lg:block">
+            <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40 max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain pr-1">
               <VendorFilters
                 selectedCategoryId={selectedCategoryId}
                 setSelectedCategoryId={setSelectedCategoryId}
@@ -475,10 +491,16 @@ function VendorsPageContent() {
             <FadeIn className="mb-5 flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Showing results</p>
-                <h2 className="font-serif text-xl font-semibold sm:text-2xl">{totalVendors} vendors</h2>
+                <h2 className="font-serif text-xl font-semibold sm:text-2xl">
+                  {totalVendors} vendors
+                </h2>
               </div>
               <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-                <Button variant="outline" className="lg:hidden" onClick={() => setMobileFiltersOpen(true)}>
+                <Button
+                  variant="outline"
+                  className="lg:hidden"
+                  onClick={() => setMobileFiltersOpen(true)}
+                >
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Filters
                 </Button>
@@ -531,18 +553,10 @@ function VendorsPageContent() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Button asChild size="lg" className="rounded-full px-8 shadow-lg">
-              <Link href="/business">
+              <Link href="/register/vendor">
                 Join as Professional
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="rounded-full border-white/20 bg-white/5 px-8 text-white backdrop-blur-sm hover:bg-white/10 hover:text-white"
-            >
-              <Link href="/business/about">Learn More</Link>
             </Button>
           </div>
         </FadeIn>

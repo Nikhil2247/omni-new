@@ -16,9 +16,10 @@ import { getMinioViewUrl } from '@/lib/utils/minio'
 
 interface PortfolioMediaCardProps {
   item: PortfolioMediaItem
+  priority?: boolean
 }
 
-export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
+export function PortfolioMediaCard({ item, priority = false }: PortfolioMediaCardProps) {
   const router = useRouter()
   const { user, hasHydrated } = useAuthStore()
   const userId = user?.id
@@ -100,6 +101,7 @@ export function PortfolioMediaCard({ item }: PortfolioMediaCardProps) {
           width={1200}
           height={900}
           unoptimized={true}
+          priority={priority}
           className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </Link>

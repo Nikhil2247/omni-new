@@ -6,3 +6,4 @@ export * from './messaging.module';
 export * from './dto';
 export * from './services';
 export * from './repositories';
+export * from './events';

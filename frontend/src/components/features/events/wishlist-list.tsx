@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Plus, Heart, Sparkles } from 'lucide-react'
+import { Plus, Heart, Sparkles, ImageIcon, Play } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
 import { useCreateWishlist, useWishlistMine } from '@/hooks/queries/use-wishlists'
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { getMinioViewUrl } from '@/lib/utils/minio'
 
 const wishlistSchema = z.object({
   name: z.string().min(2, 'Wishlist name is required'),
@@ -125,47 +127,77 @@ export function WishlistList({ basePath = '/wishlists' }: { basePath?: string } 
 
       {/* Wishlists Grid */}
       {wishlistArray.length ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {wishlistArray.map((wishlist) => (
-            <Link key={wishlist.id} href={`${basePath}/${wishlist.id}`}>
-              <Card className="group h-full cursor-pointer overflow-hidden transition-shadow hover:shadow-md">
-                {/* Gradient header */}
-                <div className="relative h-20 bg-linear-to-br from-pink-500 via-purple-500 to-indigo-500">
-                  <div className="absolute inset-0 bg-black/20" />
-                  <div className="absolute right-3 top-3">
-                    <Heart className="h-6 w-6 fill-white/80 text-white" />
-                  </div>
-                </div>
+        <div className="space-y-3">
+          {wishlistArray.map((wishlist) => {
+            const firstItem = wishlist.items?.[0]
+            const fallbackMediaItem = wishlist.items?.find(
+              (item) => item.mediaItem && (item.mediaItem.thumbnailUrl || item.mediaItem.cdnUrl || item.mediaItem.url)
+            )?.mediaItem
+            const vendorImageFromFirstItem =
+              ((firstItem?.vendor as unknown as { bannerImageUrl?: string | null; avatarUrl?: string | null })
+                ?.bannerImageUrl) ||
+              ((firstItem?.vendor as unknown as { bannerImageUrl?: string | null; avatarUrl?: string | null })
+                ?.avatarUrl)
 
-                <CardContent className="p-4">
-                  <h3 className="font-semibold group-hover:text-primary transition-colors">
-                    {wishlist.name}
-                  </h3>
-                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Sparkles className="h-4 w-4" />
-                    <span>{wishlist.items?.length ?? 0} items saved</span>
-                  </div>
+            const firstItemMediaUrl =
+              firstItem?.mediaItem?.thumbnailUrl ||
+              firstItem?.mediaItem?.cdnUrl ||
+              firstItem?.mediaItem?.url ||
+              vendorImageFromFirstItem
 
-                  {/* Preview dots */}
-                  {(wishlist.items?.length ?? 0) > 0 && (
-                    <div className="mt-3 flex -space-x-2">
-                      {[...Array(Math.min(4, wishlist.items?.length ?? 0))].map((_, i) => (
-                        <div
-                          key={i}
-                          className="h-8 w-8 rounded-full border-2 border-background bg-linear-to-br from-pink-400 to-purple-500"
-                        />
-                      ))}
-                      {(wishlist.items?.length ?? 0) > 4 && (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium">
-                          +{(wishlist.items?.length ?? 0) - 4}
+            const coverSource =
+              firstItemMediaUrl ||
+              fallbackMediaItem?.thumbnailUrl ||
+              fallbackMediaItem?.cdnUrl ||
+              fallbackMediaItem?.url
+
+            const coverUrl = (coverSource && getMinioViewUrl(coverSource)) || coverSource
+
+            return (
+              <Link key={wishlist.id} href={`${basePath}/${wishlist.id}`}>
+                <Card className="group cursor-pointer overflow-hidden transition-shadow hover:shadow-md">
+                  <CardContent className="p-0">
+                    <div className="flex items-center gap-4 p-4">
+                      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-lg border bg-muted">
+                        {coverUrl ? (
+                          <>
+                            <NextImage
+                              src={coverUrl}
+                              alt={firstItem?.mediaItem?.altText || firstItem?.mediaItem?.caption || wishlist.name}
+                              fill
+                              unoptimized
+                              className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                            />
+                            {firstItem?.mediaItem?.type === 'VIDEO' && (
+                              <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+                                <Play className="h-5 w-5 fill-white text-white" />
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate font-semibold transition-colors group-hover:text-primary">
+                          {wishlist.name}
+                        </h3>
+                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                          <Sparkles className="h-4 w-4" />
+                          <span>{wishlist.items?.length ?? 0} items saved</span>
                         </div>
-                      )}
+                      </div>
+
+                      <Heart className="h-5 w-5 shrink-0 fill-pink-500/20 text-pink-500" />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
         </div>
       ) : (
         <Empty className="border-dashed py-12">

@@ -93,6 +93,45 @@ export class LeadService {
       return existingLead;
     }
 
+    // Fetch vendor profile to get userId
+    const vendorProfile = await this.prisma.vendorProfile.findUnique({
+      where: { id: dto.vendorProfileId },
+      select: { userId: true },
+    });
+
+    if (!vendorProfile) {
+      this.logger.error(`Vendor profile not found: ${dto.vendorProfileId}`);
+      throw new NotFoundException('Vendor profile not found');
+    }
+
+    this.logger.debug(`Vendor profile userId: ${vendorProfile.userId}`);
+
+    // Validate both users exist before creating conversation
+    const [plannerUser, vendorUser] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: dto.plannerId },
+        select: { id: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: vendorProfile.userId },
+        select: { id: true },
+      }),
+    ]);
+
+    this.logger.debug(`Planner user found: ${!!plannerUser}, Vendor user found: ${!!vendorUser}`);
+
+    if (!plannerUser) {
+      this.logger.error(`Planner user not found: ${dto.plannerId}`);
+      throw new NotFoundException(`Planner user not found: ${dto.plannerId}`);
+    }
+
+    if (!vendorUser) {
+      this.logger.error(`Vendor user not found: ${vendorProfile.userId}`);
+      throw new NotFoundException(`Vendor user not found: ${vendorProfile.userId}`);
+    }
+
+    this.logger.debug('Both users validated successfully');
+
     // Wrap entire lead creation flow in transaction for atomicity
     const result = await this.prisma.$transaction(async (tx) => {
       // Create lead
@@ -128,7 +167,7 @@ export class LeadService {
         },
       });
 
-      // Create conversation for lead
+      // Create conversation for lead using vendor's userId
       const conversation = await tx.conversation.create({
         data: {
           type: 'LEAD',
@@ -140,7 +179,7 @@ export class LeadService {
                 role: 'PLANNER',
               },
               {
-                user: { connect: { id: dto.vendorProfileId } },
+                user: { connect: { id: vendorProfile.userId } },
                 role: 'VENDOR',
               },
             ],

@@ -9,6 +9,7 @@ import { ValidationPipe, Logger, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
@@ -61,6 +62,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
+  let closeWebSocketAdapter: (() => Promise<void>) | null = null;
 
   // ===========================================================================
   // WEBSOCKET ADAPTER CONFIGURATION
@@ -73,14 +75,17 @@ async function bootstrap() {
     try {
       const redisIoAdapter = await createRedisIoAdapter(app);
       app.useWebSocketAdapter(redisIoAdapter);
+      closeWebSocketAdapter = async () => {
+        await redisIoAdapter.close();
+      };
       logger.log('WebSocket Redis adapter enabled for horizontal scaling');
     } catch (error) {
       logger.warn(
         'Failed to initialize WebSocket Redis adapter, falling back to default',
       );
       // Fallback to default Socket.IO adapter
-      const { IoAdapter } = await import('@nestjs/platform-socket.io');
-      app.useWebSocketAdapter(new IoAdapter(app));
+      const fallbackAdapter = new IoAdapter(app);
+      app.useWebSocketAdapter(fallbackAdapter);
     }
   } else {
     // Use custom Socket.IO adapter with path configuration
@@ -288,16 +293,44 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
-  process.on('SIGTERM', async () => {
-    logger.log('SIGTERM received, shutting down gracefully...');
-    await app.close();
-    process.exit(0);
+  let isShuttingDown = false;
+  const shutdown = async (signal: 'SIGTERM' | 'SIGINT') => {
+    if (isShuttingDown) {
+      logger.warn(`Received ${signal} during ongoing shutdown, ignoring`);
+      return;
+    }
+
+    isShuttingDown = true;
+    logger.log(`${signal} received, shutting down gracefully...`);
+
+    const forceShutdownTimeout = setTimeout(() => {
+      logger.error('Graceful shutdown timeout reached, forcing exit');
+      process.exit(1);
+    }, 10000);
+
+    try {
+      if (closeWebSocketAdapter) {
+        logger.log('Closing WebSocket adapter connections...');
+        await closeWebSocketAdapter();
+      }
+
+      await app.close();
+      clearTimeout(forceShutdownTimeout);
+      logger.log('Application shutdown complete');
+      process.exit(0);
+    } catch (error) {
+      clearTimeout(forceShutdownTimeout);
+      logger.error('Error during shutdown', error);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM');
   });
 
-  process.on('SIGINT', async () => {
-    logger.log('SIGINT received, shutting down gracefully...');
-    await app.close();
-    process.exit(0);
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT');
   });
 
   // ===========================================================================

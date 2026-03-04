@@ -37,6 +37,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   MapPin,
   Star,
@@ -61,6 +62,7 @@ import {
   Eye,
   Briefcase,
   FileText,
+  Images,
 } from 'lucide-react'
 import type { VendorProfile as VendorProfileType } from '@/lib/api/types/business.types'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
@@ -247,6 +249,7 @@ export default function VendorPageClient({
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', body: '' })
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
   const [hoveredRating, setHoveredRating] = useState(0)
+  const [galleryPanelOpen, setGalleryPanelOpen] = useState(false)
 
   const { mutateAsync: createConversation, isPending: isCreatingConversation } =
     useCreateUserVendorConversation()
@@ -390,8 +393,15 @@ export default function VendorPageClient({
   const address = (vendor as any).address as any
   const category = (vendor as VendorProfileType).category
 
-  // Get all media items from portfolios
-  const allMedia = portfolios.flatMap((p) => p.mediaItems || [])
+  const featuredPortfolios = portfolios.filter((portfolio) => portfolio.isFeatured)
+  const nonFeaturedPortfolios = portfolios.filter((portfolio) => !portfolio.isFeatured)
+  const featuredMedia = featuredPortfolios.flatMap((portfolio) => portfolio.mediaItems || [])
+  const nonFeaturedMedia = nonFeaturedPortfolios.flatMap((portfolio) => portfolio.mediaItems || [])
+
+  // Get all media items from portfolios in featured-first order
+  const allMedia = [...featuredMedia, ...nonFeaturedMedia]
+  // For display: show only non-featured media in "All Images" section (featured already shown separately)
+  const visibleNonFeaturedMedia = nonFeaturedMedia.slice(0, 15)
 
   // Calculate member since year (guard against invalid dates yielding NaN)
   const _memberSinceRaw = vendor.createdAt ? new Date(vendor.createdAt).getFullYear() : null
@@ -480,49 +490,70 @@ export default function VendorPageClient({
               </div>
             </div>
 
-            {/* Action buttons — icon-only */}
-            <div className="flex items-center gap-1.5 pb-3">
-              <Button
-                onClick={handleMessageVendor}
-                disabled={isCreatingConversation}
-                size="icon"
-                title="Message"
-                className="h-9 w-9"
-              >
-                <MessageSquare className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                title="Get Quote"
-                className="h-9 w-9"
-                onClick={() => setQuoteDialogOpen(true)}
-              >
-                <FileText className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleFollow}
-                title={followStatus.data?.following ? 'Following' : 'Follow'}
-                className="h-9 w-9"
-              >
-                {followStatus.data?.following ? (
-                  <UserCheck className="h-4 w-4" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
-                )}
-              </Button>
+            {/* Action buttons */}
+            <div className="flex flex-wrap items-center justify-end gap-1.5 pb-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleMessageVendor}
+                    disabled={isCreatingConversation}
+                    className="h-9 gap-1.5 px-3"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Message
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Start chat with vendor</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-9 gap-1.5 px-3"
+                    onClick={() => setQuoteDialogOpen(true)}
+                  >
+                    <FileText className="h-4 w-4" />
+                    Get Quote
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Request pricing and availability</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleFollow}
+                    className="h-9 w-9"
+                    aria-label={followStatus.data?.following ? 'Following' : 'Follow'}
+                  >
+                    {followStatus.data?.following ? (
+                      <UserCheck className="h-4 w-4" />
+                    ) : (
+                      <UserPlus className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{followStatus.data?.following ? 'Following vendor' : 'Follow vendor'}</TooltipContent>
+              </Tooltip>
+
               {vendor.website && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  title="Website"
-                  className="h-9 w-9"
-                  onClick={() => window.open(vendor.website || '#', '_blank')}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={() => window.open(vendor.website || '#', '_blank')}
+                      aria-label="Website"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Open website</TooltipContent>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -652,43 +683,108 @@ export default function VendorPageClient({
                 exit={{ opacity: 0 }}
               >
                 {allMedia.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-1 md:gap-4">
-                    {allMedia.map((media, idx) => (
-                      <motion.button
-                        key={media.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: idx * 0.03 }}
-                        onClick={() => {
-                          setLightboxIndex(idx)
-                          setLightboxOpen(true)
-                        }}
-                        className="group relative aspect-square overflow-hidden bg-muted"
-                      >
-                        <Image
-                          src={media.cdnUrl || media.url}
-                          alt={media.altText || 'Portfolio'}
-                          fill
-                          unoptimized={true}
-                          priority={true}
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                        {media.type === 'VIDEO' && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90">
-                              <Play className="h-5 w-5 text-foreground" />
-                            </div>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
-                          <div className="flex items-center gap-4 text-white">
-                            <span className="flex items-center gap-1">
-                              <Star className="h-5 w-5 fill-white" />
+                  <div className="space-y-6">
+                    {featuredMedia.length > 0 && (
+                      <div>
+                        <div className="mb-3 flex items-center gap-2">
+                          <Badge variant="secondary">Featured Album</Badge>
+                          <span className="text-xs text-muted-foreground">{featuredMedia.length} items</span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-1 md:gap-4">
+                          {featuredMedia.slice(0, 6).map((media) => {
+                            const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
+                            return (
+                              <motion.button
+                                key={media.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                onClick={() => {
+                                  setLightboxIndex(mediaIndex)
+                                  setLightboxOpen(true)
+                                }}
+                                className="group relative aspect-square overflow-hidden rounded-sm bg-muted"
+                              >
+                                <Image
+                                  src={media.cdnUrl || media.url}
+                                  alt={media.altText || 'Featured portfolio'}
+                                  fill
+                                  unoptimized={true}
+                                  priority={true}
+                                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                                {media.type === 'VIDEO' && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90">
+                                      <Play className="h-5 w-5 text-foreground" />
+                                    </div>
+                                  </div>
+                                )}
+                              </motion.button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {nonFeaturedMedia.length > 0 && (
+                      <div>
+                        <div className="mb-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold">All Images</h3>
+                            <span className="text-xs text-muted-foreground">
+                              Showing {Math.min(15, nonFeaturedMedia.length)} of {nonFeaturedMedia.length}
                             </span>
                           </div>
+                          {nonFeaturedMedia.length > 15 && (
+                            <Button variant="outline" size="sm" onClick={() => setGalleryPanelOpen(true)}>
+                              <Images className="mr-1.5 h-4 w-4" />
+                              See more
+                            </Button>
+                          )}
                         </div>
-                      </motion.button>
-                    ))}
+
+                        <div className="grid grid-cols-3 gap-1 md:gap-4">
+                          {visibleNonFeaturedMedia.map((media, idx) => (
+                            <motion.button
+                              key={media.id}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: idx * 0.03 }}
+                              onClick={() => {
+                                const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
+                                setLightboxIndex(mediaIndex)
+                                setLightboxOpen(true)
+                              }}
+                              className="group relative aspect-square overflow-hidden rounded-sm bg-muted"
+                            >
+                              <Image
+                                src={media.cdnUrl || media.url}
+                                alt={media.altText || 'Portfolio'}
+                                fill
+                                unoptimized={true}
+                                priority={true}
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                              {media.type === 'VIDEO' && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90">
+                                    <Play className="h-5 w-5 text-foreground" />
+                                  </div>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
+                                <div className="flex items-center gap-4 text-white">
+                                  <span className="flex items-center gap-1">
+                                    <Star className="h-5 w-5 fill-white" />
+                                  </span>
+                                </div>
+                              </div>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -847,6 +943,12 @@ export default function VendorPageClient({
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
                               {formatDuration(service.duration)}
+                            </span>
+                          )}
+                          {service.serviceCities?.length > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              {service.serviceCities.map((sc: any) => sc.city?.name).filter(Boolean).join(', ')}
                             </span>
                           )}
                         </div>
@@ -1115,6 +1217,50 @@ export default function VendorPageClient({
           </div>
         </section>
       )}
+
+      {/* Full Gallery Panel */}
+      <Dialog open={galleryPanelOpen} onOpenChange={setGalleryPanelOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Images className="h-4 w-4" />
+              Full Portfolio
+            </DialogTitle>
+            <DialogDescription>
+              {allMedia.length} media item{allMedia.length !== 1 ? 's' : ''}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {allMedia.map((media) => (
+              <button
+                key={media.id}
+                type="button"
+                onClick={() => {
+                  const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
+                  setGalleryPanelOpen(false)
+                  setLightboxIndex(mediaIndex)
+                  setLightboxOpen(true)
+                }}
+                className="group relative aspect-square overflow-hidden rounded-md bg-muted"
+              >
+                <Image
+                  src={media.cdnUrl || media.url}
+                  alt={media.altText || 'Portfolio'}
+                  fill
+                  unoptimized={true}
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                {media.type === 'VIDEO' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                    <Play className="h-5 w-5 text-white" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Lightbox */}
       <AnimatePresence>

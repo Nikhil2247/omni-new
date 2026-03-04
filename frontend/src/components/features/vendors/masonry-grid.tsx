@@ -86,7 +86,7 @@ export function MasonryGrid({
     <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-1.5 sm:gap-2">
       {items.map((item, index) => (
         <AnimatedMasonryItem key={item.id} index={index}>
-          <PortfolioMediaCard item={item} />
+          <PortfolioMediaCard item={item} priority={index < 4} />
         </AnimatedMasonryItem>
       ))}
     </div>

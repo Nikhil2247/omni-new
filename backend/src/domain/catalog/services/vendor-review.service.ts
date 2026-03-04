@@ -8,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../core/database/prisma.service';
+import { VendorBadgeService } from './vendor-badge.service';
 import type {
   CreateVendorReviewDto,
   UpdateVendorReviewDto,
@@ -16,7 +17,10 @@ import type {
 
 @Injectable()
 export class VendorReviewService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgeService: VendorBadgeService,
+  ) {}
 
   /**
    * Update vendor rating atomically to prevent race conditions
@@ -167,6 +171,9 @@ export class VendorReviewService {
 
     // Update vendor rating atomically (prevents race conditions)
     await this.updateVendorRatingAtomic(vendorProfile.id);
+
+    // Award badges for reaching review milestones
+    await this.badgeService.awardReviewBadges(vendorProfile.id);
 
     return updated;
   }

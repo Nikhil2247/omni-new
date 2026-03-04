@@ -36,6 +36,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { getMinioViewUrl } from '@/lib/utils/minio'
 
 export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishlistId: string; basePath?: string }) {
   const { data: wishlist, isLoading, error } = useWishlist(wishlistId)
@@ -83,9 +84,14 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
 
   // Collect all media items that have a viewable URL for lightbox navigation
   const lightboxMedia = (wishlist.items ?? [])
-    .filter((item) => item.mediaItem && (item.mediaItem.cdnUrl || item.mediaItem.url))
+    .filter((item) => item.mediaItem && (item.mediaItem.cdnUrl || item.mediaItem.url || item.mediaItem.thumbnailUrl))
     .map((item) => ({
-      url: item.mediaItem!.cdnUrl || item.mediaItem!.url!,
+      url:
+        getMinioViewUrl(item.mediaItem!.cdnUrl || item.mediaItem!.url || item.mediaItem!.thumbnailUrl) ||
+        item.mediaItem!.cdnUrl ||
+        item.mediaItem!.url ||
+        item.mediaItem!.thumbnailUrl ||
+        '',
       alt: item.mediaItem!.altText || item.mediaItem!.caption || 'Wishlisted media',
       type: item.mediaItem!.type as 'IMAGE' | 'VIDEO',
     }))
@@ -143,25 +149,27 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {wishlist.items.map((item) => {
-                const thumbnailUrl =
+                const thumbnailUrl = getMinioViewUrl(
                   item.mediaItem?.thumbnailUrl ||
+                    item.mediaItem?.cdnUrl ||
+                    item.mediaItem?.url
+                ) || item.mediaItem?.thumbnailUrl || item.mediaItem?.cdnUrl || item.mediaItem?.url
+                const previewUrl = getMinioViewUrl(
                   item.mediaItem?.cdnUrl ||
-                  item.mediaItem?.url
-                const previewUrl =
-                  item.mediaItem?.cdnUrl ||
-                  item.mediaItem?.url
+                    item.mediaItem?.url ||
+                    item.mediaItem?.thumbnailUrl
+                ) || item.mediaItem?.cdnUrl || item.mediaItem?.url || item.mediaItem?.thumbnailUrl
 
                 return (
-                  <div key={item.id} className="flex items-center gap-3 rounded-xl border bg-card p-3 transition-shadow hover:shadow-sm">
-                    {/* Leading visual */}
+                  <div key={item.id} className="overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-sm">
                     {item.mediaItem ? (
                       <button
                         type="button"
                         aria-label="View media"
                         onClick={() => previewUrl && openLightbox(previewUrl)}
-                        className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-muted transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="relative block h-52 w-full overflow-hidden bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         {thumbnailUrl ? (
                           <>
@@ -170,43 +178,43 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
                               alt={item.mediaItem.altText || item.mediaItem.caption || 'Media'}
                               fill
                               unoptimized
-                              className="object-cover"
+                              className="object-cover transition-transform duration-300 hover:scale-[1.02]"
                             />
                             {item.mediaItem.type === 'VIDEO' && (
                               <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                                <Play className="h-4 w-4 fill-white text-white" />
+                                <Play className="h-8 w-8 fill-white text-white" />
                               </span>
                             )}
                           </>
                         ) : (
                           <span className="flex h-full w-full items-center justify-center">
                             {item.mediaItem.type === 'VIDEO' ? (
-                              <Video className="h-5 w-5 text-muted-foreground" />
+                              <Video className="h-7 w-7 text-muted-foreground" />
                             ) : (
-                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                              <ImageIcon className="h-7 w-7 text-muted-foreground" />
                             )}
                           </span>
                         )}
                       </button>
                     ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-pink-400 to-purple-500 text-lg font-semibold text-white shadow-sm">
-                        {item.vendor?.businessName?.[0]?.toUpperCase() ?? '?'}
+                      <div className="flex h-52 w-full items-center justify-center bg-muted">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-pink-400 to-purple-500 text-3xl font-semibold text-white shadow-sm">
+                          {item.vendor?.businessName?.[0]?.toUpperCase() ?? '?'}
+                        </div>
                       </div>
                     )}
-
-                    {/* Content */}
-                    <div className="min-w-0 flex-1">
+                    <div className="space-y-2.5 p-3">
                       {item.mediaItem ? (
                         <>
-                          <p className="truncate text-sm font-medium leading-tight">
+                          <p className="line-clamp-1 text-sm font-medium leading-tight">
                             {item.mediaItem.caption || 'Portfolio media'}
                           </p>
                           {item.mediaItem.vendor && (
-                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            <p className="line-clamp-1 text-xs text-muted-foreground">
                               {item.mediaItem.vendor.businessName}
                             </p>
                           )}
-                          <Badge variant="outline" className="mt-1 h-4 px-1.5 text-[10px] leading-none">
+                          <Badge variant="outline" className="h-4 px-1.5 text-[10px] leading-none">
                             {item.mediaItem.type === 'VIDEO' ? 'Video' : 'Photo'}
                           </Badge>
                         </>
@@ -214,23 +222,24 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
                         <>
                           <Link
                             href={`/vendors/${item.vendor.slug}`}
-                            className="truncate text-sm font-medium leading-tight hover:text-primary transition-colors"
+                            className="line-clamp-1 text-sm font-medium leading-tight transition-colors hover:text-primary"
                           >
                             {item.vendor.businessName}
                           </Link>
                           {item.vendor.tagline && (
-                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            <p className="line-clamp-1 text-xs text-muted-foreground">
                               {item.vendor.tagline}
                             </p>
                           )}
-                          <Badge variant="outline" className="mt-1 h-4 px-1.5 text-[10px] leading-none">Vendor</Badge>
+                          <Badge variant="outline" className="h-4 px-1.5 text-[10px] leading-none">Vendor</Badge>
                         </>
                       ) : (
                         <p className="text-sm text-muted-foreground">Unavailable</p>
                       )}
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2">
+
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         {item.notes && (
-                          <span className="truncate text-[11px] text-muted-foreground italic">
+                          <span className="line-clamp-1 text-[11px] text-muted-foreground italic">
                             &ldquo;{item.notes}&rdquo;
                           </span>
                         )}
@@ -238,42 +247,41 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
                           {format(new Date(item.createdAt), 'MMM d, yyyy')}
                         </span>
                       </div>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex shrink-0 items-center gap-1">
-                      {(item.mediaItem?.vendor || item.vendor) && (
-                        <Button variant="ghost" size="sm" asChild className="h-8 gap-1.5 px-2.5 text-xs">
-                          <Link href={`/vendors/${(item.mediaItem?.vendor ?? item.vendor)!.slug}`}>
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            View
-                          </Link>
-                        </Button>
-                      )}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
+                      <div className="flex items-center justify-end gap-1">
+                        {(item.mediaItem?.vendor || item.vendor) && (
+                          <Button variant="ghost" size="sm" asChild className="h-7 gap-1 px-2 text-xs">
+                            <Link href={`/vendors/${(item.mediaItem?.vendor ?? item.vendor)!.slug}`}>
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              View
+                            </Link>
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove from wishlist?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              &ldquo;{item.vendor?.businessName || item.mediaItem?.caption || 'This item'}&rdquo; will be removed from this wishlist.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Remove
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                        )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove from wishlist?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                &ldquo;{item.vendor?.businessName || item.mediaItem?.caption || 'This item'}&rdquo; will be removed from this wishlist.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </div>
                 )
@@ -354,7 +362,7 @@ export function WishlistDetail({ wishlistId, basePath = '/wishlists' }: { wishli
 
               {/* Caption */}
               {lightboxMedia[lightboxIndex]?.alt && (
-                <div className="absolute inset-x-0 bottom-0 rounded-b-xl bg-gradient-to-t from-black/70 to-transparent p-4">
+                <div className="absolute inset-x-0 bottom-0 rounded-b-xl bg-linear-to-t from-black/70 to-transparent p-4">
                   <p className="text-sm text-white/90">{lightboxMedia[lightboxIndex].alt}</p>
                 </div>
               )}

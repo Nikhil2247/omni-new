@@ -7,11 +7,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { FileText, CheckCircle2 } from 'lucide-react'
+import { format } from 'date-fns'
+import { FileText, CheckCircle2, CalendarIcon } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
 import { useCreateLead } from '@/hooks/queries/use-leads'
 import { trackQuote } from '@/lib/analytics/umami'
 import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Dialog,
   DialogContent,
@@ -29,9 +32,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
 const quoteSchema = z.object({
-  eventDate: z.string().min(1, 'Event date is required'),
+  eventDate: z.date('Event date is required'),
   eventType: z.string().min(2, 'Event type is required'),
   guestCount: z
     .string()
@@ -62,7 +66,13 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
 
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
-    defaultValues: { eventDate: '', eventType: '', guestCount: '', budget: '', message: '' },
+    defaultValues: {
+      eventDate: undefined,
+      eventType: '',
+      guestCount: '',
+      budget: '',
+      message: ''
+    },
   })
 
   const handleOpenChange = (next: boolean) => {
@@ -90,8 +100,8 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
         vendorProfileId: vendorId,
         plannerId: user.id,
         source: 'INQUIRY',
-        eventDate: values.eventDate,
-        eventType: values.eventType,
+        eventDate: values.eventDate?.toISOString(),
+        eventType: values.eventType.trim(),
         guestCount: values.guestCount ? Number(values.guestCount) : undefined,
         budget: values.budget ? Number(values.budget) : undefined,
         initialMessage: values.message?.trim() || undefined,
@@ -99,15 +109,53 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
       trackQuote.submit(vendorId, values.eventType)
       setSubmitted(true)
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        const msg = String(error.response?.data?.message ?? '')
-        if (msg.toLowerCase().includes('account is not active')) {
-          setErrorMsg('Please complete your account setup before requesting a quote.')
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status
+        const rawMessage = error.response?.data?.message
+        const message = Array.isArray(rawMessage)
+          ? rawMessage.join(', ')
+          : String(rawMessage ?? '')
+
+        if (status === 401) {
+          setErrorMsg('Please log in to send a quote request.')
           return
         }
-        setErrorMsg('Please log in to send a quote request.')
-        return
+
+        if (status === 403) {
+          if (message.toLowerCase().includes('account is not active')) {
+            setErrorMsg('Please complete your account setup before requesting a quote.')
+            return
+          }
+          setErrorMsg(message || 'Your account is not allowed to send quote requests right now.')
+          return
+        }
+
+        if (status === 400 || status === 422) {
+          setErrorMsg(message || 'Please check the form details and try again.')
+          return
+        }
+
+        if (status === 404) {
+          setErrorMsg(message || 'Vendor or user account not found. Please contact support.')
+          return
+        }
+
+        if (status === 429) {
+          setErrorMsg('Too many quote requests. Please wait a bit and try again.')
+          return
+        }
+
+        if (status === 500) {
+          setErrorMsg('Server error. Please try again or contact support if the issue persists.')
+          return
+        }
+
+        if (message) {
+          setErrorMsg(message)
+          return
+        }
       }
+
       setErrorMsg('Failed to send request. Please try again.')
     }
   }
@@ -163,11 +211,39 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
                     control={form.control}
                     name="eventDate"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Event date</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  'w-full justify-start text-left font-normal',
+                                  !field.value && 'text-muted-foreground'
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? (
+                                  format(field.value, 'PPP')
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                date < new Date(new Date().setHours(0, 0, 0, 0))
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}

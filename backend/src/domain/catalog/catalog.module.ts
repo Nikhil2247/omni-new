@@ -14,6 +14,7 @@ import {
   ServiceService,
   VendorReviewService,
   VendorFollowService,
+  VendorBadgeService,
   MediaTagService,
 } from './services';
 
@@ -41,6 +42,7 @@ import { VendorProfileEventHandler } from './events';
     ServiceService,
     VendorReviewService,
     VendorFollowService,
+    VendorBadgeService,
     MediaTagService,
 
     // Event Handlers
@@ -53,6 +55,7 @@ import { VendorProfileEventHandler } from './events';
     ServiceService,
     VendorReviewService,
     VendorFollowService,
+    VendorBadgeService,
     MediaTagService,
     // Export repositories for direct access if needed
     VendorProfileRepository,

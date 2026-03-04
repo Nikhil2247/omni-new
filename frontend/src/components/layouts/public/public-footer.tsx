@@ -16,6 +16,7 @@ export function PublicFooter() {
                 width={150}
                 height={12}
                 className="rounded-lg"
+                style={{ height: 'auto' }}
               />
               {/* <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">{siteConfig.name}</span> */}
             </div>

@@ -321,8 +321,12 @@ export default function MarketingContentDetailPage() {
             <Input
               value={featuredImage}
               onChange={(event) => {
-                setFeaturedImagePreview('')
-                setFeaturedImage(event.target.value)
+                const newUrl = event.target.value
+                setFeaturedImage(newUrl)
+                // Only clear preview if the new URL is empty or different from uploaded path
+                if (!newUrl || !newUrl.startsWith('blog-images/')) {
+                  setFeaturedImagePreview('')
+                }
               }}
               placeholder="Featured image URL"
             />
@@ -359,8 +363,12 @@ export default function MarketingContentDetailPage() {
             <Input
               value={ogImage}
               onChange={(event) => {
-                setOgImagePreview('')
-                setOgImage(event.target.value)
+                const newUrl = event.target.value
+                setOgImage(newUrl)
+                // Only clear preview if the new URL is empty or different from uploaded path
+                if (!newUrl || !newUrl.startsWith('blog-images/')) {
+                  setOgImagePreview('')
+                }
               }}
               placeholder="OG image URL"
             />

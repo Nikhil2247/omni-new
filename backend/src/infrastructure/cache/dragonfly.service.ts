@@ -93,8 +93,48 @@ export class DragonflyService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy(): Promise<void> {
     this.logger.log('Disconnecting from Dragonfly...');
-    await Promise.all([this.client?.quit(), this.subscriber?.quit()]);
+
+    await Promise.all([
+      this.shutdownClient(this.subscriber, 'subscriber'),
+      this.shutdownClient(this.client, 'client'),
+    ]);
+
     this.logger.log('Disconnected from Dragonfly');
+  }
+
+  private async shutdownClient(
+    client: RedisClient | undefined,
+    label: string,
+  ): Promise<void> {
+    if (!client) return;
+
+    const quitTimeoutMs = this.configService.get<number>(
+      'DRAGONFLY_SHUTDOWN_TIMEOUT_MS',
+      2000,
+    );
+
+    try {
+      await Promise.race([
+        client.quit(),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`${label} quit timeout`)),
+            quitTimeoutMs,
+          ),
+        ),
+      ]);
+      this.logger.log(`Dragonfly ${label} connection closed`);
+    } catch (error) {
+      this.logger.warn(
+        `Dragonfly ${label} graceful quit failed, forcing disconnect`,
+      );
+      client.disconnect();
+      this.logger.debug(
+        `Dragonfly ${label} disconnect fallback used: ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
+    }
   }
 
   private setupEventListeners(): void {

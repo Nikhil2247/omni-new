@@ -27,6 +27,7 @@ import {
   FileCategory,
 } from '../../../infrastructure/storage/upload.service';
 import { PrismaService } from '../../../core/database/prisma.service';
+import { VendorBadgeService } from './vendor-badge.service';
 
 @Injectable()
 export class VendorProfileService {
@@ -48,6 +49,7 @@ export class VendorProfileService {
     private readonly eventEmitter: EventEmitter2,
     private readonly cacheAside: CacheAsideStrategy,
     private readonly uploadService: UploadService,
+    private readonly badgeService: VendorBadgeService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -418,11 +420,12 @@ export class VendorProfileService {
       throw new NotFoundException(`Vendor profile not found`);
     }
 
-    // Increment view count asynchronously
+    // Increment view count and award view badges asynchronously
     this.vendorProfileRepository
       .incrementViewCount(vendorProfile.id)
+      .then(() => this.badgeService.awardViewBadges(vendorProfile.id))
       .catch((err) => {
-        this.logger.error(`Failed to increment view count: ${err.message}`);
+        this.logger.error(`Failed to increment view count or award badges: ${err.message}`);
       });
 
     return this.enrichVendorProfile(vendorProfile as any) as any;

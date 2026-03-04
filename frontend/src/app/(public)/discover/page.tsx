@@ -75,11 +75,18 @@ function InspirationGrid({
   const [allMedia, setAllMedia] = useState<any[]>([])
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
+  // Reset pagination when query changes
+  useEffect(() => {
+    setPage(1)
+    setAllMedia([])
+  }, [query])
+
   const filters = useMemo(
     () => ({
       query,
       page,
       limit: 30,
+      orderBy: 'random' as const,
     }),
     [query, page],
   )
@@ -177,7 +184,7 @@ function InspirationGrid({
 
 // ─── Page Content ────────────────────────────────────────────────────────────
 
-function DiscoverPageContent() {
+function InspirePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryParam = searchParams.get('query') ?? ''
@@ -186,7 +193,7 @@ function DiscoverPageContent() {
   useSmoothScroll()
 
   useEffect(() => {
-    trackDashboard.sectionView('discover', 'user')
+    trackDashboard.sectionView('inspire', 'user')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -237,7 +244,7 @@ function DiscoverPageContent() {
   )
 }
 
-export default function DiscoverPage() {
+export default function InspirePage() {
   return (
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -247,7 +254,7 @@ export default function DiscoverPage() {
         </div>
       </div>
     }>
-      <DiscoverPageContent />
+      <InspirePageContent />
     </Suspense>
   )
 }

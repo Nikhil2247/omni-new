@@ -123,9 +123,9 @@ export class SearchVendorProfileDto {
   @IsString()
   query?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by category ID' })
+  @ApiPropertyOptional({ description: 'Filter by category ID or slug' })
   @IsOptional()
-  @IsUUID()
+  @IsString()
   categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by city ID' })
@@ -171,9 +171,9 @@ export class SearchVendorIndexDto {
   @IsString()
   query?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by category ID' })
+  @ApiPropertyOptional({ description: 'Filter by category ID or slug' })
   @IsOptional()
-  @IsUUID()
+  @IsString()
   categoryId?: string;
 
   @ApiPropertyOptional({ description: 'Filter by city name' })
@@ -248,9 +248,9 @@ export class SearchNearbyVendorsDto {
   @IsString()
   query?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by category ID' })
+  @ApiPropertyOptional({ description: 'Filter by category ID or slug' })
   @IsOptional()
-  @IsUUID()
+  @IsString()
   categoryId?: string;
 
   @ApiProperty({ description: 'Latitude' })
