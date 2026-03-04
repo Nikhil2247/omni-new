@@ -6,6 +6,7 @@
 
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../core/database/database.module';
+import { CacheModule } from '../../infrastructure/cache/cache.module';
 
 // Services
 import {
@@ -29,7 +30,7 @@ import {
 import { VendorProfileEventHandler } from './events';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, CacheModule],
   providers: [
     // Repositories
     VendorProfileRepository,

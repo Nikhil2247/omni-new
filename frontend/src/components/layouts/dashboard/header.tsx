@@ -27,11 +27,10 @@ function getProfilePath(userRole: Role | undefined): string {
     case ROLES.OPERATIONAL_MANAGER:
     case ROLES.OPERATIONAL_ASSISTANT:
       return '/ops/settings/profile';
-    case ROLES.MARKETING_MANAGER:
+    case ROLES.MARKETING_SERVICES_ADMIN:
     case ROLES.CONTENT_WRITER:
       return '/marketing/settings/profile';
     case ROLES.SALES_MANAGER:
-    case ROLES.SALES_REPRESENTATIVE:
       return '/sales/settings/profile';
     case ROLES.BUSINESS_ADMIN:
       return '/business/settings/profile';

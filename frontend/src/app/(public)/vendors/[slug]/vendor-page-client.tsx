@@ -63,6 +63,26 @@ import {
   Briefcase,
   FileText,
   Images,
+  // Badge icons
+  Users,
+  Heart,
+  TrendingUp,
+  Flame,
+  Medal,
+  Trophy,
+  Gem,
+  Crown,
+  Rocket,
+  Shield,
+  Diamond,
+  MessageCircle,
+  ThumbsUp,
+  Mail,
+  Inbox,
+  Bell,
+  Target,
+  Search,
+  type LucideIcon,
 } from 'lucide-react'
 import type { VendorProfile as VendorProfileType } from '@/lib/api/types/business.types'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
@@ -164,6 +184,55 @@ const formatEventVendorStatus = (status?: string) => {
     default:
       return 'In Progress'
   }
+}
+
+// Badge icon mapping
+const badgeIconMap: Record<string, LucideIcon> = {
+  'user-plus': UserPlus,
+  'users': Users,
+  'heart': Heart,
+  'trending-up': TrendingUp,
+  'award': Award,
+  'star': Star,
+  'sparkles': Sparkles,
+  'flame': Flame,
+  'medal': Medal,
+  'trophy': Trophy,
+  'gem': Gem,
+  'crown': Crown,
+  'zap': Zap,
+  'rocket': Rocket,
+  'shield': Shield,
+  'diamond': Diamond,
+  'message-square': MessageSquare,
+  'message-circle': MessageCircle,
+  'thumbs-up': ThumbsUp,
+  'mail': Mail,
+  'inbox': Inbox,
+  'bell': Bell,
+  'target': Target,
+  'eye': Eye,
+  'search': Search,
+}
+
+// Badge color mapping (bg and text classes)
+const badgeColorMap: Record<string, { bg: string; text: string; ring: string }> = {
+  slate: { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-300', ring: 'ring-slate-200 dark:ring-slate-700' },
+  zinc: { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-600 dark:text-zinc-300', ring: 'ring-zinc-200 dark:ring-zinc-700' },
+  emerald: { bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-600 dark:text-emerald-400', ring: 'ring-emerald-200 dark:ring-emerald-800' },
+  teal: { bg: 'bg-teal-100 dark:bg-teal-900/40', text: 'text-teal-600 dark:text-teal-400', ring: 'ring-teal-200 dark:ring-teal-800' },
+  cyan: { bg: 'bg-cyan-100 dark:bg-cyan-900/40', text: 'text-cyan-600 dark:text-cyan-400', ring: 'ring-cyan-200 dark:ring-cyan-800' },
+  sky: { bg: 'bg-sky-100 dark:bg-sky-900/40', text: 'text-sky-600 dark:text-sky-400', ring: 'ring-sky-200 dark:ring-sky-800' },
+  blue: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-600 dark:text-blue-400', ring: 'ring-blue-200 dark:ring-blue-800' },
+  indigo: { bg: 'bg-indigo-100 dark:bg-indigo-900/40', text: 'text-indigo-600 dark:text-indigo-400', ring: 'ring-indigo-200 dark:ring-indigo-800' },
+  violet: { bg: 'bg-violet-100 dark:bg-violet-900/40', text: 'text-violet-600 dark:text-violet-400', ring: 'ring-violet-200 dark:ring-violet-800' },
+  purple: { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-600 dark:text-purple-400', ring: 'ring-purple-200 dark:ring-purple-800' },
+  fuchsia: { bg: 'bg-fuchsia-100 dark:bg-fuchsia-900/40', text: 'text-fuchsia-600 dark:text-fuchsia-400', ring: 'ring-fuchsia-200 dark:ring-fuchsia-800' },
+  pink: { bg: 'bg-pink-100 dark:bg-pink-900/40', text: 'text-pink-600 dark:text-pink-400', ring: 'ring-pink-200 dark:ring-pink-800' },
+  rose: { bg: 'bg-rose-100 dark:bg-rose-900/40', text: 'text-rose-600 dark:text-rose-400', ring: 'ring-rose-200 dark:ring-rose-800' },
+  orange: { bg: 'bg-orange-100 dark:bg-orange-900/40', text: 'text-orange-600 dark:text-orange-400', ring: 'ring-orange-200 dark:ring-orange-800' },
+  amber: { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-600 dark:text-amber-400', ring: 'ring-amber-200 dark:ring-amber-800' },
+  yellow: { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-600 dark:text-yellow-400', ring: 'ring-yellow-200 dark:ring-yellow-800' },
 }
 
 const getEventStatusTone = (status?: string) => {
@@ -987,34 +1056,55 @@ export default function VendorPageClient({
               >
                 {(vendor.badges?.length || 0) > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {vendor.badges?.map((badge, idx) => (
-                      <motion.div
-                        key={badge.id}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.1 }}
-                        className="flex items-center gap-4 rounded-lg border bg-card p-4"
-                      >
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                          <Award className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-foreground">
-                            {badge.definition?.name || 'Achievement'}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {badge.definition?.description || 'Earned badge'}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
+                    {vendor.badges?.map((badge, idx) => {
+                      const iconName = badge.definition?.icon || 'award'
+                      const colorName = badge.definition?.color || 'amber'
+                      const IconComponent = badgeIconMap[iconName] || Award
+                      const colorClasses = badgeColorMap[colorName] || badgeColorMap.amber
+
+                      return (
+                        <motion.div
+                          key={badge.id}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className={cn(
+                            'flex items-center gap-4 rounded-xl border bg-card p-4 ring-1',
+                            colorClasses.ring
+                          )}
+                        >
+                          <div className={cn(
+                            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full',
+                            colorClasses.bg
+                          )}>
+                            <IconComponent className={cn('h-6 w-6', colorClasses.text)} />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground truncate">
+                              {badge.definition?.name || 'Achievement'}
+                            </h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {badge.definition?.description || 'Earned badge'}
+                            </p>
+                            {badge.achievedAt && (
+                              <p className="mt-1 text-xs text-muted-foreground/70">
+                                Earned {new Date(badge.achievedAt).toLocaleDateString('en-IN', {
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                            )}
+                          </div>
+                        </motion.div>
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <Award className="mb-4 h-16 w-16 text-muted-foreground/30" />
                     <h3 className="text-lg font-semibold text-foreground">No Badges Yet</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      No badges or certifications have been earned yet.
+                      Badges are earned as this vendor reaches milestones for followers, reviews, leads, and profile views.
                     </p>
                   </div>
                 )}

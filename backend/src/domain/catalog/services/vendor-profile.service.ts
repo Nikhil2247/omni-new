@@ -380,7 +380,7 @@ export class VendorProfileService {
     this.logger.debug(`Finding vendor profile by slug: ${slug}`);
 
     const vendorProfile = await this.cacheAside.get(
-      `vendor:slug:v2:${slug}`,
+      `vendor:slug:v3:${slug}`,
       () =>
         this.vendorProfileRepository.findBySlug(slug, {
           category: true,

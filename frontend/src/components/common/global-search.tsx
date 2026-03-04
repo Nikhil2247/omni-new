@@ -197,8 +197,6 @@ export function GlobalSearch({ placeholder = "Search vendors, services...", clas
     let url: string;
     if (result.type === "vendor" && result.slug) {
       url = `/vendors/${result.slug}`;
-    } else if (result.type === "category" && result.slug) {
-      url = `/vendors?categoryId=${result.slug}`;
     } else {
       // Fallback to search
       url = `/vendors?query=${encodeURIComponent(result.title)}`;

@@ -498,7 +498,7 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.5, ease }}
-          className="relative z-[100] mx-auto mt-8 max-w-2xl"
+          className="relative z-100 mx-auto mt-8 max-w-2xl"
         >
           <GlobalSearch
             placeholder="Search vendors..."
@@ -624,7 +624,7 @@ function ServicesGrid() {
                   </p>
 
                   {/* Image */}
-                  <div className="mt-4 relative overflow-hidden rounded-xl bg-gray-100 aspect-[4/3]">
+                  <div className="mt-4 relative overflow-hidden rounded-xl bg-gray-100 aspect-4/3">
                     <div
                       className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
                       style={{ backgroundImage: `url(${cat.image})` }}
@@ -724,17 +724,17 @@ function FeatureSection({
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={cardVariants}
-      className={`relative min-h-[500px] lg:min-h-[550px] ${section.bgColor} overflow-hidden`}
+      className={`relative min-h-125 lg:min-h-137.5 ${section.bgColor} overflow-hidden`}
     >
       {/* Two-column layout */}
-      <div className={`flex flex-col lg:flex-row ${!isEven ? "lg:flex-row-reverse" : ""} min-h-[500px] lg:min-h-[550px]`}>
+      <div className={`flex flex-col lg:flex-row ${!isEven ? "lg:flex-row-reverse" : ""} min-h-125 lg:min-h-137.5`}>
 
         {/* Image Side - 50% width on desktop with parallax */}
         <motion.div
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
           variants={imageVariants}
-          className="relative h-[350px] w-full lg:h-auto lg:w-1/2 overflow-hidden"
+          className="relative h-87.5 w-full lg:h-auto lg:w-1/2 overflow-hidden"
         >
           {/* Background Image with parallax */}
           <motion.div
@@ -748,7 +748,7 @@ function FeatureSection({
           </motion.div>
 
           {/* Gradient overlay for better text readability on mobile */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/40 lg:hidden" />
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black/40 lg:hidden" />
 
           {/* TODO: Add product mockup screenshots later */}
           {/* <motion.div className="absolute bottom-6 left-6 right-6 lg:bottom-12 lg:left-12 lg:right-auto lg:w-[320px] xl:w-[380px]">
@@ -909,7 +909,7 @@ function TrustSection() {
                     </p>
 
                     {/* Image card */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gray-100 aspect-[4/3]">
+                    <div className="relative overflow-hidden rounded-2xl bg-gray-100 aspect-4/3">
                       <div
                         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
                         style={{ backgroundImage: `url(${feature.image})` }}

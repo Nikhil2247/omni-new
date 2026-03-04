@@ -7,12 +7,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../core/database/prisma.service';
 import { VendorBadgeMetric } from '@prisma/client';
+import { CacheAsideStrategy } from '../../../infrastructure/cache/strategies/cache-aside.strategy';
 
 @Injectable()
 export class VendorBadgeService {
   private readonly logger = new Logger(VendorBadgeService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cacheAside: CacheAsideStrategy,
+  ) {}
 
   /**
    * Award badges based on follower count
@@ -133,6 +137,15 @@ export class VendorBadgeService {
       data: toCreate,
       skipDuplicates: true,
     });
+
+    // Invalidate vendor cache so badges show up immediately
+    const vendor = await this.prisma.vendorProfile.findUnique({
+      where: { id: vendorProfileId },
+      select: { slug: true },
+    });
+    if (vendor?.slug) {
+      await this.cacheAside.invalidate(`vendor:slug:v3:${vendor.slug}`);
+    }
 
     this.logger.log(
       `Awarded ${toCreate.length} ${metric} badge(s) to vendor ${vendorProfileId}`,
