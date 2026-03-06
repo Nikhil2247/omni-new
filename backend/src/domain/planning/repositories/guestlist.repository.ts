@@ -37,6 +37,17 @@ export class GuestlistRepository extends BaseRepository<
     });
   }
 
+  async findWithGuests(guestlistId: string) {
+    return this.prisma.guestlist.findUnique({
+      where: { id: guestlistId },
+      include: {
+        guests: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+  }
+
   async getStats(guestlistId: string) {
     const stats = await this.prisma.guest.groupBy({
       by: ['rsvpStatus'],
@@ -88,5 +99,26 @@ export class GuestlistRepository extends BaseRepository<
 
   async findGuestById(guestId: string): Promise<Guest | null> {
     return this.prisma.guest.findUnique({ where: { id: guestId } });
+  }
+
+  async findGuestByToken(token: string): Promise<Guest | null> {
+    return this.prisma.guest.findUnique({
+      where: { rsvpToken: token },
+      include: {
+        guestlist: {
+          include: {
+            event: {
+              select: {
+                id: true,
+                name: true,
+                date: true,
+                venueName: true,
+                address: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }

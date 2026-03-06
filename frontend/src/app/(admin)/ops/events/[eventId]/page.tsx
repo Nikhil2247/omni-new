@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -8,12 +8,14 @@ import {
   useOpsOperationalTasks,
   useOpsAgreements,
   useOpsRequirements,
+  useOpsAllInvoices,
   useUpdateActiveEventStatus,
   useUpdateActiveEvent,
   useAssignManager,
   useDeleteActiveEvent,
   useOpsManagers,
 } from '@/hooks/queries/use-ops'
+import { useOpsQuotations } from '@/hooks/queries/use-quotations'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,7 +23,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -36,7 +37,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   AlertDialog,
@@ -58,7 +58,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import {
   CalendarIcon,
-  DollarSign,
   Building,
   User,
   Phone,
@@ -75,13 +74,17 @@ import {
   Trash2,
   UserPlus,
   Receipt,
-  ChevronRight,
   Loader2,
-  ArrowRightCircle,
+  FileCheck,
+  Printer,
+  ExternalLink,
 } from 'lucide-react'
 import { OpsRequirementsPanel } from '@/components/features/ops/ops-requirements-panel'
 import { OpsAgreementsList } from '@/components/features/ops/ops-agreements-list'
 import { OpsTasksList } from '@/components/features/ops/ops-tasks-list'
+import { OpsInvoicesList } from '@/components/features/ops/ops-invoices-list'
+import { QuotationPreviewDialog } from '@/components/features/ops/quotation-preview-dialog'
+import type { QuotationTemplateData } from '@/components/features/ops/quotation-template'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; step: number }> = {
   NEW: { label: 'New', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20', step: 1 },
@@ -114,12 +117,18 @@ export default function OpsEventDetailPage() {
     totalBudget: '',
   })
   const [managerIdInput, setManagerIdInput] = useState('')
+  const [previewQuotation, setPreviewQuotation] = useState<QuotationTemplateData | null>(null)
+  const [previewInvoice, setPreviewInvoice] = useState<QuotationTemplateData | null>(null)
+  const [showQuotationPreview, setShowQuotationPreview] = useState(false)
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false)
 
   const { data: event, isLoading, error } = useOpsActiveEvent(eventId)
   const { data: tasks } = useOpsOperationalTasks({ activeEventId: eventId })
   const { data: agreements } = useOpsAgreements(eventId)
   const { data: requirements } = useOpsRequirements(eventId)
   const { data: managersResponse } = useOpsManagers()
+  const { data: quotationsData } = useOpsQuotations({ activeEventId: eventId })
+  const { data: invoicesData } = useOpsAllInvoices({ activeEventId: eventId })
 
   const updateStatus = useUpdateActiveEventStatus()
   const updateEvent = useUpdateActiveEvent()
@@ -127,6 +136,91 @@ export default function OpsEventDetailPage() {
   const deleteEvent = useDeleteActiveEvent()
 
   const managers = managersResponse?.data || []
+
+  // Auto-progression logic
+  const suggestedStatus = useMemo(() => {
+    if (!event) return null
+    const currentStatus = event.status
+    const hasManager = !!event.opsManagerId
+    const hasRequirements = (requirements?.items?.length || 0) > 0
+    const hasAgreements = (agreements?.length || 0) > 0
+    const agreementsList = agreements || []
+    const allAgreementsLocked = agreementsList.length > 0 && agreementsList.every(a => a.status === 'LOCKED' || a.status === 'COMPLETED')
+    const hasAcceptedQuotations = quotationsData?.items?.some(q => q.status === 'ACCEPTED')
+    const allTasksCompleted = tasks && tasks.length > 0 && tasks.every(t => t.status === 'COMPLETED')
+
+    // Determine what status the event should be at based on current data
+    if (currentStatus === 'NEW' && hasManager) {
+      return 'ASSIGNED'
+    }
+    if (currentStatus === 'ASSIGNED' && hasRequirements) {
+      return 'REQUIREMENTS_SET'
+    }
+    if (currentStatus === 'REQUIREMENTS_SET' && hasAgreements) {
+      return 'VENDOR_SOURCING'
+    }
+    if (currentStatus === 'VENDOR_SOURCING' && (allAgreementsLocked || hasAcceptedQuotations)) {
+      return 'CONTRACTS_LOCKED'
+    }
+    if (currentStatus === 'CONTRACTS_LOCKED' && tasks && tasks.length > 0 && tasks.some(t => t.status === 'IN_PROGRESS')) {
+      return 'EXECUTION'
+    }
+    if (currentStatus === 'EXECUTION' && allTasksCompleted) {
+      return 'COMPLETED'
+    }
+    return null
+  }, [event, requirements, agreements, quotationsData, tasks])
+
+  // Auto-advance status when conditions are met
+  useEffect(() => {
+    if (suggestedStatus && event && !updateStatus.isPending) {
+      // Auto-advance for the first few stages, require manual for later stages
+      const autoAdvanceStages = ['ASSIGNED', 'REQUIREMENTS_SET', 'VENDOR_SOURCING']
+      if (autoAdvanceStages.includes(suggestedStatus)) {
+        updateStatus.mutate({ id: eventId, status: suggestedStatus })
+      }
+    }
+  }, [suggestedStatus, event, eventId, updateStatus.isPending])
+
+  // Preview handlers
+  const openQuotationPreview = (quotation: any) => {
+    const data: QuotationTemplateData = {
+      quotationNumber: quotation.quotationNumber,
+      dateIssued: quotation.createdAt,
+      validUntil: quotation.validUntil,
+      clientName: event?.clientName || 'N/A',
+      clientEmail: event?.clientEmail,
+      clientPhone: event?.clientPhone,
+      vendorName: quotation.vendorAgreement?.vendorName || 'N/A',
+      items: quotation.items || [{ description: 'Services as per agreement', quantity: 1, rate: Number(quotation.totalAmount), amount: Number(quotation.totalAmount) }],
+      subtotal: Number(quotation.subtotal || quotation.totalAmount),
+      taxRate: quotation.taxRate,
+      taxAmount: quotation.taxAmount,
+      discount: quotation.discount,
+      grandTotal: Number(quotation.totalAmount),
+      notes: quotation.notes,
+      termsAndConditions: quotation.termsAndConditions,
+    }
+    setPreviewQuotation(data)
+    setShowQuotationPreview(true)
+  }
+
+  const openInvoicePreview = (invoice: any) => {
+    const data: QuotationTemplateData = {
+      quotationNumber: invoice.invoiceNumber || `INV-${invoice.id.slice(0, 8).toUpperCase()}`,
+      dateIssued: invoice.issuedAt,
+      validUntil: invoice.dueDate,
+      clientName: event?.clientName || invoice.vendorAgreement?.activeEvent?.clientName || 'N/A',
+      clientEmail: event?.clientEmail,
+      clientPhone: event?.clientPhone,
+      vendorName: invoice.vendorAgreement?.vendorName || 'N/A',
+      items: invoice.items?.length ? invoice.items : [{ description: 'Services as per agreement', quantity: 1, rate: Number(invoice.amount), amount: Number(invoice.amount) }],
+      subtotal: Number(invoice.amount),
+      grandTotal: Number(invoice.amount),
+    }
+    setPreviewInvoice(data)
+    setShowInvoicePreview(true)
+  }
 
   const handleEditOpen = () => {
     if (event) {
@@ -224,8 +318,9 @@ export default function OpsEventDetailPage() {
   const tasksCount = tasks?.length || 0
   const completedTasksCount = tasks?.filter(t => t.status === 'COMPLETED').length || 0
   const agreementsCount = agreements?.length || 0
-  const lockedAgreementsCount = agreements?.filter(a => a.status === 'LOCKED').length || 0
   const requirementsCount = requirements?.items?.length || 0
+  const quotationsCount = quotationsData?.items?.length || 0
+  const invoicesCount = invoicesData?.items?.length || 0
 
   const budget = event.totalBudget ? Number(event.totalBudget) : 0
   const spent = event.totalSpend ? Number(event.totalSpend) : 0
@@ -242,20 +337,23 @@ export default function OpsEventDetailPage() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Events
         </Link>
-        
+
         <div className="flex items-center gap-2">
-          {nextStatus && (
+          {/* Show manual advance hint for later stages */}
+          {suggestedStatus && !['ASSIGNED', 'REQUIREMENTS_SET', 'VENDOR_SOURCING'].includes(suggestedStatus) && (
             <Button
-              onClick={() => handleStatusChange(nextStatus)}
+              onClick={() => handleStatusChange(suggestedStatus)}
               disabled={updateStatus.isPending}
               size="sm"
+              variant="outline"
+              className="text-green-600 border-green-600 hover:bg-green-50"
             >
               {updateStatus.isPending ? (
                 <Loader2 className="mr-2 h-3 w-3 animate-spin" />
               ) : (
-                <ArrowRightCircle className="mr-2 h-3 w-3" />
+                <CheckCircle className="mr-2 h-3 w-3" />
               )}
-              Advance
+              Ready for {STATUS_CONFIG[suggestedStatus]?.label}
             </Button>
           )}
 
@@ -315,71 +413,63 @@ export default function OpsEventDetailPage() {
       </div>
 
       {/* Event Header Card with Workflow */}
-      <Card>
+      <Card className="border-0 shadow-sm">
         <CardContent className="p-6">
           {/* Title and Status */}
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold">{event.clientName}</h1>
-                <Badge variant="outline" className={status.color}>
+                <h1 className="text-xl font-semibold tracking-tight">{event.clientName}</h1>
+                <Badge variant="outline" className={`${status.color} font-medium`}>
                   {status.label}
                 </Badge>
               </div>
-              <p className="text-muted-foreground">{event.eventType}</p>
+              <p className="text-sm text-muted-foreground">{event.eventType}</p>
             </div>
-            
+
             {/* Quick Info */}
-            <div className="text-right">
-              <p className="text-sm font-medium">
-                {event.eventDate ? new Date(event.eventDate).toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric', 
-                  year: 'numeric' 
+            <div className="text-right text-sm">
+              <p className="font-medium">
+                {event.eventDate ? new Date(event.eventDate).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
                 }) : 'Date TBD'}
               </p>
-              <p className="text-sm text-muted-foreground">Budget: ${budget.toLocaleString()}</p>
+              <p className="text-muted-foreground">${budget.toLocaleString()} budget</p>
             </div>
           </div>
 
-          {/* Workflow Stepper */}
-          <div className="relative">
-            <div className="absolute top-5 left-0 right-0 h-0.5 bg-border" />
-            <div 
-              className="absolute top-5 left-0 h-0.5 bg-primary transition-all duration-500"
-              style={{ width: `${(STATUS_CONFIG[event.status]?.step / STATUS_FLOW.length) * 100}%` }}
-            />
-            
-            <div className="relative flex items-center justify-between">
-              {STATUS_FLOW.map((s, index) => {
+          {/* Minimal Workflow Progress */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+              <span>Progress</span>
+              <span>{STATUS_CONFIG[event.status]?.step || 1} of {STATUS_FLOW.length}</span>
+            </div>
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-500 rounded-full"
+                style={{ width: `${((STATUS_CONFIG[event.status]?.step || 1) / STATUS_FLOW.length) * 100}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-2">
+              {STATUS_FLOW.map((s) => {
                 const config = STATUS_CONFIG[s]
                 const isActive = event.status === s
-                const isPast = config.step < STATUS_CONFIG[event.status]?.step
+                const isPast = config.step < (STATUS_CONFIG[event.status]?.step || 1)
 
                 return (
                   <button
                     key={s}
                     onClick={() => handleStatusChange(s)}
                     disabled={updateStatus.isPending}
-                    className="group flex flex-col items-center"
-                    title={`Click to set status to ${config.label}`}
+                    className={`text-xs transition-colors ${
+                      isActive ? 'text-primary font-medium' : isPast ? 'text-muted-foreground' : 'text-muted-foreground/50 hover:text-muted-foreground'
+                    }`}
+                    title={`Set to ${config.label}`}
                   >
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold mb-2 border-2 transition-all duration-300 ${
-                        isActive
-                          ? 'bg-primary text-primary-foreground border-primary scale-110 shadow-lg'
-                          : isPast
-                          ? 'bg-primary/90 text-primary-foreground border-primary'
-                          : 'bg-background border-border group-hover:border-primary/50 group-hover:scale-105'
-                      }`}
-                    >
-                      {isPast || isActive ? <CheckCircle className="h-5 w-5" /> : index + 1}
-                    </div>
-                    <span className={`text-xs font-medium text-center max-w-20 ${
-                      isActive ? 'text-foreground' : isPast ? 'text-muted-foreground' : 'text-muted-foreground/60'
-                    }`}>
-                      {config.label}
-                    </span>
+                    {config.label}
                   </button>
                 )
               })}
@@ -387,21 +477,21 @@ export default function OpsEventDetailPage() {
           </div>
 
           {/* Quick Stats Bar */}
-          <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{requirementsCount}</p>
+          <div className="grid grid-cols-4 gap-4 pt-4 border-t">
+            <div>
+              <p className="text-xl font-semibold">{requirementsCount}</p>
               <p className="text-xs text-muted-foreground">Requirements</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{agreementsCount}</p>
+            <div>
+              <p className="text-xl font-semibold">{agreementsCount}</p>
               <p className="text-xs text-muted-foreground">Agreements</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">{completedTasksCount}/{tasksCount}</p>
+            <div>
+              <p className="text-xl font-semibold">{completedTasksCount}<span className="text-muted-foreground">/{tasksCount}</span></p>
               <p className="text-xs text-muted-foreground">Tasks Done</p>
             </div>
-            <div className="text-center">
-              <p className={`text-2xl font-bold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            <div>
+              <p className={`text-xl font-semibold ${remaining < 0 ? 'text-red-600' : ''}`}>
                 ${remaining.toLocaleString()}
               </p>
               <p className="text-xs text-muted-foreground">Remaining</p>
@@ -432,146 +522,111 @@ export default function OpsEventDetailPage() {
             Tasks
             {tasksCount > 0 && <Badge variant="secondary" className="ml-2">{tasksCount}</Badge>}
           </TabsTrigger>
+          <TabsTrigger value="quotations" className="flex-1 sm:flex-none">
+            <FileCheck className="h-4 w-4 mr-2" />
+            Quotations
+            {quotationsCount > 0 && <Badge variant="secondary" className="ml-2">{quotationsCount}</Badge>}
+          </TabsTrigger>
           <TabsTrigger value="invoices" className="flex-1 sm:flex-none">
             <Receipt className="h-4 w-4 mr-2" />
             Invoices
+            {invoicesCount > 0 && <Badge variant="secondary" className="ml-2">{invoicesCount}</Badge>}
           </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3">
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-3">
             {/* Client Info */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-lg">Client Information</CardTitle>
-                <CardDescription>Contact details and event information</CardDescription>
+            <Card className="lg:col-span-2 border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium">Client & Event Details</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Client Name</p>
-                    <p className="font-medium">{event.clientName}</p>
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Client</p>
+                  <p className="font-medium">{event.clientName}</p>
                 </div>
 
                 {event.clientEmail && (
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <a href={`mailto:${event.clientEmail}`} className="font-medium text-primary hover:underline">
-                        {event.clientEmail}
-                      </a>
-                    </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Email</p>
+                    <a href={`mailto:${event.clientEmail}`} className="font-medium text-primary hover:underline text-sm">
+                      {event.clientEmail}
+                    </a>
                   </div>
                 )}
 
                 {event.clientPhone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <a href={`tel:${event.clientPhone}`} className="font-medium text-primary hover:underline">
-                        {event.clientPhone}
-                      </a>
-                    </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Phone</p>
+                    <a href={`tel:${event.clientPhone}`} className="font-medium text-primary hover:underline text-sm">
+                      {event.clientPhone}
+                    </a>
                   </div>
                 )}
 
                 {event.venueName && (
-                  <div className="flex items-center gap-3">
-                    <Building className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Venue</p>
-                      <p className="font-medium">{event.venueName}</p>
-                    </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Venue</p>
+                    <p className="font-medium text-sm">{event.venueName}</p>
                   </div>
                 )}
 
-                <div className="flex items-center gap-3">
-                  <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Event Date</p>
-                    <p className="font-medium">
-                      {event.eventDate ? new Date(event.eventDate).toLocaleString() : 'To be determined'}
-                    </p>
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Event Date</p>
+                  <p className="font-medium text-sm">
+                    {event.eventDate ? new Date(event.eventDate).toLocaleString() : 'To be determined'}
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Created</p>
-                    <p className="font-medium">
-                      {event.createdAt ? new Date(event.createdAt).toLocaleDateString() : '-'}
-                    </p>
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Origin</p>
+                  <Badge variant="secondary" className="text-xs">{event.origin.replace(/_/g, ' ')}</Badge>
                 </div>
               </CardContent>
             </Card>
 
             {/* Budget Overview */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Budget Overview</CardTitle>
-                <CardDescription>Financial tracking</CardDescription>
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium">Budget</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Spent</span>
-                    <span className="font-medium">${spent.toLocaleString()} / ${budget.toLocaleString()}</span>
+                    <span className="font-medium">{Math.round(spendPercentage)}%</span>
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
-                      className={`h-full transition-all ${
-                        spendPercentage > 90 ? 'bg-red-500' : spendPercentage > 70 ? 'bg-yellow-500' : 'bg-green-500'
+                      className={`h-full transition-all rounded-full ${
+                        spendPercentage > 90 ? 'bg-red-500' : spendPercentage > 70 ? 'bg-yellow-500' : 'bg-primary'
                       }`}
                       style={{ width: `${Math.min(spendPercentage, 100)}%` }}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total Budget</p>
-                    <p className="text-lg font-bold text-green-600">${budget.toLocaleString()}</p>
+                <div className="space-y-3 pt-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Budget</span>
+                    <span className="font-semibold">${budget.toLocaleString()}</span>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Total Spent</p>
-                    <p className="text-lg font-bold text-orange-600">${spent.toLocaleString()}</p>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Spent</span>
+                    <span className="font-semibold">${spent.toLocaleString()}</span>
                   </div>
-                  <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">Remaining</p>
-                    <p className={`text-lg font-bold ${remaining < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                  <div className="flex justify-between pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Remaining</span>
+                    <span className={`font-semibold ${remaining < 0 ? 'text-red-600' : ''}`}>
                       ${remaining.toLocaleString()}
-                    </p>
+                    </span>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* Event Origin Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Event Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{event.origin.replace(/_/g, ' ')}</Badge>
-                  <span className="text-sm text-muted-foreground">Origin</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{event.eventType}</Badge>
-                  <span className="text-sm text-muted-foreground">Event Type</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Requirements Tab */}
@@ -637,6 +692,68 @@ export default function OpsEventDetailPage() {
           </Card>
         </TabsContent>
 
+        {/* Quotations Tab */}
+        <TabsContent value="quotations">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">Quotations</CardTitle>
+                <CardDescription>Vendor quotations for this event</CardDescription>
+              </div>
+              <Link href="/ops/quotations">
+                <Button variant="outline" size="sm">
+                  <FileCheck className="mr-2 h-4 w-4" />
+                  All Quotations
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {quotationsCount === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No quotations yet
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {quotationsData?.items?.slice(0, 5).map((quotation) => (
+                    <div key={quotation.id} className="flex items-center justify-between py-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{quotation.quotationNumber}</span>
+                          <Badge variant="outline" className={
+                            quotation.status === 'ACCEPTED' ? 'bg-green-100 text-green-700' :
+                            quotation.status === 'SENT' ? 'bg-blue-100 text-blue-700' :
+                            quotation.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                            'bg-gray-100 text-gray-700'
+                          }>
+                            {quotation.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {quotation.vendorAgreement?.vendorName || 'Unknown Vendor'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold">
+                          {quotation.currency === 'INR' ? '₹' : '$'}{Number(quotation.totalAmount).toLocaleString()}
+                        </span>
+                        <Button variant="outline" size="sm" onClick={() => openQuotationPreview(quotation)}>
+                          <Printer className="mr-2 h-4 w-4" />
+                          Print
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {quotationsCount > 5 && (
+                    <Link href="/ops/quotations" className="block pt-3 text-sm text-primary hover:underline">
+                      View all {quotationsCount} quotations
+                    </Link>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Invoices Tab */}
         <TabsContent value="invoices">
           <Card>
@@ -653,15 +770,7 @@ export default function OpsEventDetailPage() {
               </Link>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <Receipt className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground mb-4">Invoices functionality coming soon</p>
-                <Link href={`/ops/events/${eventId}/invoices`}>
-                  <Button variant="outline">
-                    View Invoices Page
-                  </Button>
-                </Link>
-              </div>
+              <OpsInvoicesList activeEventId={eventId} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -807,6 +916,21 @@ export default function OpsEventDetailPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Quotation Preview Dialog */}
+      <QuotationPreviewDialog
+        open={showQuotationPreview}
+        onOpenChange={setShowQuotationPreview}
+        data={previewQuotation}
+        type="quotation"
+      />
+
+      {/* Invoice Preview Dialog */}
+      <QuotationPreviewDialog
+        open={showInvoicePreview}
+        onOpenChange={setShowInvoicePreview}
+        data={previewInvoice}
+        type="invoice"
+      />
     </div>
   )
 }

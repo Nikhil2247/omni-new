@@ -14,7 +14,15 @@
       "Bash(npm run dev:*)",
       "Bash(taskkill:*)",
       "Bash(ls:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:invoice-app-psi-lyart.vercel.app)",
+      "WebFetch(domain:github.com)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db push)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(cat:*)"
     ]
   }
 }

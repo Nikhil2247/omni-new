@@ -71,3 +71,33 @@ export function useDeleteGuest(eventId: string) {
     },
   })
 }
+
+export function useImportGuests(eventId: string, guestlistId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (csvContent: string) => {
+      if (!guestlistId) {
+        return Promise.reject(new Error('Guestlist ID missing'))
+      }
+      return guestlistService.importGuests(guestlistId, csvContent)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: guestlistKeys.byEvent(eventId) })
+    },
+  })
+}
+
+export function useGenerateMissingTokens(eventId: string, guestlistId?: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => {
+      if (!guestlistId) {
+        return Promise.reject(new Error('Guestlist ID missing'))
+      }
+      return guestlistService.generateMissingTokens(guestlistId)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: guestlistKeys.byEvent(eventId) })
+    },
+  })
+}

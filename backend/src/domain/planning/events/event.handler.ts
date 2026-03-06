@@ -30,6 +30,32 @@ interface EventDeletedPayload {
   eventName?: string;
 }
 
+interface ChecklistItemCreatedPayload {
+  eventId: string;
+  checklistId: string;
+  itemId: string;
+  title: string;
+  dueDate?: Date;
+}
+
+interface ChecklistItemDuePayload {
+  eventId: string;
+  itemId: string;
+  title: string;
+  dueDate: Date;
+  userId: string;
+  eventName?: string;
+}
+
+interface TimelineItemUpcomingPayload {
+  eventId: string;
+  itemId: string;
+  title: string;
+  scheduledTime: string;
+  userId: string;
+  eventName?: string;
+}
+
 @Injectable()
 export class EventEventHandler {
   private readonly logger = new Logger(EventEventHandler.name);
@@ -125,5 +151,81 @@ export class EventEventHandler {
         actionUrl: '/events',
       });
     }
+  }
+
+  // ============================================================================
+  // CHECKLIST NOTIFICATIONS
+  // ============================================================================
+
+  @OnEvent('checklist.item.due-soon')
+  async handleChecklistItemDueSoon(payload: ChecklistItemDuePayload) {
+    this.logger.log(`Checklist item due soon: ${payload.itemId}`);
+
+    await this.notificationService.createNotification({
+      userId: payload.userId,
+      type: NotificationType.EVENT_REMINDER,
+      title: 'Task due soon',
+      message: `"${payload.title}" is due tomorrow for ${payload.eventName ?? 'your event'}.`,
+      data: {
+        eventId: payload.eventId,
+        itemId: payload.itemId,
+        dueDate: payload.dueDate,
+      },
+      actionUrl: `/events/${payload.eventId}/checklist`,
+    });
+  }
+
+  @OnEvent('checklist.item.overdue')
+  async handleChecklistItemOverdue(payload: ChecklistItemDuePayload) {
+    this.logger.log(`Checklist item overdue: ${payload.itemId}`);
+
+    await this.notificationService.createNotification({
+      userId: payload.userId,
+      type: NotificationType.EVENT_REMINDER,
+      title: 'Task overdue',
+      message: `"${payload.title}" is overdue for ${payload.eventName ?? 'your event'}. Complete it now!`,
+      data: {
+        eventId: payload.eventId,
+        itemId: payload.itemId,
+        dueDate: payload.dueDate,
+      },
+      actionUrl: `/events/${payload.eventId}/checklist`,
+    });
+  }
+
+  // ============================================================================
+  // TIMELINE NOTIFICATIONS
+  // ============================================================================
+
+  @OnEvent('timeline.item.upcoming')
+  async handleTimelineItemUpcoming(payload: TimelineItemUpcomingPayload) {
+    this.logger.log(`Timeline item upcoming: ${payload.itemId}`);
+
+    await this.notificationService.createNotification({
+      userId: payload.userId,
+      type: NotificationType.EVENT_REMINDER,
+      title: 'Upcoming event activity',
+      message: `"${payload.title}" is scheduled for ${payload.scheduledTime} in ${payload.eventName ?? 'your event'}.`,
+      data: {
+        eventId: payload.eventId,
+        itemId: payload.itemId,
+        scheduledTime: payload.scheduledTime,
+      },
+      actionUrl: `/events/${payload.eventId}/timeline`,
+    });
+  }
+
+  @OnEvent('timeline.event-day')
+  async handleTimelineEventDay(payload: { eventId: string; userId: string; eventName: string }) {
+    this.logger.log(`Event day notification: ${payload.eventId}`);
+
+    await this.notificationService.createNotification({
+      userId: payload.userId,
+      type: NotificationType.EVENT_REMINDER,
+      title: "It's event day!",
+      message: `Today is the day for "${payload.eventName}"! Check your timeline for the schedule.`,
+      data: { eventId: payload.eventId },
+      actionUrl: `/events/${payload.eventId}/timeline`,
+    });
   }
 }

@@ -84,7 +84,7 @@ export class LeadEventHandler {
         userId: payload.plannerId,
         type: NotificationType.SYSTEM_ANNOUNCEMENT,
         title: 'Quote request received',
-        message: `Your request for ${vendorName} was received. Ops will follow up soon.`,
+        message: `Your request for ${vendorName} was received. We will follow up soon.`,
         data: { leadId: payload.leadId },
         actionUrl: `/inquiries/${payload.leadId}`,
       });

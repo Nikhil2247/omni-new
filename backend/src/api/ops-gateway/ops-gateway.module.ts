@@ -15,6 +15,7 @@ import { LeadConversionController } from './controllers/lead-conversion.controll
 import { RequirementsController } from './controllers/requirements.controller';
 import { VendorAgreementsController } from './controllers/vendor-agreements.controller';
 import { InvoicesController } from './controllers/invoices.controller';
+import { QuotationsController } from './controllers/quotations.controller';
 import { OperationalTasksController } from './controllers/operational-tasks.controller';
 import { TaskAttachmentsController } from './controllers/task-attachments.controller';
 import { OpsDashboardController } from './controllers/ops-dashboard.controller';
@@ -41,6 +42,7 @@ import { AuditService } from 'src/core/audit';
     RequirementsController,
     VendorAgreementsController,
     InvoicesController,
+    QuotationsController,
     OperationalTasksController,
     TaskAttachmentsController,
     OpsDashboardController,

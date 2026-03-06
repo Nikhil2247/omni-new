@@ -39,6 +39,7 @@ import {
   Star,
   Sparkles,
   HeartHandshake,
+  Wrench,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -226,6 +227,12 @@ export const opsAdminNav: NavGroup[] = [
         icon: Handshake,
         roles: [ROLES.OPERATIONAL_ADMIN],
       },
+      {
+        title: 'Quotations',
+        href: '/ops/quotations',
+        icon: FileCheck,
+        roles: [ROLES.OPERATIONAL_ADMIN],
+      },
     ],
   },
   {
@@ -252,6 +259,17 @@ export const opsAdminNav: NavGroup[] = [
         title: 'Invoice Center',
         href: '/ops/invoices',
         icon: Receipt,
+        roles: [ROLES.OPERATIONAL_ADMIN],
+      },
+    ],
+  },
+  {
+    title: 'Feedback',
+    items: [
+      {
+        title: 'Reviews',
+        href: '/ops/reviews',
+        icon: Star,
         roles: [ROLES.OPERATIONAL_ADMIN],
       },
     ],
@@ -301,6 +319,12 @@ export const opsManagerNav: NavGroup[] = [
         title: 'Vendor Agreements',
         href: '/ops/agreements',
         icon: Handshake,
+        roles: [ROLES.OPERATIONAL_MANAGER],
+      },
+      {
+        title: 'Quotations',
+        href: '/ops/quotations',
+        icon: FileCheck,
         roles: [ROLES.OPERATIONAL_MANAGER],
       },
     ],
@@ -736,6 +760,12 @@ export const userNav: NavGroup[] = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutDashboard,
+        roles: [ROLES.USER],
+      },
+      {
+        title: 'Tools',
+        href: '/tools',
+        icon: Wrench,
         roles: [ROLES.USER],
       },
     ],

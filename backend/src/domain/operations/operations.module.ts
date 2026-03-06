@@ -17,6 +17,7 @@ import { EventNoteService } from './services/event-note.service';
 import { RequirementSheetService } from './services/requirement-sheet.service';
 import { VendorAgreementService } from './services/vendor-agreement.service';
 import { ProvisionalInvoiceService } from './services/provisional-invoice.service';
+import { QuotationService } from './services/quotation.service';
 import { OperationalTaskService } from './services/operational-task.service';
 import { TaskAttachmentService } from './services/task-attachment.service';
 import { OpsDashboardService } from './services/ops-dashboard.service';
@@ -28,6 +29,7 @@ import { RequirementSheetRepository } from './repositories/requirement-sheet.rep
 import { VendorAgreementRepository } from './repositories/vendor-agreement.repository';
 import { OperationalTaskRepository } from './repositories/operational-task.repository';
 import { ProvisionalInvoiceRepository } from './repositories/provisional-invoice.repository';
+import { QuotationRepository } from './repositories/quotation.repository';
 import { KycVerificationRepository } from './repositories/kyc-verification.repository';
 import { DisputeRepository } from './repositories/dispute.repository';
 import { EventNoteRepository } from './repositories/event-note.repository';
@@ -54,6 +56,7 @@ import { KYCEventListener } from './events/kyc.listener';
     RequirementSheetService,
     VendorAgreementService,
     ProvisionalInvoiceService,
+    QuotationService,
     OperationalTaskService,
     TaskAttachmentService,
     OpsDashboardService,
@@ -65,6 +68,7 @@ import { KYCEventListener } from './events/kyc.listener';
     VendorAgreementRepository,
     OperationalTaskRepository,
     ProvisionalInvoiceRepository,
+    QuotationRepository,
     KycVerificationRepository,
     DisputeRepository,
     EventNoteRepository,
@@ -88,6 +92,7 @@ import { KYCEventListener } from './events/kyc.listener';
     RequirementSheetService,
     VendorAgreementService,
     ProvisionalInvoiceService,
+    QuotationService,
     OperationalTaskService,
     TaskAttachmentService,
     OpsDashboardService,

@@ -1,9 +1,8 @@
 export interface TimelineItem {
   id?: string
-  time?: string // Backend uses 'time' field
   title: string
   description?: string | null
-  scheduledTime?: string // Frontend field
+  scheduledTime?: string // Time in "HH:MM" or "HH:MM AM/PM" format
   duration?: number | null
   isCompleted?: boolean
   completedAt?: string | null
@@ -14,7 +13,7 @@ export interface Timeline {
   eventId: string
   name: string
   date: string
-  items: string | TimelineItem[] // Backend returns JSON string
+  items: TimelineItem[]
   createdAt: string
 }
 

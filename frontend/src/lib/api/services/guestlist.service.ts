@@ -66,4 +66,37 @@ export const guestlistService = {
   async deleteGuest(guestId: string) {
     await apiClient.delete(API_ENDPOINTS.USER.GUEST_BY_ID(guestId))
   },
+
+  async importGuests(guestlistId: string, csvContent: string) {
+    const response = await apiClient.post<ImportResult>(
+      API_ENDPOINTS.USER.GUESTLIST_IMPORT(guestlistId),
+      { csvContent },
+    )
+    const payload: any = response.data
+    return payload && typeof payload === 'object' && 'data' in payload ? payload.data : payload
+  },
+
+  async generateMissingTokens(guestlistId: string) {
+    const response = await apiClient.post<{ updated: number }>(
+      API_ENDPOINTS.USER.GUESTLIST_GENERATE_TOKENS(guestlistId),
+    )
+    const payload: any = response.data
+    return payload && typeof payload === 'object' && 'data' in payload ? payload.data : payload
+  },
+
+  getTemplateUrl() {
+    return API_ENDPOINTS.USER.GUESTLIST_TEMPLATE
+  },
+}
+
+export interface ImportResult {
+  imported: number
+  skipped: number
+  errors: string[]
+  guests: Array<{
+    firstName: string
+    lastName?: string
+    status: 'imported' | 'skipped' | 'error'
+    reason?: string
+  }>
 }

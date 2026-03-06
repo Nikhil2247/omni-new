@@ -32,11 +32,13 @@ export class InvoicesController {
   @Get('all')
   findAll(
     @Query('status') status?: string,
+    @Query('activeEventId') activeEventId?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.invoiceService.findAll({
       status,
+      activeEventId,
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
     });

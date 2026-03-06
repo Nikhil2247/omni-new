@@ -25,8 +25,8 @@ export class CreateTimelineItemDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ description: 'Scheduled time (ISO 8601)' })
-  @IsDateString()
+  @ApiProperty({ description: 'Scheduled time (e.g., "10:00 AM" or "14:30")' })
+  @IsString()
   scheduledTime: string;
 
   @ApiPropertyOptional({ description: 'Duration (minutes)', nullable: true })
@@ -82,9 +82,9 @@ export class UpdateTimelineItemDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Scheduled time (ISO 8601)' })
+  @ApiPropertyOptional({ description: 'Scheduled time (e.g., "10:00 AM" or "14:30")' })
   @IsOptional()
-  @IsDateString()
+  @IsString()
   scheduledTime?: string;
 
   @ApiPropertyOptional({ description: 'Duration (minutes)', nullable: true })

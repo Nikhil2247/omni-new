@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   useOpsInvoices,
+  useOpsAllInvoices,
   useCreateInvoice,
   useMarkInvoicePaid,
   useDeleteInvoice,
@@ -61,8 +62,10 @@ import {
   Building,
   Calendar,
   ExternalLink,
-  FileText,
+  Printer,
 } from 'lucide-react'
+import { QuotationPreviewDialog } from './quotation-preview-dialog'
+import type { QuotationTemplateData } from './quotation-template'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: <Clock className="h-3 w-3" /> },
@@ -80,13 +83,24 @@ interface OpsInvoicesListProps {
 
 export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateButton = true }: OpsInvoicesListProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewData, setPreviewData] = useState<QuotationTemplateData | null>(null)
   const [invoiceForm, setInvoiceForm] = useState({
     vendorAgreementId: vendorAgreementId || '',
     amount: '',
     invoiceNumber: '',
   })
 
-  const { data, isLoading, error } = useOpsInvoices(vendorAgreementId || '')
+  // Use useOpsAllInvoices when activeEventId is provided, otherwise use useOpsInvoices for vendorAgreementId
+  const byAgreementQuery = useOpsInvoices(vendorAgreementId || '')
+  const byEventQuery = useOpsAllInvoices(activeEventId ? { activeEventId } : undefined)
+
+  const data = vendorAgreementId
+    ? byAgreementQuery.data
+    : (activeEventId ? byEventQuery.data?.items : undefined)
+  const isLoading = vendorAgreementId ? byAgreementQuery.isLoading : byEventQuery.isLoading
+  const error = vendorAgreementId ? byAgreementQuery.error : byEventQuery.error
+
   const { data: agreements } = useOpsAgreements(activeEventId || '')
   const createInvoice = useCreateInvoice()
   const markPaid = useMarkInvoicePaid()
@@ -116,6 +130,23 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
 
   const handleDelete = async (id: string) => {
     await deleteInvoice.mutateAsync(id)
+  }
+
+  const openPreview = (invoice: any) => {
+    const data: QuotationTemplateData = {
+      quotationNumber: invoice.invoiceNumber || `INV-${invoice.id.slice(0, 8).toUpperCase()}`,
+      dateIssued: invoice.issuedAt,
+      validUntil: invoice.dueDate,
+      clientName: invoice.vendorAgreement?.activeEvent?.clientName || 'N/A',
+      clientEmail: invoice.vendorAgreement?.activeEvent?.clientEmail,
+      clientPhone: invoice.vendorAgreement?.activeEvent?.clientPhone,
+      vendorName: invoice.vendorAgreement?.vendorName || 'N/A',
+      items: invoice.items?.length ? invoice.items : [{ description: 'Services as per agreement', quantity: 1, rate: Number(invoice.amount), amount: Number(invoice.amount) }],
+      subtotal: Number(invoice.amount),
+      grandTotal: Number(invoice.amount),
+    }
+    setPreviewData(data)
+    setShowPreview(true)
   }
 
   if (!vendorAgreementId && !activeEventId) {
@@ -154,185 +185,122 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
   const isCreateDisabled = !invoiceForm.vendorAgreementId || !invoiceForm.invoiceNumber || !invoiceForm.amount || createInvoice.isPending
 
   return (
-    <div className="space-y-6">
-      {/* Header Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Total Invoices</p>
-            <p className="text-2xl font-bold">{data?.length || 0}</p>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div>
-            <p className="text-sm text-muted-foreground">Paid</p>
-            <p className="text-2xl font-bold text-green-600">{paidCount}</p>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div>
-            <p className="text-sm text-muted-foreground">Total Value</p>
-            <p className="text-2xl font-bold text-blue-600">${totalAmount.toLocaleString()}</p>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div>
-            <p className="text-sm text-muted-foreground">Pending</p>
-            <p className="text-2xl font-bold text-orange-600">${pendingAmount.toLocaleString()}</p>
-          </div>
-        </div>
-
-        {showCreateButton && (vendorAgreementId || (agreements && agreements.length > 0)) && (
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Invoice
+    <div className="space-y-2">
+      {/* Header */}
+      {showCreateButton && (vendorAgreementId || (agreements && agreements.length > 0)) && (
+        <div className="flex justify-end mb-2">
+          <Button size="sm" variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-1 h-3 w-3" />
+            Add Invoice
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Invoices List */}
       {!data?.length ? (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <Receipt className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground font-medium">No invoices found</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {vendorAgreementId ? 'Create the first invoice for this agreement.' : 'No invoices available.'}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="py-8 text-center text-sm text-muted-foreground">
+          No invoices yet
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y">
           {data.map((invoice) => {
             const status = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.PENDING
             const amount = Number(invoice.amount) || 0
             const canMarkPaid = invoice.status !== 'PAID' && invoice.status !== 'CANCELLED'
 
             return (
-              <Card key={invoice.id} className="hover:shadow-sm transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="p-1.5 rounded bg-primary/10">
-                          <Receipt className="h-4 w-4 text-primary" />
-                        </div>
-                        <span className="font-medium">
-                          {invoice.invoiceNumber || `INV-${invoice.id.slice(0, 8).toUpperCase()}`}
-                        </span>
-                        <Badge variant="outline" className={status.color}>
-                          {status.icon}
-                          <span className="ml-1">{status.label}</span>
-                        </Badge>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4 text-green-600" />
-                          <span className="font-bold text-lg text-green-600">${amount.toLocaleString()}</span>
-                        </div>
-
-                        {invoice.vendorAgreement && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Building className="h-4 w-4" />
-                            <span>{invoice.vendorAgreement.vendorName || 'Unknown Vendor'}</span>
-                          </div>
-                        )}
-
-                        {invoice.vendorAgreement?.activeEvent && (
-                          <div className="flex items-center gap-1">
-                            <Link
-                              href={`/ops/events/${invoice.vendorAgreement.activeEvent.id}`}
-                              className="text-primary hover:underline inline-flex items-center gap-1"
-                            >
-                              {invoice.vendorAgreement.activeEvent.clientName}
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        {invoice.issuedAt && (
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>Issued: {new Date(invoice.issuedAt).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                        {invoice.paidAt && (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>Paid: {new Date(invoice.paidAt).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {canMarkPaid && (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => handleMarkPaid(invoice.id)}
-                          disabled={markPaid.isPending}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {markPaid.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <CreditCard className="mr-1 h-3 w-3" />
-                              Mark Paid
-                            </>
-                          )}
-                        </Button>
-                      )}
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="shrink-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/ops/invoices/${invoice.id}`}>
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onSelect={(e) => e.preventDefault()}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this invoice? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(invoice.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+              <div key={invoice.id} className="flex items-center justify-between py-2 gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {invoice.invoiceNumber || `INV-${invoice.id.slice(0, 8).toUpperCase()}`}
+                    </span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      invoice.status === 'PAID' ? 'bg-green-100 text-green-700' :
+                      invoice.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {status.label}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                    {invoice.vendorAgreement && (
+                      <span>{invoice.vendorAgreement.vendorName}</span>
+                    )}
+                    {invoice.issuedAt && (
+                      <span>{new Date(invoice.issuedAt).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold">${amount.toLocaleString()}</span>
+
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => openPreview(invoice)}
+                    >
+                      Print
+                    </Button>
+
+                    {canMarkPaid && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => handleMarkPaid(invoice.id)}
+                        disabled={markPaid.isPending}
+                      >
+                        {markPaid.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Mark Paid'}
+                      </Button>
+                    )}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                          <MoreVertical className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/ops/invoices/${invoice.id}`}>View Details</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure? This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(invoice.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </div>
             )
           })}
         </div>
@@ -401,6 +369,14 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice Preview Dialog */}
+      <QuotationPreviewDialog
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        data={previewData}
+        type="invoice"
+      />
     </div>
   )
 }

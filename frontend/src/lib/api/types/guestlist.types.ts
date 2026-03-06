@@ -13,6 +13,10 @@ export interface Guest {
   dietaryReq?: string | null
   notes?: string | null
   createdAt: string
+  // RSVP Link Fields
+  rsvpToken?: string | null
+  rsvpAt?: string | null
+  rsvpMessage?: string | null
 }
 
 export interface Guestlist {

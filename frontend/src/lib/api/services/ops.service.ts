@@ -206,9 +206,9 @@ export const opsService = {
     return data
   },
 
-  getAllInvoices: async (params?: { status?: string; page?: number; limit?: number }): Promise<OpsInvoicesListResponse> => {
-    const { data } = await apiClient.get(`${API_ENDPOINTS.OPS.INVOICES}/all`, { params })
-    return data
+  getAllInvoices: async (params?: { status?: string; activeEventId?: string; page?: number; limit?: number }): Promise<OpsInvoicesListResponse> => {
+    const { data } = await apiClient.get<{ success: boolean; data: OpsInvoicesListResponse }>(`${API_ENDPOINTS.OPS.INVOICES}/all`, { params })
+    return data.data
   },
 
   getInvoiceById: async (id: string): Promise<ApiResponse<OpsInvoice>> => {

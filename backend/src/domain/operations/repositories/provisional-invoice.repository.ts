@@ -45,12 +45,18 @@ export class ProvisionalInvoiceRepository extends BaseRepository<
 
   async findAll(params?: {
     status?: ProvisionalInvoiceStatus;
+    activeEventId?: string;
     page?: number;
     limit?: number;
   }) {
     const where: Prisma.ProvisionalInvoiceWhereInput = {};
     if (params?.status) {
       where.status = params.status;
+    }
+    if (params?.activeEventId) {
+      where.vendorAgreement = {
+        activeEventId: params.activeEventId,
+      };
     }
 
     const page = params?.page || 1;

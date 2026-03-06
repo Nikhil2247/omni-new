@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,9 +8,10 @@ import * as z from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { FileText, CheckCircle2, CalendarIcon } from 'lucide-react'
+import { FileText, CheckCircle2, CalendarIcon, Calendar as CalendarIconOutline, Users, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
 import { useCreateLead } from '@/hooks/queries/use-leads'
+import { useEventsEnabled } from '@/hooks/queries/use-events'
 import { trackQuote } from '@/lib/analytics/umami'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -30,9 +31,17 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import type { EventSummary } from '@/lib/api/types/event.types'
 
 const quoteSchema = z.object({
   eventDate: z.date('Event date is required'),
@@ -57,12 +66,34 @@ interface GetQuoteDialogProps {
   vendorName: string
 }
 
+const NO_EVENT_VALUE = '__no_event__'
+
 export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: GetQuoteDialogProps) {
   const router = useRouter()
   const { user, isAuthenticated, hasHydrated } = useAuthStore()
   const createLead = useCreateLead()
   const [submitted, setSubmitted] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+
+  // Fetch user's events when authenticated and dialog is open
+  const { data: eventsData, isLoading: eventsLoading } = useEventsEnabled(
+    { status: undefined, limit: 50 },
+    open && isAuthenticated && !!user?.id
+  )
+
+  // Filter events to show only PLANNING or CONFIRMED status
+  const userEvents = useMemo(() => {
+    if (!eventsData?.data) return []
+    return eventsData.data.filter(
+      (event) => event.status === 'PLANNING' || event.status === 'CONFIRMED'
+    )
+  }, [eventsData])
+
+  const selectedEvent = useMemo(() => {
+    if (!selectedEventId || selectedEventId === NO_EVENT_VALUE) return null
+    return userEvents.find((e) => e.id === selectedEventId) || null
+  }, [selectedEventId, userEvents])
 
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
@@ -75,6 +106,29 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
     },
   })
 
+  // Auto-fill form when event is selected
+  useEffect(() => {
+    if (selectedEvent) {
+      // Set event date
+      if (selectedEvent.date) {
+        form.setValue('eventDate', new Date(selectedEvent.date))
+      }
+      // Set event type from event name (we don't have eventType.name directly)
+      // Using event name as a proxy for event type
+      if (selectedEvent.name) {
+        form.setValue('eventType', selectedEvent.name)
+      }
+      // Set guest count
+      if (selectedEvent.guestCount) {
+        form.setValue('guestCount', String(selectedEvent.guestCount))
+      }
+      // Set budget if available
+      if (selectedEvent.totalBudget) {
+        form.setValue('budget', String(selectedEvent.totalBudget))
+      }
+    }
+  }, [selectedEvent, form])
+
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       // Reset when closing so form is fresh next open
@@ -82,9 +136,18 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
         form.reset()
         setSubmitted(false)
         setErrorMsg(null)
+        setSelectedEventId(null)
       }, 300)
     }
     onOpenChange(next)
+  }
+
+  const handleEventChange = (value: string) => {
+    setSelectedEventId(value === NO_EVENT_VALUE ? null : value)
+    // Clear form when switching to no event
+    if (value === NO_EVENT_VALUE) {
+      form.reset()
+    }
   }
 
   const onSubmit = async (values: QuoteFormValues) => {
@@ -100,6 +163,7 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
         vendorProfileId: vendorId,
         plannerId: user.id,
         source: 'INQUIRY',
+        eventId: selectedEventId && selectedEventId !== NO_EVENT_VALUE ? selectedEventId : undefined,
         eventDate: values.eventDate?.toISOString(),
         eventType: values.eventType.trim(),
         guestCount: values.guestCount ? Number(values.guestCount) : undefined,
@@ -181,8 +245,17 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
             </div>
             <h3 className="text-lg font-semibold">Request sent!</h3>
             <p className="max-w-xs text-sm text-muted-foreground">
-              Our ops team will review your request and connect you with {vendorName} shortly.
+              {selectedEvent ? (
+                <>Your quote request for <span className="font-medium">{selectedEvent.name}</span> has been sent to {vendorName}.</>
+              ) : (
+                <>Our ops team will review your request and connect you with {vendorName} shortly.</>
+              )}
             </p>
+            {selectedEvent && (
+              <p className="text-xs text-muted-foreground">
+                This quote is linked to your event and will appear in your event dashboard.
+              </p>
+            )}
             <Button className="mt-2" onClick={() => handleOpenChange(false)}>
               Done
             </Button>
@@ -206,6 +279,69 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Event Selection Section */}
+                {isAuthenticated && userEvents.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Link to an event</span>
+                    </div>
+                    <Select
+                      value={selectedEventId || NO_EVENT_VALUE}
+                      onValueChange={handleEventChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select an event (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_EVENT_VALUE}>
+                          <span className="text-muted-foreground">Continue without selecting an event</span>
+                        </SelectItem>
+                        {userEvents.map((event) => (
+                          <SelectItem key={event.id} value={event.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{event.name}</span>
+                              {event.date && (
+                                <span className="text-xs text-muted-foreground">
+                                  ({format(new Date(event.date), 'MMM d, yyyy')})
+                                </span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedEvent && (
+                      <div className="rounded-md bg-muted/50 p-3 text-sm">
+                        <div className="flex items-center gap-4 text-muted-foreground">
+                          {selectedEvent.date && (
+                            <div className="flex items-center gap-1">
+                              <CalendarIconOutline className="h-3.5 w-3.5" />
+                              <span>{format(new Date(selectedEvent.date), 'PPP')}</span>
+                            </div>
+                          )}
+                          {selectedEvent.guestCount && (
+                            <div className="flex items-center gap-1">
+                              <Users className="h-3.5 w-3.5" />
+                              <span>{selectedEvent.guestCount} guests</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Event details will be auto-filled below
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {eventsLoading && isAuthenticated && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <span>Loading your events...</span>
+                  </div>
+                )}
+
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}

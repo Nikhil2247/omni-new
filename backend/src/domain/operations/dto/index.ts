@@ -23,6 +23,9 @@ export * from './create-vendor-agreement.dto';
 // Invoice DTOs
 export * from './provisional-invoice.dto';
 
+// Quotation DTOs
+export * from './quotation.dto';
+
 // Operational Task DTOs
 export * from './operational-task.dto';
 export * from './create-operational-task.dto';

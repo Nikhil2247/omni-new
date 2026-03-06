@@ -23,6 +23,7 @@ import {
 import { VibeQuizService } from './services/vibe-quiz.service';
 import { WeddingIdentityService } from './services/wedding-identity.service';
 import { WhatsAppService } from './services/whatsapp.service';
+import { GuestImportService } from './services/guest-import.service';
 
 // Repositories
 import {
@@ -47,6 +48,9 @@ import { WhatsAppRepository } from './repositories/whatsapp.repository';
 // Event Handlers
 import { EventEventHandler } from './events';
 
+// Tasks
+import { PlanningRemindersTask } from './tasks/planning-reminders.task';
+
 @Module({
   imports: [DatabaseModule],
   providers: [
@@ -66,6 +70,7 @@ import { EventEventHandler } from './events';
     VibeQuizService,
     WeddingIdentityService,
     WhatsAppService,
+    GuestImportService,
 
     // Repositories
     EventRepository,
@@ -87,6 +92,9 @@ import { EventEventHandler } from './events';
 
     // Event Handlers
     EventEventHandler,
+
+    // Tasks
+    PlanningRemindersTask,
   ],
   exports: [
     EventService,
@@ -104,6 +112,7 @@ import { EventEventHandler } from './events';
     VibeQuizService,
     WeddingIdentityService,
     WhatsAppService,
+    GuestImportService,
   ],
 })
 export class PlanningModule {}

@@ -1695,6 +1695,11 @@ model Guest {
   notes       String?
   createdAt   DateTime    @default(now()) @map("created_at")
 
+  // RSVP Link Fields
+  rsvpToken   String?     @unique @map("rsvp_token")
+  rsvpAt      DateTime?   @map("rsvp_at")
+  rsvpMessage String?     @map("rsvp_message")
+
   guestlist        Guestlist         @relation(fields: [guestlistId], references: [id])
   whatsappMessages WhatsAppMessage[]
 
@@ -2459,6 +2464,7 @@ model VendorAgreement {
   activeEvent     ActiveEvent     @relation(fields: [activeEventId], references: [id], onDelete: Cascade)
   requirementItem RequirementItem? @relation(fields: [requirementItemId], references: [id])
   invoice         ProvisionalInvoice?
+  quotation       Quotation?
 
   @@index([activeEventId])
   @@index([vendorProfileId])
@@ -2480,19 +2486,29 @@ enum AgreementStatus {
   @@schema("operations")
 }
 
-/// ProvisionalInvoice - Invoice generated when agreement is locked
+/// ProvisionalInvoice - Invoice generated when agreement is locked or quotation is converted
 model ProvisionalInvoice {
   id                String          @id @default(uuid()) @db.Uuid
   vendorAgreementId String          @unique @map("vendor_agreement_id") @db.Uuid
+  quotationId       String?         @unique @map("quotation_id") @db.Uuid
 
   invoiceNumber     String          @unique @map("invoice_number")
   amount            Decimal         @db.Decimal(10, 2)
   status            ProvisionalInvoiceStatus   @default(PENDING)
 
+  // Multi-currency support (inherited from quotation if converted)
+  currency          String          @default("INR")
+
+  // Line Items (copied from quotation when converted)
+  items             Json?           @default("[]")
+
   issuedAt          DateTime        @default(now()) @map("issued_at")
+  dueDate           DateTime?       @map("due_date")
   paidAt            DateTime?       @map("paid_at")
 
+  // Relations
   vendorAgreement   VendorAgreement @relation(fields: [vendorAgreementId], references: [id])
+  quotation         Quotation?      @relation(fields: [quotationId], references: [id])
 
   @@index([status])
   @@map("provisional_invoices")
@@ -2506,6 +2522,66 @@ enum ProvisionalInvoiceStatus {
   PAID
   OVERDUE
   CANCELLED
+
+  @@schema("operations")
+}
+
+/// Quotation - Detailed quote with line items sent for vendor approval
+/// Created from VendorAgreement, converts to ProvisionalInvoice when accepted
+model Quotation {
+  id                  String          @id @default(uuid()) @db.Uuid
+  vendorAgreementId   String          @unique @map("vendor_agreement_id") @db.Uuid
+  quotationNumber     String          @unique @map("quotation_number")
+
+  // Multi-currency support
+  currency            String          @default("INR")
+
+  // Line Items stored as JSON array
+  // Structure: [{description: string, quantity: number, rate: number, amount: number}]
+  items               Json            @default("[]")
+
+  // Financial summary
+  subtotal            Decimal         @db.Decimal(12, 2)
+  taxRate             Decimal?        @map("tax_rate") @db.Decimal(5, 2)    // Percentage (e.g., 18.00 for GST)
+  taxAmount           Decimal?        @map("tax_amount") @db.Decimal(12, 2)
+  discount            Decimal?        @db.Decimal(12, 2)
+  discountType        String?         @map("discount_type")                  // "PERCENTAGE" or "FIXED"
+  totalAmount         Decimal         @map("total_amount") @db.Decimal(12, 2)
+
+  // Additional details
+  notes               String?
+  termsAndConditions  String?         @map("terms_and_conditions")
+  validUntil          DateTime?       @map("valid_until")
+
+  // Lifecycle status
+  status              QuotationStatus @default(DRAFT)
+  sentAt              DateTime?       @map("sent_at")
+  acceptedAt          DateTime?       @map("accepted_at")
+  rejectedAt          DateTime?       @map("rejected_at")
+  rejectionReason     String?         @map("rejection_reason")
+
+  // Timestamps
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  vendorAgreement     VendorAgreement @relation(fields: [vendorAgreementId], references: [id], onDelete: Cascade)
+  invoice             ProvisionalInvoice?
+
+  @@index([status])
+  @@index([vendorAgreementId])
+  @@map("quotations")
+  @@schema("operations")
+}
+
+/// QuotationStatus - Quotation lifecycle states
+enum QuotationStatus {
+  DRAFT             // Created but not sent
+  SENT              // Sent to vendor for approval
+  ACCEPTED          // Vendor accepted
+  REJECTED          // Vendor rejected
+  EXPIRED           // Validity period passed
+  CONVERTED         // Converted to invoice
 
   @@schema("operations")
 }

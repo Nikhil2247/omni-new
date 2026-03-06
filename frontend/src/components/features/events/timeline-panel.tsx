@@ -45,6 +45,24 @@ const createTimelineSchema = z.object({
 
 type CreateTimelineValues = z.infer<typeof createTimelineSchema>
 
+// Format time from "14:30" to "2:30 PM"
+function formatTimeDisplay(time?: string): string {
+  if (!time) return ''
+
+  // Handle already formatted time (e.g., "2:30 PM")
+  if (time.toLowerCase().includes('am') || time.toLowerCase().includes('pm')) {
+    return time
+  }
+
+  // Parse HH:MM format
+  const [hours, minutes] = time.split(':').map(Number)
+  if (isNaN(hours) || isNaN(minutes)) return time
+
+  const period = hours >= 12 ? 'PM' : 'AM'
+  const displayHours = hours % 12 || 12
+  return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
 export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defaultDate?: string | null }) {
   const [isCreateTimelineOpen, setIsCreateTimelineOpen] = useState(false)
   const [isEditTimelineOpen, setIsEditTimelineOpen] = useState(false)
@@ -269,7 +287,7 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
                   {/* Time Badge */}
                   <div className="flex shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30 px-3 py-2">
                     <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
-                      {item.time || item.scheduledTime || ''}
+                      {formatTimeDisplay(item.scheduledTime)}
                     </span>
                   </div>
 

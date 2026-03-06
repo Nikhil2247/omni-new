@@ -38,7 +38,7 @@ export const opsKeys = {
   requirements: (activeEventId: string) => [...opsKeys.all, 'requirements', activeEventId] as const,
   agreements: (activeEventId: string) => [...opsKeys.all, 'agreements', activeEventId] as const,
   invoices: (vendorAgreementId: string) => [...opsKeys.all, 'invoices', vendorAgreementId] as const,
-  allInvoices: (params?: { status?: string; page?: number; limit?: number }) => [...opsKeys.all, 'all-invoices', params || {}] as const,
+  allInvoices: (params?: { status?: string; activeEventId?: string; page?: number; limit?: number }) => [...opsKeys.all, 'all-invoices', params || {}] as const,
   vendors: () => [...opsKeys.all, 'vendors'] as const,
   vendor: (id: string) => [...opsKeys.vendors(), id] as const,
   support: () => [...opsKeys.all, 'support'] as const,
@@ -173,7 +173,7 @@ export function useOpsInvoices(vendorAgreementId: string) {
   })
 }
 
-export function useOpsAllInvoices(params?: { status?: string; page?: number; limit?: number }) {
+export function useOpsAllInvoices(params?: { status?: string; activeEventId?: string; page?: number; limit?: number }) {
   return useQuery<OpsInvoicesListResponse>({
     queryKey: opsKeys.allInvoices(params),
     queryFn: () => opsService.getAllInvoices(params),

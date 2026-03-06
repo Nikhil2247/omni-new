@@ -39,7 +39,6 @@ interface TimelineItemFormProps {
     title: string
     description?: string | null
     scheduledTime?: string
-    time?: string
     duration?: number | null
   } | null
   onSubmit: (data: TimelineItemFormData & { id?: string }) => Promise<void>
@@ -59,7 +58,7 @@ export function TimelineItemForm({
     defaultValues: {
       title: item?.title || "",
       description: item?.description || "",
-      scheduledTime: item?.scheduledTime || item?.time || "",
+      scheduledTime: item?.scheduledTime || "",
       duration: item?.duration || undefined,
     },
   })
@@ -137,28 +136,22 @@ export function TimelineItemForm({
               <FormField
                 control={form.control}
                 name="scheduledTime"
-                rules={{ 
-                  required: "Time is required",
-                  pattern: {
-                    value: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](\s?(AM|PM|am|pm))?$/,
-                    message: "Invalid time format (use HH:MM or HH:MM AM/PM)"
-                  }
-                }}
+                rules={{ required: "Time is required" }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Time</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                         <Input
-                          placeholder="10:00 AM"
-                          className="pl-10"
+                          type="time"
+                          className="pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                           {...field}
                         />
                       </div>
                     </FormControl>
                     <FormDescription className="text-xs">
-                      e.g., 10:00 AM or 14:30
+                      Select the time for this activity
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

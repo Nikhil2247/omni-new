@@ -75,9 +75,10 @@ export class ProvisionalInvoiceService {
     return this.invoiceRepository.findByAgreement(vendorAgreementId);
   }
 
-  async findAll(params?: { status?: string; page?: number; limit?: number }) {
+  async findAll(params?: { status?: string; activeEventId?: string; page?: number; limit?: number }) {
     return this.invoiceRepository.findAll({
       status: params?.status as any,
+      activeEventId: params?.activeEventId,
       page: params?.page,
       limit: params?.limit,
     });

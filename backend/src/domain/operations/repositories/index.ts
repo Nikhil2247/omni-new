@@ -13,6 +13,7 @@ export * from './event-note.repository';
 export * from './requirement-sheet.repository';
 export * from './vendor-agreement.repository';
 export * from './provisional-invoice.repository';
+export * from './quotation.repository';
 export * from './operational-task.repository';
 export * from './task-attachment.repository';
 

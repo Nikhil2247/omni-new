@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useUmami } from '@/hooks/use-umami'
 import { format } from 'date-fns'
-import { FileText, DollarSign, Clock, CheckCircle, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, Eye, Receipt, XCircle, Loader2 } from 'lucide-react'
+import { FileText, DollarSign, Clock, CheckCircle, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, Eye, Receipt, XCircle, Loader2, Printer } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useOpsAllInvoices, useMarkInvoicePaid, useDeleteInvoice } from '@/hooks/queries/use-ops'
 import type { OpsInvoice } from '@/lib/api/types/ops.types'
+import { QuotationPreviewDialog } from '@/components/features/ops/quotation-preview-dialog'
+import type { QuotationTemplateData } from '@/components/features/ops/quotation-template'
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All Statuses' },
@@ -61,6 +63,7 @@ export default function OpsInvoicesPage() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [showMarkPaidDialog, setShowMarkPaidDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false)
 
   const queryParams = useMemo(() => ({
     status: statusFilter !== 'all' ? statusFilter : undefined,
@@ -127,6 +130,26 @@ export default function OpsInvoicesPage() {
       refetch()
     } catch (error) {
       console.error('Failed to delete invoice:', error)
+    }
+  }
+
+  // Convert invoice data to template format
+  const getTemplateData = (invoice: OpsInvoice): QuotationTemplateData => {
+    const amount = typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : (invoice.amount || 0)
+    return {
+      quotationNumber: invoice.invoiceNumber,
+      dateIssued: invoice.issuedAt || new Date().toISOString(),
+      clientName: invoice.vendorAgreement?.activeEvent?.clientName || 'N/A',
+      vendorName: invoice.vendorAgreement?.vendorProfile?.businessName || invoice.vendorAgreement?.vendorName || 'N/A',
+      items: [{
+        description: `${invoice.vendorAgreement?.activeEvent?.eventType || 'Service'} - Vendor Services`,
+        quantity: 1,
+        rate: amount,
+        amount: amount,
+      }],
+      subtotal: amount,
+      grandTotal: amount,
+      tokenMoneyPaid: invoice.status === 'PAID' ? amount : 0,
     }
   }
 
@@ -327,6 +350,16 @@ export default function OpsInvoicesPage() {
                             }}
                           >
                             <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedInvoice(invoice)
+                              setShowPreviewDialog(true)
+                            }}
+                          >
+                            <Printer className="h-4 w-4" />
                           </Button>
                           {invoice.status === 'PENDING' && (
                             <Button
@@ -536,6 +569,14 @@ export default function OpsInvoicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Preview/Print Dialog */}
+      <QuotationPreviewDialog
+        open={showPreviewDialog}
+        onOpenChange={setShowPreviewDialog}
+        data={selectedInvoice ? getTemplateData(selectedInvoice) : null}
+        type="invoice"
+      />
     </div>
   )
 }
