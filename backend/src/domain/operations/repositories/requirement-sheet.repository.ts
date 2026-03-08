@@ -44,4 +44,23 @@ export class RequirementSheetRepository extends BaseRepository<
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async findByApprovalToken(token: string) {
+    return this.model.findUnique({
+      where: { approvalToken: token },
+      include: {
+        items: true,
+        activeEvent: {
+          select: {
+            id: true,
+            clientName: true,
+            eventType: true,
+            eventDate: true,
+            clientEmail: true,
+            clientPhone: true,
+          },
+        },
+      },
+    });
+  }
 }

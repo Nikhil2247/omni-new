@@ -71,8 +71,23 @@ export class VendorAgreementListener {
   }
 
   @OnEvent('vendor-agreement.updated')
-  async handleAgreementUpdated(payload: { agreementId: string }) {
+  async handleAgreementUpdated(payload: {
+    agreementId: string;
+    oldStatus?: string;
+    newStatus?: string;
+  }) {
     this.logger.log(`Vendor agreement updated: ${payload.agreementId}`);
+
+    if (
+      payload.oldStatus &&
+      payload.newStatus &&
+      payload.oldStatus === payload.newStatus
+    ) {
+      this.logger.debug(
+        `Skipping vendor agreement notification for ${payload.agreementId} because status did not change`,
+      );
+      return;
+    }
 
     const agreement = await this.prisma.vendorAgreement.findUnique({
       where: { id: payload.agreementId },

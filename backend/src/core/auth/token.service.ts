@@ -61,7 +61,7 @@ export interface SessionInfo {
 @Injectable()
 export class TokenService {
   private readonly logger = new Logger(TokenService.name);
-  private readonly ACCESS_TOKEN_EXPIRY = '15m';
+  private readonly ACCESS_TOKEN_EXPIRY = '7d';
   private readonly REFRESH_TOKEN_EXPIRY = '7d';
   private readonly REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -89,7 +89,7 @@ export class TokenService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 900, // 15 minutes in seconds
+      expiresIn: 604800, // 7 days in seconds
       sessionId: session.id,
     };
   }

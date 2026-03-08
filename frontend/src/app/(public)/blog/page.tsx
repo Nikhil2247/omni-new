@@ -1,97 +1,67 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import NextImage from 'next/image'
 import { trackContent } from '@/lib/analytics/umami'
 import { Clock, Eye, Search } from 'lucide-react'
-import { usePublicBlogCategories, usePublicBlogPosts, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
+import {
+  usePublicInfiniteBlogPosts,
+} from '@/hooks/queries/use-public-blog'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getMinioViewUrl } from '@/lib/utils/minio'
+import { useInView } from 'react-intersection-observer'
+
+type BlogSortOption = 'latest' | 'mostViewed'
 
 export default function BlogPage() {
+  const [searchQuery, setSearchQuery] = useState('')
   const [keyword, setKeyword] = useState('')
-  const [categoryId, setCategoryId] = useState('all')
-  const [tagId, setTagId] = useState('all')
-  const [page, setPage] = useState(1)
-  const [allPosts, setAllPosts] = useState<any[]>([])
-  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const [sortBy, setSortBy] = useState<BlogSortOption>('latest')
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '200px',
+  })
 
   useEffect(() => {
     trackContent.articleView('blog-list', 'Blog')
   }, [])
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setPage(1)
-    setAllPosts([])
-  }, [keyword, categoryId, tagId])
+  const handleSearch = useCallback(() => {
+    setKeyword(searchQuery.trim())
+  }, [searchQuery])
 
-  const params = useMemo(
+  const filters = useMemo(
     () => ({
+      status: 'PUBLISHED' as const,
       keyword: keyword.trim() || undefined,
-      categoryId: categoryId === 'all' ? undefined : categoryId,
-      tagId: tagId === 'all' ? undefined : tagId,
-      page,
-      limit: 12,
+      sortBy,
     }),
-    [keyword, categoryId, tagId, page]
+    [keyword, sortBy]
   )
 
-  const { data, isLoading, isFetching } = usePublicBlogPosts(params)
-  const { data: categories } = usePublicBlogCategories()
-  const { data: tags } = usePublicBlogTags()
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = usePublicInfiniteBlogPosts(filters, 12)
 
-  // Accumulate posts as pages load
   useEffect(() => {
-    if (data?.data) {
-      if (page === 1) {
-        setAllPosts(data.data)
-      } else {
-        setAllPosts((prev) => {
-          const existingIds = new Set(prev.map((p) => p.id))
-          const newItems = data.data.filter((p) => !existingIds.has(p.id))
-          return [...prev, ...newItems]
-        })
-      }
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
     }
-  }, [data, page])
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  // Infinite scroll observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !isLoading && !isFetching) {
-          const hasMore = data?.meta?.hasNextPage ?? (allPosts.length < (data?.meta?.total || 0))
-          if (hasMore) {
-            setPage((prev) => prev + 1)
-          }
-        }
-      },
-      { threshold: 0.1 }
-    )
-    if (loadMoreRef.current) observer.observe(loadMoreRef.current)
-    return () => observer.disconnect()
-  }, [isLoading, isFetching, data?.meta, allPosts.length])
-
-  const categoryOptions = Array.isArray(categories)
-    ? categories
-    : categories && Array.isArray((categories as { data?: unknown })?.data)
-      ? ((categories as { data: unknown[] }).data as typeof categories)
-      : []
-
-  const tagOptions = Array.isArray(tags)
-    ? tags
-    : tags && Array.isArray((tags as { data?: unknown })?.data)
-      ? ((tags as { data: unknown[] }).data as typeof tags)
-      : []
-
-  const displayPosts = allPosts.length ? allPosts : data?.data || []
+  const displayPosts = data?.pages.flatMap((page) => page.data) ?? []
 
   return (
     <main className="mx-auto flex w-full max-w-8xl flex-col gap-5 px-6 py-12">
@@ -106,45 +76,39 @@ export default function BlogPage() {
         </div>
       </section>
 
-      <div className="flex w-full flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm md:flex-row md:items-center">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+      <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+        <div className="relative flex items-center rounded-full border border-border bg-background p-1.5 shadow-sm transition-shadow hover:shadow-md focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/20">
           <Input
-            placeholder="Search articles"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            className="pl-9"
+            type="text"
+            placeholder="Search inspiration, styles, themes..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
+            className="h-9 border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
           />
+          <Button
+            onClick={handleSearch}
+            className="h-9 w-9 shrink-0 rounded-full p-0"
+            aria-label="Search"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
         </div>
-        <Select value={categoryId} onValueChange={setCategoryId}>
-          <SelectTrigger className="w-full md:w-56">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {categoryOptions.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={tagId} onValueChange={setTagId}>
-          <SelectTrigger className="w-full md:w-56">
-            <SelectValue placeholder="Tag" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All tags</SelectItem>
-            {tagOptions.map((tag) => (
-              <SelectItem key={tag.id} value={tag.id}>
-                {tag.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        <div className="w-full md:w-45">
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as BlogSortOption)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="latest">Latest</SelectItem>
+              <SelectItem value="mostViewed">Most viewed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {isLoading && page === 1 ? (
+      {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-64 rounded-2xl" />
@@ -206,11 +170,14 @@ export default function BlogPage() {
 
           {/* Infinite scroll trigger */}
           <div ref={loadMoreRef} className="flex w-full justify-center py-8">
-            {isFetching && (
+            {isFetchingNextPage && (
               <div className="flex items-center gap-3">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 <span className="text-sm text-muted-foreground">Loading more...</span>
               </div>
+            )}
+            {!hasNextPage && !isFetching && displayPosts.length > 0 && (
+              <span className="text-sm text-muted-foreground">You have reached the end.</span>
             )}
           </div>
         </>

@@ -95,6 +95,12 @@ export interface OpsRequirementSheet {
   id: string
   activeEventId: string
   notes?: string | null
+  approvalToken?: string | null
+  approvalStatus?: 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED'
+  sentToClientAt?: string | null
+  clientApprovedAt?: string | null
+  clientRejectedAt?: string | null
+  rejectionReason?: string | null
   createdAt?: string | null
   updatedAt?: string | null
   items?: Array<{

@@ -112,6 +112,7 @@ export class OperationalTaskService {
     dto: UpdateTaskStatusDto,
   ): Promise<OperationalTask> {
     const task = await this.findById(id);
+    const statusChanged = task.status !== dto.status;
 
     if (task.status === 'COMPLETED' && dto.status !== 'COMPLETED') {
       throw new ConflictException('Completed tasks cannot change status');
@@ -126,10 +127,12 @@ export class OperationalTaskService {
       completedAt: dto.status === 'COMPLETED' ? new Date() : undefined,
     });
 
-    this.eventEmitter.emit('operational-task.status-changed', {
-      taskId: id,
-      status: dto.status,
-    });
+    if (statusChanged) {
+      this.eventEmitter.emit('operational-task.status-changed', {
+        taskId: id,
+        status: dto.status,
+      });
+    }
     return updated;
   }
 

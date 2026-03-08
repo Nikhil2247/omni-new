@@ -392,6 +392,17 @@ export function useDeleteRequirementItem() {
   })
 }
 
+export function useSendRequirementToClient() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, message }: { id: string; message?: string }) =>
+      opsService.sendRequirementToClient(id, message),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: opsKeys.all })
+    },
+  })
+}
+
 // ==================== Vendor Agreement Mutations ====================
 export function useCreateVendorAgreement() {
   const queryClient = useQueryClient()

@@ -115,38 +115,63 @@ export class VendorAgreementService {
       );
     }
 
-    this.eventEmitter.emit('vendor-agreement.updated', { agreementId: id });
+    this.eventEmitter.emit('vendor-agreement.updated', {
+      agreementId: id,
+      oldStatus: existing.status,
+      newStatus: updated.status,
+    });
     return updated;
   }
 
   async markAsSent(id: string): Promise<VendorAgreement> {
-    await this.findById(id);
+    const existing = await this.findById(id);
+    if (existing.status === 'SENT') {
+      return existing;
+    }
     const updated = await this.vendorAgreementRepository.update(id, {
       status: 'SENT',
       sentAt: new Date(),
     });
-    this.eventEmitter.emit('vendor-agreement.updated', { agreementId: id });
+    this.eventEmitter.emit('vendor-agreement.updated', {
+      agreementId: id,
+      oldStatus: existing.status,
+      newStatus: updated.status,
+    });
     return updated;
   }
 
   async markAsAccepted(id: string): Promise<VendorAgreement> {
-    await this.findById(id);
+    const existing = await this.findById(id);
+    if (existing.status === 'ACCEPTED') {
+      return existing;
+    }
     const updated = await this.vendorAgreementRepository.update(id, {
       status: 'ACCEPTED',
       acceptedAt: new Date(),
     });
-    this.eventEmitter.emit('vendor-agreement.updated', { agreementId: id });
+    this.eventEmitter.emit('vendor-agreement.updated', {
+      agreementId: id,
+      oldStatus: existing.status,
+      newStatus: updated.status,
+    });
     return updated;
   }
 
   async markAsDeclined(id: string, reason?: string): Promise<VendorAgreement> {
-    await this.findById(id);
+    const existing = await this.findById(id);
+    if (existing.status === 'DECLINED' && existing.declineReason === reason) {
+      return existing;
+    }
     const updated = await this.vendorAgreementRepository.update(id, {
       status: 'DECLINED',
       declinedAt: new Date(),
       declineReason: reason,
     });
-    this.eventEmitter.emit('vendor-agreement.updated', { agreementId: id });
+    this.eventEmitter.emit('vendor-agreement.updated', {
+      agreementId: id,
+      oldStatus: existing.status,
+      newStatus: updated.status,
+    });
     return updated;
   }
 

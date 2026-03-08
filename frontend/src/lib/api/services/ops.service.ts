@@ -159,6 +159,11 @@ export const opsService = {
     return data
   },
 
+  sendRequirementToClient: async (id: string, message?: string): Promise<ApiResponse<OpsRequirementSheet>> => {
+    const { data } = await apiClient.post(`${API_ENDPOINTS.OPS.REQUIREMENTS}/${id}/send-to-client`, { message })
+    return data
+  },
+
   // ==================== Vendor Agreements ====================
   getVendorAgreements: async (activeEventId: string): Promise<ApiResponse<OpsVendorAgreement[]>> => {
     const { data } = await apiClient.get(API_ENDPOINTS.OPS.VENDOR_AGREEMENTS, { params: { activeEventId } })

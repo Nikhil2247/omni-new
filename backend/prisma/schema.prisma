@@ -2377,6 +2377,14 @@ model RequirementSheet {
   // Summary
   notes         String?
 
+  // Client Approval
+  approvalToken       String?                   @unique @map("approval_token")
+  approvalStatus      ClientApprovalStatus      @default(DRAFT) @map("approval_status")
+  sentToClientAt      DateTime?                 @map("sent_to_client_at")
+  clientApprovedAt    DateTime?                 @map("client_approved_at")
+  clientRejectedAt    DateTime?                 @map("client_rejected_at")
+  rejectionReason     String?                   @map("rejection_reason")
+
   // Timestamps
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
@@ -2386,6 +2394,7 @@ model RequirementSheet {
   activeEvent   ActiveEvent  @relation(fields: [activeEventId], references: [id], onDelete: Cascade)
   items         RequirementItem[]
 
+  @@index([approvalToken])
   @@map("requirement_sheets")
   @@schema("operations")
 }
@@ -2426,6 +2435,16 @@ enum RequirementStatus {
   VENDOR_SELECTED   // Vendor chosen, agreement pending
   CONTRACTED        // Vendor agreement locked
   FULFILLED         // Vendor completed the work
+
+  @@schema("operations")
+}
+
+/// ClientApprovalStatus - Client approval lifecycle for requirement sheets
+enum ClientApprovalStatus {
+  DRAFT             // Not yet sent to client
+  PENDING           // Sent to client, awaiting response
+  APPROVED          // Client approved
+  REJECTED          // Client rejected
 
   @@schema("operations")
 }

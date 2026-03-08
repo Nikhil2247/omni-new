@@ -12,6 +12,15 @@ interface NotificationReadEvent {
   unreadCount: number
 }
 
+const dedupeNotifications = (items: NotificationItem[]): NotificationItem[] => {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false
+    seen.add(item.id)
+    return true
+  })
+}
+
 export const useNotifications = (params: NotificationListParams = {}) => {
   const { isAuthenticated, accessToken } = useAuthStore()
   const socketRef = useRef<Socket | null>(null)
@@ -33,7 +42,7 @@ export const useNotifications = (params: NotificationListParams = {}) => {
       notificationService.unreadCount(),
     ])
       .then(([listResponse, unreadResponse]) => {
-        setNotifications(listResponse?.items ?? [])
+        setNotifications(dedupeNotifications(listResponse?.items ?? []))
         setUnreadCount(unreadResponse?.count ?? 0)
       })
       .finally(() => setLoading(false))
@@ -104,8 +113,17 @@ export const useNotifications = (params: NotificationListParams = {}) => {
 
     // Notification event handlers
     socket.on('notification', (payload: NotificationItem) => {
-      setNotifications((prev) => [payload, ...prev])
-      setUnreadCount((prev) => prev + 1)
+      let inserted = false
+      setNotifications((prev) => {
+        if (prev.some((item) => item.id === payload.id)) {
+          return prev
+        }
+        inserted = true
+        return [payload, ...prev]
+      })
+      if (inserted && !payload.isRead) {
+        setUnreadCount((prev) => prev + 1)
+      }
     })
 
     socket.on('notification:read', (payload: NotificationReadEvent) => {

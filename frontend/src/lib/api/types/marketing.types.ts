@@ -106,6 +106,7 @@ export interface BlogPostSearchParams {
   categoryId?: string
   tagId?: string
   keyword?: string
+  sortBy?: 'latest' | 'mostViewed'
   page?: number
   limit?: number
 }

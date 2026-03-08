@@ -16,39 +16,40 @@ import { GlobalSearch } from "@/components/common/global-search";
 import {
   ArrowRight,
   ArrowDown,
-  Building2,
-  Camera,
-  Music,
-  Flower2,
-  UtensilsCrossed,
   Sparkles,
   Users,
   CheckCircle2,
   Star,
-  Shield,
-  MessageSquare,
-  DollarSign,
-  Clock,
-  Heart,
-  Lightbulb,
-  MapPin,
-  ListChecks,
+  Calendar,
   Wallet,
-  QrCode,
+  ListChecks,
   CalendarClock,
+  Mail,
+  Heart,
+  ChevronRight,
   Search,
-  type LucideIcon,
+  Clock,
+  Shield,
+  Zap,
+  Award,
+  Building2,
+  Camera,
+  UtensilsCrossed,
+  Music,
+  Flower2,
+  Lightbulb,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { VendorCard } from "@/components/features/vendors/vendor-card";
 import { useFeaturedVendors } from "@/hooks/queries/use-public-vendors";
+import { useBlogPosts } from "@/hooks/queries/use-marketing";
 
 // ─── Lenis Smooth Scroll ─────────────────────────────────────────────────────
 
@@ -68,16 +69,57 @@ function useSmoothScroll() {
   }, []);
 }
 
-// ─── Reusable Motion Wrappers ────────────────────────────────────────────────
+// ─── Reusable Components ─────────────────────────────────────────────────────
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/** Fade-up on scroll into view — used for section headings & blocks */
+// Floating Elements Component
+function FloatingElements() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <motion.div
+        animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-20 left-[10%] w-32 h-32 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-xl"
+      />
+      <motion.div
+        animate={{ y: [0, 20, 0], x: [0, -15, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute bottom-32 right-[15%] w-24 h-24 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full blur-xl"
+      />
+      <motion.div
+        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="absolute top-1/2 left-[5%] w-16 h-16 bg-gradient-to-br from-emerald-400/10 to-teal-400/10 rounded-full blur-lg"
+      />
+      <motion.div
+        animate={{ y: [0, -15, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        className="absolute top-1/3 right-[8%] w-20 h-20 bg-gradient-to-br from-amber-400/10 to-orange-400/10 rounded-full blur-lg"
+      />
+    </div>
+  );
+}
+
+// Background Pattern Component
+function BackgroundPattern() {
+  return (
+    <div className="absolute inset-0 opacity-30 pointer-events-none">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
+    </div>
+  );
+}
+
 function FadeIn({
   children,
   delay = 0,
   className = "",
-  y = 50,
+  y = 40,
 }: {
   children: React.ReactNode;
   delay?: number;
@@ -85,14 +127,14 @@ function FadeIn({
   y?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-60px" });
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y }}
-      transition={{ duration: 0.7, delay, ease }}
+      initial={{ opacity: 0, y, filter: "blur(4px)" }}
+      animate={isInView ? { opacity: 1, y: 0, filter: "blur(0px)" } : { opacity: 0, y, filter: "blur(4px)" }}
+      transition={{ duration: 0.6, delay, ease }}
       className={className}
     >
       {children}
@@ -100,18 +142,17 @@ function FadeIn({
   );
 }
 
-/** Staggered children container */
 function StaggerContainer({
   children,
   className = "",
-  staggerDelay = 0.06,
+  staggerDelay = 0.05,
 }: {
   children: React.ReactNode;
   className?: string;
   staggerDelay?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-40px" });
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
 
   return (
     <motion.div
@@ -119,8 +160,8 @@ function StaggerContainer({
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: staggerDelay } },
+        hidden: { opacity: 0 },
+        visible: { opacity: 1, transition: { staggerChildren: staggerDelay, delayChildren: 0.1 } },
       }}
       className={className}
     >
@@ -130,12 +171,13 @@ function StaggerContainer({
 }
 
 const staggerChild: Variants = {
-  hidden: { opacity: 0, y: 30, scale: 0.97 },
+  hidden: { opacity: 0, y: 25, scale: 0.97, filter: "blur(4px)" },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { duration: 0.55, ease },
+    filter: "blur(0px)",
+    transition: { duration: 0.5, ease },
   },
 };
 
@@ -148,38 +190,28 @@ function HeroVideoBackground() {
   const [isVideoReady, setIsVideoReady] = useState(false);
 
   useEffect(() => {
-    if (isInView) {
-      setShouldLoadVideo(true);
-    }
+    if (isInView) setShouldLoadVideo(true);
   }, [isInView]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onChange = () => setPrefersReducedMotion(mediaQuery.matches);
-
     onChange();
     mediaQuery.addEventListener("change", onChange);
-
     return () => mediaQuery.removeEventListener("change", onChange);
   }, []);
 
   useEffect(() => {
-    if (!videoRef.current || !shouldLoadVideo || prefersReducedMotion) {
-      return;
-    }
-
+    if (!videoRef.current || !shouldLoadVideo || prefersReducedMotion) return;
     const playPromise = videoRef.current.play();
     if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => {
-        setIsVideoReady(false);
-      });
+      playPromise.catch(() => setIsVideoReady(false));
     }
   }, [shouldLoadVideo, prefersReducedMotion]);
 
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
       <div className="absolute inset-0 bg-background" />
-
       {shouldLoadVideo && !prefersReducedMotion && (
         <video
           ref={videoRef}
@@ -196,267 +228,68 @@ function HeroVideoBackground() {
           <source src="/video/hero-desktop.mp4" type="video/mp4" />
         </video>
       )}
-
       <div className="absolute inset-0 bg-black/55" />
     </div>
   );
 }
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Data ────────────────────────────────────────────────────────────────────
 
-const CATEGORY_SLUGS = {
-  VENUE: "venue",
-  PHOTOGRAPHY: "photography",
-  FOOD_CATERING: "food-catering",
-  WEDDING_PLANNING: "wedding-planning",
-  ENTERTAINMENT: "entertainment",
-  DECOR_DESIGN: "decor-design",
-  MAKEUP_HAIR: "makeup-hair",
-  MEHNDI_ARTISTS: "mehndi-artists",
-};
-
-// Category cards with images - Zola style
 const serviceCategories = [
-  {
-    title: "Venues",
-    description: "Find the perfect location for your celebration.",
-    icon: Building2,
-    href: `/vendors?categoryId=${CATEGORY_SLUGS.VENUE}`,
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&q=80",
-  },
-  {
-    title: "Photo & Video",
-    description: "Capture every precious moment beautifully.",
-    icon: Camera,
-    href: `/vendors?categoryId=${CATEGORY_SLUGS.PHOTOGRAPHY}`,
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=600&q=80",
-  },
-  {
-    title: "Food & Catering",
-    description: "Delight your guests with amazing cuisine.",
-    icon: UtensilsCrossed,
-    href: `/vendors?categoryId=${CATEGORY_SLUGS.FOOD_CATERING}`,
-    image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=600&q=80",
-  },
-  {
-    title: "Decor & Design",
-    description: "Transform your venue into a dream setting.",
-    icon: Sparkles,
-    href: `/vendors?categoryId=${CATEGORY_SLUGS.DECOR_DESIGN}`,
-    image: "https://images.unsplash.com/photo-1478146059778-26028b07395a?w=600&q=80",
-  },
-  {
-    title: "Mehndi & Artists",
-    description: "Beautiful henna designs for your special day.",
-    icon: Flower2,
-    href: `/vendors?categoryId=${CATEGORY_SLUGS.MEHNDI_ARTISTS}`,
-    image: "https://images.unsplash.com/photo-1702378154233-9b870ff8f1b3?q=80&w=600",
-  },
-  {
-    title: "Entertainment",
-    description: "Keep your guests entertained all night long.",
-    icon: Music,
-    href: `/vendors?categoryId=${CATEGORY_SLUGS.ENTERTAINMENT}`,
-    image: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=600&q=80",
-  },
-  {
-    title: "Planners",
-    description: "Let experts handle the details for you.",
-    icon: Users,
-    href: `/vendors?categoryId=${CATEGORY_SLUGS.WEDDING_PLANNING}`,
-    image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&q=80",
-  },
-  {
-    title: "Makeup & Hair",
-    description: "Look your absolute best on your big day.",
-    icon: Lightbulb,
-    href: `/vendors?categoryId=${CATEGORY_SLUGS.MAKEUP_HAIR}`,
-    image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&q=80",
-  },
+  { title: "Venue", icon: Building2, href: "/vendors?categoryId=venue" },
+  { title: "Photography", icon: Camera, href: "/vendors?categoryId=photography" },
+  { title: "Catering", icon: UtensilsCrossed, href: "/vendors?categoryId=food-catering" },
+  { title: "Decor", icon: Sparkles, href: "/vendors?categoryId=decor-design" },
+  { title: "Mehndi", icon: Flower2, href: "/vendors?categoryId=mehndi-artists" },
+  { title: "Entertainment", icon: Music, href: "/vendors?categoryId=entertainment" },
+  { title: "Planner", icon: Users, href: "/vendors?categoryId=wedding-planning" },
+  { title: "Makeup", icon: Lightbulb, href: "/vendors?categoryId=makeup-hair" },
 ];
 
-// Zola-style feature cards with images
-const toolkitFeatures = [
-  {
-    title: "Find Vendors",
-    description: "Discover the perfect professionals for your event.",
-    href: "/vendors",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&q=80",
-    badge: "5,000+ vendors",
-    badgeIcon: Star,
-  },
-  {
-    title: "Event Website",
-    description: "Create a beautiful site to share with guests.",
-    href: "/register",
-    image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&q=80",
-    badge: "Free templates",
-    badgeIcon: Sparkles,
-  },
-  {
-    title: "Digital Invites",
-    description: "Send stunning invitations and track RSVPs.",
-    href: "/register",
-    image: "https://images.unsplash.com/photo-1607861716497-e65ab29fc7ac?w=600&q=80",
-    badge: "Customize design",
-    badgeIcon: Heart,
-  },
-  {
-    title: "Guest List",
-    description: "Manage RSVPs, meals, and seating with ease.",
-    href: "/register",
-    image: "https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=600&q=80",
-    badge: "Track RSVPs",
-    badgeIcon: Users,
-  },
-  {
-    title: "Budget Tracker",
-    description: "Stay on top of every rupee you spend.",
-    href: "/register",
-    image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80",
-    badge: "Payment reminders",
-    badgeIcon: Wallet,
-  },
-  {
-    title: "Photo Gallery",
-    description: "Collect moments from all your guests instantly.",
-    href: "/register",
-    image: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=600&q=80",
-    badge: "QR uploads",
-    badgeIcon: Camera,
-  },
+const tools = [
+  { title: "Budget Calculator", description: "Track expenses and manage your event budget", icon: Wallet, href: "/event-budget-calculator", color: "from-emerald-500 to-teal-500" },
+  { title: "Guest List Manager", description: "Organize guests, RSVPs, and seating", icon: Users, href: "/wedding-guest-list-manager", color: "from-blue-500 to-indigo-500" },
+  { title: "Event Checklist", description: "Never miss a task with smart planning", icon: ListChecks, href: "/event-checklist-tool", color: "from-purple-500 to-violet-500" },
+  { title: "Timeline Generator", description: "Create day-of schedules for your event", icon: CalendarClock, href: "/event-timeline-generator", color: "from-orange-500 to-amber-500" },
+  { title: "RSVP Manager", description: "Track responses and send reminders", icon: Mail, href: "/rsvp-manager", color: "from-pink-500 to-rose-500" },
+  { title: "Digital Invites", description: "Design and send beautiful invitations", icon: Heart, href: "/digital-invite-generator", color: "from-teal-500 to-cyan-500" },
 ];
 
-// Feature sections with Zola-style layout - images + text
-const featureSections = [
-  {
-    id: "vendors",
-    badge: "Find Vendors",
-    title: "Discover trusted vendors for your dream event",
-    description: "Browse thousands of verified photographers, decorators, caterers, and more. Compare portfolios, read real reviews, and book with confidence.",
-    cta: "Explore Vendors",
-    ctaHref: "/vendors",
-    ctaSecondary: "How it works",
-    ctaSecondaryHref: "/how-it-works",
-    bgImage: "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80",
-    mockupImage: "/images/features/vendor-search-mockup.png",
-    bgColor: "bg-[#0f4c5c]", // Teal
-    textColor: "text-white",
-  },
-  {
-    id: "discover",
-    badge: "Get Inspired",
-    title: "Explore stunning portfolios and find your style",
-    description: "Browse through thousands of real event photos and portfolios. Get inspired by the latest trends, save your favorites, and discover vendors whose style matches your vision.",
-    cta: "Explore Gallery",
-    ctaHref: "/discover",
-    ctaSecondary: "View Portfolios",
-    ctaSecondaryHref: "/discover?tab=portfolios",
-    bgImage: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200&q=80",
-    mockupImage: "/images/features/discover-mockup.png",
-    bgColor: "bg-[#5e4b8b]", // Purple
-    textColor: "text-white",
-  },
-  {
-    id: "planning",
-    badge: "Planning Tools",
-    title: "Plan every detail with ease",
-    description: "Smart checklists, budget trackers, and timelines that adapt to your event date. Stay organized without the stress.",
-    cta: "Start Planning",
-    ctaHref: "/register",
-    ctaSecondary: "See Features",
-    ctaSecondaryHref: "/features",
-    bgImage: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=1200&q=80",
-    mockupImage: "/images/features/checklist-mockup.png",
-    bgColor: "bg-[#2d5a4a]", // Forest green
-    textColor: "text-white",
-  },
-  {
-    id: "invites",
-    badge: "E-Invites",
-    title: "Send beautiful digital invitations",
-    description: "Create stunning digital invitations that match your event theme. Track RSVPs in real-time, send reminders, and keep all your guests informed effortlessly.",
-    cta: "Create Invite",
-    ctaHref: "/register",
-    ctaSecondary: "View Templates",
-    ctaSecondaryHref: "/invites/templates",
-    bgImage: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1200&q=80",
-    mockupImage: "/images/features/invites-mockup.png",
-    bgColor: "bg-[#8b5a2b]", // Warm brown
-    textColor: "text-white",
-  },
-  {
-    id: "website",
-    badge: "Event Website",
-    title: "Create your own event website in minutes",
-    description: "Build a beautiful, personalized website for your event. Share your story, event details, registry links, and photo galleries — all in one place your guests can easily access.",
-    cta: "Build Your Site",
-    ctaHref: "/register",
-    ctaSecondary: "See Examples",
-    ctaSecondaryHref: "/websites/examples",
-    bgImage: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=1200&q=80",
-    mockupImage: "/images/features/website-mockup.png",
-    bgColor: "bg-[#4a3728]", // Deep brown
-    textColor: "text-white",
-  },
-  {
-    id: "guests",
-    badge: "Guest Management",
-    title: "Manage your guest list effortlessly",
-    description: "Track RSVPs, manage dietary preferences, organize seating arrangements, and keep everyone in the loop with beautiful digital invites.",
-    cta: "Start Planning",
-    ctaHref: "/register",
-    ctaSecondary: "Learn More",
-    ctaSecondaryHref: "/features/guests",
-    bgImage: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=80",
-    mockupImage: "/images/features/guest-list-mockup.png",
-    bgColor: "bg-[#3d5a6c]", // Steel blue
-    textColor: "text-white",
-  },
-  {
-    id: "memories",
-    badge: "Capture Memories",
-    title: "Collect every moment from your guests",
-    description: "Generate a QR code for your event. Guests scan and upload photos instantly — no app needed. Create a beautiful shared gallery.",
-    cta: "Start Planning",
-    ctaHref: "/register",
-    ctaSecondary: "See Demo",
-    ctaSecondaryHref: "/features/memories",
-    bgImage: "https://images.unsplash.com/photo-1529634806980-85c3dd6d34ac?w=1200&q=80",
-    mockupImage: "/images/features/qr-gallery-mockup.png",
-    bgColor: "bg-[#6b4c5a]", // Dusty mauve
-    textColor: "text-white",
-  },
+const platformFeatures = [
+  { icon: Search, title: "Discover Vendors", description: "Browse thousands of verified vendors across all categories including venues, photographers, caterers, decorators, and more. Filter by location, budget, style, and availability to find your perfect match.", color: "from-blue-500 to-indigo-500" },
+  { icon: Star, title: "Verified Reviews", description: "Read authentic reviews and ratings from real couples who have worked with our vendors. See photos, detailed feedback, and honest experiences to make informed decisions.", color: "from-amber-500 to-orange-500" },
+  { icon: Calendar, title: "Planning Tools", description: "Access free budget calculators, guest list managers, event checklists, timeline generators, RSVP trackers, and digital invite creators to stay organized throughout your planning journey.", color: "from-emerald-500 to-teal-500" },
+  { icon: Shield, title: "Secure Booking", description: "Book vendors with confidence using our secure payment processing. Your transactions are protected, and we offer booking guarantees to ensure peace of mind for your special day.", color: "from-purple-500 to-violet-500" },
+  { icon: Zap, title: "Instant Communication", description: "Message vendors directly through our platform, share ideas, request quotes, negotiate details, and finalize everything in one convenient place without switching between apps.", color: "from-pink-500 to-rose-500" },
+  { icon: Award, title: "Best Price Guarantee", description: "Get competitive pricing with transparent quotes from multiple vendors. Compare packages, negotiate deals, and ensure you're getting the best value for your celebration.", color: "from-cyan-500 to-sky-500" },
 ];
 
-const popularLocations = [
-  { city: "Mumbai" },
-  { city: "Delhi" },
-  { city: "Bangalore" },
-  { city: "Hyderabad" },
-  { city: "Chennai" },
-  { city: "Kolkata" },
-  { city: "Pune" },
-  { city: "Jaipur" },
-  { city: "Ahmedabad" },
-  { city: "Goa" },
-  { city: "Udaipur" },
-  { city: "Lucknow" },
+const inspirationCategories = [
+  { title: "Wedding Decor", image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80", count: "2,500+ ideas" },
+  { title: "Venue Ideas", image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&q=80", count: "1,800+ venues" },
+  { title: "Bridal Looks", image: "https://images.unsplash.com/photo-1594552072238-b8a33785b261?w=600&q=80", count: "3,200+ styles" },
+  { title: "Food & Menu", image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=600&q=80", count: "1,500+ menus" },
+];
+
+const faqs = [
+  { question: "Is Omnicassion free to use?", answer: "Yes! Creating an account, browsing vendors, and using our planning tools is completely free. You only pay when you book vendor services." },
+  { question: "How do I find the right vendor?", answer: "Use our search filters to narrow down by category, location, budget, and style. Read reviews, view portfolios, and message vendors directly to find your perfect match." },
+  { question: "Are vendors on Omnicassion verified?", answer: "Yes, all vendors go through a verification process. We check business documents, portfolios, and monitor reviews to ensure quality service." },
+  { question: "Can I manage my entire event on Omnicassion?", answer: "Absolutely! Use our budget calculator, guest list manager, checklist, timeline generator, and digital invites to plan every detail of your event." },
+  { question: "How does vendor booking work?", answer: "Browse vendors, request quotes, compare prices, and book directly through our secure platform. We handle payments and provide booking protection." },
+  { question: "What if I need help with planning?", answer: "Our AI assistant is available 24/7 to answer questions and provide recommendations. You can also hire professional planners through our platform." },
 ];
 
 // ─── Hero ────────────────────────────────────────────────────────────────────
 
 function HeroSection() {
-  const scrollToServices = useCallback(() => {
+  const scrollToContent = useCallback(() => {
     document.getElementById("services")?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  // Spring-smoothed transforms for buttery parallax
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+
   const rawY = useTransform(scrollYProgress, [0, 1], [0, 100]);
   const rawOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
   const rawScale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
@@ -467,7 +300,7 @@ function HeroSection() {
   return (
     <section
       ref={heroRef}
-      className="relative z-20 flex min-h-[60vh] w-full items-center justify-center overflow-x-hidden overflow-y-visible bg-background py-12 sm:min-h-[85vh] sm:py-16"
+      className="relative z-20 flex min-h-[70vh] w-full items-center justify-center overflow-hidden bg-background py-16 sm:min-h-[85vh] sm:py-20"
     >
       <HeroVideoBackground />
 
@@ -481,479 +314,228 @@ function HeroSection() {
           transition={{ duration: 1, delay: 0.2, ease }}
           className="font-serif text-4xl leading-tight font-bold tracking-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl"
         >
-          Discover the Best Events and Services
+          Plan Your Perfect Event
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3, ease }}
-          className="mx-auto mt-4 max-w-2xl text-lg text-white/90 sm:text-xl"
+          className="mx-auto mt-6 max-w-2xl text-lg text-white/90 sm:text-xl"
         >
-          Find the perfect venue, vendors, and planners for your next event.
+          Discover top vendors, manage your budget, and bring your dream celebration to life.
         </motion.p>
 
-        {/* Global Search */}
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.5, ease }}
-          className="relative z-100 mx-auto mt-8 max-w-2xl"
+          className="relative z-100 mx-auto mt-10 max-w-2xl"
         >
-          <GlobalSearch
-            placeholder="Search vendors..."
-            className="max-w-none"
-            showOnHomePage={true}
-          />
+          <GlobalSearch placeholder="Search vendors, venues, services..." className="max-w-none" showOnHomePage={true} />
         </motion.div>
 
-  
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.7, ease }}
+          className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-white/80"
+        >
+          <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />5,000+ Verified Vendors</span>
+          <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />Free Planning Tools</span>
+          <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />Trusted by 50,000+ Couples</span>
+        </motion.div>
       </motion.div>
 
-      {/* Scroll arrow */}
       <motion.button
-        onClick={scrollToServices}
+        onClick={scrollToContent}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2, duration: 0.6 }}
-        className="animate-bounce-slow absolute bottom-20 left-1/2 z-20 -translate-x-1/2 text-white/75 transition-colors hover:text-white sm:bottom-24"
+        className="animate-bounce-slow absolute bottom-16 left-1/2 z-20 -translate-x-1/2 text-white/75 transition-colors hover:text-white sm:bottom-20"
         aria-label="Scroll down"
       >
         <ArrowDown className="h-6 w-6" />
       </motion.button>
-
-      {/* Wave cutout at bottom — visible in viewport */}
-      {/* <div className="absolute bottom-0 left-0 z-10 w-full overflow-hidden leading-[0]">
-        <svg
-          viewBox="0 0 1440 200"
-          preserveAspectRatio="none"
-          className="relative block h-[100px] w-full sm:h-[130px] lg:h-[80px]"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M0,80 C180,160 360,20 540,80 C720,140 900,30 1080,90 C1200,120 1320,60 1440,80 L1440,200 L0,200 Z"
-            className="fill-background"
-          />
-        </svg>
-      </div> */}
     </section>
   );
 }
 
-// ─── Services Grid - Zola Style Layout (Title Left, Cards Right) ─────────────
+// ─── Start Planning Section with Floating Elements ───────────────────────────
 
-function ServicesGrid() {
-  const gridRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(gridRef, { once: true, margin: "-50px" });
-
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 25 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease },
-    },
-  };
-
-  // Take first 6 categories for 2x3 grid
-  const displayCategories = serviceCategories.slice(0, 6);
-
-  return (
-    <section id="services" className="bg-background py-12 sm:py-16 lg:py-16">
-      <div className="mx-auto max-w-7xl px-6">
-        {/* Two-column layout: Title on left (centered vertically), grid on right */}
-        <div className="grid gap-10 lg:grid-cols-[280px_1fr] lg:gap-8 xl:grid-cols-[320px_1fr]">
-
-          {/* Left side - Title (vertically centered) */}
-          <FadeIn className="flex flex-col justify-center">
-            <h2 className="font-serif text-3xl font-bold leading-tight sm:text-4xl">
-              Explore by Categories
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              Find the perfect professionals for your event
-            </p>
-          </FadeIn>
-
-          {/* Right side - Cards grid with vertical dividers */}
-          <motion.div
-            ref={gridRef}
-            initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
-            variants={containerVariants}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-10"
-          >
-            {displayCategories.map((cat, index) => {
-              // Border logic: add left border for 2nd and 3rd columns
-              const isSecondColLg = index % 3 === 1;
-              const isThirdColLg = index % 3 === 2;
-              const isSecondColSm = index % 2 === 1;
-
-              return (
-                <motion.div
-                  key={cat.title}
-                  variants={itemVariants}
-                  className={`
-                    px-0 first:pl-0
-                    sm:px-6
-                    ${isSecondColSm ? 'sm:border-l border-border' : ''}
-                    ${isSecondColLg || isThirdColLg ? 'lg:border-l' : 'lg:border-l-0'}
-                    ${index % 3 === 0 ? 'lg:pl-0' : ''}
-                  `}
-                >
-                <Link href={cat.href} prefetch={false} className="group block">
-                  {/* Title with arrow */}
-                  <h3 className="text-lg font-semibold flex items-center gap-1 group-hover:underline decoration-1 underline-offset-4">
-                    {cat.title}
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </h3>
-
-                  {/* Description */}
-                  <p className="mt-1.5 text-sm text-muted-foreground">
-                    {cat.description}
-                  </p>
-
-                  {/* Image */}
-                  <div className="mt-4 relative overflow-hidden rounded-xl bg-gray-100 aspect-4/3">
-                    <div
-                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                      style={{ backgroundImage: `url(${cat.image})` }}
-                    />
-                  </div>
-                </Link>
-              </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
-
-        {/* View all link */}
-        <FadeIn delay={0.3} className="mt-10 text-center lg:text-right">
-          <Link
-            href="/vendors"
-            className="inline-flex items-center text-sm font-medium text-primary hover:underline underline-offset-4"
-          >
-            View all categories
-            <ArrowRight className="ml-1.5 h-4 w-4" />
-          </Link>
-        </FadeIn>
-      </div>
-    </section>
-  );
-}
-
-// ─── Zola-Style Feature Section with Lenis Smooth Stagger ────────────────────
-
-function FeatureSection({
-  section,
-  index
-}: {
-  section: (typeof featureSections)[number];
-  index: number;
-}) {
+function StartPlanningSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
-  const isEven = index % 2 === 0;
+  const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
-  // Parallax effect for the image
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  // Smooth spring-based parallax for image
-  const rawImageY = useTransform(scrollYProgress, [0, 1], ["-5%", "5%"]);
-  const imageY = useSpring(rawImageY, { stiffness: 100, damping: 30 });
-
-  // Card entrance animation
-  const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 0.6, ease },
-    },
-  };
-
-  // Image slide-in animation
-  const imageVariants: Variants = {
-    hidden: { opacity: 0, x: isEven ? -60 : 60, scale: 1.1 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      scale: 1,
-      transition: { duration: 0.8, ease, delay: 0.2 },
-    },
-  };
-
-  // Stagger animation variants for text content
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.3,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 30, filter: "blur(4px)" },
-    visible: {
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: { duration: 0.5, ease },
-    },
+    hidden: { opacity: 0, y: 20, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.45, ease } },
   };
 
   return (
-    <motion.section
-      ref={sectionRef}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
-      variants={cardVariants}
-      className={`relative min-h-125 lg:min-h-137.5 ${section.bgColor} overflow-hidden`}
-    >
-      {/* Two-column layout */}
-      <div className={`flex flex-col lg:flex-row ${!isEven ? "lg:flex-row-reverse" : ""} min-h-125 lg:min-h-137.5`}>
+    <section id="services" ref={sectionRef} className="relative bg-gradient-to-br from-background via-background to-primary/5 py-14 lg:py-20 overflow-hidden">
+      <BackgroundPattern />
+      <FloatingElements />
 
-        {/* Image Side - 50% width on desktop with parallax */}
+      <div className="relative mx-auto max-w-7xl px-6">
+        {/* Section Header */}
+        <FadeIn className="text-center mb-10">
+          <div className="inline-flex items-center bg-gradient-to-r from-primary/10 to-primary/20 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <Sparkles className="w-4 h-4 mr-2" />
+            Start Planning
+          </div>
+          <h2 className="font-serif text-3xl font-bold leading-tight sm:text-4xl">
+            Everything You Need to Plan Your{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Dream Event
+            </span>
+          </h2>
+          <p className="mt-4 text-muted-foreground text-lg max-w-3xl mx-auto">
+            Omnicassion is your all-in-one event planning platform. From finding verified vendors to managing your budget,
+            we provide every tool and resource you need to create unforgettable celebrations.
+          </p>
+        </FadeIn>
+
+        {/* Platform Features Grid */}
         <motion.div
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
-          variants={imageVariants}
-          className="relative h-87.5 w-full lg:h-auto lg:w-1/2 overflow-hidden"
+          variants={containerVariants}
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {/* Background Image with parallax */}
-          <motion.div
-            style={{ y: imageY }}
-            className="absolute inset-[-10%] bg-cover bg-center"
-          >
-            <div
-              className="absolute inset-0 bg-cover bg-center scale-110"
-              style={{ backgroundImage: `url(${section.bgImage})` }}
-            />
-          </motion.div>
+          {platformFeatures.map((feature, index) => (
+            <motion.div key={feature.title} variants={itemVariants} whileHover={{ y: -6, transition: { duration: 0.25 } }}>
+              <div className="relative group h-full overflow-hidden">
+                {/* Card Background */}
+                <div className="absolute inset-0 bg-card/80 backdrop-blur-lg rounded-2xl shadow-lg border border-border/50 group-hover:shadow-xl group-hover:border-primary/30 transition-all" />
 
-          {/* Gradient overlay for better text readability on mobile */}
-          <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-black/40 lg:hidden" />
+                {/* Floating Elements inside card */}
+                <motion.div
+                  animate={{ y: [0, -8, 0], x: [0, 4, 0] }}
+                  transition={{ duration: 4 + index * 0.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl"
+                />
+                <motion.div
+                  animate={{ y: [0, 6, 0], x: [0, -3, 0] }}
+                  transition={{ duration: 5 + index * 0.3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  className="absolute -bottom-6 -left-6 w-16 h-16 bg-gradient-to-tr from-primary/8 to-transparent rounded-full blur-lg"
+                />
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: index * 0.2 }}
+                  className="absolute top-1/2 right-4 w-8 h-8 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-md"
+                />
 
-          {/* TODO: Add product mockup screenshots later */}
-          {/* <motion.div className="absolute bottom-6 left-6 right-6 lg:bottom-12 lg:left-12 lg:right-auto lg:w-[320px] xl:w-[380px]">
-            Product mockup will go here
-          </motion.div> */}
-        </motion.div>
-
-        {/* Text Side - 50% width on desktop with stagger animations */}
-        <div className="flex w-full items-center lg:w-1/2">
-          <motion.div
-            initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
-            variants={containerVariants}
-            className="px-6 py-8 lg:px-12 xl:px-16 lg:py-12"
-          >
-            {/* Badge */}
-            <motion.span
-              variants={itemVariants}
-              className="mb-3 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/90"
-            >
-              {section.badge}
-            </motion.span>
-
-            {/* Title */}
-            <motion.h2
-              variants={itemVariants}
-              className="font-serif text-2xl font-bold leading-tight text-white sm:text-3xl lg:text-4xl"
-            >
-              {section.title}
-            </motion.h2>
-
-            {/* Description */}
-            <motion.p
-              variants={itemVariants}
-              className="mt-3 max-w-lg text-base leading-relaxed text-white/80"
-            >
-              {section.description}
-            </motion.p>
-
-            {/* CTA - Single button only */}
-            <motion.div
-              variants={itemVariants}
-              className="mt-6"
-            >
-              <Button
-                asChild
-                size="default"
-                className="rounded-full bg-white px-6 text-gray-900 hover:bg-white/90"
-              >
-                <Link href={section.ctaHref}>
-                  {section.cta}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+                {/* Card Content */}
+                <div className="relative z-10 p-6 h-full flex flex-col">
+                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} text-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform`}>
+                    <feature.icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">{feature.title}</h3>
+                  <p className="text-muted-foreground flex-1 leading-relaxed">{feature.description}</p>
+                </div>
+              </div>
             </motion.div>
-          </motion.div>
-        </div>
-      </div>
-    </motion.section>
-  );
-}
-
-function FeatureDeepDives() {
-  return (
-    <section className="relative">
-      {/* Section Header */}
-      <div className="bg-background py-16 text-center lg:py-16">
-        <FadeIn>
-          <p className="text-primary mb-3 text-sm font-semibold tracking-widest uppercase">
-            Everything you need
-          </p>
-          <h2 className="font-serif text-3xl font-bold sm:text-4xl lg:text-5xl">
-            Your complete planning toolkit
-          </h2>
-          <p className="text-muted-foreground mx-auto mt-5 max-w-2xl text-lg">
-            From finding the perfect vendors to capturing every memory — all the tools you need
-            to plan your dream event, in one place.
-          </p>
-        </FadeIn>
-      </div>
-
-      {/* Feature Sections */}
-      <div>
-        {featureSections.map((section, i) => (
-          <FeatureSection key={section.id} section={section} index={i} />
-        ))}
+          ))}
+        </motion.div>
       </div>
     </section>
   );
 }
 
-// ─── Trust Section - Zola Style with Image Cards ─────────────────────────────
+// ─── Tools Section ───────────────────────────────────────────────────────────
 
-function TrustSection() {
+function ToolsSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+  const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.2,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease },
-    },
+    hidden: { opacity: 0, y: 20, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.45, ease } },
   };
 
   return (
-    <section ref={sectionRef} className="bg-muted/30 py-20 lg:py-28">
-      <div className="mx-auto max-w-7xl px-6">
-        {/* Zola-style layout: Title on left, grid on right */}
-        <div className="grid gap-12 lg:grid-cols-[300px_1fr] lg:gap-16 xl:grid-cols-[350px_1fr]">
+    <section ref={sectionRef} className="relative bg-muted/30 py-14 lg:py-20 overflow-hidden">
+      <FloatingElements />
 
-          {/* Left side - Title */}
-          <FadeIn className="lg:sticky lg:top-24 lg:self-start">
-            <h2 className="font-serif text-3xl font-bold leading-tight sm:text-4xl lg:text-[2.75rem]">
-              <span className="text-foreground">Everything you need</span>{" "}
-              <span className="text-muted-foreground">to plan the event you want</span>
-            </h2>
-            <p className="mt-6 text-muted-foreground text-lg">
-              For all the days along the way
-            </p>
-          </FadeIn>
+      <div className="relative mx-auto max-w-7xl px-6">
+        <FadeIn className="text-center mb-10">
+          <div className="inline-flex items-center bg-gradient-to-r from-primary/10 to-primary/20 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <Zap className="w-4 h-4 mr-2" />
+            Free Tools
+          </div>
+          <h2 className="font-serif text-3xl font-bold leading-tight sm:text-4xl">
+            Planning Tools to Keep You{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Organized
+            </span>
+          </h2>
+          <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
+            Powerful, easy-to-use tools to plan every aspect of your event
+          </p>
+        </FadeIn>
 
-          {/* Right side - Image cards grid */}
-          <motion.div
-            initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
-            variants={containerVariants}
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-          >
-            {toolkitFeatures.map((feature) => (
-              <motion.div key={feature.title} variants={itemVariants}>
-                <Link href={feature.href} className="group block">
-                  {/* Card */}
-                  <div className="space-y-3">
-                    {/* Title with arrow */}
-                    <div className="flex items-center gap-1">
-                      <h3 className="text-lg font-semibold group-hover:underline decoration-1 underline-offset-4">
-                        {feature.title}
-                      </h3>
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-muted-foreground text-sm">
-                      {feature.description}
-                    </p>
-
-                    {/* Image card */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gray-100 aspect-4/3">
-                      <div
-                        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                        style={{ backgroundImage: `url(${feature.image})` }}
-                      />
-
-                      {/* Floating badge */}
-                      <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-lg">
-                        <feature.badgeIcon className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-xs font-medium text-gray-700">{feature.badge}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+        <motion.div
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          variants={containerVariants}
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {tools.map((tool) => (
+            <motion.div key={tool.title} variants={itemVariants} whileHover={{ y: -6, transition: { duration: 0.25 } }}>
+              <Link href={tool.href} className="group flex items-start gap-5 p-6 rounded-2xl border bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all">
+                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${tool.color} text-white shadow-lg`}>
+                  <tool.icon className="h-7 w-7" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors">{tool.title}</h3>
+                  <p className="text-sm text-muted-foreground mb-3">{tool.description}</p>
+                  <span className="inline-flex items-center text-sm font-medium text-primary">
+                    Try it free
+                    <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
 }
 
-// ─── Featured Vendors ────────────────────────────────────────────────────────
+// ─── Featured Vendors Section ────────────────────────────────────────────────
 
 function FeaturedVendorsSection() {
   const { data: vendors, isLoading } = useFeaturedVendors(8);
-
   if (!isLoading && (!vendors || vendors.length === 0)) return null;
 
   return (
-    <section className="bg-muted/30 py-20 lg:py-28">
+    <section className="bg-background py-14 lg:py-20">
       <div className="mx-auto max-w-7xl px-6">
-        <FadeIn className="mb-14 flex flex-col items-center justify-between gap-4 sm:flex-row">
+        <FadeIn className="mb-10 flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div>
-            <p className="text-primary mb-2 text-sm font-semibold tracking-widest uppercase">
+            <div className="inline-flex items-center bg-gradient-to-r from-primary/10 to-primary/20 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-3">
+              <Star className="w-4 h-4 mr-2" />
               Featured
-            </p>
-            <h2 className="font-serif text-3xl font-bold sm:text-4xl">Top-rated vendors</h2>
+            </div>
+            <h2 className="font-serif text-2xl font-bold sm:text-3xl lg:text-4xl">
+              Top-Rated <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Vendors</span>
+            </h2>
+            <p className="mt-1 text-muted-foreground text-sm">Handpicked professionals for your special day</p>
           </div>
-          <Button asChild variant="outline" className="rounded-full">
-            <Link href="/vendors">
-              View All Vendors
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
+          <Button asChild variant="outline" className="rounded-full h-10">
+            <Link href="/vendors">View All Vendors<ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
         </FadeIn>
 
@@ -965,22 +547,14 @@ function FeaturedVendorsSection() {
                 <div className="space-y-3 p-4">
                   <div className="bg-muted h-4 w-3/4 rounded" />
                   <div className="bg-muted h-3 w-full rounded" />
-                  <div className="bg-muted h-3 w-2/3 rounded" />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <StaggerContainer
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
-            staggerDelay={0.07}
-          >
+          <StaggerContainer className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" staggerDelay={0.07}>
             {vendors!.slice(0, 8).map((vendor) => (
-              <motion.div
-                key={vendor.id}
-                variants={staggerChild}
-                whileHover={{ y: -6, transition: { duration: 0.25 } }}
-              >
+              <motion.div key={vendor.id} variants={staggerChild} whileHover={{ y: -6, transition: { duration: 0.25 } }}>
                 <VendorCard vendor={vendor} />
               </motion.div>
             ))}
@@ -991,40 +565,124 @@ function FeaturedVendorsSection() {
   );
 }
 
-// ─── Vendor Discovery ────────────────────────────────────────────────────────
+// ─── Inspire Section ─────────────────────────────────────────────────────────
 
-function VendorDiscoverySection() {
+function InspireSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(sectionRef, { once: true, margin: "-80px" });
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 25, scale: 0.97, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", transition: { duration: 0.5, ease } },
+  };
+
   return (
-    <section className="bg-background border-t py-20 lg:py-28">
-      <div className="mx-auto max-w-7xl px-6">
-        <FadeIn className="mb-14 text-center">
-          <h2 className="font-serif text-3xl font-bold sm:text-4xl">Find vendors near you</h2>
-          <p className="text-muted-foreground mx-auto mt-3 max-w-xl">
-            Browse event professionals by category and location across India.
+    <section ref={sectionRef} className="relative bg-muted/30 py-14 lg:py-20 overflow-hidden">
+      <FloatingElements />
+
+      <div className="relative mx-auto max-w-7xl px-6">
+        <FadeIn className="text-center mb-10">
+          <div className="inline-flex items-center bg-gradient-to-r from-primary/10 to-primary/20 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <Heart className="w-4 h-4 mr-2" />
+            Get Inspired
+          </div>
+          <h2 className="font-serif text-3xl font-bold leading-tight sm:text-4xl">
+            Explore Ideas for Your{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Event</span>
+          </h2>
+          <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
+            Browse through stunning photos, trending styles, and creative ideas
           </p>
         </FadeIn>
 
-        <FadeIn delay={0.15}>
-          <h3 className="text-muted-foreground mb-6 text-center text-sm font-semibold tracking-widest uppercase">
-            Popular Locations
-          </h3>
+        <motion.div
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          variants={containerVariants}
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          {inspirationCategories.map((cat) => (
+            <motion.div key={cat.title} variants={itemVariants}>
+              <Link href="/discover" className="group block">
+                <div className="relative overflow-hidden rounded-2xl aspect-[4/5]">
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                    style={{ backgroundImage: `url(${cat.image})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-6">
+                    <h3 className="text-xl font-bold text-white mb-1">{cat.title}</h3>
+                    <p className="text-white/70 text-sm">{cat.count}</p>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <FadeIn delay={0.2} className="mt-10 text-center">
+          <Button asChild variant="outline" className="rounded-full h-10">
+            <Link href="/discover">Explore All Ideas<ArrowRight className="ml-2 h-4 w-4" /></Link>
+          </Button>
+        </FadeIn>
+      </div>
+    </section>
+  );
+}
+
+// ─── Top Blogs Section ───────────────────────────────────────────────────────
+
+function TopBlogsSection() {
+  const { data: blogsData, isLoading } = useBlogPosts({ status: "PUBLISHED", limit: 3, sortBy: "mostViewed" });
+  const blogs = blogsData?.data || [];
+  if (isLoading || blogs.length === 0) return null;
+
+  return (
+    <section className="bg-background py-14 lg:py-20">
+      <div className="mx-auto max-w-7xl px-6">
+        <FadeIn className="mb-10 flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div>
+            <div className="inline-flex items-center bg-gradient-to-r from-primary/10 to-primary/20 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-3">
+              <Calendar className="w-4 h-4 mr-2" />
+              Latest Articles
+            </div>
+            <h2 className="font-serif text-2xl font-bold sm:text-3xl lg:text-4xl">
+              Top Wedding <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Blogs</span>
+            </h2>
+            <p className="mt-1 text-muted-foreground text-sm">Tips, trends, and inspiration for your big day</p>
+          </div>
+          <Button asChild variant="outline" className="rounded-full h-10">
+            <Link href="/blog">View All Articles<ArrowRight className="ml-2 h-4 w-4" /></Link>
+          </Button>
         </FadeIn>
 
-        <StaggerContainer
-          className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
-          staggerDelay={0.04}
-        >
-          {popularLocations.map((loc) => (
-            <motion.div key={loc.city} variants={staggerChild}>
-              <Link
-                href={`/vendors?location=${loc.city.toLowerCase()}`}
-                prefetch={false}
-                className="group border-border bg-card hover:border-primary/30 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm transition-all hover:shadow-sm"
-              >
-                <MapPin className="text-muted-foreground group-hover:text-primary h-3.5 w-3.5 transition-colors" />
-                <span className="text-foreground group-hover:text-primary font-medium transition-colors">
-                  {loc.city}
-                </span>
+        <StaggerContainer className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3" staggerDelay={0.1}>
+          {blogs.map((blog) => (
+            <motion.div key={blog.id} variants={staggerChild}>
+              <Link href={`/blog/${blog.slug}`} className="group block">
+                <div className="relative overflow-hidden rounded-2xl aspect-[16/10] mb-5">
+                  {blog.featuredImage ? (
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                      style={{ backgroundImage: `url(${blog.featuredImage})` }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5" />
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
+                  {blog.category && (
+                    <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{blog.category.name}</span>
+                  )}
+                  <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{blog.readingTime} min read</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">{blog.title}</h3>
+                {blog.excerpt && <p className="text-muted-foreground text-sm line-clamp-2">{blog.excerpt}</p>}
               </Link>
             </motion.div>
           ))}
@@ -1034,66 +692,120 @@ function VendorDiscoverySection() {
   );
 }
 
-// ─── CTA Section ─────────────────────────────────────────────────────────────
+// ─── FAQ Section ─────────────────────────────────────────────────────────────
 
-function CTASection() {
+function FAQSection() {
+  return (
+    <section className="relative bg-gradient-to-br from-muted/30 via-background to-primary/5 py-14 lg:py-20 overflow-hidden">
+      <BackgroundPattern />
+      <FloatingElements />
+
+      <div className="relative mx-auto max-w-7xl px-6">
+        <FadeIn className="text-center mb-10">
+          <div className="inline-flex items-center bg-gradient-to-r from-primary/10 to-primary/20 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <HelpCircle className="w-4 h-4 mr-2" />
+            FAQ Section
+          </div>
+          <h2 className="font-serif text-3xl font-bold leading-tight sm:text-4xl">
+            Got <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Questions?</span>
+            <br />We've Got Answers
+          </h2>
+        </FadeIn>
+
+        <FadeIn delay={0.15} className="max-w-3xl mx-auto">
+          <Accordion type="single" collapsible defaultValue="item-0" className="space-y-4">
+            {faqs.map((faq, index) => (
+              <AccordionItem
+                key={index}
+                value={`item-${index}`}
+                className="rounded-2xl border bg-card/80 backdrop-blur-sm px-6 data-[state=open]:shadow-lg transition-shadow"
+              >
+                <AccordionTrigger className="text-left hover:no-underline py-6 text-lg font-semibold">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 rounded-full bg-muted border flex items-center justify-center shrink-0">
+                      <span className="text-sm font-semibold text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
+                    </div>
+                    {faq.question}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-6 text-base pl-12">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </FadeIn>
+      </div>
+    </section>
+  );
+}
+
+// ─── Join as Vendor Section ──────────────────────────────────────────────────
+
+function JoinAsVendorSection() {
   const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const bgY = useTransform(scrollYProgress, [0, 1], [60, -60]);
-  const bgScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.95, 1, 0.95]);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const bgY = useTransform(scrollYProgress, [0, 1], [0, -80]);
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20, filter: "blur(4px)" },
+    visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.5, ease } },
+  };
 
   return (
-    <section
-      ref={ref}
-      className="relative overflow-hidden bg-linear-to-br from-slate-900 via-indigo-950 to-purple-950 py-20 lg:py-28"
-    >
-      <motion.div
-        style={{ y: bgY }}
-        className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-sky-500/15 blur-[120px]"
-      />
-      <motion.div
-        style={{ y: bgY }}
-        className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-rose-500/12 blur-[120px]"
-      />
+    <section ref={ref} className="relative overflow-hidden py-16 lg:py-24">
+      <motion.div style={{ y: bgY }} className="absolute inset-0 -z-10">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-110"
+          style={{ backgroundImage: `url(https://images.unsplash.com/photo-1519741497674-611481863552?w=1920&q=80)` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-purple-900/90 to-indigo-900/95" />
+      </motion.div>
 
       <motion.div
-        style={{ scale: bgScale }}
-        className="relative z-10 mx-auto max-w-3xl px-6 text-center"
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
+        variants={containerVariants}
+        className="relative z-10 mx-auto max-w-4xl px-6 text-center"
       >
-        <FadeIn>
-          <h2 className="font-serif text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-            Ready to plan your dream event?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-white/55">
-            Join thousands of couples and event planners who trust Omnicassion to bring their vision
-            to life.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Button
-              asChild
-              size="lg"
-              className="shadow-primary/30 h-13 rounded-full px-8 text-base shadow-lg"
-            >
-              <Link href="/register">
-                Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="h-13 rounded-full border-white/20 bg-white/5 px-8 text-base text-white backdrop-blur-sm hover:bg-white/10 hover:text-white"
-            >
-              <Link href="/vendors" prefetch={false}>
-                Browse Vendors
-              </Link>
-            </Button>
-          </div>
-        </FadeIn>
+        <motion.div variants={itemVariants} className="inline-flex items-center bg-white/10 backdrop-blur-sm text-white/90 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+          <Users className="w-4 h-4 mr-2" />
+          For Vendors
+        </motion.div>
+        <motion.h2 variants={itemVariants} className="font-serif text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+          Grow Your Business <span className="bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">With Us</span>
+        </motion.h2>
+        <motion.p variants={itemVariants} className="mx-auto mt-4 max-w-2xl text-lg text-white/70">
+          Join thousands of vendors reaching couples planning their dream events.
+        </motion.p>
+
+        <motion.div variants={itemVariants} className="mt-8 grid gap-4 sm:grid-cols-3 text-center">
+          {[
+            { value: "50,000+", label: "Active Users" },
+            { value: "5,000+", label: "Verified Vendors" },
+            { value: "10,000+", label: "Successful Events" },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <div className="text-3xl font-bold text-white">{stat.value}</div>
+              <div className="text-white/60 text-sm mt-1">{stat.label}</div>
+            </div>
+          ))}
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <Button asChild size="lg" className="h-12 rounded-full bg-white px-8 text-base font-semibold text-purple-600 shadow-xl hover:bg-white/90">
+            <Link href="/vendor-registration">Join as Vendor<ArrowRight className="ml-2 h-4 w-4" /></Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-2 border-white/40 bg-white/10 px-8 text-base font-semibold text-white backdrop-blur-sm hover:bg-white/20">
+            <Link href="/vendor-benefits">Learn More</Link>
+          </Button>
+        </motion.div>
       </motion.div>
     </section>
   );
@@ -1107,11 +819,13 @@ export default function Home() {
   return (
     <PublicLayout>
       <HeroSection />
-      <ServicesGrid />
-      <FeatureDeepDives />
+      <StartPlanningSection />
+      <ToolsSection />
       <FeaturedVendorsSection />
-      {/* <VendorDiscoverySection /> */}
-      {/* <CTASection /> */}
+      <InspireSection />
+      <TopBlogsSection />
+      <FAQSection />
+      <JoinAsVendorSection />
     </PublicLayout>
   );
 }

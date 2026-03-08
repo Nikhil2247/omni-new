@@ -5,9 +5,11 @@ import { HealthController } from './controllers/health.controller';
 import { GuestUploadController } from './controllers/guest-upload.controller';
 import { RsvpController } from './controllers/rsvp.controller';
 import { SearchController } from './controllers/search.controller';
+import { QuoteApprovalController } from './controllers/quote-approval.controller';
 import { CatalogModule } from '../../domain/catalog/catalog.module';
 import { PlanningModule } from '../../domain/planning/planning.module';
 import { ContentModule } from '../../domain/content/content.module';
+import { OperationsModule } from '../../domain/operations/operations.module';
 import { StorageModule } from '../../infrastructure/storage/storage.module';
 import { HealthModule } from '../../infrastructure/health/health.module';
 import { SearchModule } from '../../infrastructure/search/search.module';
@@ -27,6 +29,7 @@ import { MediaUrlNormalizerService } from './services/media-url-normalizer.servi
     CatalogModule,
     PlanningModule,
     ContentModule,
+    OperationsModule,
     StorageModule,
     HealthModule,
     SearchModule,
@@ -38,6 +41,7 @@ import { MediaUrlNormalizerService } from './services/media-url-normalizer.servi
     SystemStatusController,
     GuestUploadController,
     RsvpController,
+    QuoteApprovalController,
     BlogController,
     MediaController,
     UploadController,

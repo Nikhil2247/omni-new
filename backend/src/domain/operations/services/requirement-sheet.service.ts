@@ -6,19 +6,21 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { RequirementSheet, RequirementItem } from '@prisma/client';
+import { RequirementSheet, RequirementItem, ClientApprovalStatus } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import { RequirementSheetRepository } from '../repositories';
 import { PrismaService } from 'src/core/database/prisma.service';
-import { CreateRequirementSheetDto, UpdateRequirementSheetDto } from '../dto';
+import { CreateRequirementSheetDto, UpdateRequirementSheetDto, SendToClientDto, ClientRejectDto } from '../dto';
 import { Decimal } from '@prisma/client/runtime/client';
 import {
   UpdateRequirementItemDto,
   CreateRequirementItemDto,
 } from '../dto/requirement-item.dto';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class RequirementSheetService {
@@ -181,5 +183,151 @@ export class RequirementSheetService {
 
     await this.prisma.requirementItem.delete({ where: { id: itemId } });
     this.eventEmitter.emit('requirement-item.deleted', { itemId });
+  }
+
+  // =========================================================================
+  // CLIENT APPROVAL OPERATIONS
+  // =========================================================================
+
+  private generateApprovalToken(): string {
+    return randomBytes(16).toString('base64url');
+  }
+
+  async sendToClient(id: string, dto: SendToClientDto): Promise<RequirementSheet> {
+    const sheetWithRelations = await this.requirementSheetRepository.findById(id, {
+      items: true,
+      activeEvent: {
+        select: {
+          id: true,
+          clientName: true,
+          clientEmail: true,
+          eventType: true,
+        },
+      },
+    });
+
+    if (!sheetWithRelations) {
+      throw new NotFoundException('Requirement sheet not found');
+    }
+
+    const sheet = sheetWithRelations as RequirementSheet & {
+      items?: RequirementItem[];
+      activeEvent?: { id: string; clientName: string; clientEmail: string; eventType: string }
+    };
+
+    // Check if already approved
+    if (sheet.approvalStatus === ClientApprovalStatus.APPROVED) {
+      throw new BadRequestException('Requirement sheet is already approved');
+    }
+
+    // Check if there are items
+    if (!sheet.items || sheet.items.length === 0) {
+      throw new BadRequestException('Cannot send empty requirement sheet to client');
+    }
+
+    // Generate token if not already generated
+    const approvalToken = sheet.approvalToken || this.generateApprovalToken();
+
+    const updated = await this.requirementSheetRepository.update(
+      id,
+      {
+        approvalToken,
+        approvalStatus: ClientApprovalStatus.PENDING,
+        sentToClientAt: new Date(),
+        // Clear previous rejection if resending
+        clientRejectedAt: null,
+        rejectionReason: null,
+      },
+      { items: true },
+    );
+
+    // Emit event for email sending
+    this.eventEmitter.emit('requirement-sheet.sent-to-client', {
+      sheetId: id,
+      approvalToken,
+      clientEmail: sheet.activeEvent?.clientEmail,
+      clientName: sheet.activeEvent?.clientName,
+      eventType: sheet.activeEvent?.eventType,
+      message: dto.message,
+    });
+
+    this.logger.log(`Requirement sheet ${id} sent to client for approval`);
+    return updated;
+  }
+
+  async findByApprovalToken(token: string) {
+    const sheet = await this.requirementSheetRepository.findByApprovalToken(token);
+    if (!sheet) {
+      throw new NotFoundException('Requirement sheet not found or link expired');
+    }
+    return sheet;
+  }
+
+  async approveByToken(token: string): Promise<RequirementSheet> {
+    const sheet = await this.requirementSheetRepository.findByApprovalToken(token);
+
+    if (!sheet) {
+      throw new NotFoundException('Requirement sheet not found or link expired');
+    }
+
+    if (sheet.approvalStatus === ClientApprovalStatus.APPROVED) {
+      throw new BadRequestException('Requirement sheet is already approved');
+    }
+
+    if (sheet.approvalStatus !== ClientApprovalStatus.PENDING) {
+      throw new BadRequestException('Requirement sheet is not pending approval');
+    }
+
+    const updated = await this.requirementSheetRepository.update(
+      sheet.id,
+      {
+        approvalStatus: ClientApprovalStatus.APPROVED,
+        clientApprovedAt: new Date(),
+      },
+      { items: true },
+    );
+
+    this.eventEmitter.emit('requirement-sheet.approved', {
+      sheetId: sheet.id,
+      activeEventId: sheet.activeEventId,
+    });
+
+    this.logger.log(`Requirement sheet ${sheet.id} approved by client`);
+    return updated;
+  }
+
+  async rejectByToken(token: string, dto: ClientRejectDto): Promise<RequirementSheet> {
+    const sheet = await this.requirementSheetRepository.findByApprovalToken(token);
+
+    if (!sheet) {
+      throw new NotFoundException('Requirement sheet not found or link expired');
+    }
+
+    if (sheet.approvalStatus === ClientApprovalStatus.APPROVED) {
+      throw new BadRequestException('Requirement sheet is already approved');
+    }
+
+    if (sheet.approvalStatus !== ClientApprovalStatus.PENDING) {
+      throw new BadRequestException('Requirement sheet is not pending approval');
+    }
+
+    const updated = await this.requirementSheetRepository.update(
+      sheet.id,
+      {
+        approvalStatus: ClientApprovalStatus.REJECTED,
+        clientRejectedAt: new Date(),
+        rejectionReason: dto.reason,
+      },
+      { items: true },
+    );
+
+    this.eventEmitter.emit('requirement-sheet.rejected', {
+      sheetId: sheet.id,
+      activeEventId: sheet.activeEventId,
+      reason: dto.reason,
+    });
+
+    this.logger.log(`Requirement sheet ${sheet.id} rejected by client`);
+    return updated;
   }
 }

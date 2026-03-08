@@ -13,6 +13,7 @@ import { RequirementSheetService } from '../../../domain/operations/services/req
 import {
   CreateRequirementSheetDto,
   UpdateRequirementSheetDto,
+  SendToClientDto,
 } from '../../../domain/operations/dto/requirement-sheet.dto';
 import {
   CreateRequirementItemDto,
@@ -80,5 +81,10 @@ export class RequirementsController {
   async remove(@Param('id') id: string) {
     await this.requirementSheetService.delete(id);
     return { success: true };
+  }
+
+  @Post(':id/send-to-client')
+  sendToClient(@Param('id') id: string, @Body() dto: SendToClientDto) {
+    return this.requirementSheetService.sendToClient(id, dto);
   }
 }

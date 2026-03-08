@@ -4,32 +4,63 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth-store'
-import { getSettingsPath } from '@/lib/utils/permissions'
 import type { Role } from '@/config/roles'
+import { ROLES } from '@/config/roles'
 import {
-  Home,
+  Calendar,
   Compass,
   Users,
   Newspaper,
-  Settings,
+  Heart,
   type LucideIcon,
 } from 'lucide-react'
 
 interface NavItem {
   href: string | null
   label: string
-  icon: LucideIcon
+  outlinedIcon: LucideIcon
+  filledIcon: LucideIcon
   requiresAuth?: boolean
   dynamicHref?: (role?: Role) => string
 }
 
+const getWishlistPath = (role?: Role) =>
+  role === ROLES.BUSINESS_ADMIN ? '/business/wishlists' : '/wishlists'
+
 // Public page navigation items
 const baseNavItems: NavItem[] = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/vendors', label: 'Vendors', icon: Users },
-  { href: '/discover', label: 'Discover', icon: Compass },
-  { href: '/blog', label: 'Blog', icon: Newspaper },
-  { href: null, label: 'Settings', icon: Settings, requiresAuth: true, dynamicHref: getSettingsPath },
+  {
+    href: '/tools',
+    label: 'Tools',
+    outlinedIcon: Calendar,
+    filledIcon: Calendar,
+  },
+  {
+    href: '/vendors',
+    label: 'Vendors',
+    outlinedIcon: Users,
+    filledIcon: Users,
+  },
+  {
+    href: '/discover',
+    label: 'Discover',
+    outlinedIcon: Compass,
+    filledIcon: Compass,
+  },
+  {
+    href: '/blog',
+    label: 'Blog',
+    outlinedIcon: Newspaper,
+    filledIcon: Newspaper,
+  },
+  {
+    href: null,
+    label: 'Wishlist',
+    outlinedIcon: Heart,
+    filledIcon: Heart,
+    requiresAuth: true,
+    dynamicHref: getWishlistPath,
+  },
 ]
 
 export function BottomNav() {
@@ -53,7 +84,8 @@ export function BottomNav() {
           if (!href) return null
 
           const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
-          const Icon = item.icon
+          const OutlinedIcon = item.outlinedIcon
+          const FilledIcon = item.filledIcon
 
           return (
             <Link
@@ -66,7 +98,13 @@ export function BottomNav() {
                   : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              <Icon className={cn('h-5 w-5', isActive && 'fill-current')} strokeWidth={isActive ? 2.5 : 2} />
+              {isActive ? (
+                <span className="relative inline-flex h-5 w-5 items-center justify-center">
+                  <FilledIcon className="h-5 w-5 fill-current" strokeWidth={1.4} />
+                </span>
+              ) : (
+                <OutlinedIcon className="h-5 w-5" strokeWidth={2} />
+              )}
               <span className="text-[10px] tracking-wide">{item.label}</span>
             </Link>
           )

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import NextImage from 'next/image'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/auth-store'
 import { MessagingClient } from '@/lib/websocket/messaging-client'
 import {
@@ -13,6 +13,7 @@ import {
   useMessagingRealtime,
   useAddReaction,
   useSendMessage,
+  useCreateDirectConversation,
   type MessagingScope,
 } from '@/hooks/queries/use-messaging'
 import { useUserConversations } from '@/hooks/queries/use-messaging'
@@ -179,8 +180,10 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
 
   const { user } = useAuthStore()
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const initialConversationId = searchParams.get('conversationId')
+  const initialParticipantUserId = searchParams.get('userId')
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -190,7 +193,7 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
       ? useBusinessConversations({ page: 1, limit: 50 })
       : useUserConversations({ page: 1, limit: 50 })
 
-  const conversations = Array.isArray(conversationsQuery.data)
+  const conversations: Conversation[] = Array.isArray(conversationsQuery.data)
     ? conversationsQuery.data
     : conversationsQuery.data?.data ?? []
 
@@ -212,6 +215,18 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
   })
 
   const createBusinessLead = useCreateBusinessLead()
+  const createDirectConversation = useCreateDirectConversation(scope)
+  const [isResolvingDeepLinkConversation, setIsResolvingDeepLinkConversation] = useState(false)
+
+  const setConversationQueryParam = useCallback(
+    (conversationId: string) => {
+      const next = new URLSearchParams(searchParams.toString())
+      next.set('conversationId', conversationId)
+      next.delete('userId')
+      router.replace(`${pathname}?${next.toString()}`)
+    },
+    [pathname, router, searchParams],
+  )
 
   useEffect(() => {
     if (initialConversationId) {
@@ -223,6 +238,60 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
       setActiveConversationId(conversations[0].id)
     }
   }, [initialConversationId, conversations, activeConversationId])
+
+  useEffect(() => {
+    if (!initialParticipantUserId || initialConversationId) {
+      return
+    }
+    if (!user?.id || conversationsQuery.isLoading || isResolvingDeepLinkConversation) {
+      return
+    }
+
+    const existing = conversations.find((conversation) =>
+      conversation.participants?.some((participant) => participant.userId === initialParticipantUserId),
+    )
+
+    if (existing) {
+      setActiveConversationId(existing.id)
+      setShowMobileChat(true)
+      setConversationQueryParam(existing.id)
+      return
+    }
+
+    let cancelled = false
+    setIsResolvingDeepLinkConversation(true)
+
+    createDirectConversation
+      .mutateAsync({ participantUserId: initialParticipantUserId })
+      .then((conversation) => {
+        if (cancelled) return
+        setActiveConversationId(conversation.id)
+        setShowMobileChat(true)
+        setConversationQueryParam(conversation.id)
+      })
+      .catch(() => {
+        if (cancelled) return
+        toast.error('Unable to start conversation')
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsResolvingDeepLinkConversation(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    initialParticipantUserId,
+    initialConversationId,
+    user?.id,
+    conversations,
+    conversationsQuery.isLoading,
+    isResolvingDeepLinkConversation,
+    createDirectConversation,
+    setConversationQueryParam,
+  ])
 
   const activeConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === activeConversationId) || null,

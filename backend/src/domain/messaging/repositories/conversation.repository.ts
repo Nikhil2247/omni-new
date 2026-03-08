@@ -45,6 +45,21 @@ export class ConversationRepository extends BaseRepository<
     });
   }
 
+  async findConversationByUsers(
+    userId: string,
+    otherUserId: string,
+  ): Promise<Conversation | null> {
+    return this.prisma.conversation.findFirst({
+      where: {
+        AND: [
+          { participants: { some: { userId } } },
+          { participants: { some: { userId: otherUserId } } },
+        ],
+      },
+      orderBy: [{ lastMessageAt: 'desc' }, { createdAt: 'desc' }],
+    });
+  }
+
   async findByLeadId(leadId: string): Promise<Conversation | null> {
     return this.prisma.conversation.findFirst({
       where: { leadId },

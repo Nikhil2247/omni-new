@@ -14,6 +14,7 @@ import {
   useAssignManager,
   useDeleteActiveEvent,
   useOpsManagers,
+  useSendRequirementToClient,
 } from '@/hooks/queries/use-ops'
 import { useOpsQuotations } from '@/hooks/queries/use-quotations'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -78,6 +79,8 @@ import {
   FileCheck,
   Printer,
   ExternalLink,
+  Send,
+  Copy,
 } from 'lucide-react'
 import { OpsRequirementsPanel } from '@/components/features/ops/ops-requirements-panel'
 import { OpsAgreementsList } from '@/components/features/ops/ops-agreements-list'
@@ -134,8 +137,28 @@ export default function OpsEventDetailPage() {
   const updateEvent = useUpdateActiveEvent()
   const assignManager = useAssignManager()
   const deleteEvent = useDeleteActiveEvent()
+  const sendToClient = useSendRequirementToClient()
 
   const managers = managersResponse?.data || []
+
+  // Send to client handler
+  const handleSendToClient = () => {
+    if (!requirements?.id) return
+    sendToClient.mutate({ id: requirements.id })
+  }
+
+  const getApprovalLink = () => {
+    if (!requirements?.approvalToken) return null
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+    return `${baseUrl}/quote-approval/${requirements.approvalToken}`
+  }
+
+  const copyApprovalLink = () => {
+    const link = getApprovalLink()
+    if (link) {
+      navigator.clipboard.writeText(link)
+    }
+  }
 
   // Auto-progression logic
   const suggestedStatus = useMemo(() => {
@@ -437,7 +460,7 @@ export default function OpsEventDetailPage() {
                   year: 'numeric'
                 }) : 'Date TBD'}
               </p>
-              <p className="text-muted-foreground">${budget.toLocaleString()} budget</p>
+              <p className="text-muted-foreground">₹{budget.toLocaleString()} budget</p>
             </div>
           </div>
 
@@ -492,7 +515,7 @@ export default function OpsEventDetailPage() {
             </div>
             <div>
               <p className={`text-xl font-semibold ${remaining < 0 ? 'text-red-600' : ''}`}>
-                ${remaining.toLocaleString()}
+                ₹{remaining.toLocaleString()}
               </p>
               <p className="text-xs text-muted-foreground">Remaining</p>
             </div>
@@ -517,11 +540,6 @@ export default function OpsEventDetailPage() {
             Agreements
             {agreementsCount > 0 && <Badge variant="secondary" className="ml-2">{agreementsCount}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="flex-1 sm:flex-none">
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Tasks
-            {tasksCount > 0 && <Badge variant="secondary" className="ml-2">{tasksCount}</Badge>}
-          </TabsTrigger>
           <TabsTrigger value="quotations" className="flex-1 sm:flex-none">
             <FileCheck className="h-4 w-4 mr-2" />
             Quotations
@@ -531,6 +549,11 @@ export default function OpsEventDetailPage() {
             <Receipt className="h-4 w-4 mr-2" />
             Invoices
             {invoicesCount > 0 && <Badge variant="secondary" className="ml-2">{invoicesCount}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="flex-1 sm:flex-none">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Tasks
+            {tasksCount > 0 && <Badge variant="secondary" className="ml-2">{tasksCount}</Badge>}
           </TabsTrigger>
         </TabsList>
 
@@ -611,16 +634,16 @@ export default function OpsEventDetailPage() {
                 <div className="space-y-3 pt-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Budget</span>
-                    <span className="font-semibold">${budget.toLocaleString()}</span>
+                    <span className="font-semibold">₹{budget.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Spent</span>
-                    <span className="font-semibold">${spent.toLocaleString()}</span>
+                    <span className="font-semibold">₹{spent.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between pt-2 border-t">
                     <span className="text-sm text-muted-foreground">Remaining</span>
                     <span className={`font-semibold ${remaining < 0 ? 'text-red-600' : ''}`}>
-                      ${remaining.toLocaleString()}
+                      ₹{remaining.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -634,17 +657,99 @@ export default function OpsEventDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg">Requirements Sheet</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">Requirements Sheet</CardTitle>
+                  {requirements?.approvalStatus && (
+                    <Badge variant="outline" className={
+                      requirements.approvalStatus === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                      requirements.approvalStatus === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                      requirements.approvalStatus === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                      'bg-gray-100 text-gray-700'
+                    }>
+                      {requirements.approvalStatus === 'APPROVED' ? 'Client Approved' :
+                       requirements.approvalStatus === 'PENDING' ? 'Awaiting Approval' :
+                       requirements.approvalStatus === 'REJECTED' ? 'Client Rejected' :
+                       'Draft'}
+                    </Badge>
+                  )}
+                </div>
                 <CardDescription>Manage vendor requirements for this event</CardDescription>
               </div>
-              <Link href={`/ops/events/${eventId}/requirements`}>
-                <Button variant="outline" size="sm">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Full View
-                </Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                {requirements && requirements.approvalStatus !== 'APPROVED' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendToClient}
+                    disabled={sendToClient.isPending || !requirements?.items?.length}
+                  >
+                    {sendToClient.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="mr-2 h-4 w-4" />
+                    )}
+                    {requirements?.approvalStatus === 'PENDING' ? 'Resend' : 'Send to Client'}
+                  </Button>
+                )}
+                <Link href={`/ops/events/${eventId}/requirements`}>
+                  <Button variant="outline" size="sm">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Full View
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
+              {/* Approval Link Info */}
+              {requirements?.approvalStatus === 'PENDING' && requirements?.approvalToken && (
+                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                      <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        Awaiting client approval
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="ghost" onClick={copyApprovalLink}>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy Link
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => window.open(getApprovalLink() || '', '_blank')}>
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {requirements?.approvalStatus === 'APPROVED' && (
+                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                      Client approved on {requirements.clientApprovedAt ? new Date(requirements.clientApprovedAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {requirements?.approvalStatus === 'REJECTED' && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      <span className="text-sm font-medium text-red-800 dark:text-red-200">
+                        Client rejected on {requirements.clientRejectedAt ? new Date(requirements.clientRejectedAt).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                    {requirements.rejectionReason && (
+                      <p className="text-sm text-red-600 dark:text-red-400 ml-6">
+                        Reason: {requirements.rejectionReason}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
               <OpsRequirementsPanel activeEventId={eventId} />
             </CardContent>
           </Card>
@@ -734,7 +839,7 @@ export default function OpsEventDetailPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-semibold">
-                          {quotation.currency === 'INR' ? '₹' : '$'}{Number(quotation.totalAmount).toLocaleString()}
+                          ₹{Number(quotation.totalAmount).toLocaleString()}
                         </span>
                         <Button variant="outline" size="sm" onClick={() => openQuotationPreview(quotation)}>
                           <Printer className="mr-2 h-4 w-4" />

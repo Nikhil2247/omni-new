@@ -4,12 +4,10 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/config/site";
-import { User, Settings, LogOut, Bell, MessageSquare, Heart, Moon, Sun } from "lucide-react";
+import { User, Settings, LogOut, MessageSquare, Moon, Sun } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
 import { useLogout } from "@/hooks/use-auth";
 import { getSettingsPath } from "@/lib/utils/permissions";
-import { cn } from "@/lib/utils";
 import type { Role } from "@/config/roles";
 import { ROLES } from "@/config/roles";
 import { useRouter } from "next/navigation";
@@ -17,8 +15,7 @@ import { NotificationPopover } from "@/components/features/notifications/notific
 import { GlobalSearch } from "@/components/common/global-search";
 import { useTheme } from "next-themes";
 
-interface PublicHeaderProps {
-}
+interface PublicHeaderProps {}
 
 export function PublicHeader({}: PublicHeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -39,25 +36,25 @@ export function PublicHeader({}: PublicHeaderProps) {
 
   // Check if user is business or regular user
   const isBusinessOrUser = user?.role === ROLES.BUSINESS_ADMIN || user?.role === ROLES.USER;
-  const messagesPath = user?.role === ROLES.BUSINESS_ADMIN ? '/business-messages' : '/messages';
-  const profilePath = user?.role === ROLES.BUSINESS_ADMIN ? '/business/profile' : '/settings/profile';
   const isUser = user?.role === ROLES.USER;
+  const messagesPath = user?.role === ROLES.BUSINESS_ADMIN ? "/business-messages" : "/messages";
+  const profilePath =
+    user?.role === ROLES.BUSINESS_ADMIN ? "/business/profile" : "/settings/profile";
   const guestNavItems = [
-    { href: '/vendors', label: 'Find Vendors' },
-    { href: '/discover', label: 'Discover' },
-    { href: '/blog', label: 'Blog' },
+    { href: "/vendors", label: "Find Vendors" },
+    { href: "/discover", label: "Discover" },
+    { href: "/blog", label: "Blog" },
   ];
   const loggedInUserNavItems = [
-    { href: '/events', label: 'Events' },
-    { href: '/checklist', label: 'Checklist' },
-    { href: '/budget', label: 'Budget' },
+    { href: "/events", label: "Events" },
+    { href: "/checklist", label: "Checklist" },
+    { href: "/budget", label: "Budget" },
   ];
-  const desktopNavItems = hasHydrated && isAuthenticated && isUser
-    ? loggedInUserNavItems
-    : guestNavItems;
+  const desktopNavItems =
+    hasHydrated && isAuthenticated && isUser ? loggedInUserNavItems : guestNavItems;
 
   return (
-    <header className="fixed top-0 left-0 z-50 w-full bg-linear-to-b from-[#9cc0e4] to-transparent backdrop-blur-md md:hidden">
+    <header className="fixed top-0 left-0 z-50 w-full border-b bg-linear-to-b from-[#9cc0e4] to-[#ffffff] backdrop-blur md:hidden">
       <nav className="mx-auto flex items-center justify-between px-4 py-3 lg:px-6">
         {/* Left Section: Sidebar Toggle + Logo */}
         <div className="flex items-center gap-2">
@@ -99,23 +96,24 @@ export function PublicHeader({}: PublicHeaderProps) {
 
         {/* Right Section: Auth Buttons */}
         <div className="flex items-center gap-2 md:gap-4">
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="rounded-lg p-2 text-black transition-all hover:bg-gray-100 inline-flex items-center justify-center"
-            aria-label="Toggle theme"
-            title="Toggle theme"
-          >
-            {mounted && theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </button>
-
           {hasHydrated && !isAuthenticated && (
-            <Button asChild className="bg-white text-[#4597e3] shadow-lg hover:bg-white/90">
-              <Link href="/login">Login</Link>
-            </Button>
+            <>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="inline-flex items-center justify-center rounded-lg p-2 text-black transition-all hover:bg-gray-100"
+                aria-label="Toggle theme"
+                title="Toggle theme"
+              >
+                {mounted && theme === "dark" ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </button>
+              <Button asChild className="bg-white text-[#4597e3] shadow-lg hover:bg-white/90">
+                <Link href="/login">Login</Link>
+              </Button>
+            </>
           )}
           {hasHydrated && isAuthenticated && (
             <>
@@ -125,20 +123,10 @@ export function PublicHeader({}: PublicHeaderProps) {
               {isBusinessOrUser && (
                 <Link
                   href={messagesPath}
-                  className="rounded-lg p-2 text-white/90 transition-all hover:bg-gray-100 hover:text-white inline-flex items-center justify-center"
+                  className="inline-flex items-center justify-center rounded-lg p-2 text-white/90 transition-all hover:bg-gray-100 hover:text-white"
                   aria-label="Messages"
                 >
                   <MessageSquare className="h-5 w-5 text-black" />
-                </Link>
-              )}
-
-              {isUser && (
-                <Link
-                  href="/wishlists"
-                  className="rounded-lg p-2 text-white/90 transition-all hover:bg-gray-100 hover:text-white inline-flex items-center justify-center"
-                  aria-label="Wishlist"
-                >
-                  <Heart className="h-5 w-5 text-black" />
                 </Link>
               )}
 
@@ -149,7 +137,7 @@ export function PublicHeader({}: PublicHeaderProps) {
                   className="flex items-center gap-2 rounded-full p-1 transition-all hover:bg-white/10"
                   aria-label="Open user menu"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1B75C9] font-semibold shadow-md">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white font-semibold text-[#1B75C9] shadow-md">
                     {user?.name?.charAt(0).toUpperCase() || "U"}
                   </div>
                 </button>
@@ -183,10 +171,27 @@ export function PublicHeader({}: PublicHeaderProps) {
                           <Settings className="h-4 w-4" />
                           Settings
                         </button>
+                        <button
+                          onClick={() => {
+                            setTheme(theme === "dark" ? "light" : "dark");
+                            setShowUserMenu(false);
+                          }}
+                          className="flex w-full items-center gap-3 rounded-md px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100"
+                        >
+                          {mounted && theme === "dark" ? (
+                            <Sun className="h-4 w-4" />
+                          ) : (
+                            <Moon className="h-4 w-4" />
+                          )}
+                          Toggle theme
+                        </button>
                       </div>
                       <div className="border-t py-2">
                         <button
-                          onClick={handleLogout}
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            handleLogout();
+                          }}
                           className="flex w-full items-center gap-3 rounded-md px-4 py-2 text-sm text-red-600 transition-colors hover:bg-gray-100"
                         >
                           <LogOut className="h-4 w-4" />

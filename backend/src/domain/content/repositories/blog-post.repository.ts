@@ -9,7 +9,7 @@ import {
   PaginatedResult,
 } from '../../../core/database/repositories/base.repository';
 import { PrismaService } from '../../../core/database/prisma.service';
-import { SearchBlogPostsDto } from '../dto/blog-post.dto';
+import { BlogPostSortBy, SearchBlogPostsDto } from '../dto/blog-post.dto';
 
 @Injectable()
 export class BlogPostRepository extends BaseRepository<
@@ -59,6 +59,7 @@ export class BlogPostRepository extends BaseRepository<
       categoryId,
       tagId,
       keyword,
+      sortBy = BlogPostSortBy.LATEST,
       page = 1,
       limit = 20,
     } = dto;
@@ -84,11 +85,16 @@ export class BlogPostRepository extends BaseRepository<
       }),
     };
 
+    const orderBy: Prisma.BlogPostOrderByWithRelationInput[] =
+      sortBy === BlogPostSortBy.MOST_VIEWED
+        ? [{ viewCount: 'desc' }, { publishedAt: 'desc' }]
+        : [{ publishedAt: 'desc' }];
+
     return this.findManyPaginated(
       { page, limit },
       {
         where,
-        orderBy: { publishedAt: 'desc' },
+        orderBy,
         include: {
           category: true,
           author: {

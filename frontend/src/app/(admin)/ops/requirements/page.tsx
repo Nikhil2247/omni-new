@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   useOpsActiveEvents,
@@ -9,6 +9,7 @@ import {
   useAddRequirementItem,
   useUpdateRequirementItem,
   useDeleteRequirementItem,
+  useSendRequirementToClient,
 } from "@/hooks/queries/use-ops";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,12 @@ import {
   Clock,
   Package,
   XCircle,
+  Send,
+  Loader2,
+  Copy,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 const categoryOptions = [
@@ -83,12 +90,20 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   CANCELLED: { label: "Cancelled", color: "bg-red-500/10 text-red-700 border-red-500/20" },
 };
 
+const approvalStatusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
+  DRAFT: { label: "Draft", color: "bg-gray-500/10 text-gray-700 border-gray-500/20", icon: <ClipboardList className="h-3 w-3" /> },
+  PENDING: { label: "Awaiting Approval", color: "bg-amber-500/10 text-amber-700 border-amber-500/20", icon: <Clock className="h-3 w-3" /> },
+  APPROVED: { label: "Client Approved", color: "bg-green-500/10 text-green-700 border-green-500/20", icon: <CheckCircle2 className="h-3 w-3" /> },
+  REJECTED: { label: "Client Rejected", color: "bg-red-500/10 text-red-700 border-red-500/20", icon: <XCircle className="h-3 w-3" /> },
+};
+
 export default function OpsRequirementsPage() {
   const { data: events, isLoading: eventsLoading } = useOpsActiveEvents();
   const createSheet = useCreateRequirementSheet();
   const addItem = useAddRequirementItem();
   const updateItem = useUpdateRequirementItem();
   const deleteItem = useDeleteRequirementItem();
+  const sendToClient = useSendRequirementToClient();
 
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,6 +115,8 @@ export default function OpsRequirementsPage() {
   const [createSheetDialogOpen, setCreateSheetDialogOpen] = useState(false);
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
   const [editItemDialogOpen, setEditItemDialogOpen] = useState(false);
+  const [sendToClientDialogOpen, setSendToClientDialogOpen] = useState(false);
+  const [sendMessage, setSendMessage] = useState("");
   const [selectedItem, setSelectedItem] = useState<{
     id: string;
     category: string;
@@ -220,6 +237,33 @@ export default function OpsRequirementsPage() {
       priority: item.priority || "NORMAL",
     });
     setEditItemDialogOpen(true);
+  };
+
+  const handleSendToClient = () => {
+    if (!requirements?.id) return;
+
+    sendToClient.mutate(
+      { id: requirements.id, message: sendMessage || undefined },
+      {
+        onSuccess: () => {
+          setSendToClientDialogOpen(false);
+          setSendMessage("");
+        },
+      }
+    );
+  };
+
+  const getApprovalLink = () => {
+    if (!requirements?.approvalToken) return null;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    return `${baseUrl}/quote-approval/${requirements.approvalToken}`;
+  };
+
+  const copyApprovalLink = () => {
+    const link = getApprovalLink();
+    if (link) {
+      navigator.clipboard.writeText(link);
+    }
   };
 
   const selectedEvent = events?.find((e) => e.id === selectedEventId);
@@ -363,7 +407,20 @@ export default function OpsRequirementsPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle>Requirement Sheet</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle>Requirement Sheet</CardTitle>
+                        {requirements.approvalStatus && (
+                          <Badge
+                            variant="outline"
+                            className={approvalStatusConfig[requirements.approvalStatus]?.color}
+                          >
+                            {approvalStatusConfig[requirements.approvalStatus]?.icon}
+                            <span className="ml-1">
+                              {approvalStatusConfig[requirements.approvalStatus]?.label}
+                            </span>
+                          </Badge>
+                        )}
+                      </div>
                       <CardDescription>
                         {selectedEvent?.clientName} - {selectedEvent?.eventType}
                       </CardDescription>
@@ -374,6 +431,17 @@ export default function OpsRequirementsPage() {
                           View Event
                         </Button>
                       </Link>
+                      {requirements.approvalStatus !== "APPROVED" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSendToClientDialogOpen(true)}
+                          disabled={!requirements.items || requirements.items.length === 0}
+                        >
+                          <Send className="mr-2 h-4 w-4" />
+                          {requirements.approvalStatus === "PENDING" ? "Resend" : "Send to Client"}
+                        </Button>
+                      )}
                       <Button size="sm" onClick={() => setAddItemDialogOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add Item
@@ -381,13 +449,96 @@ export default function OpsRequirementsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                {requirements.notes && (
-                  <CardContent>
+                <CardContent className="space-y-4">
+                  {/* Approval Link Section */}
+                  {requirements.approvalStatus === "PENDING" && requirements.approvalToken && (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-medium text-amber-800 dark:text-amber-200">
+                            Awaiting Client Approval
+                          </p>
+                          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                            Sent on{" "}
+                            {requirements.sentToClientAt
+                              ? new Date(requirements.sentToClientAt).toLocaleDateString()
+                              : "N/A"}
+                          </p>
+                          <div className="flex items-center gap-2 mt-3">
+                            <Input
+                              readOnly
+                              value={getApprovalLink() || ""}
+                              className="text-xs bg-white dark:bg-slate-800"
+                            />
+                            <Button size="sm" variant="outline" onClick={copyApprovalLink}>
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => window.open(getApprovalLink() || "", "_blank")}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Approved Section */}
+                  {requirements.approvalStatus === "APPROVED" && (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-green-800 dark:text-green-200">
+                            Approved by Client
+                          </p>
+                          <p className="text-sm text-green-700 dark:text-green-300">
+                            Approved on{" "}
+                            {requirements.clientApprovedAt
+                              ? new Date(requirements.clientApprovedAt).toLocaleDateString()
+                              : "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejected Section */}
+                  {requirements.approvalStatus === "REJECTED" && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-red-800 dark:text-red-200">
+                            Rejected by Client
+                          </p>
+                          <p className="text-sm text-red-700 dark:text-red-300">
+                            Rejected on{" "}
+                            {requirements.clientRejectedAt
+                              ? new Date(requirements.clientRejectedAt).toLocaleDateString()
+                              : "N/A"}
+                          </p>
+                          {requirements.rejectionReason && (
+                            <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                              Reason: {requirements.rejectionReason}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {requirements.notes && (
                     <div className="bg-muted/50 rounded-lg p-3">
                       <p className="text-muted-foreground text-sm">{requirements.notes}</p>
                     </div>
-                  </CardContent>
-                )}
+                  )}
+                </CardContent>
               </Card>
 
               {/* Stats */}
@@ -789,6 +940,64 @@ export default function OpsRequirementsPage() {
             </Button>
             <Button onClick={handleUpdateItem} disabled={updateItem.isPending}>
               {updateItem.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send to Client Dialog */}
+      <Dialog open={sendToClientDialogOpen} onOpenChange={setSendToClientDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send to Client for Approval</DialogTitle>
+            <DialogDescription>
+              Send this requirement sheet to {selectedEvent?.clientName} for approval. They will
+              receive a link to view and approve the quotation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">Total Items</span>
+                <span className="font-bold">{requirements?.items?.length || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Estimated Total</span>
+                <span className="font-bold text-green-600">
+                  {requirements?.items
+                    ?.reduce((sum, i) => sum + (Number(i.estimatedBudget) || 0), 0)
+                    .toLocaleString("en-IN")}{" "}
+                  Rs
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sendMessage">Message (Optional)</Label>
+              <Textarea
+                id="sendMessage"
+                placeholder="Add a personal message to include in the email..."
+                value={sendMessage}
+                onChange={(e) => setSendMessage(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendToClientDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendToClient} disabled={sendToClient.isPending}>
+              {sendToClient.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send for Approval
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -22,6 +22,11 @@ export enum BlogStatus {
   ARCHIVED = 'ARCHIVED',
 }
 
+export enum BlogPostSortBy {
+  LATEST = 'latest',
+  MOST_VIEWED = 'mostViewed',
+}
+
 // ============================================================================
 // CREATE DTOs
 // ============================================================================
@@ -268,6 +273,15 @@ export class SearchBlogPostsDto {
   @IsOptional()
   @IsString()
   keyword?: string;
+
+  @ApiPropertyOptional({
+    description: 'Sort blog posts',
+    enum: BlogPostSortBy,
+    default: BlogPostSortBy.LATEST,
+  })
+  @IsOptional()
+  @IsEnum(BlogPostSortBy)
+  sortBy?: BlogPostSortBy;
 
   @ApiPropertyOptional({ description: 'Page number', example: 1, default: 1 })
   @IsOptional()

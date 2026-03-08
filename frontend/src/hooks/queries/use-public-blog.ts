@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { publicService } from '@/lib/api/services/public.service'
 import type { BlogPostSearchParams } from '@/lib/api/types/marketing.types'
 import type { BlogPost } from '@/lib/api/types/marketing.types'
@@ -16,6 +16,25 @@ export function usePublicBlogPosts(filters: BlogPostSearchParams) {
   return useQuery({
     queryKey: publicBlogKeys.list(filters),
     queryFn: () => publicService.getBlogPosts(filters),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function usePublicInfiniteBlogPosts(
+  filters: Omit<BlogPostSearchParams, 'page' | 'limit'>,
+  limit = 12,
+) {
+  return useInfiniteQuery({
+    queryKey: [...publicBlogKeys.all, 'infinite-list', filters, limit],
+    queryFn: ({ pageParam = 1 }) =>
+      publicService.getBlogPosts({
+        ...filters,
+        page: pageParam,
+        limit,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage?.meta?.hasNextPage ? lastPage.meta.page + 1 : undefined,
     staleTime: 5 * 60 * 1000,
   })
 }

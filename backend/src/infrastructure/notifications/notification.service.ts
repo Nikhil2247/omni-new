@@ -20,6 +20,8 @@ export interface CreateNotificationInput {
   imageUrl?: string;
   expiresAt?: Date;
   priority?: 'low' | 'normal' | 'high' | 'urgent';
+  dedupeKey?: string;
+  dedupeWindowMs?: number;
 }
 
 export interface NotificationListParams {
@@ -53,6 +55,8 @@ export interface NotificationListResult {
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
+  private readonly recentFingerprints = new Map<string, number>();
+  private readonly defaultDedupeWindowMs = 30_000;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -60,6 +64,34 @@ export class NotificationService {
   ) {}
 
   async createNotification(input: CreateNotificationInput) {
+    const dedupeWindowMs = Math.max(
+      1_000,
+      input.dedupeWindowMs ?? this.defaultDedupeWindowMs,
+    );
+    const now = Date.now();
+    const fingerprint = this.buildFingerprint(input);
+
+    this.pruneRecentFingerprints(now, dedupeWindowMs);
+    const lastSeenAt = this.recentFingerprints.get(fingerprint);
+    if (lastSeenAt && now - lastSeenAt <= dedupeWindowMs) {
+      const existing = await this.findRecentDuplicate(input, dedupeWindowMs);
+      if (existing) {
+        this.logger.warn(
+          `Duplicate notification prevented (memory window) for user ${input.userId}`,
+        );
+        return existing;
+      }
+    }
+
+    const existing = await this.findRecentDuplicate(input, dedupeWindowMs);
+    if (existing) {
+      this.recentFingerprints.set(fingerprint, now);
+      this.logger.warn(
+        `Duplicate notification prevented (db window) for user ${input.userId}`,
+      );
+      return existing;
+    }
+
     const notification = await this.prisma.notification.create({
       data: {
         userId: input.userId,
@@ -73,6 +105,8 @@ export class NotificationService {
         expiresAt: input.expiresAt,
       },
     });
+
+    this.recentFingerprints.set(fingerprint, now);
 
     this.eventEmitter.emit('notification.send', {
       userId: input.userId,
@@ -91,6 +125,76 @@ export class NotificationService {
     });
 
     return notification;
+  }
+
+  private buildFingerprint(input: CreateNotificationInput): string {
+    const data = this.stableStringify(input.data);
+    return [
+      input.dedupeKey || '',
+      input.userId,
+      input.type,
+      input.channel ?? NotificationChannel.IN_APP,
+      input.title,
+      input.message,
+      input.actionUrl ?? '',
+      input.imageUrl ?? '',
+      data,
+    ].join('|');
+  }
+
+  private pruneRecentFingerprints(now: number, windowMs: number): void {
+    const expiry = windowMs * 2;
+    for (const [key, timestamp] of this.recentFingerprints.entries()) {
+      if (now - timestamp > expiry) {
+        this.recentFingerprints.delete(key);
+      }
+    }
+  }
+
+  private async findRecentDuplicate(
+    input: CreateNotificationInput,
+    dedupeWindowMs: number,
+  ) {
+    const since = new Date(Date.now() - dedupeWindowMs);
+    const channel = input.channel ?? NotificationChannel.IN_APP;
+    const candidate = await this.prisma.notification.findFirst({
+      where: {
+        userId: input.userId,
+        type: input.type,
+        channel,
+        title: input.title,
+        message: input.message,
+        actionUrl: input.actionUrl ?? null,
+        imageUrl: input.imageUrl ?? null,
+        createdAt: { gte: since },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!candidate) {
+      return null;
+    }
+
+    const candidateData = this.stableStringify(
+      candidate.data as Prisma.JsonValue | undefined,
+    );
+    const inputData = this.stableStringify(input.data);
+    return candidateData === inputData ? candidate : null;
+  }
+
+  private stableStringify(value: unknown): string {
+    if (value === undefined) return '';
+    if (value === null) return 'null';
+    if (Array.isArray(value)) {
+      return `[${value.map((item) => this.stableStringify(item)).join(',')}]`;
+    }
+    if (typeof value === 'object') {
+      const entries = Object.entries(value as Record<string, unknown>)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, item]) => `${key}:${this.stableStringify(item)}`);
+      return `{${entries.join(',')}}`;
+    }
+    return String(value);
   }
 
   async getNotifications(

@@ -58,11 +58,10 @@ export class ConversationService {
     const userRole = vendorUserIds.has(userId) ? 'VENDOR' : 'PLANNER';
     const participantRole = vendorUserIds.has(participantUserId) ? 'VENDOR' : 'PLANNER';
 
-    const existing =
-      await this.conversationRepository.findDirectConversationByUsers(
-        userId,
-        participantUserId,
-      );
+    const existing = await this.conversationRepository.findConversationByUsers(
+      userId,
+      participantUserId,
+    );
 
     if (existing) {
       return existing;

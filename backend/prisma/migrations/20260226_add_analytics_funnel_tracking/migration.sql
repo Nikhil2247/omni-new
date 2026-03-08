@@ -31,5 +31,5 @@ CREATE INDEX "funnel_events_session_id_funnel_name_step_index_idx" ON "analytics
 -- CreateIndex
 CREATE INDEX "funnel_events_timestamp_idx" ON "analytics"."funnel_events"("timestamp");
 
--- AddForeignKey
-ALTER TABLE "analytics"."funnel_events" ADD CONSTRAINT "funnel_events_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- AddForeignKey (commented out - users table may not exist in shadow db)
+-- ALTER TABLE "analytics"."funnel_events" ADD CONSTRAINT "funnel_events_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;

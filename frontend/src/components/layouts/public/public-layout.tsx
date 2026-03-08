@@ -34,7 +34,6 @@ import {
   Bookmark,
 } from "lucide-react";
 import type { Role } from "@/config/roles";
-import { useRouter } from "next/navigation";
 import { useLogout } from "@/hooks/use-auth";
 import { useTheme } from "next-themes";
 
@@ -45,8 +44,8 @@ interface PublicLayoutProps {
 export function PublicLayout({ children }: PublicLayoutProps) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [showSidebarUserMenu, setShowSidebarUserMenu] = useState(false);
   const { isAuthenticated, hasHydrated, user } = useAuthStore();
-  const router = useRouter();
   const logoutMutation = useLogout();
   const { theme, setTheme } = useTheme();
   const settingsPath = getSettingsPath(user?.role as Role | undefined);
@@ -207,45 +206,72 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                 />
               </div>
 
-              <Link
-                href={profilePath}
-                className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"
-                aria-label="Profile"
-                title="Profile"
-              >
-                <User className="h-5 w-5" />
-              </Link>
+              <div className="relative flex justify-center">
+                <button
+                  onClick={() => setShowSidebarUserMenu((current) => !current)}
+                  className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"
+                  aria-label="Open user menu"
+                  title="Open user menu"
+                >
+                  <User className="h-5 w-5" />
+                </button>
 
-              <button
-                onClick={() => router.push(settingsPath)}
-                className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"
-                aria-label="Settings"
-                title="Settings"
-              >
-                <Settings className="h-5 w-5" />
-              </button>
-
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"
-                aria-label="Toggle theme"
-                title="Toggle theme"
-              >
-                {mounted && theme === "dark" ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
+                {showSidebarUserMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowSidebarUserMenu(false)} />
+                    <div className="bg-background absolute bottom-0 left-full z-50 ml-2 w-52 rounded-xl border shadow-lg">
+                      <div className="border-b px-4 py-3">
+                        <p className="text-sm font-medium text-foreground">{user?.name}</p>
+                        <p className="text-xs text-muted-foreground">{user?.email}</p>
+                      </div>
+                      <div className="py-2">
+                        <Link
+                          href={profilePath}
+                          onClick={() => setShowSidebarUserMenu(false)}
+                          className="hover:bg-muted flex w-full items-center gap-3 px-4 py-2 text-sm text-foreground"
+                        >
+                          <User className="h-4 w-4" />
+                          Profile
+                        </Link>
+                        <Link
+                          href={settingsPath}
+                          onClick={() => setShowSidebarUserMenu(false)}
+                          className="hover:bg-muted flex w-full items-center gap-3 px-4 py-2 text-sm text-foreground"
+                        >
+                          <Settings className="h-4 w-4" />
+                          Settings
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setTheme(theme === "dark" ? "light" : "dark");
+                            setShowSidebarUserMenu(false);
+                          }}
+                          className="hover:bg-muted flex w-full items-center gap-3 px-4 py-2 text-sm text-foreground"
+                        >
+                          {mounted && theme === "dark" ? (
+                            <Sun className="h-4 w-4" />
+                          ) : (
+                            <Moon className="h-4 w-4" />
+                          )}
+                          Toggle theme
+                        </button>
+                      </div>
+                      <div className="border-t py-2">
+                        <button
+                          onClick={() => {
+                            setShowSidebarUserMenu(false);
+                            logoutMutation.mutate();
+                          }}
+                          className="hover:bg-muted flex w-full items-center gap-3 px-4 py-2 text-sm text-red-600"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 )}
-              </button>
-
-              <button
-                onClick={() => logoutMutation.mutate()}
-                className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
+              </div>
             </div>
           )}
 
