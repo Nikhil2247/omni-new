@@ -80,6 +80,7 @@ model User {
   notifications   Notification[]
   vibeQuizResult  VibeQuizResult?
   weddingPartners WeddingPartner[]
+  chatbotConversations ChatbotConversation[]
   vendorFollows   VendorFollow[]
   vendorReviews   VendorReview[]
   conversationParticipants ConversationParticipant[]
@@ -1828,6 +1829,57 @@ model EventMemory {
   uploads       GuestUpload[]
 
   @@map("event_memories")
+  @@schema("planning")
+}
+
+/// ChatbotConversation - Persistent AI assistant conversation (multiple per user allowed)
+model ChatbotConversation {
+  id              String                 @id @default(uuid()) @db.Uuid
+  userId          String                 @map("user_id") @db.Uuid
+  title           String                 @default("New Chat")
+  language        ChatbotConversationLanguage @default(en)
+  filters         Json                   @default("{}")
+  turns           Int                    @default(0)
+  lastMessageAt   DateTime?              @map("last_message_at")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages        ChatbotConversationMessage[]
+
+  @@index([userId, lastMessageAt(sort: Desc)])
+  @@index([lastMessageAt])
+  @@map("chatbot_conversations")
+  @@schema("planning")
+}
+
+/// ChatbotConversationMessage - Individual user/assistant message turn
+model ChatbotConversationMessage {
+  id              String                     @id @default(uuid()) @db.Uuid
+  conversationId  String                     @map("conversation_id") @db.Uuid
+  role            ChatbotMessageRole
+  content         String
+  createdAt       DateTime                   @default(now()) @map("created_at")
+
+  conversation    ChatbotConversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("chatbot_conversation_messages")
+  @@schema("planning")
+}
+
+enum ChatbotMessageRole {
+  user
+  assistant
+
+  @@schema("planning")
+}
+
+enum ChatbotConversationLanguage {
+  en
+  hi
+  hinglish
+
   @@schema("planning")
 }
 

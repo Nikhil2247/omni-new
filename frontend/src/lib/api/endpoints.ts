@@ -43,6 +43,12 @@ export const API_ENDPOINTS = {
     },
     CHATBOT: {
       MESSAGE: '/public/chatbot/message',
+      HISTORY: (userId: string) => `/public/chatbot/history/${userId}`,
+      CONVERSATIONS: (userId: string) => `/public/chatbot/conversations/${userId}`,
+      CONVERSATION: (userId: string, conversationId: string) =>
+        `/public/chatbot/conversations/${userId}/${conversationId}`,
+      CLEAR_CONVERSATION: (userId: string, conversationId: string) =>
+        `/public/chatbot/conversations/${userId}/${conversationId}/clear`,
     },
     SEARCH: {
       GLOBAL: '/public/search',
@@ -80,6 +86,11 @@ export const API_ENDPOINTS = {
       ENGAGEMENT_TRENDS: '/admin/insights/engagement/trends',
       TOP_VENDORS: '/admin/insights/vendors/top',
       VENDOR_RANKINGS: '/admin/insights/vendors/rankings',
+    },
+    CHATBOT: {
+      METRICS: '/admin/chatbot/metrics',
+      SESSION_METRICS: (sessionId: string) =>
+        `/admin/chatbot/metrics/session/${sessionId}`,
     },
   },
   MARKETING: {

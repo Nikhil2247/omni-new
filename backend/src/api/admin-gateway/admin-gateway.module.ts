@@ -12,6 +12,8 @@ import { SystemHealthController } from './controllers/system-health.controller';
 import { SystemHealthService } from './services/system-health.service';
 import { FeatureFlagController } from './controllers/feature-flag.controller';
 import { FeatureFlagService } from './services/feature-flag.service';
+import { ChatbotAdminController } from './controllers/chatbot-admin.controller';
+import { ChatbotAdminService } from './services/chatbot-admin.service';
 import { AuditService } from 'src/core/audit';
 
 @Module({
@@ -25,11 +27,13 @@ import { AuditService } from 'src/core/audit';
     SystemHealthController,
     FeatureFlagController,
     SearchAdminController,
+    ChatbotAdminController,
   ],
   providers: [
     SystemConfigService,
     SystemHealthService,
     FeatureFlagService,
+    ChatbotAdminService,
     AuditService,
   ],
 })

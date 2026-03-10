@@ -9,6 +9,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { CacheInvalidationHandler } from './handlers/cache-invalidation.handler';
 import { SearchIndexHandler } from './handlers/search-index.handler';
 import { EmailEventHandler } from './handlers/email.handler';
+import { ChatbotAnalyticsHandler } from './handlers/chatbot-analytics.handler';
 import { NotificationsModule } from '../../infrastructure/notifications/notifications.module';
 
 @Global()
@@ -31,7 +32,12 @@ import { NotificationsModule } from '../../infrastructure/notifications/notifica
     }),
     NotificationsModule,
   ],
-  providers: [CacheInvalidationHandler, SearchIndexHandler, EmailEventHandler],
+  providers: [
+    CacheInvalidationHandler,
+    SearchIndexHandler,
+    EmailEventHandler,
+    ChatbotAnalyticsHandler,
+  ],
   exports: [EventEmitterModule],
 })
 export class EventsModule {}

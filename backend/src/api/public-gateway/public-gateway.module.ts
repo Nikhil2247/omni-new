@@ -13,6 +13,7 @@ import { OperationsModule } from '../../domain/operations/operations.module';
 import { StorageModule } from '../../infrastructure/storage/storage.module';
 import { HealthModule } from '../../infrastructure/health/health.module';
 import { SearchModule } from '../../infrastructure/search/search.module';
+import { ChatbotModule } from '../../domain/chatbot/chatbot.module';
 import { BlogController } from './controllers/blog.controller';
 import { MediaController } from './controllers/media.controller';
 import { UploadController } from './controllers/upload.controller';
@@ -23,6 +24,7 @@ import { ChatbotController } from './controllers/chatbot.controller';
 import { ChatbotService } from './services/chatbot.service';
 import { GlobalSearchService } from './services/global-search.service';
 import { MediaUrlNormalizerService } from './services/media-url-normalizer.service';
+import { ChatbotPersistenceService } from '../../domain/chatbot/services/chatbot-persistence.service';
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { MediaUrlNormalizerService } from './services/media-url-normalizer.servi
     StorageModule,
     HealthModule,
     SearchModule,
+    ChatbotModule,
   ],
   controllers: [
     WebhooksController,
@@ -50,6 +53,6 @@ import { MediaUrlNormalizerService } from './services/media-url-normalizer.servi
     ChatbotController,
     SearchController,
   ],
-  providers: [ChatbotService, GlobalSearchService, MediaUrlNormalizerService],
+  providers: [ChatbotService, GlobalSearchService, MediaUrlNormalizerService, ChatbotPersistenceService],
 })
 export class PublicGatewayModule {}

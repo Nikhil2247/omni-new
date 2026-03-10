@@ -25,7 +25,8 @@
     "export:portfolio-media": "ts-node scripts/export-portfolio-media-urls.ts",
     "migrate:extract": "ts-node scripts/extract-bson-to-json.ts",
     "migrate:mongodb": "ts-node scripts/migrate-mongodb-to-postgres.ts",
-    "migrate:full": "npm run migrate:extract && npm run migrate:mongodb"
+    "migrate:full": "npm run migrate:extract && npm run migrate:mongodb",
+    "notifications:clear": "ts-node scripts/clear-all-notifications.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

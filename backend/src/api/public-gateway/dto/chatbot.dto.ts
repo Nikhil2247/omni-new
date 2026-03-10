@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsNumber,
   IsOptional,
   IsString,
@@ -56,6 +57,22 @@ export class ChatbotMessageDto {
   message: string;
 
   @IsOptional()
+  @IsString()
+  userId?: string;
+
+  @IsOptional()
+  @IsString()
+  sessionId?: string;
+
+  @IsOptional()
+  @IsString()
+  conversationId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  resetSession?: boolean;
+
+  @IsOptional()
   @ValidateNested()
   @Type(() => ChatbotContextDto)
   context?: ChatbotContextDto;
@@ -65,6 +82,17 @@ export class ChatbotMessageDto {
   @ValidateNested({ each: true })
   @Type(() => ChatbotMessageHistoryDto)
   conversationHistory?: ChatbotMessageHistoryDto[];
+}
+
+export class CreateConversationDto {
+  @IsOptional()
+  @IsString()
+  title?: string;
+}
+
+export class UpdateConversationDto {
+  @IsString()
+  title: string;
 }
 
 export class ChatbotVendorSuggestionDto {
@@ -128,11 +156,47 @@ export class ChatbotResponseDto {
   @ApiProperty({ example: 'FIND_VENDOR', enum: ['WELCOME', 'GENERAL', 'FIND_VENDOR'] })
   intent: string;
 
+  @ApiProperty({ example: 'en', enum: ['en', 'hi', 'hinglish'] })
+  language: 'en' | 'hi' | 'hinglish';
+
+  @ApiProperty({ example: 0.88 })
+  confidence: number;
+
   @ApiProperty({
     type: [String],
     example: ['Show me more options', 'Only verified vendors', 'Filter by budget'],
   })
   suggestions: string[];
+
+  @ApiProperty({
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        label: { type: 'string' },
+        type: { type: 'string', enum: ['search', 'filter', 'plan', 'compare'] },
+      },
+    },
+  })
+  actions: Array<{ id: string; label: string; type: string }>;
+
+  @ApiProperty({
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        type: { type: 'string', enum: ['vendor', 'planning'] },
+        title: { type: 'string' },
+        subtitle: { type: 'string' },
+        description: { type: 'string' },
+        ctaLabel: { type: 'string' },
+        ctaUrl: { type: 'string' },
+      },
+    },
+  })
+  cards: Array<{ id: string; type: string; title: string }>;
 
   @ApiProperty({ type: [ChatbotVendorSuggestionDto] })
   vendors: ChatbotVendorSuggestionDto[];
@@ -156,4 +220,18 @@ export class ChatbotResponseDto {
 
   @ApiProperty({ type: ChatbotResponseMetaDto })
   meta: ChatbotResponseMetaDto;
+
+  @ApiProperty({
+    type: 'object',
+    properties: {
+      userId: { type: 'string' },
+      sessionId: { type: 'string' },
+      turns: { type: 'number' },
+    },
+  })
+  session: {
+    userId?: string;
+    sessionId?: string;
+    turns: number;
+  };
 }

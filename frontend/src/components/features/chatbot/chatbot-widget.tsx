@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -9,55 +9,21 @@ import {
   Send,
   Sparkles,
   Trash2,
-  X,
   MapPin,
   CheckCircle2,
   ChevronRight,
   Lightbulb,
   Maximize2,
   Loader2,
+  X,
+  Plus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Textarea } from '@/components/ui/textarea'
-import { chatbotService } from '@/lib/api/services/chatbot.service'
-import type {
-  ChatbotVendorSuggestion,
-  ChatbotContext,
-  FollowUpQuestion,
-} from '@/lib/api/types/chatbot.types'
 import { cn } from '@/lib/utils'
-
-interface ChatMessage {
-  id: string
-  role: 'user' | 'bot'
-  text: string
-  createdAt: number
-  vendors?: ChatbotVendorSuggestion[]
-  suggestions?: string[]
-  followUpQuestions?: FollowUpQuestion[]
-}
-
-const STORAGE_KEY = 'omni-chatbot-history-v2'
-
-const DEFAULT_MESSAGE: ChatMessage = {
-  id: 'welcome',
-  role: 'bot',
-  text: "Hi! I'm your event planning assistant. Tell me what vendors you need, your city, and budget - I'll find the perfect matches!",
-  createdAt: Date.now(),
-  suggestions: ['Wedding photographer in Delhi', 'Catering under ₹80K', 'Decorators in Mumbai'],
-  followUpQuestions: [
-    { id: 'vendor', text: 'What kind of vendor do you need?', type: 'category' },
-    { id: 'location', text: 'Which city?', type: 'location' },
-  ],
-}
+import { useAuthStore } from '@/store/auth-store'
+import { useChatStore, type ChatMessage } from '@/store/chat-store'
+import type { ChatbotVendorSuggestion, FollowUpQuestion } from '@/lib/api/types/chatbot.types'
+import { ChatbotMarkdown } from '@/components/features/chatbot/chatbot-markdown'
 
 const formatPrice = (price?: number) => {
   if (!price) return null
@@ -66,30 +32,21 @@ const formatPrice = (price?: number) => {
   return `₹${price}`
 }
 
-// Typing indicator
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1 px-3 py-2">
-      <motion.div
-        className="h-1.5 w-1.5 rounded-full bg-primary/60"
-        animate={{ scale: [1, 1.3, 1] }}
-        transition={{ duration: 0.5, repeat: Infinity, delay: 0 }}
-      />
-      <motion.div
-        className="h-1.5 w-1.5 rounded-full bg-primary/60"
-        animate={{ scale: [1, 1.3, 1] }}
-        transition={{ duration: 0.5, repeat: Infinity, delay: 0.15 }}
-      />
-      <motion.div
-        className="h-1.5 w-1.5 rounded-full bg-primary/60"
-        animate={{ scale: [1, 1.3, 1] }}
-        transition={{ duration: 0.5, repeat: Infinity, delay: 0.3 }}
-      />
+      {[0, 0.15, 0.3].map((delay, i) => (
+        <motion.div
+          key={i}
+          className="h-1.5 w-1.5 rounded-full bg-primary/50"
+          animate={{ scale: [1, 1.3, 1] }}
+          transition={{ duration: 0.5, repeat: Infinity, delay }}
+        />
+      ))}
     </div>
   )
 }
 
-// Compact vendor card for widget
 function CompactVendorCard({ vendor }: { vendor: ChatbotVendorSuggestion }) {
   const priceRange = useMemo(() => {
     const min = formatPrice(vendor.minPrice)
@@ -102,276 +59,308 @@ function CompactVendorCard({ vendor }: { vendor: ChatbotVendorSuggestion }) {
   return (
     <Link
       href={vendor.profileUrl || `/vendors/${vendor.slug}`}
-      className="group block rounded-xl border border-border/60 bg-background/80 p-3 transition-all hover:border-primary/40 hover:shadow-sm"
+      className="group block rounded-lg border border-border/50 bg-background p-2.5 transition-all hover:border-primary/30"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-sm text-foreground truncate">{vendor.businessName}</span>
-            {vendor.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            <span className="truncate text-sm font-medium">{vendor.businessName}</span>
+            {vendor.isVerified && <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-500" />}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {vendor.categoryName || 'Vendor'}
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {vendor.categoryName}
             {vendor.city && (
               <>
                 <span className="mx-1">•</span>
-                <MapPin className="h-2.5 w-2.5 inline -mt-0.5" />
-                <span className="ml-0.5">{vendor.city}</span>
+                <MapPin className="inline h-2.5 w-2.5" /> {vendor.city}
               </>
             )}
           </p>
-          {priceRange && <p className="text-xs font-medium text-primary mt-1">{priceRange}</p>}
+          {priceRange && <p className="mt-0.5 text-xs font-medium text-primary">{priceRange}</p>}
         </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
+        <ChevronRight className="h-4 w-4 text-muted-foreground/40 transition-colors group-hover:text-primary" />
       </div>
     </Link>
   )
 }
 
+function WidgetMessage({
+  message,
+  onSuggestion,
+  onFollowUp,
+}: {
+  message: ChatMessage
+  onSuggestion: (text: string) => void
+  onFollowUp: (q: FollowUpQuestion) => void
+}) {
+  const isBot = message.role === 'bot'
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn('flex gap-2', isBot ? 'justify-start' : 'justify-end')}
+    >
+      {isBot && (
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Bot className="h-3.5 w-3.5 text-primary" />
+        </div>
+      )}
+
+      <div className={cn('max-w-[85%] space-y-1.5', !isBot && 'order-first')}>
+        <div
+          className={cn(
+            'rounded-2xl px-3 py-2 text-sm',
+            isBot ? 'bg-muted' : 'bg-primary text-primary-foreground'
+          )}
+        >
+          <ChatbotMarkdown content={message.text} variant={isBot ? 'bot' : 'user'} />
+        </div>
+
+        {message.vendors && message.vendors.length > 0 && (
+          <div className="space-y-1.5">
+            {message.vendors.slice(0, 3).map((v) => (
+              <CompactVendorCard key={v.id} vendor={v} />
+            ))}
+          </div>
+        )}
+
+        {message.followUpQuestions && message.followUpQuestions.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {message.followUpQuestions.slice(0, 2).map((q) => (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => onFollowUp(q)}
+                className="flex items-center gap-1 rounded-md border border-border/50 bg-background px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+              >
+                <Lightbulb className="h-2.5 w-2.5" />
+                {q.text.length > 28 ? q.text.slice(0, 28) + '...' : q.text}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {message.suggestions && message.suggestions.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {message.suggestions.slice(0, 3).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onSuggestion(s)}
+                className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs text-primary transition-colors hover:bg-primary/10"
+              >
+                <Sparkles className="h-2.5 w-2.5" />
+                {s.length > 22 ? s.slice(0, 22) + '...' : s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 export function ChatbotWidget() {
+  const { user, isAuthenticated, hasHydrated: authHydrated } = useAuthStore()
+  const userId = user?.id
+
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<ChatMessage[]>([DEFAULT_MESSAGE])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [context, setContext] = useState<ChatbotContext>({})
-  const bottomRef = useRef<HTMLDivElement | null>(null)
 
-  // Load from storage
+  const {
+    isLoading,
+    isHydrated,
+    getActiveThread,
+    getMessages,
+    sendMessage,
+    clearThread,
+    createThread,
+    initialize,
+  } = useChatStore()
+
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const activeThread = getActiveThread()
+  const messages = getMessages()
+
+  // Initialize store with user context
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (parsed.messages && Array.isArray(parsed.messages) && parsed.messages.length > 0) {
-          setMessages(parsed.messages)
-        }
-        if (parsed.context) {
-          setContext(parsed.context)
-        }
-      }
-    } catch {
-      setMessages([DEFAULT_MESSAGE])
-    }
-  }, [])
+    if (!authHydrated) return
+    initialize(isAuthenticated ? userId : undefined)
+  }, [authHydrated, isAuthenticated, userId, initialize])
 
-  // Save to storage
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, context }))
-  }, [messages, context])
-
-  // Scroll to bottom
+  // Scroll to bottom when open
   useEffect(() => {
     if (!open) return
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, open, isLoading])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isLoading, open])
 
-  const lastSuggestions = useMemo(() => {
-    const last = [...messages].reverse().find((m) => m.suggestions?.length)
-    return last?.suggestions || []
-  }, [messages])
-
-  const handleClear = () => {
-    setMessages([DEFAULT_MESSAGE])
-    setContext({})
-  }
+  // Focus input when opened
+  useEffect(() => {
+    if (open && isHydrated) {
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
+  }, [open, isHydrated])
 
   const handleSend = async (content?: string) => {
-    const text = (content ?? input).trim()
-    if (!text || isLoading) return
+    const text = content ?? inputRef.current?.value ?? ''
+    if (!text.trim()) return
 
-    const userMessage: ChatMessage = {
-      id: `${Date.now()}-user`,
-      role: 'user',
-      text,
-      createdAt: Date.now(),
+    if (inputRef.current) {
+      inputRef.current.value = ''
+      inputRef.current.style.height = 'auto'
     }
 
-    setMessages((prev) => [...prev, userMessage])
-    setInput('')
-    setIsLoading(true)
+    await sendMessage(text)
+    inputRef.current?.focus()
+  }
 
-    try {
-      const response = await chatbotService.sendMessage({ message: text, context })
-
-      if (response.filters) {
-        setContext(response.filters)
-      }
-
-      const botMessage: ChatMessage = {
-        id: `${Date.now()}-bot`,
-        role: 'bot',
-        text: response.reply,
-        createdAt: Date.now(),
-        vendors: response.vendors,
-        suggestions: response.suggestions,
-        followUpQuestions: response.followUpQuestions,
-      }
-      setMessages((prev) => [...prev, botMessage])
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-error`,
-          role: 'bot',
-          text: "Sorry, I couldn't connect. Please try again.",
-          createdAt: Date.now(),
-        },
-      ])
-    } finally {
-      setIsLoading(false)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
     }
+  }
+
+  const handleNewChat = async () => {
+    await createThread()
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button className="fixed bottom-24 right-4 z-50 h-12 gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 px-5 shadow-xl shadow-primary/20 md:bottom-6 md:right-6 hover:shadow-2xl hover:shadow-primary/30 transition-all">
-          <MessageCircle className="h-5 w-5" />
-          <span className="text-sm font-medium">AI ChatBot</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-md">
-        <SheetHeader className="border-b px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 shadow-sm">
-                <Bot className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div>
-                <SheetTitle className="text-base">Event Assistant</SheetTitle>
-                <p className="text-xs text-muted-foreground">Find perfect vendors</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-                <Link href="/assistant">
-                  <Maximize2 className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleClear} className="h-8 w-8">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </SheetHeader>
+    <>
+      {/* Trigger button */}
+      <AnimatePresence>
+        {!open && (
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6"
+          >
+            <Button
+              onClick={() => setOpen(true)}
+              className="h-12 gap-2 rounded-full bg-primary px-5 shadow-lg shadow-primary/20 hover:shadow-xl"
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span className="text-sm font-medium">AI Assistant</span>
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <ScrollArea className="flex-1 px-4 py-4">
-          <div className="space-y-4">
-            <AnimatePresence mode="popLayout">
-              {messages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn('flex gap-2', message.role === 'user' ? 'justify-end' : 'justify-start')}
-                >
-                  {message.role === 'bot' && (
-                    <div className="shrink-0 h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Bot className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
-                  <div className={cn('max-w-[85%] space-y-2', message.role === 'user' && 'order-first')}>
-                    <div
-                      className={cn(
-                        'rounded-2xl px-3 py-2 text-sm shadow-sm',
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
-                      )}
-                    >
-                      <p className="whitespace-pre-wrap leading-relaxed">{message.text}</p>
-                    </div>
-
-                    {/* Vendors */}
-                    {message.vendors && message.vendors.length > 0 && (
-                      <div className="space-y-2">
-                        {message.vendors.map((vendor) => (
-                          <CompactVendorCard key={vendor.id} vendor={vendor} />
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Follow-up questions */}
-                    {message.followUpQuestions && message.followUpQuestions.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {message.followUpQuestions.slice(0, 2).map((q) => (
-                          <button
-                            key={q.id}
-                            type="button"
-                            onClick={() => handleSend(q.text)}
-                            className="text-xs px-2.5 py-1.5 rounded-lg border border-border/60 bg-background/50 text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors flex items-center gap-1"
-                          >
-                            <Lightbulb className="h-3 w-3" />
-                            {q.text.length > 30 ? q.text.slice(0, 30) + '...' : q.text}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {isLoading && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2">
-                <div className="shrink-0 h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+      {/* Chat panel */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-4 right-4 z-50 flex h-[min(600px,calc(100dvh-2rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl md:bottom-6 md:right-6"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
-                <div className="rounded-2xl bg-muted">
-                  <TypingIndicator />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate max-w-[140px]">
+                    {activeThread?.title || 'AI Assistant'}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {isAuthenticated ? 'Synced' : 'Sign in to save'}
+                  </p>
                 </div>
-              </motion.div>
-            )}
-
-            <div ref={bottomRef} />
-          </div>
-        </ScrollArea>
-
-        <div className="border-t px-4 py-3 space-y-3">
-          {/* Quick suggestions */}
-          {lastSuggestions.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {lastSuggestions.slice(0, 3).map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs text-primary hover:bg-primary/10 transition-colors"
-                  onClick={() => handleSend(suggestion)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNewChat}
+                  className="h-8 w-8"
+                  title="New chat"
                 >
-                  <Sparkles className="h-3 w-3" />
-                  {suggestion.length > 25 ? suggestion.slice(0, 25) + '...' : suggestion}
-                </button>
-              ))}
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" asChild className="h-8 w-8" title="Open full page">
+                  <Link href="/assistant" onClick={() => setOpen(false)}>
+                    <Maximize2 className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => clearThread()}
+                  className="h-8 w-8"
+                  title="Clear chat"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setOpen(false)} className="h-8 w-8" title="Close">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          )}
 
-          {/* Input */}
-          <div className="flex items-end gap-2">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about vendors..."
-              className="min-h-[44px] max-h-24 resize-none text-sm"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSend()
-                }
-              }}
-            />
-            <Button
-              size="icon"
-              className="h-11 w-11 shrink-0 rounded-xl"
-              onClick={() => handleSend()}
-              disabled={isLoading || !input.trim()}
-            >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="space-y-3">
+                <AnimatePresence mode="popLayout">
+                  {messages.map((m) => (
+                    <WidgetMessage
+                      key={m.id}
+                      message={m}
+                      onSuggestion={handleSend}
+                      onFollowUp={(q) => handleSend(q.text)}
+                    />
+                  ))}
+                </AnimatePresence>
+
+                {isLoading && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                      <Bot className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="rounded-2xl bg-muted">
+                      <TypingIndicator />
+                    </div>
+                  </motion.div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {/* Input */}
+            <div className="border-t p-3">
+              <div className="flex items-end gap-2">
+                <textarea
+                  ref={inputRef}
+                  placeholder="Ask about vendors..."
+                  className="min-h-[40px] max-h-24 flex-1 resize-none rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50 focus:bg-background"
+                  rows={1}
+                  onKeyDown={handleKeyDown}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement
+                    target.style.height = 'auto'
+                    target.style.height = Math.min(target.scrollHeight, 96) + 'px'
+                  }}
+                />
+                <Button
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-xl"
+                  onClick={() => handleSend()}
+                  disabled={isLoading}
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
