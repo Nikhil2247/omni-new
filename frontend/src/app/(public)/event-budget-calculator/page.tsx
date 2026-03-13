@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import NextImage from "next/image";
 import {
   motion,
   useScroll,
@@ -132,7 +131,7 @@ const faqSchema: FAQSchema = {
 };
 
 const relatedTools = [
-  { title: "Guest List Manager", href: "/wedding-guest-list-manager", description: "Track RSVPs and manage guests.", badge: "Track RSVPs", badgeIcon: Users },
+  { title: "Guest List Manager", href: "/wedding-guest-list", description: "Track RSVPs and manage guests.", badge: "Track RSVPs", badgeIcon: Users },
   { title: "Event Checklist", href: "/event-checklist-tool", description: "Never miss a planning task.", badge: "Stay organized", badgeIcon: CheckCircle2 },
   { title: "Timeline Generator", href: "/event-timeline-generator", description: "Create day-of schedules.", badge: "Minute by minute", badgeIcon: Sparkles },
 ];
@@ -142,18 +141,26 @@ const relatedTools = [
 function LandingHeader() {
   return (
     <header className="absolute top-0 left-0 right-0 z-50">
-      <nav className="mx-auto flex items-center justify-center px-6 py-6">
-        <Link href="/" className="flex items-center">
-          <NextImage
-            src="/images/omnilogo.avif"
-            width={180}
-            height={40}
-            unoptimized={true}
-            priority={true}
-            className="h-10 w-auto"
-            alt="Omnicassion"
-          />
+      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+        <Link 
+          href="/" 
+          className="group flex items-center gap-2 transition-all duration-300 hover:opacity-80"
+        >
+          <span className="font-serif text-2xl font-bold tracking-tight text-white drop-shadow-sm">
+            Omnicassion
+          </span>
         </Link>
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/90">
+          <Link href="/vendors" className="hover:text-white hover:drop-shadow-md transition-all">Vendors</Link>
+          <Link href="/venues" className="hover:text-white hover:drop-shadow-md transition-all">Venues</Link>
+          <Link href="/login" className="hover:text-white hover:drop-shadow-md transition-all">Log in</Link>
+          <a
+            href="/register"
+            className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-neutral-900 shadow-xl transition-all hover:scale-105 hover:bg-white/90"
+          >
+            Sign up
+          </a>
+        </div>
       </nav>
     </header>
   );
@@ -233,14 +240,14 @@ function HeroSection() {
               transition={{ duration: 0.8, delay: 0.5, ease }}
               className="mt-10 flex flex-wrap justify-center lg:justify-start gap-4"
             >
-              <Button asChild size="lg" className="h-14 rounded-full bg-white px-10 text-lg font-semibold text-emerald-600 shadow-xl hover:bg-white/90 hover:scale-105 transition-transform">
-                <Link href="/register">
-                  Start Planning Free
+              <Button asChild size="lg" className="h-14 rounded-full bg-white/95 px-10 text-lg font-semibold text-emerald-700 shadow-2xl shadow-black/15 hover:bg-white hover:scale-105 transition-all">
+                <Link href="#how-it-works">
+                  See How It Works
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-14 rounded-full border-2 border-white/40 bg-white/10 px-10 text-lg font-semibold text-white backdrop-blur-sm hover:bg-white/20">
-                <Link href="/vendors">Explore Vendors</Link>
+              <Button asChild size="lg" variant="outline" className="h-14 rounded-full border-2 border-white/50 bg-white/10 px-10 text-lg font-semibold text-white backdrop-blur-sm hover:bg-white/20">
+                <Link href="/vendors">View Vendor Ideas</Link>
               </Button>
             </motion.div>
 
@@ -248,20 +255,16 @@ function HeroSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.7 }}
-              className="mt-10 flex flex-wrap justify-center lg:justify-start gap-8 text-sm text-white/90"
+              className="mt-10 grid w-full max-w-2xl gap-3 text-sm text-white/90 sm:grid-cols-3"
             >
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
-                Free to use
-              </span>
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
-                No credit card
-              </span>
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
-                Export anytime
-              </span>
+              {["Free to use", "No credit card", "Export anytime"].map((item) => (
+                <div key={item} className="rounded-xl border border-white/25 bg-white/10 px-3 py-2 backdrop-blur-sm">
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    {item}
+                  </span>
+                </div>
+              ))}
             </motion.div>
           </div>
 
@@ -368,7 +371,7 @@ function FeaturesSection() {
               whileHover={{ y: -8, transition: { duration: 0.25 } }}
               className="group text-center"
             >
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-900/20 dark:ring-emerald-500/30 dark:text-emerald-400">
                 <feature.icon className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
@@ -407,6 +410,7 @@ function HowItWorksSection() {
 
   return (
     <motion.section
+      id="how-it-works"
       ref={sectionRef}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
@@ -584,42 +588,42 @@ function CTASection() {
     target: ref,
     offset: ["start end", "end start"],
   });
-  const bgY = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const bgY = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
   return (
-    <section ref={ref} className="relative overflow-hidden py-24 lg:py-32">
-      {/* Background Image */}
-      <motion.div
-        style={{ y: bgY }}
-        className="absolute inset-0 -z-10"
-      >
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-110"
-          style={{ backgroundImage: `url(https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=80)` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/95 via-teal-900/90 to-cyan-900/95" />
-      </motion.div>
+    <section ref={ref} className="relative overflow-hidden py-24 lg:py-32 bg-background">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-emerald-500/5 via-background to-background pointer-events-none" />
+      
+      <div className="relative z-10 mx-auto max-w-5xl px-6">
+        <motion.div 
+          style={{ y: bgY }}
+          className="relative rounded-[2.5rem] overflow-hidden bg-neutral-950 px-8 py-20 lg:py-24 text-center border border-white/5 shadow-2xl"
+        >
+          {/* Subtle noise texture */}
+          <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+          
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[30%] bg-emerald-500/20 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
-        <FadeIn>
-          <h2 className="font-serif text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
-            Ready to plan your perfect event?
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-xl text-white/70">
-            Join thousands of couples using Omnicassion to plan stress-free events.
-          </p>
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
-            <Button asChild size="lg" className="h-14 rounded-full bg-white px-10 text-lg font-semibold text-emerald-600 shadow-xl hover:bg-white/90 hover:scale-105 transition-transform">
-              <Link href="/register">
-                Create Free Account
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-14 rounded-full border-2 border-white/40 bg-white/10 px-10 text-lg font-semibold text-white backdrop-blur-sm hover:bg-white/20">
-              <Link href="/vendors">Browse Vendors</Link>
-            </Button>
-          </div>
-        </FadeIn>
+          <FadeIn className="relative z-10">
+            <h2 className="font-serif text-4xl font-bold text-white sm:text-5xl lg:text-5xl max-w-3xl mx-auto leading-tight tracking-tight">
+              Ready to plan your perfect event?
+            </h2>
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-white/60">
+              Join thousands of couples using Omnicassion to plan stress-free events. Experience the future of elegant event planning today.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center gap-4 justify-center">
+              <Button asChild size="lg" className="h-14 rounded-full bg-white px-8 text-base font-semibold text-neutral-900 shadow-xl hover:bg-neutral-100 hover:scale-[1.02] transition-all duration-300">
+                <Link href="/register">
+                  Create Free Account
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="h-14 rounded-full border border-white/10 bg-white/5 px-8 text-base font-medium text-white backdrop-blur-md hover:bg-white/10 transition-all duration-300">
+                <Link href="/vendors">Browse Vendors</Link>
+              </Button>
+            </div>
+          </FadeIn>
+        </motion.div>
       </div>
     </section>
   );
@@ -633,7 +637,6 @@ export default function EventBudgetCalculatorPage() {
   return (
     <div className="relative min-h-screen">
       <JsonLd data={faqSchema} />
-      <LandingHeader />
       <HeroSection />
       <FeaturesSection />
       <HowItWorksSection />

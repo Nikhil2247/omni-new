@@ -236,6 +236,7 @@ export const API_ENDPOINTS = {
     GUEST_RSVP: (guestId: string) => `/user/guestlist/guests/${guestId}/rsvp`,
     TIMELINE: '/user/timeline',
     TIMELINE_BY_ID: (id: string) => `/user/timeline/${id}`,
+    PLANNER_INSIGHTS: '/user/planner-insights',
     MEMORIES: '/user/memories',
     MEMORY_BY_ID: (id: string) => `/user/memories/${id}`,
     EVENT_VENDORS: '/user/event-vendors',

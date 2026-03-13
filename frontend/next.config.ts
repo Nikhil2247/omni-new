@@ -97,6 +97,16 @@ const nextConfig: NextConfig = {
   // Generate ETags for caching
   generateEtags: true,
 
+  // Keep legacy marketing links working after route rename.
+  async rewrites() {
+    return [
+      {
+        source: '/wedding-guest-list-manager',
+        destination: '/wedding-guest-list',
+      },
+    ];
+  },
+
   // HTTP headers for security and SEO
   async headers() {
     return [

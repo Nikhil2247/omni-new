@@ -530,9 +530,9 @@ export default function VendorPageClient({
 
         {/* Avatar + Actions row */}
         <div className="px-4 md:px-6">
-          <div className="flex items-end justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             {/* Avatar — overlaps banner */}
-            <div className="-mt-13 md:-mt-18">
+            <div className="-mt-13 md:-mt-18 self-start sm:self-auto">
               <div className="relative">
                 <div className="relative h-26 w-26 overflow-hidden rounded-full border-4 border-background bg-background ring-2 ring-border md:h-36 md:w-36">
                   {vendor.profilePhotoUrl ? (
@@ -560,7 +560,7 @@ export default function VendorPageClient({
             </div>
 
             {/* Action buttons */}
-            <div className="flex flex-wrap items-center justify-end gap-1.5 pb-3">
+            <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 pb-3">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -615,7 +615,16 @@ export default function VendorPageClient({
                       variant="outline"
                       size="icon"
                       className="h-9 w-9"
-                      onClick={() => window.open(vendor.website || '#', '_blank')}
+                      onClick={() => {
+                        if (vendor.website) {
+                          window.open(
+                            vendor.website.startsWith('http')
+                              ? vendor.website
+                              : `https://${vendor.website}`,
+                            '_blank'
+                          )
+                        }
+                      }}
                       aria-label="Website"
                     >
                       <ExternalLink className="h-4 w-4" />

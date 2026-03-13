@@ -19,6 +19,7 @@ import {
   EventMemoryService,
   EventVendorService,
   GuestUploadService,
+  PlannerInsightsService,
 } from './services';
 import { VibeQuizService } from './services/vibe-quiz.service';
 import { WeddingIdentityService } from './services/wedding-identity.service';
@@ -67,6 +68,7 @@ import { PlanningRemindersTask } from './tasks/planning-reminders.task';
     EventMemoryService,
     EventVendorService,
     GuestUploadService,
+    PlannerInsightsService,
     VibeQuizService,
     WeddingIdentityService,
     WhatsAppService,
@@ -109,6 +111,7 @@ import { PlanningRemindersTask } from './tasks/planning-reminders.task';
     EventMemoryService,
     EventVendorService,
     GuestUploadService,
+    PlannerInsightsService,
     VibeQuizService,
     WeddingIdentityService,
     WhatsAppService,

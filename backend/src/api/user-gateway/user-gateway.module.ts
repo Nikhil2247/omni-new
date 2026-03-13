@@ -26,6 +26,7 @@ import { LookupsController } from './controllers/lookups.controller';
 import { MessagingController } from './controllers/messaging.controller';
 import { VendorFollowsController } from './controllers/vendor-follows.controller';
 import { VendorReviewsController } from './controllers/vendor-reviews.controller';
+import { PlannerInsightsController } from './controllers/planner-insights.controller';
 import { CatalogModule } from '../../domain/catalog/catalog.module';
 import { PlanningModule } from '../../domain/planning/planning.module';
 import { LeadsModule } from '../../domain/leads/leads.module';
@@ -66,6 +67,7 @@ import { AuditService } from 'src/core/audit';
     NotificationsController,
     LookupsController,
     MessagingController,
+    PlannerInsightsController,
     VendorFollowsController,
     VendorReviewsController,
   ],

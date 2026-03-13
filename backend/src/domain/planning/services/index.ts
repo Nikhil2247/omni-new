@@ -14,3 +14,4 @@ export * from './wishlist.service';
 export * from './event-memory.service';
 export * from './event-vendor.service';
 export * from './guest-upload.service';
+export * from './planner-insights.service';
