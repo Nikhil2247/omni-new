@@ -26,7 +26,9 @@
     "migrate:extract": "ts-node scripts/extract-bson-to-json.ts",
     "migrate:mongodb": "ts-node scripts/migrate-mongodb-to-postgres.ts",
     "migrate:full": "npm run migrate:extract && npm run migrate:mongodb",
-    "notifications:clear": "ts-node scripts/clear-all-notifications.ts"
+    "notifications:clear": "ts-node scripts/clear-all-notifications.ts",
+    "blogs:vendor:audit": "ts-node scripts/normalize-vendor-blogs.ts",
+    "blogs:vendor:normalize": "ts-node scripts/normalize-vendor-blogs.ts apply"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
