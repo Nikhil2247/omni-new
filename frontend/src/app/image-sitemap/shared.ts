@@ -1,5 +1,10 @@
 const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com').replace(/\/$/, '')
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '')
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://backend.omnicassion.com/api'
+    : 'http://localhost:3001/api')
+).replace(/\/$/, '')
 
 export const IMAGE_SITEMAP_PAGE_SIZE = 1000
 export const IMAGE_SITEMAP_REVALIDATE_SECONDS = 3600
@@ -85,12 +90,21 @@ export async function fetchImageSitemapPage(
   page: number,
   limit = IMAGE_SITEMAP_PAGE_SIZE,
 ): Promise<PaginatedImageSitemapData> {
-  const response = await fetch(
-    `${API_URL}/public/discovery/media?page=${page}&limit=${limit}&orderBy=newest`,
-    {
-      next: { revalidate: IMAGE_SITEMAP_REVALIDATE_SECONDS },
-    },
-  )
+  let response: Response
+  try {
+    response = await fetch(
+      `${API_URL}/public/discovery/media?page=${page}&limit=${limit}&orderBy=newest`,
+      {
+        next: { revalidate: IMAGE_SITEMAP_REVALIDATE_SECONDS },
+      },
+    )
+  } catch {
+    return {
+      entries: [],
+      totalPages: 0,
+      total: 0,
+    }
+  }
 
   if (!response.ok) {
     return {
