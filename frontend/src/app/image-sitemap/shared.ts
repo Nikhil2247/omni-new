@@ -181,13 +181,11 @@ export function buildImageSitemapXml(entries: ImageSitemapEntry[]): string {
 }
 
 export function buildImageSitemapIndexXml(pageCount: number): string {
-  if (pageCount <= 0) {
-    return `${XML_HEADER}\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>`
-  }
+  const safePageCount = Math.max(1, pageCount)
 
   const now = new Date().toISOString()
 
-  const rows = Array.from({ length: pageCount }, (_, index) => {
+  const rows = Array.from({ length: safePageCount }, (_, index) => {
     const page = index + 1
     return [
       '  <sitemap>',
