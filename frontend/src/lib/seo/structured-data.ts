@@ -26,7 +26,7 @@ export function createOrganizationSchema(): OrganizationSchema {
     name: 'Omnicassion',
     url: SITE_URL,
     logo: `${SITE_URL}/icons/icon-512x512.png`,
-    description: 'India\'s Premier Event Planning Platform - Connecting event planners with verified vendors',
+    description: 'India\'s premier all-in-one planning and social platform for weddings, celebrations, and events.',
     address: {
       '@type': 'PostalAddress',
       addressCountry: 'IN',
@@ -59,7 +59,7 @@ export function createWebsiteSchema(): WebsiteSchema {
     '@type': 'WebSite',
     name: 'Omnicassion',
     url: SITE_URL,
-    description: 'India\'s Premier Event Planning Platform',
+    description: 'India\'s premier all-in-one planning and social platform',
     potentialAction: {
       '@type': 'SearchAction',
       target: `${SITE_URL}/vendors?search={search_term_string}`,

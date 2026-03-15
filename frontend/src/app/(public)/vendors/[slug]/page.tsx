@@ -255,8 +255,8 @@ export async function generateMetadata(
   }
 
   const title = vendor.category?.name
-    ? `${vendor.businessName} | ${vendor.category.name} Vendor`
-    : `${vendor.businessName} | Vendor`
+    ? `${vendor.businessName} | ${vendor.category.name} Services${((vendor as VendorWithSeoFields).address?.city ? ` in ${(vendor as VendorWithSeoFields).address?.city}` : '')}, Portfolio & Reviews`
+    : `${vendor.businessName} | Event Services, Portfolio & Reviews`
 
   const description = buildDescription(vendor)
   const extendedVendor = vendor as VendorWithSeoFields

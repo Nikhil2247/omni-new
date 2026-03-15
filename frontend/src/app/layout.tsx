@@ -20,14 +20,17 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = generateMetadata({
-  title: "Omnicassion - India's Premier Event Planning Platform",
+  title: "Omnicassion - India's Premier All-in-One Planning and Social Platform",
   description:
-    "Plan your perfect wedding, corporate event, party, or celebration with Omnicassion. Discover 10,000+ verified vendors, get instant quotes, compare prices, and book with confidence. India's most efficient, visual-first event planning ecosystem.",
+    "Omnicassion is India's premier all-in-one planning and social platform for weddings, celebrations, and events. Discover verified professionals, compare services, manage planning, and connect socially in one unified experience.",
   keywords: [
+    "all-in-one planning and social platform India",
+    "India event and social planning platform",
     "event planning India",
     "wedding planning",
     "vendor booking",
     "event management platform",
+    "social planning platform",
     "wedding vendors India",
     "party planning services",
     "corporate event management",
@@ -77,31 +80,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             href={new URL(process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL).origin}
           />
         )}
-
-        {/* Unregister any existing service workers to clear cache issues */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                  for (let registration of registrations) {
-                    registration.unregister();
-                    console.log('Service Worker unregistered');
-                  }
-                });
-                // Clear all caches
-                if ('caches' in window) {
-                  caches.keys().then(function(names) {
-                    for (let name of names) {
-                      caches.delete(name);
-                      console.log('Cache deleted:', name);
-                    }
-                  });
-                }
-              }
-            `,
-          }}
-        />
       </head>
       <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
         <ErrorBoundaryWrapper>

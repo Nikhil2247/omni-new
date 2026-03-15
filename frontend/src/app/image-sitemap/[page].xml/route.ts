@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import {
   buildImageSitemapXml,
   fetchImageSitemapPage,
@@ -8,13 +8,15 @@ import {
 
 export const revalidate = IMAGE_SITEMAP_REVALIDATE_SECONDS
 
-type RouteParams = {
-  params: Promise<{ page: string }>
+type RouteContext = {
+  params: Promise<Record<string, string | string[] | undefined>>
 }
 
-export async function GET(_: Request, { params }: RouteParams): Promise<NextResponse> {
-  const { page } = await params
-  const parsedPage = Number.parseInt(page, 10)
+export async function GET(_: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+  const resolvedParams = await params
+  const rawPage = resolvedParams.page
+  const page = Array.isArray(rawPage) ? rawPage[0] : rawPage
+  const parsedPage = Number.parseInt(page || '', 10)
 
   if (!Number.isFinite(parsedPage) || parsedPage < 1) {
     return new NextResponse('Invalid sitemap page', { status: 400 })
