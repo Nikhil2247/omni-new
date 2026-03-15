@@ -104,6 +104,12 @@ const nextConfig: NextConfig = {
         source: '/wedding-guest-list-manager',
         destination: '/wedding-guest-list',
       },
+      // Map image-sitemap/N.xml → image-sitemap/N because Next.js App Router
+      // does not register partial dynamic segments with dots in folder names (e.g. [page].xml).
+      {
+        source: '/image-sitemap/:page(\\d+)\\.xml',
+        destination: '/image-sitemap/:page',
+      },
     ];
   },
 
