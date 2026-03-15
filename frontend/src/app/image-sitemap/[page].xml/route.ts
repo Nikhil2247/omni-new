@@ -6,14 +6,14 @@ import {
   IMAGE_SITEMAP_REVALIDATE_SECONDS,
 } from '../shared'
 
-export const revalidate = IMAGE_SITEMAP_REVALIDATE_SECONDS
+export const revalidate = 3600
 
 type RouteContext = {
-  params: Promise<Record<string, string | string[] | undefined>>
+  params?: Promise<Record<string, string | string[] | undefined>>
 }
 
-export async function GET(_: NextRequest, { params }: RouteContext): Promise<NextResponse> {
-  const resolvedParams = await params
+export async function GET(_: NextRequest, context: RouteContext = {}): Promise<NextResponse> {
+  const resolvedParams = context.params ? await context.params : {}
   const rawPage = resolvedParams.page
   const page = Array.isArray(rawPage) ? rawPage[0] : rawPage
   const parsedPage = Number.parseInt(page || '', 10)

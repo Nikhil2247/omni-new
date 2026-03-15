@@ -6,7 +6,7 @@ import {
   IMAGE_SITEMAP_REVALIDATE_SECONDS,
 } from '../image-sitemap/shared'
 
-export const revalidate = IMAGE_SITEMAP_REVALIDATE_SECONDS
+export const revalidate = 3600
 
 export async function GET(): Promise<NextResponse> {
   const firstPage = await fetchImageSitemapPage(1, IMAGE_SITEMAP_PAGE_SIZE)
