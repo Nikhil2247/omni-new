@@ -380,7 +380,7 @@ export class VendorProfileService {
     this.logger.debug(`Finding vendor profile by slug: ${slug}`);
 
     const vendorProfile = await this.cacheAside.get(
-      `vendor:slug:v3:${slug}`,
+      `vendor:slug:v4:${slug}`,
       () =>
         this.vendorProfileRepository.findBySlug(slug, {
           category: true,
@@ -401,13 +401,11 @@ export class VendorProfileService {
             },
           },
           portfolios: {
-            take: 12,
             orderBy: { createdAt: 'desc' },
             include: {
               mediaItems: {
                 where: { isApproved: true },
                 orderBy: { sortOrder: 'asc' },
-                take: 20,
               },
             },
           },
