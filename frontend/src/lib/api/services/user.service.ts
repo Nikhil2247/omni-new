@@ -9,10 +9,14 @@ export interface UserProfileResponse {
   firstName: string | null
   lastName: string | null
   phone?: string | null
+  avatarUrl?: string | null
   role?: string
   roles?: string[]
   emailVerified?: boolean
   twoFactorEnabled?: boolean
+  hasPassword?: boolean
+  authProvider?: 'local' | 'google'
+  createdAt?: string
 }
 
 export interface UpdateProfilePayload {
@@ -23,6 +27,10 @@ export interface UpdateProfilePayload {
 
 export interface ChangePasswordPayload {
   currentPassword: string
+  newPassword: string
+}
+
+export interface SetPasswordPayload {
   newPassword: string
 }
 
@@ -80,6 +88,10 @@ export const userService = {
 
   changePassword: async (payload: ChangePasswordPayload): Promise<void> => {
     await apiClient.post(API_ENDPOINTS.USER.ACCOUNT.PASSWORD, payload)
+  },
+
+  setPassword: async (payload: SetPasswordPayload): Promise<void> => {
+    await apiClient.post(API_ENDPOINTS.USER.ACCOUNT.SET_PASSWORD, payload)
   },
 
   getNotificationPreferences: async (): Promise<NotificationPreferences> => {

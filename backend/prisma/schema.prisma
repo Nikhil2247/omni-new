@@ -41,6 +41,7 @@ model User {
   phone         String?
   avatarUrl     String?   @map("avatar_url")
   status        UserStatus @default(PENDING)
+  authProvider  AuthProvider @default(LOCAL) @map("auth_provider")
 
   // Email Verification
   emailVerified   Boolean   @default(false) @map("email_verified")
@@ -93,6 +94,7 @@ model User {
   @@index([email])
   @@index([status])
   @@index([emailVerified])
+  @@index([authProvider])
   @@map("users")
   @@schema("public")
 }
@@ -103,6 +105,14 @@ enum UserStatus {
   ACTIVE     // Account active and verified
   SUSPENDED  // Temporarily disabled by admin
   DELETED    // Soft deleted (data retained for compliance)
+
+  @@schema("public")
+}
+
+/// AuthProvider - How user authenticated/registered
+enum AuthProvider {
+  LOCAL      // Email/password registration
+  GOOGLE     // Google OAuth
 
   @@schema("public")
 }

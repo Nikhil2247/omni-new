@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   NotFoundException,
   Patch,
@@ -17,7 +19,7 @@ import {
 import { PrismaService } from '../../../core/database/prisma.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { TwoFactorService } from '../../../core/auth/two-factor.service';
-import { ChangePasswordDto } from '../../../core/auth/dto/password.dto';
+import { ChangePasswordDto, SetPasswordDto } from '../../../core/auth/dto/password.dto';
 import {
   NotificationPreferencesDto,
   TwoFactorCodeDto,
@@ -125,6 +127,47 @@ export class AccountController {
     return { success: true };
   }
 
+  @Post('set-password')
+  async setPassword(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: SetPasswordDto,
+  ) {
+    // Verify user is a Google OAuth user without a real password
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { authProvider: true, passwordChangedAt: true },
+    });
+
+    if (!dbUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (dbUser.authProvider !== 'GOOGLE') {
+      throw new ForbiddenException(
+        'This endpoint is only for users who signed up with Google',
+      );
+    }
+
+    // If user already has a password set, they should use change-password instead
+    if (dbUser.passwordChangedAt !== null) {
+      throw new BadRequestException(
+        'You already have a password set. Please use the change password option.',
+      );
+    }
+
+    // Set the new password
+    const hashedPassword = await this.authService.hashPassword(dto.newPassword);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: hashedPassword,
+        passwordChangedAt: new Date(),
+      },
+    });
+
+    return { success: true, message: 'Password set successfully. You can now login with email and password.' };
+  }
+
   @Get('notification-preferences')
   async getNotificationPreferences(@CurrentUser() user: CurrentUserData) {
     const cacheKey = this.getNotificationPreferencesCacheKey(user.id);
@@ -200,16 +243,24 @@ export class AccountController {
 
     const roles = user.userRoles.map((assignment) => assignment.role.name);
 
+    // Determine if user has a real password set
+    // Google OAuth users have a random hash but authProvider is GOOGLE
+    const hasPassword = user.authProvider === 'LOCAL' || user.passwordChangedAt !== null;
+
     return {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      avatarUrl: user.avatarUrl,
       role: roles[0],
       roles,
       emailVerified: user.emailVerified,
       twoFactorEnabled: user.twoFactorEnabled,
+      hasPassword,
+      authProvider: user.authProvider.toLowerCase(),
+      createdAt: user.createdAt.toISOString(),
     };
   }
 

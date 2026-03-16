@@ -13,6 +13,25 @@ export interface Category {
   icon?: string
 }
 
+export interface VendorAddress {
+  id: string
+  addressLine1?: string
+  addressLine2?: string
+  postalCode?: string
+  city?: {
+    id: string
+    name: string
+    state?: {
+      id: string
+      name: string
+      country?: {
+        id: string
+        name: string
+      }
+    }
+  }
+}
+
 export interface VendorProfile {
   id: string
   userId: string
@@ -28,6 +47,7 @@ export interface VendorProfile {
   contactPhone?: string
   website?: string
   addressId?: string
+  address?: VendorAddress
   serviceRadius?: number
   status: VendorStatus
   leadCount: number

@@ -38,6 +38,7 @@ const CONTENT_EDITOR_ROLES = [
   'ADMIN_SYSTEM',
   'MARKETING_SERVICES_ADMIN',
   'CONTENT_WRITER',
+  'USER'
 ];
 
 @Controller('content')

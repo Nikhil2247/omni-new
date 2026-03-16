@@ -247,8 +247,10 @@ export const API_ENDPOINTS = {
     WISHLIST_ITEM_BY_ID: (itemId: string) => `/user/wishlists/items/${itemId}`,
     ACCOUNT: {
       PROFILE: '/user/account/profile',
+      AVATAR: '/user/account/avatar',
       ADDRESSES: '/user/account/addresses',
       PASSWORD: '/user/account/password',
+      SET_PASSWORD: '/user/account/set-password',
       NOTIFICATIONS: '/user/account/notification-preferences',
       TWO_FACTOR_ENABLE: '/user/account/2fa/enable',
       TWO_FACTOR_VERIFY: '/user/account/2fa/verify',

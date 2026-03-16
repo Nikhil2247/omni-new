@@ -461,6 +461,7 @@ export class AuthService {
           firstName: tokenInfo.given_name || fallbackFirstName || null,
           lastName: tokenInfo.family_name || fallbackLastName,
           status: 'ACTIVE',
+          authProvider: 'GOOGLE',
           emailVerified: true,
           emailVerifiedAt: new Date(),
           userRoles: {

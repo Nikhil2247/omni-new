@@ -146,6 +146,18 @@ export class VendorProfileRepository extends BaseRepository<
             select: {
               id: true,
               name: true,
+              state: {
+                select: {
+                  id: true,
+                  name: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -274,6 +286,18 @@ export class VendorProfileRepository extends BaseRepository<
               select: {
                 id: true,
                 name: true,
+                state: {
+                  select: {
+                    id: true,
+                    name: true,
+                    country: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
@@ -416,6 +440,18 @@ export class VendorProfileRepository extends BaseRepository<
               select: {
                 id: true,
                 name: true,
+                state: {
+                  select: {
+                    id: true,
+                    name: true,
+                    country: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },

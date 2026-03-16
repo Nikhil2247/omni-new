@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { userService, type UpdateProfilePayload, type ChangePasswordPayload, type NotificationPreferences, type Verify2FAPayload } from '@/lib/api/services/user.service'
+import { userService, type UpdateProfilePayload, type ChangePasswordPayload, type SetPasswordPayload, type NotificationPreferences, type Verify2FAPayload } from '@/lib/api/services/user.service'
 import { toast } from 'sonner'
 
 /**
@@ -31,6 +31,24 @@ export function useChangePassword() {
     },
     onError: (error: any) => {
       toast.error(error?.message || 'Failed to change password')
+    },
+  })
+}
+
+/**
+ * Hook to set password (for OAuth users who don't have a password)
+ */
+export function useSetPassword() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: SetPasswordPayload) => userService.setPassword(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] })
+      toast.success('Password set successfully. You can now login with email and password.')
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Failed to set password')
     },
   })
 }
