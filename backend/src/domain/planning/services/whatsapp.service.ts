@@ -83,6 +83,7 @@ export class WhatsAppService {
         guestId: g.id,
         error: 'No phone number',
       })),
+      guestlistId, // Include guestlistId for usage tracking
     };
   }
 
@@ -102,6 +103,7 @@ export class WhatsAppService {
         sent: 0,
         failed: 0,
         errors: [],
+        guestlistId: dto.guestlistId,
       };
     }
 
@@ -131,6 +133,7 @@ export class WhatsAppService {
       sent: count,
       failed: 0,
       errors: [],
+      guestlistId: dto.guestlistId, // Include guestlistId for usage tracking
     };
   }
 

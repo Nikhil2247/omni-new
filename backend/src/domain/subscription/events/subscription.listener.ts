@@ -1,13 +1,14 @@
 // ============================================================================
 // SUBSCRIPTION EVENT LISTENER - Subscription Domain
 // ============================================================================
+// Handles non-notification subscription events (analytics, state updates, etc.)
+// Notification handling is delegated to SubscriptionNotificationListener
+// ============================================================================
 
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
   SubscriptionEvents,
-  SubscriptionCreatedPayload,
-  SubscriptionCancelledPayload,
   PaymentSucceededPayload,
   PaymentFailedPayload,
   UsageLimitReachedPayload,
@@ -45,73 +46,9 @@ export class SubscriptionEventListener {
     return vendorProfile?.userId ?? null;
   }
 
-  @OnEvent(SubscriptionEvents.CREATED)
-  async handleSubscriptionCreated(payload: SubscriptionCreatedPayload) {
-    this.logger.log(`Subscription created: ${payload.subscriptionId}`);
-
-    const userId = await this.getVendorUserIdByVendorProfile(
-      payload.vendorProfileId,
-    );
-
-    if (userId) {
-      await this.notificationService.createNotification({
-        userId,
-        type: NotificationType.SYSTEM_ANNOUNCEMENT,
-        title: 'Subscription activated',
-        message:
-          'Your subscription is now active. Enjoy your premium features!',
-        data: {
-          subscriptionId: payload.subscriptionId,
-          planId: payload.planId,
-        },
-        actionUrl: '/business/profile',
-      });
-    }
-  }
-
-  @OnEvent(SubscriptionEvents.CANCELLED)
-  async handleSubscriptionCancelled(payload: SubscriptionCancelledPayload) {
-    this.logger.log(`Subscription cancelled: ${payload.subscriptionId}`);
-
-    const userId = await this.getVendorUserIdByVendorProfile(
-      payload.vendorProfileId,
-    );
-
-    if (userId) {
-      await this.notificationService.createNotification({
-        userId,
-        type: NotificationType.SYSTEM_ANNOUNCEMENT,
-        title: 'Subscription cancelled',
-        message: payload.immediate
-          ? 'Your subscription has been cancelled and access is ending immediately.'
-          : 'Your subscription will end at the close of your billing period.',
-        data: {
-          subscriptionId: payload.subscriptionId,
-          reason: payload.reason,
-        },
-        actionUrl: '/business/profile',
-      });
-    }
-  }
-
-  @OnEvent(SubscriptionEvents.RENEWED)
-  async handleSubscriptionRenewed(payload: { subscriptionId: string }) {
-    this.logger.log(`Subscription renewed: ${payload.subscriptionId}`);
-
-    const userId = await this.getVendorUserIdBySubscription(
-      payload.subscriptionId,
-    );
-    if (userId) {
-      await this.notificationService.createNotification({
-        userId,
-        type: NotificationType.SYSTEM_ANNOUNCEMENT,
-        title: 'Subscription renewed',
-        message: 'Your subscription has been renewed successfully.',
-        data: { subscriptionId: payload.subscriptionId },
-        actionUrl: '/business/profile',
-      });
-    }
-  }
+  // ============================================================================
+  // PAYMENT EVENTS
+  // ============================================================================
 
   @OnEvent(SubscriptionEvents.PAYMENT_SUCCEEDED)
   async handlePaymentSucceeded(payload: PaymentSucceededPayload) {
@@ -154,7 +91,7 @@ export class SubscriptionEventListener {
     if (userId) {
       await this.notificationService.createNotification({
         userId,
-        type: NotificationType.SYSTEM_ANNOUNCEMENT,
+        type: NotificationType.SUBSCRIPTION_PAYMENT_FAILED,
         title: 'Payment failed',
         message:
           'We could not process your recent payment. Please update your billing details.',
@@ -167,6 +104,10 @@ export class SubscriptionEventListener {
       });
     }
   }
+
+  // ============================================================================
+  // USAGE EVENTS
+  // ============================================================================
 
   @OnEvent(SubscriptionEvents.USAGE_LIMIT_REACHED)
   async handleUsageLimitReached(payload: UsageLimitReachedPayload) {
@@ -193,32 +134,9 @@ export class SubscriptionEventListener {
     }
   }
 
-  @OnEvent(SubscriptionEvents.TRIAL_ENDING)
-  async handleTrialEnding(payload: {
-    subscriptionId: string;
-    daysLeft: number;
-  }) {
-    this.logger.log(
-      `Trial ending: ${payload.subscriptionId} (${payload.daysLeft} days left)`,
-    );
-
-    const userId = await this.getVendorUserIdBySubscription(
-      payload.subscriptionId,
-    );
-    if (userId) {
-      await this.notificationService.createNotification({
-        userId,
-        type: NotificationType.SYSTEM_ANNOUNCEMENT,
-        title: 'Trial ending soon',
-        message: `Your trial ends in ${payload.daysLeft} days. Upgrade to keep access.`,
-        data: {
-          subscriptionId: payload.subscriptionId,
-          daysLeft: payload.daysLeft,
-        },
-        actionUrl: '/business/profile',
-      });
-    }
-  }
+  // ============================================================================
+  // INVOICE EVENTS
+  // ============================================================================
 
   @OnEvent(SubscriptionEvents.INVOICE_OVERDUE)
   async handleInvoiceOverdue(payload: {

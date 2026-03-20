@@ -49,7 +49,8 @@ import {
 } from "@/components/ui/accordion";
 import { VendorCard } from "@/components/features/vendors/vendor-card";
 import { useFeaturedVendors } from "@/hooks/queries/use-public-vendors";
-import { useBlogPosts } from "@/hooks/queries/use-marketing";
+import { usePublicBlogPosts } from "@/hooks/queries/use-public-blog";
+import { FeaturedVendors, BannerAd, PromotedAlbums } from "@/components/ads";
 
 // ─── Lenis Smooth Scroll ─────────────────────────────────────────────────────
 
@@ -638,7 +639,7 @@ function InspireSection() {
 // ─── Top Blogs Section ───────────────────────────────────────────────────────
 
 function TopBlogsSection() {
-  const { data: blogsData, isLoading } = useBlogPosts({ status: "PUBLISHED", limit: 3, sortBy: "mostViewed" });
+  const { data: blogsData, isLoading } = usePublicBlogPosts({ status: "PUBLISHED", limit: 3, sortBy: "mostViewed" });
   const blogs = blogsData?.data || [];
   if (isLoading || blogs.length === 0) return null;
 
@@ -813,6 +814,44 @@ function JoinAsVendorSection() {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
+// ─── Sponsored Banner Section ─────────────────────────────────────────────────
+
+function SponsoredBannerSection() {
+  return (
+    <section className="bg-background py-8">
+      <div className="mx-auto max-w-7xl px-6">
+        <BannerAd placement="homepage" variant="large" />
+      </div>
+    </section>
+  );
+}
+
+// ─── Boosted Vendors Section (Paid Promotions) ────────────────────────────────
+
+function BoostedVendorsSection() {
+  return (
+    <FeaturedVendors
+      limit={4}
+      title="Sponsored Vendors"
+      subtitle="Premium vendors ready to make your event special"
+      className="bg-gradient-to-br from-primary/5 via-background to-background"
+    />
+  );
+}
+
+// ─── Promoted Albums Section ──────────────────────────────────────────────────
+
+function PromotedAlbumsSection() {
+  return (
+    <PromotedAlbums
+      limit={6}
+      title="Trending Portfolios"
+      subtitle="Discover stunning work from top vendors"
+      className="bg-muted/30"
+    />
+  );
+}
+
 export default function Home() {
   useSmoothScroll();
 
@@ -820,8 +859,11 @@ export default function Home() {
     <PublicLayout>
       <HeroSection />
       <StartPlanningSection />
+      <SponsoredBannerSection />
       <ToolsSection />
+      <BoostedVendorsSection />
       <FeaturedVendorsSection />
+      <PromotedAlbumsSection />
       <InspireSection />
       <TopBlogsSection />
       <FAQSection />

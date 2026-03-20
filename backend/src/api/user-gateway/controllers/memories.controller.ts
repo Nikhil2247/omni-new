@@ -13,12 +13,22 @@ import { CreateEventMemoryDto } from '../../../domain/planning/dto/event-memory.
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../core/auth/guards/roles.guard';
 import { UserAccess } from '../../../core/auth/decorators/roles.decorator';
+import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
+import { UserSubscriptionGuard } from '../../../domain/subscription/guards/user-subscription.guard';
+import {
+  CheckMemoryUploadsLimit,
+  RequireBasicPlan,
+} from '../../../domain/subscription/decorators/user-subscription.decorators';
+import { UserUsageService } from '../../../domain/subscription/services/user-usage.service';
 
 @Controller('memories')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, UserSubscriptionGuard)
 @UserAccess()
 export class MemoriesController {
-  constructor(private readonly memoryService: EventMemoryService) {}
+  constructor(
+    private readonly memoryService: EventMemoryService,
+    private readonly userUsageService: UserUsageService,
+  ) {}
 
   @Post()
   create(@Body() dto: CreateEventMemoryDto) {

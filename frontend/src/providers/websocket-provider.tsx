@@ -8,7 +8,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { useAuthStore } from '@/store/auth-store'
-import { NotificationClient, Notification } from '@/lib/websocket/notification-client'
+import { NotificationClient, Notification, KycEvent, KycEventCallback } from '@/lib/websocket/notification-client'
 import { toast } from 'sonner'
 
 interface WebSocketContextValue {
@@ -17,6 +17,10 @@ interface WebSocketContextValue {
   markAsRead: (notificationIds: string[]) => void
   subscribeToEvent: (eventId: string) => void
   unsubscribeFromEvent: (eventId: string) => void
+  // Ops KYC real-time
+  subscribeToOpsKyc: () => void
+  unsubscribeFromOpsKyc: () => void
+  onKycEvent: (callback: KycEventCallback) => () => void
 }
 
 const WebSocketContext = createContext<WebSocketContextValue | null>(null)
@@ -98,6 +102,18 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     NotificationClient.unsubscribeFromEvent(eventId)
   }
 
+  const subscribeToOpsKyc = () => {
+    NotificationClient.subscribeToOpsKyc()
+  }
+
+  const unsubscribeFromOpsKyc = () => {
+    NotificationClient.unsubscribeFromOpsKyc()
+  }
+
+  const onKycEvent = (callback: KycEventCallback) => {
+    return NotificationClient.onKycEvent(callback)
+  }
+
   return (
     <WebSocketContext.Provider
       value={{
@@ -106,6 +122,9 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         markAsRead,
         subscribeToEvent,
         unsubscribeFromEvent,
+        subscribeToOpsKyc,
+        unsubscribeFromOpsKyc,
+        onKycEvent,
       }}
     >
       {children}

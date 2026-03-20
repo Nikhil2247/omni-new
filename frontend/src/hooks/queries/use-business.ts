@@ -22,6 +22,22 @@ import type {
   BlockedDate,
   CreateBlockedDateRequest,
   LeadStatus,
+  VendorKYC,
+  KYCDocument,
+  CreateKYCRequest,
+  DocumentType,
+  DocumentTypesResponse,
+  VendorContract,
+  ContractResponse,
+  ContractTermsResponse,
+  UpdateBankDetailsRequest,
+  PayoutRecord,
+  VendorConsent,
+  ConsentStatusResponse,
+  ConsentTypesResponse,
+  GiveConsentRequest,
+  BulkConsentRequest,
+  WithdrawConsentRequest,
 } from '@/lib/api/types/business.types'
 import type { Timeline } from '@/lib/api/types/timeline.types'
 
@@ -45,10 +61,20 @@ export const businessKeys = {
   task: (id: string) => [...businessKeys.all, 'task', id] as const,
   calendar: (eventId: string) => [...businessKeys.all, 'calendar', eventId] as const,
   blockedDates: (vendorProfileId: string) => [...businessKeys.all, 'blocked-dates', vendorProfileId] as const,
+  kyc: () => [...businessKeys.all, 'kyc'] as const,
+  kycDocuments: () => [...businessKeys.all, 'kyc-documents'] as const,
+  kycDocumentTypes: () => [...businessKeys.all, 'kyc-document-types'] as const,
+  contract: () => [...businessKeys.all, 'contract'] as const,
+  contractTerms: () => [...businessKeys.all, 'contract-terms'] as const,
+  payouts: () => [...businessKeys.all, 'payouts'] as const,
+  consents: () => [...businessKeys.all, 'consents'] as const,
+  consentStatus: () => [...businessKeys.all, 'consent-status'] as const,
+  consentTypes: () => [...businessKeys.all, 'consent-types'] as const,
+  categories: () => [...businessKeys.all, 'categories'] as const,
 }
 
 // ==================== Profile Hooks ====================
-export function useBusinessProfile() {
+export function useBusinessProfile(options?: { enabled?: boolean }) {
   return useQuery<VendorProfile>({
     queryKey: businessKeys.profile(),
     queryFn: async () => {
@@ -57,6 +83,7 @@ export function useBusinessProfile() {
     },
     staleTime: 60_000,
     retry: false,
+    enabled: options?.enabled ?? true,
   })
 }
 
@@ -67,6 +94,14 @@ export function useCreateBusinessProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: businessKeys.profile() })
     },
+  })
+}
+
+export function useVendorCategories() {
+  return useQuery({
+    queryKey: businessKeys.categories(),
+    queryFn: () => businessService.getCategories(),
+    staleTime: Infinity, // Categories don't change often
   })
 }
 
@@ -545,6 +580,211 @@ export function useSubmitTaskProof() {
       businessService.submitTaskProof(id, files, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: businessKeys.all })
+    },
+  })
+}
+
+// ==================== KYC Hooks ====================
+export function useBusinessKyc(options?: { enabled?: boolean }) {
+  return useQuery<VendorKYC>({
+    queryKey: businessKeys.kyc(),
+    queryFn: async () => {
+      const response = await businessService.getMyKyc()
+      return response.data
+    },
+    retry: false,
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useKycDocuments() {
+  return useQuery<KYCDocument[]>({
+    queryKey: businessKeys.kycDocuments(),
+    queryFn: async () => {
+      const response = await businessService.getKycDocuments()
+      return response.data || []
+    },
+  })
+}
+
+export function useKycDocumentTypes() {
+  return useQuery<DocumentTypesResponse>({
+    queryKey: businessKeys.kycDocumentTypes(),
+    queryFn: async () => {
+      return businessService.getKycDocumentTypes()
+    },
+    staleTime: Infinity, // Document types don't change
+  })
+}
+
+export function useCreateOrUpdateKyc() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateKYCRequest) => businessService.createOrUpdateKyc(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.kyc() })
+    },
+  })
+}
+
+export function useSubmitKyc() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => businessService.submitKyc(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.kyc() })
+      queryClient.invalidateQueries({ queryKey: businessKeys.profile() })
+    },
+  })
+}
+
+export function useUploadKycDocument() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ file, type, notes }: { file: File; type: DocumentType; notes?: string }) =>
+      businessService.uploadKycDocument(file, type, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.kycDocuments() })
+      queryClient.invalidateQueries({ queryKey: businessKeys.kyc() })
+    },
+  })
+}
+
+export function useDeleteKycDocument() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (documentId: string) => businessService.deleteKycDocument(documentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.kycDocuments() })
+      queryClient.invalidateQueries({ queryKey: businessKeys.kyc() })
+    },
+  })
+}
+
+// ==================== Contract Hooks ====================
+export function useBusinessContract(options?: { enabled?: boolean }) {
+  return useQuery<ContractResponse>({
+    queryKey: businessKeys.contract(),
+    queryFn: async () => {
+      return businessService.getMyContract()
+    },
+    retry: false,
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useContractTerms() {
+  return useQuery<ContractTermsResponse>({
+    queryKey: businessKeys.contractTerms(),
+    queryFn: async () => {
+      return businessService.getContractTerms()
+    },
+    retry: false,
+  })
+}
+
+export function useVendorPayouts() {
+  return useQuery<PayoutRecord[]>({
+    queryKey: businessKeys.payouts(),
+    queryFn: async () => {
+      const response = await businessService.getMyPayouts()
+      return response.payouts || []
+    },
+  })
+}
+
+export function useUpdateBankDetails() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: UpdateBankDetailsRequest) =>
+      businessService.updateBankDetails(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.contract() })
+    },
+  })
+}
+
+export function useGenerateContract() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => businessService.generateContract(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.contract() })
+    },
+  })
+}
+
+export function useSignContract() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => businessService.signContract(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.contract() })
+      queryClient.invalidateQueries({ queryKey: businessKeys.profile() })
+    },
+  })
+}
+
+// ==================== Consent Hooks ====================
+export function useVendorConsents() {
+  return useQuery<VendorConsent[]>({
+    queryKey: businessKeys.consents(),
+    queryFn: async () => {
+      const response = await businessService.getMyConsents()
+      return response.consents || []
+    },
+  })
+}
+
+export function useConsentStatus(options?: { enabled?: boolean }) {
+  return useQuery<ConsentStatusResponse>({
+    queryKey: businessKeys.consentStatus(),
+    queryFn: async () => {
+      return businessService.getConsentStatus()
+    },
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useRequiredConsentTypes() {
+  return useQuery<ConsentTypesResponse>({
+    queryKey: businessKeys.consentTypes(),
+    queryFn: async () => {
+      return businessService.getRequiredConsentTypes()
+    },
+    staleTime: Infinity, // Consent types don't change often
+  })
+}
+
+export function useGiveConsent() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: GiveConsentRequest) => businessService.giveConsent(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.consents() })
+      queryClient.invalidateQueries({ queryKey: businessKeys.consentStatus() })
+    },
+  })
+}
+
+export function useGiveConsentsBulk() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: BulkConsentRequest) => businessService.giveConsentsBulk(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.consents() })
+      queryClient.invalidateQueries({ queryKey: businessKeys.consentStatus() })
+    },
+  })
+}
+
+export function useWithdrawConsent() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: WithdrawConsentRequest) => businessService.withdrawConsent(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.consents() })
+      queryClient.invalidateQueries({ queryKey: businessKeys.consentStatus() })
     },
   })
 }

@@ -218,6 +218,28 @@ export class SubscriptionService {
     return updated;
   }
 
+  /**
+   * Get usage details for a subscription
+   * Returns usage records for metered features
+   */
+  async getUsageDetails(subscriptionId: string) {
+    const usageRecords = await this.subscriptionRepository.getUsageRecords(subscriptionId);
+
+    return usageRecords.map((record: any) => ({
+      featureKey: record.featureKey,
+      periodStart: record.periodStart,
+      periodEnd: record.periodEnd,
+      usageCount: record.usageCount,
+      usageLimit: record.usageLimit,
+      percentUsed: record.usageLimit
+        ? Math.round((record.usageCount / record.usageLimit) * 100)
+        : null,
+      isOverLimit: record.usageLimit
+        ? record.usageCount > record.usageLimit
+        : false,
+    }));
+  }
+
   async renewSubscription(id: string) {
     const subscription = (await this.findById(id)) as any;
 
@@ -233,6 +255,95 @@ export class SubscriptionService {
 
     this.eventEmitter.emit('subscription.renewed', { subscriptionId: id });
     return updated;
+  }
+
+  // ============================================================================
+  // WEBHOOK SUPPORT METHODS
+  // ============================================================================
+
+  /**
+   * Activate subscription after successful payment (called from webhook)
+   * @param vendorProfileId - Vendor profile ID
+   * @param planId - Plan ID to activate
+   * @param paymentId - Gateway payment ID for reference
+   */
+  async activateAfterPayment(
+    vendorProfileId: string,
+    planId: string,
+    paymentId: string,
+  ) {
+    this.logger.log(
+      `Activating subscription for vendor ${vendorProfileId} after payment ${paymentId}`,
+    );
+
+    // Check if vendor already has a subscription
+    const existing =
+      await this.subscriptionRepository.findActiveByVendorProfile(
+        vendorProfileId,
+      );
+
+    // Verify plan exists
+    const plan = await this.planService.findById(planId);
+    if (!plan) {
+      throw new NotFoundException(`Plan not found: ${planId}`);
+    }
+
+    const planWithPrices = plan as any;
+    // Get the default price (first monthly price or first price)
+    const price =
+      planWithPrices.prices?.find((p: any) => p.billingCycle === 'MONTHLY') ||
+      planWithPrices.prices?.[0];
+
+    if (!price) {
+      throw new BadRequestException('No price found for plan');
+    }
+
+    // Calculate period dates
+    const now = new Date();
+    const periodEnd = this.calculatePeriodEnd(now, price.billingCycle);
+
+    if (existing) {
+      // Update existing subscription (upgrade scenario)
+      this.logger.log(`Upgrading existing subscription ${existing.id}`);
+
+      const updated = await this.subscriptionRepository.update(existing.id, {
+        plan: { connect: { id: planId } },
+        price: { connect: { id: price.id } },
+        status: 'ACTIVE',
+        currentPeriodStart: now,
+        currentPeriodEnd: periodEnd,
+      });
+
+      this.eventEmitter.emit('subscription.activated-after-payment', {
+        subscriptionId: updated.id,
+        vendorProfileId,
+        planId,
+        paymentId,
+        isUpgrade: true,
+      });
+
+      return updated;
+    }
+
+    // Create new subscription
+    const subscription = await this.subscriptionRepository.create({
+      vendorProfile: { connect: { id: vendorProfileId } },
+      plan: { connect: { id: planId } },
+      price: { connect: { id: price.id } },
+      status: 'ACTIVE',
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
+    });
+
+    this.eventEmitter.emit('subscription.activated-after-payment', {
+      subscriptionId: subscription.id,
+      vendorProfileId,
+      planId,
+      paymentId,
+      isUpgrade: false,
+    });
+
+    return subscription;
   }
 
   private calculatePeriodEnd(startDate: Date, billingCycle: string): Date {

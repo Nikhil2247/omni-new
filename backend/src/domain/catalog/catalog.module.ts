@@ -4,9 +4,10 @@
 // Handles vendor profiles, portfolios, services, and discovery
 // ============================================================================
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DatabaseModule } from '../../core/database/database.module';
 import { CacheModule } from '../../infrastructure/cache/cache.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 
 // Services
 import {
@@ -17,6 +18,7 @@ import {
   VendorFollowService,
   VendorBadgeService,
   MediaTagService,
+  VendorClaimService,
 } from './services';
 
 // Repositories
@@ -24,18 +26,20 @@ import {
   VendorProfileRepository,
   PortfolioRepository,
   ServiceRepository,
+  VendorClaimRepository,
 } from './repositories';
 
 // Event Handlers
 import { VendorProfileEventHandler } from './events';
 
 @Module({
-  imports: [DatabaseModule, CacheModule],
+  imports: [DatabaseModule, CacheModule, forwardRef(() => SubscriptionModule)],
   providers: [
     // Repositories
     VendorProfileRepository,
     PortfolioRepository,
     ServiceRepository,
+    VendorClaimRepository,
 
     // Services
     VendorProfileService,
@@ -45,6 +49,7 @@ import { VendorProfileEventHandler } from './events';
     VendorFollowService,
     VendorBadgeService,
     MediaTagService,
+    VendorClaimService,
 
     // Event Handlers
     VendorProfileEventHandler,
@@ -58,10 +63,12 @@ import { VendorProfileEventHandler } from './events';
     VendorFollowService,
     VendorBadgeService,
     MediaTagService,
+    VendorClaimService,
     // Export repositories for direct access if needed
     VendorProfileRepository,
     PortfolioRepository,
     ServiceRepository,
+    VendorClaimRepository,
   ],
 })
 export class CatalogModule {}

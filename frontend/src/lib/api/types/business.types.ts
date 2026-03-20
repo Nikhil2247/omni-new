@@ -505,3 +505,283 @@ export type AgreementStatus =
   | 'LOCKED'
   | 'COMPLETED'
   | 'CANCELLED'
+
+// ============================================================================
+// KYC TYPES
+// ============================================================================
+
+export type KYCStatus =
+  | 'PENDING'
+  | 'SUBMITTED'
+  | 'UNDER_REVIEW'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'EXPIRED'
+
+export type DocumentType =
+  | 'BUSINESS_LICENSE'
+  | 'TAX_CERTIFICATE'
+  | 'INSURANCE'
+  | 'ID_DOCUMENT'
+  | 'ADDRESS_PROOF'
+  | 'OTHER'
+
+export type DocumentStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED'
+
+export interface VendorKYC {
+  id: string
+  vendorProfileId: string
+  legalName: string
+  businessType: string
+  taxId?: string | null
+  status: KYCStatus
+  submittedAt?: string | null
+  approvedAt?: string | null
+  rejectedAt?: string | null
+  rejectionReason?: string | null
+  reviewerId?: string | null
+  reviewedAt?: string | null
+  expiryDate?: string | null
+  createdAt: string
+  updatedAt: string
+  documents?: KYCDocument[]
+}
+
+export interface KYCDocument {
+  id: string
+  kycId: string
+  type: DocumentType
+  url: string
+  fileName?: string | null
+  fileSize?: number | null
+  mimeType?: string | null
+  status: DocumentStatus
+  notes?: string | null
+  reviewerId?: string | null
+  reviewedAt?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateKYCRequest {
+  legalName: string
+  businessType: string
+  taxId?: string
+}
+
+export interface DocumentTypeInfo {
+  type: DocumentType
+  name: string
+  description: string
+  required: boolean
+}
+
+export interface DocumentTypesResponse {
+  required: DocumentTypeInfo[]
+  optional: DocumentTypeInfo[]
+}
+
+// ============================================================================
+// CONTRACT TYPES
+// ============================================================================
+
+export type ContractStatus = 'DRAFT' | 'PENDING_SIGNATURE' | 'ACTIVE' | 'SUSPENDED' | 'TERMINATED' | 'EXPIRED'
+export type PayoutFrequency = 'AFTER_EVENT' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'ON_COMPLETION'
+export type PayoutRecordStatus = 'PENDING' | 'SCHEDULED' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+
+export interface VendorContract {
+  id?: string
+  vendorProfileId?: string
+  contractNumber?: string
+  version?: number
+  commissionRate: number
+  minCommission?: number | null
+  maxCommission?: number | null
+  payoutFrequency: PayoutFrequency
+  payoutHoldDays: number
+  minPayoutAmount: number
+  effectiveDate?: string | null
+  expiryDate?: string | null
+  status: ContractStatus
+  signedByVendor: boolean
+  signedByPlatform: boolean
+  signedAt?: string | null
+  vendorSignedAt?: string | null
+  platformSignedAt?: string | null
+  vendorSignatureIp?: string | null
+  suspendedAt?: string | null
+  suspendedReason?: string | null
+  terminatedAt?: string | null
+  terminatedReason?: string | null
+  bankAccountName?: string | null
+  bankAccountNumber?: string | null
+  bankIfscCode?: string | null
+  bankName?: string | null
+  upiId?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface ContractTerms {
+  commissionRate: number
+  payoutFrequency: PayoutFrequency
+  payoutHoldDays: number
+  minPayoutAmount: number
+  effectiveDate: string
+  expiryDate?: string | null
+  status: ContractStatus
+}
+
+export interface UpdateBankDetailsRequest {
+  bankAccountName?: string
+  bankAccountNumber?: string
+  bankIfscCode?: string
+  bankName?: string
+  upiId?: string
+}
+
+export interface PayoutRecord {
+  id: string
+  contractId: string
+  vendorProfileId: string
+  periodStart: string
+  periodEnd: string
+  grossEarnings: number
+  totalCommission: number
+  netPayout: number
+  eventCount: number
+  status: PayoutRecordStatus
+  scheduledFor?: string | null
+  processedAt?: string | null
+  transactionRef?: string | null
+  paymentMethod?: string | null
+  failedAt?: string | null
+  failureReason?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ContractResponse {
+  hasContract: boolean
+  contract: VendorContract | null
+}
+
+export interface ContractTermsResponse {
+  hasContract: boolean
+  terms?: ContractTerms
+}
+
+export interface PayoutsResponse {
+  payouts: PayoutRecord[]
+}
+
+// ============================================================================
+// CONSENT TYPES
+// ============================================================================
+
+export type ConsentType =
+  | 'TERMS_OF_SERVICE'
+  | 'PRIVACY_POLICY'
+  | 'MARKETING_EMAIL'
+  | 'MARKETING_SMS'
+  | 'MARKETING_PUSH'
+  | 'DATA_PROCESSING'
+  | 'PLATFORM_COMMISSION'
+  | 'COOKIE_ESSENTIAL'
+  | 'COOKIE_ANALYTICS'
+  | 'COOKIE_MARKETING'
+
+export interface VendorConsent {
+  id: string
+  vendorProfileId: string
+  consentType: ConsentType
+  version: string
+  documentUrl?: string | null
+  givenAt: string
+  withdrawnAt?: string | null
+  expiresAt?: string | null
+  ipAddress?: string | null
+  userAgent?: string | null
+  source?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ConsentTypeInfo {
+  type: ConsentType
+  name: string
+  description: string
+  version?: string
+  documentUrl?: string | null
+  content?: string | null
+  summary?: string | null
+}
+
+export interface ConsentTypesResponse {
+  required: ConsentTypeInfo[]
+  optional: ConsentTypeInfo[]
+}
+
+export interface ConsentStatus {
+  [key: string]: {
+    hasConsent: boolean
+    version?: string
+    givenAt?: string
+  }
+}
+
+export interface ConsentStatusResponse {
+  status: ConsentStatus
+  required: {
+    hasAll: boolean
+    missing: ConsentType[]
+  }
+}
+
+export interface GiveConsentRequest {
+  consentType: ConsentType
+  version: string
+  documentUrl?: string
+}
+
+export interface BulkConsentRequest {
+  consents: GiveConsentRequest[]
+}
+
+export interface WithdrawConsentRequest {
+  consentType: ConsentType
+  version: string
+}
+
+export interface ConsentsResponse {
+  consents: VendorConsent[]
+}
+
+// ============================================================================
+// CONSENT DEFINITIONS
+// ============================================================================
+
+export interface ConsentDefinition {
+  id: string
+  consentType: ConsentType
+  version: string
+  title: string
+  description?: string | null
+  content?: string | null
+  summary?: string | null
+  documentUrl?: string | null
+  isRequired: boolean
+  isActive: boolean
+  appliesToUsers: boolean
+  appliesToVendors: boolean
+  displayOrder: number
+  effectiveFrom: string
+  effectiveUntil?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ConsentDefinitionsResponse {
+  required: ConsentDefinition[]
+  optional: ConsentDefinition[]
+}

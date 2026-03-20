@@ -3,7 +3,7 @@
 import Link from "next/link";
 import NextImage from "next/image";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { PublicHeader } from "./public-header";
 import { PublicFooter } from "./public-footer";
 import { BottomNav } from "@/components/ui/bottom-nav";
@@ -14,6 +14,12 @@ import { useAuthStore } from "@/store/auth-store";
 import { ROLES } from "@/config/roles";
 import { getSettingsPath } from "@/lib/utils/permissions";
 import { useEventsEnabled } from "@/hooks/queries/use-events";
+import {
+  useBusinessProfile,
+  useBusinessKyc,
+  useBusinessContract,
+  useConsentStatus,
+} from "@/hooks/queries/use-business";
 import {
   Compass,
   Users,
@@ -43,6 +49,7 @@ interface PublicLayoutProps {
 
 export function PublicLayout({ children }: PublicLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [showSidebarUserMenu, setShowSidebarUserMenu] = useState(false);
   const { isAuthenticated, hasHydrated, user } = useAuthStore();
@@ -56,6 +63,35 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const messagesPath = user?.role === ROLES.BUSINESS_ADMIN ? "/business-messages" : "/messages";
   const profilePath =
     user?.role === ROLES.BUSINESS_ADMIN ? "/business/profile" : "/settings/profile";
+
+  // Vendor onboarding status check
+  const { data: vendorProfile } = useBusinessProfile({ enabled: isVendor });
+  const { data: vendorKyc } = useBusinessKyc({ enabled: isVendor });
+  const { data: vendorContract } = useBusinessContract({ enabled: isVendor });
+  const { data: consentStatus } = useConsentStatus({ enabled: isVendor });
+
+  // Check if vendor onboarding is complete
+  const isVendorOnboardingComplete = (() => {
+    if (!isVendor) return true;
+
+    const hasProfile = !!vendorProfile?.id;
+    const hasCompleteProfile = hasProfile && !!vendorProfile?.businessName && !!vendorProfile?.description && !!vendorProfile?.categoryId;
+    const isKycApproved = vendorKyc?.status === 'APPROVED';
+    const hasRequiredConsents = consentStatus?.required?.hasAll ?? false;
+    const hasSignedContract = vendorContract?.contract?.signedByVendor ?? false;
+
+    return hasCompleteProfile && isKycApproved && hasRequiredConsents && hasSignedContract;
+  })();
+
+  // Handle profile navigation with onboarding check
+  const handleProfileNavigation = () => {
+    setShowSidebarUserMenu(false);
+    if (isVendor && !isVendorOnboardingComplete) {
+      router.push('/business/onboarding');
+    } else {
+      router.push(profilePath);
+    }
+  };
   const { data: eventsResponse } = useEventsEnabled({ page: 1, limit: 1 }, isLoggedInUser);
   const primaryEventId = eventsResponse?.data?.[0]?.id;
   const toolSubItems = primaryEventId
@@ -225,14 +261,13 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                         <p className="text-xs text-muted-foreground">{user?.email}</p>
                       </div>
                       <div className="py-2">
-                        <Link
-                          href={profilePath}
-                          onClick={() => setShowSidebarUserMenu(false)}
+                        <button
+                          onClick={handleProfileNavigation}
                           className="hover:bg-muted flex w-full items-center gap-3 px-4 py-2 text-sm text-foreground"
                         >
                           <User className="h-4 w-4" />
                           Profile
-                        </Link>
+                        </button>
                         <Link
                           href={settingsPath}
                           onClick={() => setShowSidebarUserMenu(false)}

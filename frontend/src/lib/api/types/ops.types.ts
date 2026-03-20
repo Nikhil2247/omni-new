@@ -83,12 +83,44 @@ export interface OpsDispute {
   resolution?: string | null
 }
 
+export interface OpsKycDocument {
+  id: string
+  kycId: string
+  type: 'BUSINESS_LICENSE' | 'ID_DOCUMENT' | 'TAX_CERTIFICATE' | 'INSURANCE' | 'ADDRESS_PROOF' | 'OTHER'
+  url: string
+  fileName: string
+  fileSize: number
+  mimeType: string
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED'
+  notes?: string | null
+  reviewerId?: string | null
+  reviewedAt?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
 export interface OpsKycRecord {
   id: string
   vendorProfileId: string
   status: string
+  businessName?: string | null
+  businessType?: string | null
+  registrationNumber?: string | null
+  taxId?: string | null
+  businessAddress?: string | null
   submittedAt?: string | null
   reviewedAt?: string | null
+  reviewerId?: string | null
+  rejectionReason?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+  documents?: OpsKycDocument[]
+  vendorProfile?: {
+    id: string
+    businessName?: string | null
+    slug?: string | null
+    status?: string | null
+  }
 }
 
 export interface OpsRequirementSheet {
@@ -172,8 +204,87 @@ export interface OpsInvoicesListResponse {
 export interface OpsVendorProfile {
   id: string
   businessName?: string | null
+  slug?: string | null
+  description?: string | null
+  tagline?: string | null
+  categoryId?: string | null
+  contactEmail?: string | null
+  contactPhone?: string | null
   status?: string | null
   verifiedAt?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+export interface OpsVendorConsent {
+  id: string
+  vendorProfileId: string
+  consentType: string
+  version: string
+  givenAt: string
+  ipAddress?: string | null
+  userAgent?: string | null
+  documentUrl?: string | null
+  withdrawnAt?: string | null
+}
+
+export interface OpsConsentStatus {
+  [key: string]: {
+    required: boolean
+    hasConsent: boolean
+    consentedAt?: string | null
+    version?: string | null
+  }
+}
+
+export interface OpsVendorContract {
+  id: string
+  contractNumber?: string | null
+  commissionRate?: number | null
+  payoutFrequency?: string | null
+  payoutHoldDays?: number | null
+  minPayoutAmount?: number | null
+  status?: string | null
+  effectiveDate?: string | null
+  expiryDate?: string | null
+  signedByVendor?: boolean | null
+  signedByPlatform?: boolean | null
+  signedAt?: string | null
+  bankAccountName?: string | null
+  bankAccountNumber?: string | null
+  bankIfscCode?: string | null
+  bankName?: string | null
+  upiId?: string | null
+  createdAt?: string | null
+}
+
+export interface OpsOnboardingStep {
+  completed: boolean
+  label: string
+  status?: string
+}
+
+export interface OpsOnboardingStatus {
+  steps: {
+    profile: OpsOnboardingStep
+    kyc: OpsOnboardingStep
+    consents: OpsOnboardingStep
+    contract: OpsOnboardingStep
+    bankDetails: OpsOnboardingStep
+  }
+  progress: number
+  isComplete: boolean
+  completedSteps: number
+  totalSteps: number
+}
+
+export interface OpsVendorOnboardingData {
+  profile: OpsVendorProfile | null
+  kyc: OpsKycRecord | null
+  consents: OpsVendorConsent[]
+  consentStatus: OpsConsentStatus | null
+  contract: OpsVendorContract | null
+  onboardingStatus: OpsOnboardingStatus
 }
 
 export interface OpsSupportTicket {

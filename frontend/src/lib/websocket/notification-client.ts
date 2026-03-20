@@ -22,9 +22,27 @@ export interface NotificationCallback {
   (notification: Notification): void
 }
 
+export interface KycEventCallback {
+  (event: KycEvent): void
+}
+
+export interface KycEvent {
+  type: 'kyc:submitted' | 'kyc:created' | 'kyc:approved' | 'kyc:rejected' | 'kyc:document:uploaded'
+  kycId: string
+  vendorProfileId: string
+  timestamp: string
+  legalName?: string
+  approvedBy?: string
+  rejectedBy?: string
+  rejectionReason?: string
+  documentType?: string
+}
+
 class NotificationClientClass {
   private client: SocketClient | null = null
   private callbacks: NotificationCallback[] = []
+  private kycCallbacks: KycEventCallback[] = []
+  private subscribedToOpsKyc = false
 
   /**
    * Initialize notification client
@@ -135,6 +153,92 @@ class NotificationClientClass {
   }
 
   /**
+   * Subscribe to ops KYC events
+   */
+  subscribeToOpsKyc(): void {
+    if (!this.client?.isConnected()) {
+      console.warn('[NotificationClient] Cannot subscribe to ops KYC: not connected')
+      return
+    }
+    if (this.subscribedToOpsKyc) {
+      console.log('[NotificationClient] Already subscribed to ops KYC')
+      return
+    }
+    this.client.emit('subscribe:ops:kyc', {})
+    this.subscribedToOpsKyc = true
+    this.setupKycEventListeners()
+    console.log('[NotificationClient] Subscribed to ops KYC events')
+  }
+
+  /**
+   * Unsubscribe from ops KYC events
+   */
+  unsubscribeFromOpsKyc(): void {
+    if (!this.client?.isConnected()) {
+      return
+    }
+    this.client.emit('unsubscribe:ops:kyc', {})
+    this.subscribedToOpsKyc = false
+    this.removeKycEventListeners()
+    console.log('[NotificationClient] Unsubscribed from ops KYC events')
+  }
+
+  /**
+   * Setup KYC event listeners
+   */
+  private setupKycEventListeners(): void {
+    if (!this.client) return
+
+    const kycEvents = ['kyc:submitted', 'kyc:created', 'kyc:approved', 'kyc:rejected', 'kyc:document:uploaded']
+    kycEvents.forEach(event => {
+      this.client!.on(event, (data: any) => {
+        console.log(`[NotificationClient] KYC event received: ${event}`, data)
+        this.notifyKycCallbacks({ type: event as KycEvent['type'], ...data })
+      })
+    })
+  }
+
+  /**
+   * Remove KYC event listeners
+   */
+  private removeKycEventListeners(): void {
+    if (!this.client) return
+
+    const kycEvents = ['kyc:submitted', 'kyc:created', 'kyc:approved', 'kyc:rejected', 'kyc:document:uploaded']
+    kycEvents.forEach(event => {
+      this.client!.off(event)
+    })
+  }
+
+  /**
+   * Subscribe to KYC events
+   */
+  onKycEvent(callback: KycEventCallback): () => void {
+    this.kycCallbacks.push(callback)
+
+    // Return unsubscribe function
+    return () => {
+      const index = this.kycCallbacks.indexOf(callback)
+      if (index > -1) {
+        this.kycCallbacks.splice(index, 1)
+      }
+    }
+  }
+
+  /**
+   * Notify KYC callbacks
+   */
+  private notifyKycCallbacks(event: KycEvent): void {
+    this.kycCallbacks.forEach(callback => {
+      try {
+        callback(event)
+      } catch (error) {
+        console.error('[NotificationClient] Error in KYC callback:', error)
+      }
+    })
+  }
+
+  /**
    * Disconnect from notification server
    */
   disconnect(): void {
@@ -142,6 +246,8 @@ class NotificationClientClass {
       this.client.disconnect()
       this.client = null
       this.callbacks = []
+      this.kycCallbacks = []
+      this.subscribedToOpsKyc = false
     }
   }
 

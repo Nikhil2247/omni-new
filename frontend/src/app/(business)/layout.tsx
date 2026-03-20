@@ -3,6 +3,7 @@
 import { AuthGuard } from '@/components/auth';
 import { RoleGuard } from '@/components/auth';
 import { DashboardLayout } from '@/components/layouts/dashboard';
+import { OnboardingGuard } from '@/components/business/onboarding';
 import { ROLES } from '@/config/roles';
 
 export default function BusinessLayout({
@@ -13,7 +14,9 @@ export default function BusinessLayout({
   return (
     <AuthGuard>
       <RoleGuard allowedRoles={[ROLES.BUSINESS_ADMIN]} redirectOnFail={true}>
-        <DashboardLayout>{children}</DashboardLayout>
+        <DashboardLayout>
+          <OnboardingGuard>{children}</OnboardingGuard>
+        </DashboardLayout>
       </RoleGuard>
     </AuthGuard>
   );

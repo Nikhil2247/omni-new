@@ -21,6 +21,8 @@ import { TaskAttachmentsController } from './controllers/task-attachments.contro
 import { OpsDashboardController } from './controllers/ops-dashboard.controller';
 import { LeadsController } from './controllers/leads.controller';
 import { OpsTeamController } from './controllers/ops-team.controller';
+import { PayoutsController } from './controllers/payouts.controller';
+import { ContractsController } from './controllers/contracts.controller';
 import { OperationsModule } from '../../domain/operations/operations.module';
 import { LeadsModule } from '../../domain/leads/leads.module';
 import { CatalogModule } from '../../domain/catalog/catalog.module';
@@ -46,6 +48,8 @@ import { AuditService } from 'src/core/audit';
     OperationalTasksController,
     TaskAttachmentsController,
     OpsDashboardController,
+    PayoutsController,
+    ContractsController,
   ],
   providers: [NotificationService, AuditService],
 })

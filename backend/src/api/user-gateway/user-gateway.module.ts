@@ -27,12 +27,16 @@ import { MessagingController } from './controllers/messaging.controller';
 import { VendorFollowsController } from './controllers/vendor-follows.controller';
 import { VendorReviewsController } from './controllers/vendor-reviews.controller';
 import { PlannerInsightsController } from './controllers/planner-insights.controller';
+import { UserSubscriptionController } from './controllers/user-subscription.controller';
+import { PaymentController } from './controllers/payment.controller';
+import { InvoiceController } from './controllers/invoice.controller';
 import { CatalogModule } from '../../domain/catalog/catalog.module';
 import { PlanningModule } from '../../domain/planning/planning.module';
 import { LeadsModule } from '../../domain/leads/leads.module';
 import { MessagingModule } from '../../domain/messaging/messaging.module';
 import { ExportModule } from '../../infrastructure/export/export.module';
 import { InsightsModule } from '../../domain/insights/insights.module';
+import { SubscriptionModule } from '../../domain/subscription/subscription.module';
 import { DatabaseModule } from '../../core/database/database.module';
 import { NotificationService } from 'src/infrastructure/notifications/notification.service';
 import { AuditService } from 'src/core/audit';
@@ -46,6 +50,7 @@ import { AuditService } from 'src/core/audit';
     MessagingModule,
     ExportModule,
     InsightsModule,
+    SubscriptionModule,
   ],
   controllers: [
     EventsController,
@@ -70,6 +75,9 @@ import { AuditService } from 'src/core/audit';
     PlannerInsightsController,
     VendorFollowsController,
     VendorReviewsController,
+    UserSubscriptionController,
+    PaymentController,
+    InvoiceController,
   ],
   providers: [NotificationService, AuditService],
 })

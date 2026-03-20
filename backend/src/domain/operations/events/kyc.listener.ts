@@ -15,13 +15,17 @@ import {
   KYCDocumentRejectedEvent,
 } from './kyc.events';
 import { NotificationService } from '../../../infrastructure/notifications/notification.service';
-import { NotificationType } from '@prisma/client';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { NotificationType, DocumentStatus, DocumentType } from '@prisma/client';
 
 @Injectable()
 export class KYCEventListener {
   private readonly logger = new Logger(KYCEventListener.name);
 
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(
+    private readonly notificationService: NotificationService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   // ============================================================================
   // KYC LIFECYCLE EVENTS
@@ -42,15 +46,36 @@ export class KYCEventListener {
       `KYC approved: ${event.kycId} for vendor ${event.vendorProfileId}`,
     );
 
-    await this.notificationService.createNotification({
-      userId: event.vendorUserId,
-      type: NotificationType.KYC_APPROVED,
-      title: 'KYC approved',
-      message:
-        'Your KYC verification has been approved. You can now access vendor payouts.',
-      data: { kycId: event.kycId, vendorProfileId: event.vendorProfileId },
-      actionUrl: '/business/profile',
+    // Set VendorProfile.verifiedAt when KYC is approved
+    await this.prisma.vendorProfile.update({
+      where: { id: event.vendorProfileId },
+      data: {
+        verifiedAt: new Date(),
+        status: 'ACTIVE', // Auto-activate vendor when KYC approved
+      },
     });
+
+    this.logger.log(
+      `Vendor ${event.vendorProfileId} verified and activated after KYC approval`,
+    );
+
+    // Get vendor user ID for notification
+    const vendorProfile = await this.prisma.vendorProfile.findUnique({
+      where: { id: event.vendorProfileId },
+      select: { userId: true },
+    });
+
+    if (vendorProfile?.userId) {
+      await this.notificationService.createNotification({
+        userId: vendorProfile.userId,
+        type: NotificationType.KYC_APPROVED,
+        title: 'KYC Approved - You are now Verified!',
+        message:
+          'Congratulations! Your KYC verification has been approved. Your profile is now verified and active.',
+        data: { kycId: event.kycId, vendorProfileId: event.vendorProfileId },
+        actionUrl: '/business/profile',
+      });
+    }
   }
 
   @OnEvent(KYC_EVENTS.KYC_REJECTED)
@@ -59,20 +84,28 @@ export class KYCEventListener {
       `KYC rejected: ${event.kycId} for vendor ${event.vendorProfileId}`,
     );
 
-    await this.notificationService.createNotification({
-      userId: event.vendorUserId,
-      type: NotificationType.KYC_REJECTED,
-      title: 'KYC rejected',
-      message: event.rejectionReason
-        ? `Your KYC was rejected: ${event.rejectionReason}. Please re-submit documents.`
-        : 'Your KYC was rejected. Please re-submit documents.',
-      data: {
-        kycId: event.kycId,
-        vendorProfileId: event.vendorProfileId,
-        rejectionReason: event.rejectionReason,
-      },
-      actionUrl: '/business/profile',
+    // Get vendor user ID for notification
+    const vendorProfile = await this.prisma.vendorProfile.findUnique({
+      where: { id: event.vendorProfileId },
+      select: { userId: true },
     });
+
+    if (vendorProfile?.userId) {
+      await this.notificationService.createNotification({
+        userId: vendorProfile.userId,
+        type: NotificationType.KYC_REJECTED,
+        title: 'KYC Verification Rejected',
+        message: event.rejectionReason
+          ? `Your KYC was rejected: ${event.rejectionReason}. Please review and re-submit your documents.`
+          : 'Your KYC was rejected. Please review and re-submit your documents.',
+        data: {
+          kycId: event.kycId,
+          vendorProfileId: event.vendorProfileId,
+          rejectionReason: event.rejectionReason,
+        },
+        actionUrl: '/business/verification',
+      });
+    }
   }
 
   @OnEvent(KYC_EVENTS.KYC_EXPIRED)
@@ -81,15 +114,31 @@ export class KYCEventListener {
       `KYC expired: ${event.kycId} for vendor ${event.vendorProfileId}`,
     );
 
-    await this.notificationService.createNotification({
-      userId: event.vendorUserId,
-      type: NotificationType.KYC_REJECTED,
-      title: 'KYC expired',
-      message:
-        'Your KYC verification expired. Please re-submit documents to continue payouts.',
-      data: { kycId: event.kycId, vendorProfileId: event.vendorProfileId },
-      actionUrl: '/business/profile',
+    // Remove verified status when KYC expires
+    await this.prisma.vendorProfile.update({
+      where: { id: event.vendorProfileId },
+      data: {
+        verifiedAt: null, // Remove verified status
+      },
     });
+
+    // Get vendor user ID for notification
+    const vendorProfile = await this.prisma.vendorProfile.findUnique({
+      where: { id: event.vendorProfileId },
+      select: { userId: true },
+    });
+
+    if (vendorProfile?.userId) {
+      await this.notificationService.createNotification({
+        userId: vendorProfile.userId,
+        type: NotificationType.KYC_REJECTED,
+        title: 'KYC Verification Expired',
+        message:
+          'Your KYC verification has expired. Please re-submit your documents to maintain your verified status.',
+        data: { kycId: event.kycId, vendorProfileId: event.vendorProfileId },
+        actionUrl: '/business/verification',
+      });
+    }
   }
 
   // ============================================================================
@@ -102,9 +151,38 @@ export class KYCEventListener {
       `KYC document uploaded: ${event.documentId} (${event.documentType})`,
     );
 
-    // TODO: Implement actual handlers
-    // - Notify ops team of new document
-    // - Trigger automated document verification (if applicable)
+    // Check if all required documents are uploaded
+    const kyc = await this.prisma.vendorKYC.findUnique({
+      where: { id: event.kycId },
+      include: { documents: true, vendorProfile: { select: { userId: true } } },
+    });
+
+    if (!kyc) return;
+
+    // Auto-submit KYC if minimum required documents are uploaded
+    const uploadedTypes = new Set(kyc.documents.map((d) => d.type));
+    const requiredTypes: DocumentType[] = [
+      DocumentType.BUSINESS_LICENSE,
+      DocumentType.ID_DOCUMENT,
+    ];
+    const hasMinRequired = requiredTypes.every((type) =>
+      uploadedTypes.has(type),
+    );
+
+    if (hasMinRequired && kyc.status === 'PENDING') {
+      // Auto-submit for review
+      await this.prisma.vendorKYC.update({
+        where: { id: event.kycId },
+        data: {
+          status: 'SUBMITTED',
+          submittedAt: new Date(),
+        },
+      });
+
+      this.logger.log(
+        `KYC ${event.kycId} auto-submitted after required documents uploaded`,
+      );
+    }
   }
 
   @OnEvent(KYC_EVENTS.KYC_DOCUMENT_VERIFIED)
@@ -113,9 +191,28 @@ export class KYCEventListener {
       `KYC document verified: ${event.documentId} (${event.documentType})`,
     );
 
-    // TODO: Implement actual handlers
-    // - Check if all required documents are now verified
-    // - If so, auto-approve KYC or notify for final review
+    // Check if all documents are now verified
+    const kyc = await this.prisma.vendorKYC.findUnique({
+      where: { id: event.kycId },
+      include: { documents: true },
+    });
+
+    if (!kyc) return;
+
+    const allVerified = kyc.documents.every(
+      (doc) => doc.status === DocumentStatus.VERIFIED,
+    );
+    const hasDocuments = kyc.documents.length > 0;
+
+    if (allVerified && hasDocuments && kyc.status === 'UNDER_REVIEW') {
+      // All documents verified - flag for final approval
+      this.logger.log(
+        `All documents verified for KYC ${event.kycId} - ready for final approval`,
+      );
+
+      // Optionally auto-approve if all required documents verified
+      // For now, just log - ops team should do final approval
+    }
   }
 
   @OnEvent(KYC_EVENTS.KYC_DOCUMENT_REJECTED)
@@ -124,8 +221,39 @@ export class KYCEventListener {
       `KYC document rejected: ${event.documentId} (${event.documentType})`,
     );
 
-    // TODO: Implement actual handlers
-    // - Notify vendor of document rejection
-    // - Request re-upload
+    // Get KYC and vendor info
+    const kyc = await this.prisma.vendorKYC.findUnique({
+      where: { id: event.kycId },
+      include: { vendorProfile: { select: { userId: true } } },
+    });
+
+    if (!kyc) return;
+
+    // Notify vendor of document rejection (only if vendor has an associated user)
+    if (kyc.vendorProfile.userId) {
+      await this.notificationService.createNotification({
+        userId: kyc.vendorProfile.userId,
+        type: NotificationType.KYC_REJECTED,
+        title: 'Document Rejected',
+        message: event.rejectionReason
+          ? `Your ${event.documentType.replace('_', ' ').toLowerCase()} was rejected: ${event.rejectionReason}. Please upload a new document.`
+          : `Your ${event.documentType.replace('_', ' ').toLowerCase()} was rejected. Please upload a new document.`,
+        data: {
+          kycId: event.kycId,
+          documentId: event.documentId,
+          documentType: event.documentType,
+          rejectionReason: event.rejectionReason,
+        },
+        actionUrl: '/business/verification',
+      });
+    }
+
+    // If KYC was under review, move back to submitted for re-upload
+    if (kyc.status === 'UNDER_REVIEW') {
+      await this.prisma.vendorKYC.update({
+        where: { id: event.kycId },
+        data: { status: 'SUBMITTED' },
+      });
+    }
   }
 }

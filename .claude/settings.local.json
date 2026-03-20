@@ -24,7 +24,18 @@
       "Bash(npx prisma generate:*)",
       "Bash(cat:*)",
       "Bash(npx prisma db execute:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(npm install:*)",
+      "Bash(xargs:*)",
+      "Bash(test:*)",
+      "Bash(timeout:*)",
+      "Bash(pushd:*)",
+      "Bash(popd:*)",
+      "Bash(npx prisma db pull:*)",
+      "Bash(npx prisma validate:*)",
+      "Bash(cut:*)",
+      "Bash(cd:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

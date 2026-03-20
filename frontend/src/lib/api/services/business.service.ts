@@ -24,6 +24,25 @@ import type {
   BlockedDate,
   CreateBlockedDateRequest,
   LeadStatus,
+  VendorKYC,
+  KYCDocument,
+  CreateKYCRequest,
+  DocumentType,
+  DocumentTypesResponse,
+  VendorContract,
+  ContractResponse,
+  ContractTermsResponse,
+  UpdateBankDetailsRequest,
+  PayoutRecord,
+  PayoutsResponse,
+  VendorConsent,
+  ConsentsResponse,
+  ConsentStatusResponse,
+  ConsentTypesResponse,
+  GiveConsentRequest,
+  BulkConsentRequest,
+  WithdrawConsentRequest,
+  ConsentType,
 } from '../types/business.types'
 import type { Timeline } from '../types/timeline.types'
 import type { UploadedFile } from './upload.service'
@@ -89,11 +108,24 @@ const normalizeVendorServicesResponse = <T>(data: T): T => {
   return data
 }
 
+export interface VendorCategory {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  icon?: string
+}
+
 export const businessService = {
   // ==================== Profile ====================
   getMyProfile: async (): Promise<ApiResponse<VendorProfile>> => {
     const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.PROFILE.ME)
     return data
+  },
+
+  getCategories: async (): Promise<VendorCategory[]> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.PROFILE.CATEGORIES)
+    return data?.data || data || []
   },
 
   createProfile: async (payload: CreateVendorProfileRequest): Promise<ApiResponse<VendorProfile>> => {
@@ -398,5 +430,145 @@ export const businessService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     return data
+  },
+
+  // ==================== KYC ====================
+  getMyKyc: async (): Promise<ApiResponse<VendorKYC>> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.KYC.ME)
+    return data
+  },
+
+  createOrUpdateKyc: async (payload: CreateKYCRequest): Promise<ApiResponse<VendorKYC>> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.KYC.ME, payload)
+    return data
+  },
+
+  submitKyc: async (): Promise<ApiResponse<VendorKYC>> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.KYC.SUBMIT)
+    return data
+  },
+
+  getKycDocuments: async (): Promise<ApiResponse<KYCDocument[]>> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.KYC.DOCUMENTS)
+    return data
+  },
+
+  uploadKycDocument: async (
+    file: File,
+    type: DocumentType,
+    notes?: string
+  ): Promise<ApiResponse<KYCDocument>> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', type)
+    if (notes) formData.append('notes', notes)
+
+    const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.KYC.DOCUMENTS, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
+
+  deleteKycDocument: async (documentId: string): Promise<{ success: boolean }> => {
+    const { data } = await apiClient.put(API_ENDPOINTS.BUSINESS.KYC.DOCUMENT_DELETE(documentId))
+    return data
+  },
+
+  getKycDocumentTypes: async (): Promise<DocumentTypesResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.KYC.DOCUMENT_TYPES)
+    return data?.data ?? data
+  },
+
+  // ==================== Contract ====================
+  getMyContract: async (): Promise<ContractResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.CONTRACT.ME)
+    // API returns { success, data: { hasContract, contract }, meta }
+    return data?.data || data
+  },
+
+  updateBankDetails: async (
+    payload: UpdateBankDetailsRequest
+  ): Promise<ApiResponse<VendorContract>> => {
+    const { data } = await apiClient.put(
+      API_ENDPOINTS.BUSINESS.CONTRACT.BANK_DETAILS,
+      payload
+    )
+    // API returns { success, data: { success, contract }, meta }
+    return data?.data || data
+  },
+
+  generateContract: async (): Promise<ContractResponse> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.CONTRACT.GENERATE)
+    // API returns { success, data: { success, hasContract, contract }, meta }
+    return data?.data || data
+  },
+
+  signContract: async (): Promise<ApiResponse<VendorContract>> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.CONTRACT.SIGN)
+    // API returns { success, data: { success, contract }, meta }
+    return data?.data || data
+  },
+
+  getMyPayouts: async (): Promise<PayoutsResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.CONTRACT.PAYOUTS)
+    // API returns { success, data: { payouts }, meta }
+    return data?.data || data
+  },
+
+  getContractTerms: async (): Promise<ContractTermsResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.CONTRACT.TERMS)
+    // API returns { success, data: { hasContract, terms }, meta }
+    return data?.data || data
+  },
+
+  // ==================== Consents ====================
+  getMyConsents: async (): Promise<ConsentsResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.CONSENTS.ME)
+    // API returns { success, data: { consents }, meta }
+    return data?.data || data
+  },
+
+  getConsentStatus: async (): Promise<ConsentStatusResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.CONSENTS.STATUS)
+    // API returns { success, data: { status, required }, meta }
+    return data?.data || data
+  },
+
+  giveConsent: async (
+    payload: GiveConsentRequest
+  ): Promise<ApiResponse<VendorConsent>> => {
+    const { data } = await apiClient.post(
+      API_ENDPOINTS.BUSINESS.CONSENTS.GIVE,
+      payload
+    )
+    return data
+  },
+
+  giveConsentsBulk: async (
+    payload: BulkConsentRequest
+  ): Promise<ApiResponse<VendorConsent[]>> => {
+    const { data } = await apiClient.post(
+      API_ENDPOINTS.BUSINESS.CONSENTS.BULK,
+      payload
+    )
+    return data
+  },
+
+  withdrawConsent: async (
+    payload: WithdrawConsentRequest
+  ): Promise<ApiResponse<VendorConsent>> => {
+    const { data } = await apiClient.post(
+      API_ENDPOINTS.BUSINESS.CONSENTS.WITHDRAW,
+      payload
+    )
+    return data
+  },
+
+  getRequiredConsentTypes: async (): Promise<ConsentTypesResponse> => {
+    const { data } = await apiClient.get(
+      API_ENDPOINTS.BUSINESS.CONSENTS.REQUIRED_TYPES
+    )
+    // API returns { success, data: { required, optional }, meta }
+    return data?.data || data
   },
 }

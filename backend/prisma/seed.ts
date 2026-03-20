@@ -48,6 +48,7 @@ import {
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 import * as bcrypt from 'bcryptjs'
+import { seedSubscriptionPlans } from './seeds/subscription-plans.seed'
 import { randomUUID } from 'crypto'
 
 // Initialize Prisma with adapter
@@ -67,7 +68,7 @@ const prisma = isAccelerate
 async function cleanupDatabase() {
   console.log('🧹 Cleaning up database...')
 
-  // Subscription schema
+  // Subscription schema - Vendor plans
   await prisma.payment.deleteMany()
   await prisma.invoiceLineItem.deleteMany()
   await prisma.invoice.deleteMany()
@@ -79,6 +80,12 @@ async function cleanupDatabase() {
   await prisma.planPrice.deleteMany()
   await prisma.planFeature.deleteMany()
   await prisma.subscriptionPlan.deleteMany()
+
+  // Subscription schema - User plans
+  await prisma.userSubscription.deleteMany()
+  await prisma.userPlanPrice.deleteMany()
+  await prisma.userPlanFeature.deleteMany()
+  await prisma.userSubscriptionPlan.deleteMany()
 
   // Content schema
   await prisma.blogPostTag.deleteMany()
@@ -2226,105 +2233,18 @@ async function main() {
   console.log('✅ Blog content created (100 comprehensive posts)')
 
   // ============================================================================
-  // STEP 22: SUBSCRIPTION PLANS
+  // STEP 22: SUBSCRIPTION PLANS (Vendor and User)
   // ============================================================================
   console.log('💳 Creating subscription plans...')
 
-  const freePlan = await prisma.subscriptionPlan.create({
-    data: {
-      name: 'Free',
-      slug: 'free',
-      description: 'Get started with basic features',
-      tier: PlanTier.FREE,
-      displayOrder: 1,
-      trialDays: 0,
-      isActive: true,
-      isPublic: true,
-    },
-  })
+  // Seed both vendor and user subscription plans using the dedicated seed function
+  await seedSubscriptionPlans(prisma)
 
-  const starterPlan = await prisma.subscriptionPlan.create({
-    data: {
-      name: 'Starter',
-      slug: 'starter',
-      description: 'Perfect for growing businesses',
-      tier: PlanTier.STARTER,
-      displayOrder: 2,
-      trialDays: 14,
-      isActive: true,
-      isPublic: true,
-    },
-  })
-
-  const proPlan = await prisma.subscriptionPlan.create({
-    data: {
-      name: 'Professional',
-      slug: 'professional',
-      description: 'For established vendors',
-      tier: PlanTier.PROFESSIONAL,
-      displayOrder: 3,
-      isPopular: true,
-      trialDays: 14,
-      isActive: true,
-      isPublic: true,
-    },
-  })
-
-  const enterprisePlan = await prisma.subscriptionPlan.create({
-    data: {
-      name: 'Enterprise',
-      slug: 'enterprise',
-      description: 'Custom solutions for large businesses',
-      tier: PlanTier.ENTERPRISE,
-      displayOrder: 4,
-      trialDays: 30,
-      isActive: true,
-      isPublic: true,
-    },
-  })
-
-  // Plan Features
-  const featureData = [
-    // Free plan
-    { planId: freePlan.id, featureKey: 'leads_per_month', featureName: 'Leads per month', limitType: FeatureLimitType.COUNT_PER_MONTH, limitValue: 5, sortOrder: 1 },
-    { planId: freePlan.id, featureKey: 'portfolio_photos', featureName: 'Portfolio photos', limitType: FeatureLimitType.COUNT, limitValue: 10, sortOrder: 2 },
-    { planId: freePlan.id, featureKey: 'analytics', featureName: 'Basic analytics', limitType: FeatureLimitType.BOOLEAN, limitValue: 1, sortOrder: 3 },
-    // Starter plan
-    { planId: starterPlan.id, featureKey: 'leads_per_month', featureName: 'Leads per month', limitType: FeatureLimitType.COUNT_PER_MONTH, limitValue: 25, sortOrder: 1 },
-    { planId: starterPlan.id, featureKey: 'portfolio_photos', featureName: 'Portfolio photos', limitType: FeatureLimitType.COUNT, limitValue: 50, sortOrder: 2 },
-    { planId: starterPlan.id, featureKey: 'analytics', featureName: 'Advanced analytics', limitType: FeatureLimitType.BOOLEAN, limitValue: 1, isHighlighted: true, sortOrder: 3 },
-    // Pro plan
-    { planId: proPlan.id, featureKey: 'leads_per_month', featureName: 'Leads per month', limitType: FeatureLimitType.COUNT_PER_MONTH, limitValue: 100, sortOrder: 1 },
-    { planId: proPlan.id, featureKey: 'portfolio_photos', featureName: 'Portfolio photos', limitType: FeatureLimitType.UNLIMITED, limitValue: null, sortOrder: 2 },
-    { planId: proPlan.id, featureKey: 'featured_listing', featureName: 'Featured listing', limitType: FeatureLimitType.BOOLEAN, limitValue: 1, isHighlighted: true, sortOrder: 3 },
-    { planId: proPlan.id, featureKey: 'priority_support', featureName: 'Priority support', limitType: FeatureLimitType.BOOLEAN, limitValue: 1, sortOrder: 4 },
-    // Enterprise plan
-    { planId: enterprisePlan.id, featureKey: 'leads_per_month', featureName: 'Leads per month', limitType: FeatureLimitType.UNLIMITED, limitValue: null, sortOrder: 1 },
-    { planId: enterprisePlan.id, featureKey: 'portfolio_photos', featureName: 'Portfolio photos', limitType: FeatureLimitType.UNLIMITED, limitValue: null, sortOrder: 2 },
-    { planId: enterprisePlan.id, featureKey: 'dedicated_account_manager', featureName: 'Dedicated account manager', limitType: FeatureLimitType.BOOLEAN, limitValue: 1, isHighlighted: true, sortOrder: 3 },
-    { planId: enterprisePlan.id, featureKey: 'api_access', featureName: 'API access', limitType: FeatureLimitType.BOOLEAN, limitValue: 1, sortOrder: 4 },
-  ]
-
-  await prisma.planFeature.createMany({ data: featureData })
-
-  // Plan Prices
-  await prisma.planPrice.createMany({
-    data: [
-      { planId: freePlan.id, currency: 'USD', amount: 0, billingCycle: BillingCycle.MONTHLY, isActive: true },
-      { planId: starterPlan.id, currency: 'USD', amount: 29, billingCycle: BillingCycle.MONTHLY, isActive: true },
-      { planId: starterPlan.id, currency: 'USD', amount: 290, billingCycle: BillingCycle.YEARLY, savingsPercent: 17, isActive: true },
-      { planId: proPlan.id, currency: 'USD', amount: 79, billingCycle: BillingCycle.MONTHLY, isActive: true },
-      { planId: proPlan.id, currency: 'USD', amount: 790, billingCycle: BillingCycle.YEARLY, savingsPercent: 17, isActive: true },
-      { planId: enterprisePlan.id, currency: 'USD', amount: 199, billingCycle: BillingCycle.MONTHLY, isActive: true },
-      { planId: enterprisePlan.id, currency: 'USD', amount: 1990, billingCycle: BillingCycle.YEARLY, savingsPercent: 17, isActive: true },
-    ],
-  })
-
-  // Coupons
+  // Coupons for vendor plans
   await prisma.coupon.createMany({
     data: [
       { code: 'WELCOME20', name: 'Welcome Discount', description: '20% off your first subscription', discountType: DiscountType.PERCENTAGE, discountValue: 20, appliesTo: CouponAppliesTo.PAID_PLANS_ONLY, duration: CouponDuration.ONCE, maxRedemptions: 1000, validFrom: new Date(), validUntil: new Date('2025-12-31'), isActive: true },
-      { code: 'YEARLYBONUS', name: 'Yearly Bonus', description: '$50 off yearly subscriptions', discountType: DiscountType.FIXED_AMOUNT, discountValue: 50, appliesTo: CouponAppliesTo.ALL_PLANS, duration: CouponDuration.ONCE, maxRedemptions: 500, minAmount: 100, validFrom: new Date(), validUntil: new Date('2025-06-30'), isActive: true },
+      { code: 'YEARLYBONUS', name: 'Yearly Bonus', description: '500 INR off yearly subscriptions', discountType: DiscountType.FIXED_AMOUNT, discountValue: 500, appliesTo: CouponAppliesTo.ALL_PLANS, duration: CouponDuration.ONCE, maxRedemptions: 500, minAmount: 1000, validFrom: new Date(), validUntil: new Date('2025-06-30'), isActive: true },
     ],
   })
 
@@ -2365,7 +2285,8 @@ async function main() {
   console.log(`   - Leads: ${leads.length}`)
   console.log(`   - Blog Posts: 100`)
   console.log(`   - Blog Categories: 8`)
-  console.log(`   - Subscription Plans: 4`)
+  console.log(`   - Vendor Subscription Plans: 3 (FREE, PRO, ENTERPRISE)`)
+  console.log(`   - User Subscription Plans: 3 (FREE, BASIC, PREMIUM)`)
   console.log('')
   console.log('🔑 Test Credentials (Password: Password123!):')
   console.log('   - Admin: admin@omnicassion.com')

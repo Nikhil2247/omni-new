@@ -93,4 +93,33 @@ export class InvoiceRepository {
       },
     });
   }
+
+  /**
+   * Find invoices by user ID (through subscription -> vendorProfile -> user)
+   */
+  async findByUserId(
+    userId: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<Invoice[]> {
+    return this.prisma.invoice.findMany({
+      where: {
+        subscription: {
+          vendorProfile: {
+            userId,
+          },
+        },
+      },
+      include: {
+        subscription: {
+          include: { plan: true },
+        },
+        lineItems: true,
+        payments: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
+    });
+  }
 }

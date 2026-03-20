@@ -125,4 +125,13 @@ export class SubscriptionRepository {
       },
     });
   }
+
+  async getUsageRecords(subscriptionId: string) {
+    return this.prisma.usageRecord.findMany({
+      where: {
+        subscriptionId,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

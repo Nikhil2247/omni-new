@@ -7,6 +7,7 @@ import type { BlogCategory, BlogPost, BlogPostSearchParams, BlogTag } from '../t
 import type { SystemStatusState } from '../types/system.types'
 import type { VendorReview } from '../types/vendor-review.types'
 import type { MediaTag } from '../types/media-tag.types'
+import type { ConsentDefinition, ConsentDefinitionsResponse, ConsentType } from '../types/business.types'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 
 const resolveMediaUrl = (value?: string | null): string | null | undefined => {
@@ -179,6 +180,36 @@ export const publicService = {
 
   getMediaTags: async (query?: string): Promise<MediaTag[]> => {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.MEDIA_TAGS.LIST, { params: { query } })
+    return data?.data || data
+  },
+
+  // ==================== CONSENT DEFINITIONS ====================
+  getUserConsentDefinitions: async (): Promise<ConsentDefinitionsResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.CONSENTS.DEFINITIONS_USERS)
+    return data?.data || data
+  },
+
+  getVendorConsentDefinitions: async (): Promise<ConsentDefinitionsResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.CONSENTS.DEFINITIONS_VENDORS)
+    return data?.data || data
+  },
+
+  getRequiredConsentDefinitions: async (type: 'user' | 'vendor' = 'user'): Promise<ConsentDefinition[]> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.CONSENTS.DEFINITIONS_REQUIRED, {
+      params: { type },
+    })
+    return data?.data || data
+  },
+
+  getConsentDefinitionByType: async (consentType: ConsentType, version?: string): Promise<ConsentDefinition> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.CONSENTS.DEFINITION_BY_TYPE(consentType), {
+      params: version ? { version } : undefined,
+    })
+    return data?.data || data
+  },
+
+  getConsentDefinitionById: async (id: string): Promise<ConsentDefinition> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.CONSENTS.DEFINITION_BY_ID(id))
     return data?.data || data
   },
 }

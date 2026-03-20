@@ -338,6 +338,56 @@ export class NotificationGateway
     return { event: 'pong', timestamp: new Date().toISOString() };
   }
 
+  @SubscribeMessage('subscribe:ops:kyc')
+  async handleSubscribeOpsKyc(
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ): Promise<{ success: boolean; error?: string }> {
+    // Only ops staff can subscribe to KYC updates
+    const opsRoles = [
+      'OPERATIONAL_ADMIN',
+      'OPERATIONAL_MANAGER',
+      'OPERATIONAL_ASSISTANT',
+      'ADMIN_SYSTEM',
+    ];
+
+    if (!client.userId || !client.roles?.some(role => opsRoles.includes(role))) {
+      return { success: false, error: 'Unauthorized: Ops role required' };
+    }
+
+    await client.join('ops:kyc');
+    this.logger.debug(`Client ${client.id} subscribed to ops:kyc room`);
+    return { success: true };
+  }
+
+  @SubscribeMessage('unsubscribe:ops:kyc')
+  async handleUnsubscribeOpsKyc(
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ): Promise<{ success: boolean }> {
+    await client.leave('ops:kyc');
+    this.logger.debug(`Client ${client.id} unsubscribed from ops:kyc room`);
+    return { success: true };
+  }
+
+  @SubscribeMessage('subscribe:ops:disputes')
+  async handleSubscribeOpsDisputes(
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ): Promise<{ success: boolean; error?: string }> {
+    const opsRoles = [
+      'OPERATIONAL_ADMIN',
+      'OPERATIONAL_MANAGER',
+      'OPERATIONAL_ASSISTANT',
+      'ADMIN_SYSTEM',
+    ];
+
+    if (!client.userId || !client.roles?.some(role => opsRoles.includes(role))) {
+      return { success: false, error: 'Unauthorized: Ops role required' };
+    }
+
+    await client.join('ops:disputes');
+    this.logger.debug(`Client ${client.id} subscribed to ops:disputes room`);
+    return { success: true };
+  }
+
   // ============================================================================
   // EVENT HANDLERS (from EventEmitter)
   // ============================================================================
@@ -386,6 +436,80 @@ export class NotificationGateway
     reason?: string;
   }): Promise<void> {
     this.sendToRoom(`event:${payload.eventId}`, 'event:cancelled', payload);
+  }
+
+  // ============================================================================
+  // KYC EVENT HANDLERS - Real-time updates for ops staff
+  // ============================================================================
+
+  @OnEvent('kyc.submitted')
+  async handleKycSubmitted(payload: {
+    kycId: string;
+    vendorProfileId: string;
+  }): Promise<void> {
+    this.logger.debug(`KYC submitted: ${payload.kycId}`);
+    this.sendToRoom('ops:kyc', 'kyc:submitted', {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @OnEvent('kyc.created')
+  async handleKycCreated(payload: {
+    kycId: string;
+    vendorProfileId: string;
+  }): Promise<void> {
+    this.logger.debug(`KYC created: ${payload.kycId}`);
+    this.sendToRoom('ops:kyc', 'kyc:created', {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @OnEvent('kyc.approved')
+  async handleKycApproved(payload: {
+    kycId: string;
+    vendorProfileId: string;
+    approvedBy: string;
+    approvedAt: Date;
+    legalName?: string;
+  }): Promise<void> {
+    this.logger.debug(`KYC approved: ${payload.kycId}`);
+    this.sendToRoom('ops:kyc', 'kyc:approved', {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @OnEvent('kyc.rejected')
+  async handleKycRejected(payload: {
+    kycId: string;
+    vendorProfileId: string;
+    rejectedBy: string;
+    rejectedAt: Date;
+    legalName?: string;
+    rejectionReason?: string;
+  }): Promise<void> {
+    this.logger.debug(`KYC rejected: ${payload.kycId}`);
+    this.sendToRoom('ops:kyc', 'kyc:rejected', {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @OnEvent('kyc.document.uploaded')
+  async handleKycDocumentUploaded(payload: {
+    documentId: string;
+    kycId: string;
+    vendorProfileId: string;
+    documentType: string;
+    uploadedAt: Date;
+  }): Promise<void> {
+    this.logger.debug(`KYC document uploaded: ${payload.documentId}`);
+    this.sendToRoom('ops:kyc', 'kyc:document:uploaded', {
+      ...payload,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   // ============================================================================

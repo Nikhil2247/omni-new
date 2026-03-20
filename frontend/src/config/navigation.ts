@@ -99,6 +99,34 @@ export const adminNav: NavGroup[] = [
     ],
   },
   {
+    title: 'Finance',
+    items: [
+      {
+        title: 'Payments',
+        href: '/admin/payments',
+        icon: CreditCard,
+        roles: [ROLES.ADMIN, ROLES.ADMIN_SYSTEM],
+      },
+      {
+        title: 'Subscriptions',
+        href: '/admin/subscriptions',
+        icon: Receipt,
+        roles: [ROLES.ADMIN, ROLES.ADMIN_SYSTEM],
+      },
+    ],
+  },
+  {
+    title: 'Moderation',
+    items: [
+      {
+        title: 'Campaign Approval',
+        href: '/admin/campaigns',
+        icon: Megaphone,
+        roles: [ROLES.ADMIN, ROLES.ADMIN_SYSTEM],
+      },
+    ],
+  },
+  {
     title: 'Account',
     items: [
       {
@@ -236,6 +264,23 @@ export const opsAdminNav: NavGroup[] = [
     ],
   },
   {
+    title: 'Vendors',
+    items: [
+      {
+        title: 'Vendor Directory',
+        href: '/ops/vendors',
+        icon: Store,
+        roles: [ROLES.OPERATIONAL_ADMIN],
+      },
+      {
+        title: 'KYC Verification',
+        href: '/ops/kyc',
+        icon: FileCheck,
+        roles: [ROLES.OPERATIONAL_ADMIN],
+      },
+    ],
+  },
+  {
     title: 'Team',
     items: [
       {
@@ -259,6 +304,23 @@ export const opsAdminNav: NavGroup[] = [
         title: 'Invoice Center',
         href: '/ops/invoices',
         icon: Receipt,
+        roles: [ROLES.OPERATIONAL_ADMIN],
+      },
+    ],
+  },
+  {
+    title: 'Support',
+    items: [
+      {
+        title: 'Support Tickets',
+        href: '/ops/support',
+        icon: Headphones,
+        roles: [ROLES.OPERATIONAL_ADMIN],
+      },
+      {
+        title: 'Disputes',
+        href: '/ops/disputes',
+        icon: AlertTriangle,
         roles: [ROLES.OPERATIONAL_ADMIN],
       },
     ],
@@ -739,8 +801,31 @@ export const businessNav: NavGroup[] = [
     ],
   },
   {
+    title: 'Marketing',
+    items: [
+      {
+        title: 'Campaigns',
+        href: '/business/marketing/campaigns',
+        icon: Megaphone,
+        roles: [ROLES.BUSINESS_ADMIN],
+      },
+      {
+        title: 'Ad Credits',
+        href: '/business/marketing/credits',
+        icon: CreditCard,
+        roles: [ROLES.BUSINESS_ADMIN],
+      },
+    ],
+  },
+  {
     title: 'Account',
     items: [
+      {
+        title: 'Subscription',
+        href: '/business/settings/subscription',
+        icon: CreditCard,
+        roles: [ROLES.BUSINESS_ADMIN],
+      },
       {
         title: 'Settings',
         href: '/business/settings',
@@ -831,6 +916,12 @@ export const userNav: NavGroup[] = [
   {
     title: 'Account',
     items: [
+      {
+        title: 'Subscription',
+        href: '/settings/subscription',
+        icon: CreditCard,
+        roles: [ROLES.USER],
+      },
       {
         title: 'Settings',
         href: '/settings',

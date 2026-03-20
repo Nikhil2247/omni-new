@@ -1319,7 +1319,7 @@ export default function VendorPageClient({
 
       {/* Full Gallery Panel */}
       <Dialog open={galleryPanelOpen} onOpenChange={setGalleryPanelOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto !max-w-6xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Images className="h-4 w-4" />

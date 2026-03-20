@@ -37,11 +37,75 @@ export class KycVerificationRepository extends BaseRepository<
           select: {
             id: true,
             businessName: true,
+            slug: true,
             contactEmail: true,
+            status: true,
           },
         },
       },
     });
+  }
+
+  async findAll(options?: {
+    status?: KYCStatus | KYCStatus[];
+    skip?: number;
+    take?: number;
+    orderBy?: 'asc' | 'desc';
+  }) {
+    this.logger.log(`Repository findAll called with options: ${JSON.stringify(options)}`);
+
+    const where: Prisma.VendorKYCWhereInput = {};
+
+    if (options?.status) {
+      if (Array.isArray(options.status)) {
+        where.status = { in: options.status };
+      } else {
+        where.status = options.status;
+      }
+    }
+
+    try {
+      const results = await this.model.findMany({
+        where,
+        include: {
+          documents: {
+            orderBy: { createdAt: 'desc' },
+          },
+          vendorProfile: {
+            select: {
+              id: true,
+              businessName: true,
+              slug: true,
+              contactEmail: true,
+              status: true,
+            },
+          },
+        },
+        orderBy: { createdAt: options?.orderBy || 'desc' },
+        skip: options?.skip,
+        take: options?.take,
+      });
+
+      this.logger.log(`Repository findAll found ${results?.length ?? 0} records`);
+      return results || [];
+    } catch (error) {
+      this.logger.error(`Repository findAll error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  async countAll(status?: KYCStatus | KYCStatus[]): Promise<number> {
+    const where: Prisma.VendorKYCWhereInput = {};
+
+    if (status) {
+      if (Array.isArray(status)) {
+        where.status = { in: status };
+      } else {
+        where.status = status;
+      }
+    }
+
+    return this.model.count({ where });
   }
 
   async findByStatus(

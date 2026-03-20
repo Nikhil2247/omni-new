@@ -36,6 +36,17 @@ export const VENDOR_EVENTS = {
   REACTIVATED: 'vendor.reactivated',
   FEATURED: 'vendor.featured',
   UNFEATURED: 'vendor.unfeatured',
+  CLAIMED: 'vendor.claimed',
+} as const;
+
+// Vendor Claim Events
+export const VENDOR_CLAIM_EVENTS = {
+  INITIATED: 'vendor.claim.initiated',
+  VERIFICATION_SENT: 'vendor.claim.verification_sent',
+  VERIFIED: 'vendor.claim.verified',
+  APPROVED: 'vendor.claim.approved',
+  REJECTED: 'vendor.claim.rejected',
+  EXPIRED: 'vendor.claim.expired',
 } as const;
 
 // Portfolio & Media Events
@@ -143,6 +154,7 @@ export const SEARCH_EVENTS = {
 export const ALL_EVENTS = {
   ...USER_EVENTS,
   ...VENDOR_EVENTS,
+  ...VENDOR_CLAIM_EVENTS,
   ...PORTFOLIO_EVENTS,
   ...MEDIA_EVENTS,
   ...LEAD_EVENTS,
@@ -172,6 +184,15 @@ export interface UserEventPayload extends BaseEventPayload {
 export interface VendorEventPayload extends BaseEventPayload {
   vendorProfileId: string;
   userId?: string;
+}
+
+export interface VendorClaimEventPayload extends BaseEventPayload {
+  claimId: string;
+  vendorProfileId: string;
+  userId: string;
+  adminUserId?: string;
+  verificationMethod?: string;
+  reason?: string;
 }
 
 export interface LeadEventPayload extends BaseEventPayload {

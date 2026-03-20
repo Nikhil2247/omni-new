@@ -11,6 +11,8 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -28,15 +30,19 @@ import {
 } from '../../../infrastructure/storage/upload.service';
 import { MinioService } from '../../../infrastructure/storage/minio.service';
 import { CreateGuestUploadDto } from '../../../domain/planning/dto/guest-upload.dto';
+import { UserUsageService } from '../../../domain/subscription/services/user-usage.service';
 
 @Controller('guest-upload')
 @ApiTags('Guest Upload (Public)')
 @Public()
 export class GuestUploadController {
+  private readonly logger = new Logger(GuestUploadController.name);
+
   constructor(
     private readonly guestUploadService: GuestUploadService,
     private readonly uploadService: UploadService,
     private readonly minioService: MinioService,
+    private readonly userUsageService: UserUsageService,
   ) {}
 
   @Get(':eventCode')
@@ -106,6 +112,36 @@ export class GuestUploadController {
       throw new BadRequestException('This event memory has expired');
     }
 
+    // Check upload limit for event owner
+    // memory.event contains the event with userId (owner)
+    const eventId = memory.event?.id;
+    const ownerId = (memory.event as any)?.userId;
+
+    if (eventId && ownerId) {
+      try {
+        const status = await this.userUsageService.checkFeatureLimit(
+          ownerId,
+          eventId,
+          'memory_uploads_per_event',
+        );
+
+        if (!status.isUnlimited && status.remaining <= 0) {
+          throw new ForbiddenException(
+            'The event owner has reached the upload limit for this event. ' +
+              'Please contact the event organizer.',
+          );
+        }
+      } catch (error) {
+        // Log but don't block if usage service fails - graceful degradation
+        if (error instanceof ForbiddenException) {
+          throw error;
+        }
+        this.logger.warn(
+          `Failed to check upload limit for event ${eventId}: ${error.message}`,
+        );
+      }
+    }
+
     // Determine media type
     const isVideo = file.mimetype.startsWith('video/');
     const mediaType = isVideo ? 'VIDEO' : 'IMAGE';
@@ -145,6 +181,23 @@ export class GuestUploadController {
       fileSize: uploaded.size,
       caption: dto.caption,
     });
+
+    // Record usage for event owner after successful upload
+    if (eventId && ownerId) {
+      try {
+        await this.userUsageService.recordUsage(
+          ownerId,
+          eventId,
+          'memory_uploads_per_event',
+          1,
+        );
+      } catch (error) {
+        // Log but don't fail the upload if usage recording fails
+        this.logger.warn(
+          `Failed to record upload usage for event ${eventId}: ${error.message}`,
+        );
+      }
+    }
 
     const mediaUrl = guestUpload.mediaUrl
       ? await this.minioService.getFileUrl(guestUpload.mediaUrl)

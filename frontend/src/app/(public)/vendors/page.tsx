@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sheet";
 import type { VendorSearchParams } from "@/lib/api/types/vendor.types";
 import { Search, Users, ArrowRight, SlidersHorizontal } from "lucide-react";
+import { BannerAdsCarousel } from "@/components/ads";
 
 // ─── Lenis Smooth Scroll ─────────────────────────────────────────────────────
 
@@ -470,7 +471,7 @@ function VendorsPageContent() {
       <div className="max-w-8xl mx-auto px-6 py-8 lg:py-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
           <aside className="sticky top-6 hidden self-start lg:block">
-            <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40 max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain pr-1">
+            <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40 max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain pr-1 space-y-6">
               <VendorFilters
                 selectedCategoryId={selectedCategoryId}
                 setSelectedCategoryId={setSelectedCategoryId}
@@ -484,6 +485,8 @@ function VendorsPageContent() {
                 onClear={clearFilters}
                 autoApply
               />
+              {/* Sponsored Ads in Sidebar */}
+              <BannerAdsCarousel placement="search" limit={2} variant="compact" />
             </div>
           </aside>
 

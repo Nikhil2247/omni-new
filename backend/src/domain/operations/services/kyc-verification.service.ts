@@ -42,8 +42,67 @@ export class KycVerificationService {
     return kyc;
   }
 
+  async createWithDetails(
+    vendorProfileId: string,
+    details: { legalName: string; businessType: string; taxId?: string },
+  ): Promise<VendorKYC> {
+    this.logger.log(`Creating KYC record with details for vendor: ${vendorProfileId}`);
+
+    // Check if KYC already exists
+    const existing =
+      await this.kycRepository.findByVendorProfileId(vendorProfileId);
+    if (existing) {
+      throw new ConflictException('KYC record already exists for this vendor');
+    }
+
+    const kyc = await this.kycRepository.create({
+      vendorProfile: { connect: { id: vendorProfileId } },
+      legalName: details.legalName,
+      businessType: details.businessType,
+      taxId: details.taxId,
+      status: 'PENDING',
+    });
+
+    this.eventEmitter.emit('kyc.created', { kycId: kyc.id, vendorProfileId });
+    return kyc;
+  }
+
+  async update(
+    id: string,
+    data: { legalName?: string; businessType?: string; taxId?: string },
+  ): Promise<VendorKYC> {
+    const kyc = await this.findById(id);
+
+    if (kyc.status !== 'PENDING' && kyc.status !== 'REJECTED') {
+      throw new ConflictException(
+        'KYC can only be updated when in PENDING or REJECTED status',
+      );
+    }
+
+    // If rejected, reset status to pending when updating
+    const updateData: any = { ...data };
+    if (kyc.status === 'REJECTED') {
+      updateData.status = 'PENDING';
+      updateData.rejectedAt = null;
+      updateData.rejectionReason = null;
+    }
+
+    return this.kycRepository.update(id, updateData);
+  }
+
   async findById(id: string): Promise<VendorKYC> {
-    const kyc = await this.kycRepository.findById(id, { documents: true });
+    const kyc = await this.kycRepository.findById(id, {
+      documents: true,
+      vendorProfile: {
+        select: {
+          id: true,
+          businessName: true,
+          slug: true,
+          contactEmail: true,
+          status: true,
+        },
+      },
+    });
     if (!kyc) {
       throw new NotFoundException('KYC record not found');
     }
@@ -54,6 +113,17 @@ export class KycVerificationService {
     vendorProfileId: string,
   ): Promise<VendorKYC | null> {
     return this.kycRepository.findByVendorProfileId(vendorProfileId);
+  }
+
+  async findAll(options?: {
+    status?: KYCStatus | KYCStatus[];
+    skip?: number;
+    take?: number;
+  }) {
+    this.logger.log(`Finding all KYC records with options: ${JSON.stringify(options)}`);
+    const records = await this.kycRepository.findAll(options);
+    this.logger.log(`Found ${records?.length ?? 0} KYC records`);
+    return records || [];
   }
 
   async findByStatus(status: KYCStatus) {
@@ -92,7 +162,8 @@ export class KycVerificationService {
 
     return this.kycRepository.update(id, {
       status: 'UNDER_REVIEW',
-      // reviewerId, // Field doesn't exist
+      reviewerId,
+      reviewedAt: new Date(),
     });
   }
 
@@ -105,17 +176,26 @@ export class KycVerificationService {
 
     const updated = await this.kycRepository.update(id, {
       status: 'APPROVED',
-      // reviewerId, // Field doesn't exist
-      // reviewedAt: new Date(), // Field does not exist in schema
+      reviewerId,
+      reviewedAt: new Date(),
       approvedAt: new Date(),
-      // expiryDate, // Field does not exist in schema
+      expiryDate: expiryDate || this.getDefaultExpiryDate(),
     });
 
     this.eventEmitter.emit('kyc.approved', {
       kycId: id,
       vendorProfileId: kyc.vendorProfileId,
+      approvedBy: reviewerId,
+      approvedAt: updated.approvedAt,
+      legalName: kyc.legalName,
     });
     return updated;
+  }
+
+  private getDefaultExpiryDate(): Date {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() + 1); // Default 1 year expiry
+    return date;
   }
 
   async reject(
@@ -127,15 +207,19 @@ export class KycVerificationService {
 
     const updated = await this.kycRepository.update(id, {
       status: 'REJECTED',
-      // reviewerId, // Field doesn't exist
-      // reviewedAt: new Date(), // Field does not exist in schema
+      reviewerId,
+      reviewedAt: new Date(),
+      rejectedAt: new Date(),
       rejectionReason,
     });
 
     this.eventEmitter.emit('kyc.rejected', {
       kycId: id,
       vendorProfileId: kyc.vendorProfileId,
-      reason: rejectionReason,
+      rejectedBy: reviewerId,
+      rejectedAt: updated.rejectedAt,
+      legalName: kyc.legalName,
+      rejectionReason,
     });
     return updated;
   }

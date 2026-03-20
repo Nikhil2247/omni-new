@@ -547,7 +547,9 @@ async function migrateVendorProfiles(
       select: { id: true, userId: true },
     });
     for (const profile of existingProfiles) {
-      existingProfileByUserId.set(profile.userId, profile.id);
+      if (profile.userId) {
+        existingProfileByUserId.set(profile.userId, profile.id);
+      }
     }
   }
 

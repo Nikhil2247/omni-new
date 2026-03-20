@@ -183,8 +183,17 @@ async function bootstrap() {
   // Compression
   app.use(compression());
 
-  // Request size limits
-  app.useBodyParser('json', { limit: '10mb' });
+  // Request size limits with raw body preservation for webhook signature verification
+  // Raw body is needed for verifying webhook signatures (e.g., Razorpay, Stripe)
+  app.useBodyParser('json', {
+    limit: '10mb',
+    verify: (req: any, _res: any, buf: Buffer) => {
+      // Preserve raw body for webhook routes
+      if (req.originalUrl?.includes('/webhooks/')) {
+        req.rawBody = buf;
+      }
+    },
+  });
   app.useBodyParser('urlencoded', { limit: '10mb', extended: true });
 
   // Trust proxy (for rate limiting behind load balancer)

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { User, Bell, Shield } from 'lucide-react'
+import { User, Bell, Shield, CreditCard } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
 import { useUmami } from '@/hooks/use-umami'
 
@@ -42,6 +42,14 @@ export default function BusinessSettingsPage() {
           href="/business/settings/security"
           icon={Shield}
           iconColor="text-green-500"
+        />
+
+        <SettingsCard
+          title="Subscription"
+          description="Manage your plan, ad credits, usage, and billing."
+          href="/business/settings/subscription"
+          icon={CreditCard}
+          iconColor="text-purple-500"
         />
       </div>
     </div>

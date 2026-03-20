@@ -11,15 +11,10 @@ import {
   IsDateString,
   MaxLength,
 } from 'class-validator';
+import { KYCStatus } from '@prisma/client';
 
-export enum KYCStatus {
-  PENDING = 'PENDING',
-  SUBMITTED = 'SUBMITTED',
-  UNDER_REVIEW = 'UNDER_REVIEW',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  EXPIRED = 'EXPIRED',
-}
+// Re-export for convenience
+export { KYCStatus };
 
 // ============================================================================
 // CREATE DTOs

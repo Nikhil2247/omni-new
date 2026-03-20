@@ -6,10 +6,15 @@ import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../../core/database/database.module';
 import { LeadsModule } from '../leads/leads.module';
 import { PlanningModule } from '../planning/planning.module';
+import { StorageModule } from '../../infrastructure/storage/storage.module';
 
 // Services
 import { ActiveEventService } from './services/active-event.service';
 import { KycVerificationService } from './services/kyc-verification.service';
+import { KycDocumentService } from './services/kyc-document.service';
+import { VendorContractService } from './services/vendor-contract.service';
+import { ConsentService } from './services/consent.service';
+import { PayoutService } from './services/payout.service';
 import { DisputeService } from './services/dispute.service';
 import { BillingService } from './services/billing.service';
 import { LeadConversionService } from './services/lead-conversion.service';
@@ -44,11 +49,15 @@ import { VendorAgreementListener } from './events/vendor-agreement.listener';
 import { KYCEventListener } from './events/kyc.listener';
 
 @Module({
-  imports: [DatabaseModule, LeadsModule, PlanningModule],
+  imports: [DatabaseModule, LeadsModule, PlanningModule, StorageModule],
   providers: [
     // Services
     ActiveEventService,
     KycVerificationService,
+    KycDocumentService,
+    VendorContractService,
+    ConsentService,
+    PayoutService,
     DisputeService,
     BillingService,
     LeadConversionService,
@@ -85,6 +94,10 @@ import { KYCEventListener } from './events/kyc.listener';
   exports: [
     ActiveEventService,
     KycVerificationService,
+    KycDocumentService,
+    VendorContractService,
+    ConsentService,
+    PayoutService,
     DisputeService,
     BillingService,
     LeadConversionService,

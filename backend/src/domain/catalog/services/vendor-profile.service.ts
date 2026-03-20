@@ -28,6 +28,7 @@ import {
 } from '../../../infrastructure/storage/upload.service';
 import { PrismaService } from '../../../core/database/prisma.service';
 import { VendorBadgeService } from './vendor-badge.service';
+import { StoragePathHelper } from '../../../infrastructure/storage/storage-path.helper';
 
 @Injectable()
 export class VendorProfileService {
@@ -51,6 +52,7 @@ export class VendorProfileService {
     private readonly uploadService: UploadService,
     private readonly badgeService: VendorBadgeService,
     private readonly prisma: PrismaService,
+    private readonly storagePathHelper: StoragePathHelper,
   ) {}
 
   private async resolveCategoryId(input?: string): Promise<string> {
@@ -753,6 +755,12 @@ export class VendorProfileService {
       }
     }
 
+    // Generate path using StoragePathHelper: vendors/{vendorSlug}/profile/{filename}.webp
+    const storagePath = this.storagePathHelper.vendorProfilePhoto(
+      { vendorSlug: profile.slug },
+      originalName,
+    );
+
     // Upload new profile photo with WebP conversion
     const uploadResult = await this.uploadService.uploadImage(
       file,
@@ -760,7 +768,7 @@ export class VendorProfileService {
       FileCategory.VENDOR_PROFILE,
       mimeType,
       {
-        customPath: `${FileCategory.VENDOR_PROFILE}/${id}/${Date.now()}.webp`,
+        customPath: storagePath,
         imageProcessing: {
           convertToWebP: true,
           quality: 80,
@@ -835,13 +843,19 @@ export class VendorProfileService {
       }
     }
 
+    // Generate path using StoragePathHelper: vendors/{vendorSlug}/banner/{filename}.webp
+    const storagePath = this.storagePathHelper.vendorBanner(
+      { vendorSlug: profile.slug },
+      originalName,
+    );
+
     const uploadResult = await this.uploadService.uploadImage(
       file,
       originalName,
       FileCategory.VENDOR_PROFILE,
       mimeType,
       {
-        customPath: `${FileCategory.VENDOR_PROFILE}/${id}/banner-${Date.now()}.webp`,
+        customPath: storagePath,
         imageProcessing: {
           convertToWebP: true,
           quality: 82,

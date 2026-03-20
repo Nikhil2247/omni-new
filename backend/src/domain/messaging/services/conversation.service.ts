@@ -37,6 +37,10 @@ export class ConversationService {
       throw new NotFoundException('Vendor profile not found');
     }
 
+    if (!vendor.userId) {
+      throw new BadRequestException('Vendor has no associated user (unclaimed vendor)');
+    }
+
     return this.createDirectConversation(userId, vendor.userId);
   }
 
@@ -112,12 +116,18 @@ export class ConversationService {
       throw new NotFoundException('Vendor profile not found');
     }
 
+    if (!vendor.userId) {
+      throw new BadRequestException('Vendor has no associated user (unclaimed vendor)');
+    }
+
+    const vendorUserId = vendor.userId; // Capture non-null value for use in transaction
+
     // Check if there's an existing direct conversation between these users
     // If so, link it to the lead instead of creating a new one
     const existingDirect =
       await this.conversationRepository.findDirectConversationByUsers(
         plannerId,
-        vendor.userId,
+        vendorUserId,
       );
 
     if (existingDirect) {
@@ -138,7 +148,7 @@ export class ConversationService {
           participants: {
             create: [
               { userId: plannerId, role: 'PLANNER' },
-              { userId: vendor.userId, role: 'VENDOR' },
+              { userId: vendorUserId, role: 'VENDOR' },
             ],
           },
         },
@@ -147,7 +157,7 @@ export class ConversationService {
 
     this.eventEmitter.emit('conversation.created', {
       conversation,
-      participants: [plannerId, vendor.userId],
+      participants: [plannerId, vendorUserId],
     });
 
     return conversation;

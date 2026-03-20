@@ -90,6 +90,12 @@ model User {
   messageReceipts MessageReceipt[]
   messageDeletions MessageDeletion[]
   blogPosts       BlogPost[]
+  userSubscription UserSubscription?
+  userConsents    UserConsent[]
+  vendorClaims    VendorClaim[]
+  payments        Payment[]
+  campaignsApproved Campaign[] @relation("CampaignApprovedBy")
+  campaignsRejected Campaign[] @relation("CampaignRejectedBy")
 
   @@index([email])
   @@index([status])
@@ -396,6 +402,14 @@ enum NotificationType {
   TASK_ASSIGNED      // Task assigned to user
   TASK_DUE           // Task due date approaching
   VENDOR_BOOKED      // Vendor confirmed booking
+
+  // Subscription
+  SUBSCRIPTION_ACTIVATED     // Subscription activated
+  SUBSCRIPTION_CANCELLED     // Subscription cancelled
+  SUBSCRIPTION_RENEWED       // Subscription renewed
+  SUBSCRIPTION_PAYMENT_FAILED // Payment failed
+  SUBSCRIPTION_EXPIRING_SOON // Subscription expiring soon
+  CREDITS_PURCHASED          // Ad credits purchased
 
   // System
   SYSTEM_ANNOUNCEMENT // Platform-wide announcement
@@ -797,10 +811,17 @@ model VendorProfile {
   averageRating   Decimal?  @map("average_rating") @db.Decimal(3, 2) // Calculated atomically
   totalReviews    Int       @default(0) @map("total_reviews")         // Count of approved reviews
 
+  // Ad Credits
+  adCredits       Int       @default(0) @map("ad_credits")
+
   // Status
   status          VendorStatus @default(DRAFT)
   verifiedAt      DateTime?    @map("verified_at")
   featuredUntil   DateTime?    @map("featured_until")
+
+  // Plan & Search
+  planTier        PlanTier     @default(FREE) @map("plan_tier")
+  searchBoost     Int          @default(0) @map("search_boost")
 
   // Timestamps
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -821,6 +842,13 @@ model VendorProfile {
   followers       VendorFollow[]
   reviews         VendorReview[]
   badges          VendorBadge[]
+  campaigns       Campaign[]
+  adCreditTransactions AdCreditTransaction[]
+  vendorClaim     VendorClaim?
+  vendorConsents  VendorConsent[]
+  vendorContract  VendorContract?
+  payoutRecords   PayoutRecord[]
+  payments        Payment[]
 
   // Primary indexes
   @@index([categoryId, status])
@@ -837,6 +865,9 @@ model VendorProfile {
   @@index([status, averageRating(sort: Desc)])       // Highest rated vendors
   @@index([categoryId, status, averageRating(sort: Desc)]) // Category with rating sort
   @@index([featuredUntil])                           // Featured vendor queries
+  @@index([planTier])                                // Plan tier filtering
+  @@index([searchBoost])                             // Search boost sorting
+  @@index([status, searchBoost(sort: Desc)])         // Active vendors by search boost
 
   @@map("vendor_profiles")
   @@schema("catalog")
@@ -845,6 +876,7 @@ model VendorProfile {
 /// VendorStatus - Vendor account/profile lifecycle states
 enum VendorStatus {
   DRAFT          // Profile incomplete
+  UNCLAIMED      // Listed but not claimed
   PENDING_REVIEW // Submitted for review
   ACTIVE         // Live and visible
   SUSPENDED      // Temporarily disabled
@@ -1578,6 +1610,7 @@ model Event {
   vendorReviews VendorReview[]
   vendors     EventVendor[]
   eventMemory EventMemory?                              // QR code & guest uploads
+  userUsageRecords UserUsageRecord[]
 
   // Primary indexes
   @@index([userId])
@@ -2190,6 +2223,11 @@ model VendorKYC {
   rejectedAt      DateTime? @map("rejected_at")
   rejectionReason String?   @map("rejection_reason")
 
+  // Reviewer
+  reviewerId      String?   @map("reviewer_id") @db.Uuid
+  reviewedAt      DateTime? @map("reviewed_at")
+  expiryDate      DateTime? @map("expiry_date")
+
   // Timestamps
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -2198,6 +2236,7 @@ model VendorKYC {
   vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id])
   documents       KYCDocument[]
 
+  @@index([reviewerId])
   @@map("vendor_kyc")
   @@schema("operations")
 }
@@ -2216,16 +2255,23 @@ enum KYCStatus {
 
 /// KYCDocument - Individual documents submitted for KYC
 model KYCDocument {
-  id        String       @id @default(uuid()) @db.Uuid
-  kycId     String       @map("kyc_id") @db.Uuid
-  type      DocumentType
-  url       String
-  status    DocumentStatus @default(PENDING)
-  notes     String?
-  createdAt DateTime     @default(now()) @map("created_at")
+  id          String         @id @default(uuid()) @db.Uuid
+  kycId       String         @map("kyc_id") @db.Uuid
+  type        DocumentType
+  url         String
+  fileName    String?        @map("file_name")
+  fileSize    Int?           @map("file_size")
+  mimeType    String?        @map("mime_type")
+  status      DocumentStatus @default(PENDING)
+  notes       String?
+  reviewerId  String?        @map("reviewer_id") @db.Uuid
+  reviewedAt  DateTime?      @map("reviewed_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
 
-  kyc       VendorKYC    @relation(fields: [kycId], references: [id])
+  kyc         VendorKYC      @relation(fields: [kycId], references: [id])
 
+  @@index([reviewerId])
   @@map("kyc_documents")
   @@schema("operations")
 }
@@ -3090,6 +3136,7 @@ model Subscription {
   invoices            Invoice[]
   usageRecords        UsageRecord[]
   statusHistory       SubscriptionStatusHistory[]
+  payments            Payment[]
 
   @@index([vendorProfileId])
   @@index([planId])
@@ -3289,8 +3336,11 @@ model InvoiceLineItem {
 /// Payment - Payment transactions for invoices
 model Payment {
   id                 String         @id @default(uuid()) @db.Uuid
-  invoiceId          String         @map("invoice_id") @db.Uuid
+  invoiceId          String?        @map("invoice_id") @db.Uuid
   paymentMethodId    String?        @map("payment_method_id") @db.Uuid
+  subscriptionId     String?        @map("subscription_id") @db.Uuid
+  userId             String?        @map("user_id") @db.Uuid
+  vendorProfileId    String?        @map("vendor_profile_id") @db.Uuid
 
   // Payment Details
   amount             Decimal        @db.Decimal(10, 2)
@@ -3302,7 +3352,9 @@ model Payment {
   // External Gateway Details
   gatewayProvider    String?        @map("gateway_provider")   // stripe, razorpay
   gatewayPaymentId   String?        @map("gateway_payment_id")
+  gatewayOrderId     String?        @map("gateway_order_id")
   gatewayResponse    Json?          @map("gateway_response")
+  metadata           Json?
 
   // Failure Details
   failureCode        String?        @map("failure_code")
@@ -3319,12 +3371,19 @@ model Payment {
   processedAt        DateTime?      @map("processed_at")
 
   // Relations
-  invoice            Invoice        @relation(fields: [invoiceId], references: [id])
+  invoice            Invoice?       @relation(fields: [invoiceId], references: [id])
   paymentMethod      PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  subscription       Subscription?  @relation(fields: [subscriptionId], references: [id])
+  user               User?          @relation(fields: [userId], references: [id])
+  vendorProfile      VendorProfile? @relation(fields: [vendorProfileId], references: [id])
 
   @@index([invoiceId])
   @@index([paymentMethodId])
+  @@index([subscriptionId])
+  @@index([userId])
+  @@index([vendorProfileId])
   @@index([status])
+  @@index([gatewayOrderId])
   @@map("payments")
   @@schema("subscription")
 }
@@ -3457,6 +3516,561 @@ enum CouponDuration {
   FOREVER           // Discount forever
 
   @@schema("subscription")
+}
+
+// ============================================================================
+// USER SUBSCRIPTION SCHEMA - User Plans & Subscriptions
+// ============================================================================
+
+/// UserPlanTier - User subscription plan tier levels
+enum UserPlanTier {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+
+  @@schema("subscription")
+}
+
+/// UserSubscriptionPlan - Available subscription plans for users
+model UserSubscriptionPlan {
+  id              String            @id @default(uuid()) @db.Uuid
+  name            String            @unique
+  slug            String            @unique
+  description     String?
+  tier            UserPlanTier      @default(FREE)
+  displayOrder    Int               @default(0) @map("display_order")
+  isPopular       Boolean           @default(false) @map("is_popular")
+  trialDays       Int               @default(0) @map("trial_days")
+  isActive        Boolean           @default(true) @map("is_active")
+  isPublic        Boolean           @default(true) @map("is_public")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  features        UserPlanFeature[]
+  prices          UserPlanPrice[]
+  subscriptions   UserSubscription[]
+
+  @@index([tier])
+  @@index([isActive, isPublic])
+  @@map("user_subscription_plans")
+  @@schema("subscription")
+}
+
+/// UserPlanFeature - Features included in user plans
+model UserPlanFeature {
+  id              String               @id @default(uuid()) @db.Uuid
+  planId          String               @map("plan_id") @db.Uuid
+  featureKey      String               @map("feature_key")
+  featureName     String               @map("feature_name")
+  description     String?
+  limitValue      Int?                 @map("limit_value")
+  limitType       FeatureLimitType?    @map("limit_type")
+  isEnabled       Boolean              @default(true) @map("is_enabled")
+  isHighlighted   Boolean              @default(false) @map("is_highlighted")
+  sortOrder       Int                  @default(0) @map("sort_order")
+  createdAt       DateTime             @default(now()) @map("created_at")
+
+  plan            UserSubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureKey], name: "planId_featureKey")
+  @@index([planId])
+  @@index([sortOrder])
+  @@map("user_plan_features")
+  @@schema("subscription")
+}
+
+/// UserPlanPrice - Pricing for user plans
+model UserPlanPrice {
+  id               String               @id @default(uuid()) @db.Uuid
+  planId           String               @map("plan_id") @db.Uuid
+  currency         String               @db.VarChar(3)
+  amount           Decimal              @db.Decimal(10, 2)
+  billingCycle     BillingCycle         @map("billing_cycle")
+  stripePriceId    String?              @map("stripe_price_id")
+  razorpayPlanId   String?              @map("razorpay_plan_id")
+  savingsPercent   Int?                 @map("savings_percent")
+  isActive         Boolean              @default(true) @map("is_active")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  plan             UserSubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  subscriptions    UserSubscription[]
+
+  @@unique([planId, currency, billingCycle], name: "planId_currency_billingCycle")
+  @@index([planId])
+  @@index([currency])
+  @@map("user_plan_prices")
+  @@schema("subscription")
+}
+
+/// UserSubscription - User's subscription to a plan
+model UserSubscription {
+  id                       String               @id @default(uuid()) @db.Uuid
+  userId                   String               @unique @map("user_id") @db.Uuid
+  planId                   String               @map("plan_id") @db.Uuid
+  priceId                  String               @map("price_id") @db.Uuid
+  status                   SubscriptionStatus   @default(PENDING)
+  currentPeriodStart       DateTime             @map("current_period_start")
+  currentPeriodEnd         DateTime             @map("current_period_end")
+  trialStart               DateTime?            @map("trial_start")
+  trialEnd                 DateTime?            @map("trial_end")
+  cancelAtPeriodEnd        Boolean              @default(false) @map("cancel_at_period_end")
+  cancelledAt              DateTime?            @map("cancelled_at")
+  cancellationReason       String?              @map("cancellation_reason")
+  stripeSubscriptionId     String?              @map("stripe_subscription_id")
+  stripeCustomerId         String?              @map("stripe_customer_id")
+  razorpaySubscriptionId   String?              @map("razorpay_subscription_id")
+  createdAt                DateTime             @default(now()) @map("created_at")
+  updatedAt                DateTime             @updatedAt @map("updated_at")
+  autoRenew                Boolean              @default(true) @map("auto_renew")
+  scheduledPlanId          String?              @map("scheduled_plan_id") @db.Uuid
+  scheduledPriceId         String?              @map("scheduled_price_id") @db.Uuid
+
+  plan                     UserSubscriptionPlan @relation(fields: [planId], references: [id])
+  price                    UserPlanPrice        @relation(fields: [priceId], references: [id])
+  user                     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageRecords             UserUsageRecord[]
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+  @@map("user_subscriptions")
+  @@schema("subscription")
+}
+
+/// UserUsageRecord - Usage tracking for user subscriptions
+model UserUsageRecord {
+  id              String           @id @default(uuid()) @db.Uuid
+  subscriptionId  String           @map("subscription_id") @db.Uuid
+  eventId         String           @map("event_id") @db.Uuid
+  featureKey      String           @map("feature_key")
+  usageCount      Int              @default(0) @map("usage_count")
+  usageLimit      Int?             @map("usage_limit")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  event           Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  subscription    UserSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, eventId, featureKey])
+  @@index([subscriptionId])
+  @@index([featureKey])
+  @@index([eventId])
+  @@map("user_usage_records")
+  @@schema("subscription")
+}
+
+// ============================================================================
+// CAMPAIGN & AD CREDITS SCHEMA
+// ============================================================================
+
+/// CampaignStatus - Campaign lifecycle states
+enum CampaignStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+  SCHEDULED
+
+  @@schema("subscription")
+}
+
+/// CampaignType - Types of ad campaigns
+enum CampaignType {
+  PROFILE_BOOST
+  FEATURED_LISTING
+  BANNER_AD
+  SEARCH_PRIORITY
+  CATEGORY_SPOTLIGHT
+  ALBUM_PROMOTION
+
+  @@schema("subscription")
+}
+
+/// Campaign - Advertising campaign
+model Campaign {
+  id                String           @id @default(uuid()) @db.Uuid
+  vendorProfileId   String           @map("vendor_profile_id") @db.Uuid
+  name              String
+  description       String?
+  type              CampaignType
+  status            CampaignStatus   @default(DRAFT)
+  dailyBudget       Int              @map("daily_budget")
+  totalBudget       Int              @map("total_budget")
+  creditsSpent      Int              @default(0) @map("credits_spent")
+  startDate         DateTime         @map("start_date")
+  endDate           DateTime?        @map("end_date")
+  targetEntityId    String?          @map("target_entity_id") @db.Uuid
+  targetEntityType  String?          @map("target_entity_type")
+  impressions       Int              @default(0)
+  clicks            Int              @default(0)
+  conversions       Int              @default(0)
+  submittedAt       DateTime?        @map("submitted_at")
+  approvedAt        DateTime?        @map("approved_at")
+  approvedById      String?          @map("approved_by_id") @db.Uuid
+  rejectedAt        DateTime?        @map("rejected_at")
+  rejectedById      String?          @map("rejected_by_id") @db.Uuid
+  rejectionReason   String?          @map("rejection_reason")
+  internalNotes     String?          @map("internal_notes")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  vendorProfile     VendorProfile    @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  approvedBy        User?            @relation("CampaignApprovedBy", fields: [approvedById], references: [id])
+  rejectedBy        User?            @relation("CampaignRejectedBy", fields: [rejectedById], references: [id])
+  dailyStats        CampaignDailyStats[]
+
+  @@index([vendorProfileId])
+  @@index([status])
+  @@index([type])
+  @@index([startDate, endDate])
+  @@map("campaigns")
+  @@schema("subscription")
+}
+
+/// CampaignDailyStats - Daily statistics for campaigns
+model CampaignDailyStats {
+  id              String   @id @default(uuid()) @db.Uuid
+  campaignId      String   @map("campaign_id") @db.Uuid
+  date            DateTime @db.Date
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  conversions     Int      @default(0)
+  creditsSpent    Int      @default(0) @map("credits_spent")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+  @@index([campaignId])
+  @@index([date])
+  @@map("campaign_daily_stats")
+  @@schema("subscription")
+}
+
+/// CreditTransactionType - Types of ad credit transactions
+enum CreditTransactionType {
+  PURCHASE
+  SPEND
+  CAMPAIGN_SPEND
+  REFUND
+  GRANT
+  EXPIRY
+  ADJUSTMENT
+  SUBSCRIPTION_GRANT
+
+  @@schema("subscription")
+}
+
+/// AdCreditTransaction - Ad credit transaction history
+model AdCreditTransaction {
+  id              String                 @id @default(uuid()) @db.Uuid
+  vendorProfileId String                 @map("vendor_profile_id") @db.Uuid
+  type            CreditTransactionType
+  amount          Int
+  balance         Int
+  description     String?
+  referenceType   String?                @map("reference_type")
+  referenceId     String?                @map("reference_id") @db.Uuid
+  paymentId       String?                @map("payment_id") @db.Uuid
+  createdAt       DateTime               @default(now()) @map("created_at")
+
+  vendorProfile   VendorProfile          @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("ad_credit_transactions")
+  @@schema("subscription")
+}
+
+// ============================================================================
+// VENDOR OPERATIONS SCHEMA - Claims, Contracts, Payouts, Consents
+// ============================================================================
+
+/// ClaimStatus - Vendor claim status
+enum ClaimStatus {
+  PENDING
+  VERIFICATION_SENT
+  VERIFIED
+  APPROVED
+  REJECTED
+  EXPIRED
+
+  @@schema("catalog")
+}
+
+/// ClaimVerificationMethod - Methods for verifying vendor claims
+enum ClaimVerificationMethod {
+  EMAIL
+  PHONE
+  DOCUMENT
+  MANUAL
+  ADMIN_VERIFIED
+
+  @@schema("catalog")
+}
+
+/// VendorClaim - Vendor profile claim requests
+model VendorClaim {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  vendorProfileId     String                  @unique @map("vendor_profile_id") @db.Uuid
+  userId              String                  @map("user_id") @db.Uuid
+  status              ClaimStatus             @default(PENDING)
+  verificationMethod  ClaimVerificationMethod @map("verification_method")
+  verificationCode    String?                 @map("verification_code")
+  verificationExpiry  DateTime?               @map("verification_expiry")
+  verificationData    Json?                   @map("verification_data")
+  expiresAt           DateTime                @map("expires_at")
+  reviewedBy          String?                 @map("reviewed_by") @db.Uuid
+  reviewedAt          DateTime?               @map("reviewed_at")
+  reviewNotes         String?                 @map("review_notes")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+
+  vendorProfile       VendorProfile           @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  user                User                    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("vendor_claims")
+  @@schema("catalog")
+}
+
+/// ConsentType - Types of consent
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  MARKETING_EMAIL
+  MARKETING_SMS
+  MARKETING_PUSH
+  DATA_PROCESSING
+  PLATFORM_COMMISSION
+  COOKIE_ESSENTIAL
+  COOKIE_ANALYTICS
+  COOKIE_MARKETING
+
+  @@schema("public")
+}
+
+/// ConsentDefinition - Consent type definitions
+model ConsentDefinition {
+  id              String       @id @default(uuid()) @db.Uuid
+  type            ConsentType  @map("consent_type")
+  version         String
+  title           String
+  description     String?
+  content         String?
+  summary         String?
+  documentUrl     String?      @map("document_url")
+  isRequired      Boolean      @default(false) @map("is_required")
+  isActive        Boolean      @default(true) @map("is_active")
+  appliesToUsers  Boolean      @default(true) @map("applies_to_users")
+  appliesToVendors Boolean     @default(false) @map("applies_to_vendors")
+  displayOrder    Int          @default(0) @map("display_order")
+  effectiveFrom   DateTime     @default(now()) @map("effective_from")
+  effectiveUntil  DateTime?    @map("effective_until")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@unique([type, version], name: "consentType_version")
+  @@index([type])
+  @@index([isActive])
+  @@index([isRequired])
+  @@map("consent_definitions")
+  @@schema("public")
+}
+
+/// UserConsent - User consent records
+model UserConsent {
+  id              String       @id @default(uuid()) @db.Uuid
+  userId          String       @map("user_id") @db.Uuid
+  consentType     ConsentType  @map("consent_type")
+  version         String
+  documentUrl     String?      @map("document_url")
+  givenAt         DateTime     @map("given_at")
+  withdrawnAt     DateTime?    @map("withdrawn_at")
+  expiresAt       DateTime?    @map("expires_at")
+  ipAddress       String?      @map("ip_address")
+  userAgent       String?      @map("user_agent")
+  source          String?
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, consentType, version], name: "userId_consentType_version")
+  @@index([userId])
+  @@index([consentType])
+  @@index([givenAt])
+  @@map("user_consents")
+  @@schema("public")
+}
+
+/// VendorConsent - Vendor consent records
+model VendorConsent {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  consentType     ConsentType   @map("consent_type")
+  version         String
+  documentUrl     String?       @map("document_url")
+  givenAt         DateTime      @map("given_at")
+  withdrawnAt     DateTime?     @map("withdrawn_at")
+  expiresAt       DateTime?     @map("expires_at")
+  ipAddress       String?       @map("ip_address")
+  userAgent       String?       @map("user_agent")
+  source          String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorProfileId, consentType, version], name: "vendorProfileId_consentType_version")
+  @@index([vendorProfileId])
+  @@index([consentType])
+  @@index([givenAt])
+  @@map("vendor_consents")
+  @@schema("operations")
+}
+
+/// ContractStatus - Vendor contract status
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+  EXPIRED
+
+  @@schema("operations")
+}
+
+/// PayoutFrequency - How often payouts are processed
+enum PayoutFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  AFTER_EVENT
+
+  @@schema("operations")
+}
+
+/// VendorContract - Vendor contract with platform
+model VendorContract {
+  id                String             @id @default(uuid()) @db.Uuid
+  vendorProfileId   String             @unique @map("vendor_profile_id") @db.Uuid
+  contractNumber    String             @unique @map("contract_number")
+  commissionRate    Decimal            @map("commission_rate") @db.Decimal(5, 2)
+  minCommission     Decimal?           @map("min_commission") @db.Decimal(10, 2)
+  maxCommission     Decimal?           @map("max_commission") @db.Decimal(10, 2)
+  payoutFrequency   PayoutFrequency    @map("payout_frequency")
+  payoutHoldDays    Int                @default(7) @map("payout_hold_days")
+  minPayoutAmount   Decimal            @default(500) @map("min_payout_amount") @db.Decimal(10, 2)
+  bankAccountName   String?            @map("bank_account_name")
+  bankAccountNumber String?            @map("bank_account_number")
+  bankIfscCode      String?            @map("bank_ifsc_code")
+  bankName          String?            @map("bank_name")
+  upiId             String?            @map("upi_id")
+  status            ContractStatus     @default(PENDING_SIGNATURE)
+  version           Int                @default(1)
+  startDate         DateTime?          @map("start_date")
+  effectiveDate     DateTime?          @map("effective_date")
+  expiryDate        DateTime?          @map("expiry_date")
+  terminatedAt      DateTime?          @map("terminated_at")
+  terminationReason String?            @map("termination_reason")
+  termsVersion      String?            @map("terms_version")
+  termsAcceptedAt   DateTime?          @map("terms_accepted_at")
+  contractDocUrl    String?            @map("contract_doc_url")
+  signedAt          DateTime?          @map("signed_at")
+  signedByVendor    Boolean            @default(false) @map("signed_by_vendor")
+  signedByPlatform  Boolean            @default(false) @map("signed_by_platform")
+  vendorSignatureIp String?            @map("vendor_signature_ip")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  vendorProfile     VendorProfile      @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  amendments        ContractAmendment[]
+  payoutRecords     PayoutRecord[]
+
+  @@index([status])
+  @@index([vendorProfileId])
+  @@map("vendor_contracts")
+  @@schema("operations")
+}
+
+/// ContractAmendment - Amendments to vendor contracts
+model ContractAmendment {
+  id              String         @id @default(uuid()) @db.Uuid
+  contractId      String         @map("contract_id") @db.Uuid
+  amendmentNumber Int            @map("amendment_number")
+  previousRate    Decimal?       @map("previous_rate") @db.Decimal(5, 2)
+  newRate         Decimal?       @map("new_rate") @db.Decimal(5, 2)
+  description     String
+  effectiveDate   DateTime       @map("effective_date")
+  signedAt        DateTime?      @map("signed_at")
+  signedByVendor  Boolean        @default(false) @map("signed_by_vendor")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  contract        VendorContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, amendmentNumber])
+  @@index([contractId])
+  @@map("contract_amendments")
+  @@schema("operations")
+}
+
+/// PayoutRecordStatus - Payout status
+enum PayoutRecordStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  SCHEDULED
+
+  @@schema("operations")
+}
+
+/// PayoutRecord - Vendor payout records
+model PayoutRecord {
+  id                String             @id @default(uuid()) @db.Uuid
+  contractId        String             @map("contract_id") @db.Uuid
+  vendorProfileId   String             @map("vendor_profile_id") @db.Uuid
+  periodStart       DateTime           @map("period_start")
+  periodEnd         DateTime           @map("period_end")
+  grossAmount       Decimal            @map("gross_amount") @db.Decimal(12, 2)
+  commissionAmount  Decimal            @map("commission_amount") @db.Decimal(12, 2)
+  netAmount         Decimal            @map("net_amount") @db.Decimal(12, 2)
+  grossEarnings     Decimal?           @map("gross_earnings") @db.Decimal(12, 2)
+  totalCommission   Decimal?           @map("total_commission") @db.Decimal(12, 2)
+  netPayout         Decimal?           @map("net_payout") @db.Decimal(12, 2)
+  eventCount        Int                @default(0) @map("event_count")
+  status            PayoutRecordStatus @default(PENDING)
+  scheduledFor      DateTime?          @map("scheduled_for")
+  processedAt       DateTime?          @map("processed_at")
+  failedAt          DateTime?          @map("failed_at")
+  failureReason     String?            @map("failure_reason")
+  transactionRef    String?            @map("transaction_ref")
+  paymentMethod     String?            @map("payment_method")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  contract          VendorContract     @relation(fields: [contractId], references: [id])
+  vendorProfile     VendorProfile      @relation(fields: [vendorProfileId], references: [id])
+
+  @@index([contractId])
+  @@index([vendorProfileId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@map("payout_records")
+  @@schema("operations")
 }
 
 // ============================================================================

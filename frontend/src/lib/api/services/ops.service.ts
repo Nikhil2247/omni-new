@@ -21,6 +21,7 @@ import type {
   CreateVendorAgreementRequest,
   UpdateVendorAgreementRequest,
   CreateDisputeRequest,
+  OpsVendorOnboardingData,
 } from '../types/ops.types'
 
 export interface ApiResponse<T> {
@@ -310,7 +311,12 @@ export const opsService = {
   },
 
   getVendorById: async (id: string): Promise<ApiResponse<OpsVendorProfile>> => {
-    const { data } = await apiClient.get(`${API_ENDPOINTS.OPS.VENDORS}/${id}`)
+    const { data } = await apiClient.get(API_ENDPOINTS.OPS.VENDOR_BY_ID(id))
+    return data
+  },
+
+  getVendorOnboarding: async (vendorProfileId: string): Promise<ApiResponse<OpsVendorOnboardingData>> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.OPS.VENDOR_ONBOARDING(vendorProfileId))
     return data
   },
 

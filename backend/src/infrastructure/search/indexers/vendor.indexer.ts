@@ -37,6 +37,14 @@ export interface VendorSearchDocument extends Record<string, unknown> {
   _geo?: { lat: number; lng: number };
   createdAt: number;
   updatedAt: number;
+
+  // Subscription & Visibility
+  planTier: string; // FREE, STARTER, PROFESSIONAL, ENTERPRISE
+  searchBoost: number; // 0-100
+  hasPremiumBadge: boolean; // true if ENTERPRISE
+  hasProBadge: boolean; // true if PROFESSIONAL or ENTERPRISE
+  isProfileBoosted: boolean; // true if active PROFILE_BOOST campaign exists
+  isFeatured: boolean; // true if PROFESSIONAL or ENTERPRISE
 }
 
 @Injectable()
@@ -107,8 +115,20 @@ export class VendorIndexer implements OnModuleInit {
         'maxPrice',
         'leadCount',
         'viewCount',
+        // Subscription & Visibility filters
+        'planTier',
+        'hasPremiumBadge',
+        'hasProBadge',
+        'isProfileBoosted',
+        'isFeatured',
       ],
-      sortableAttributes: ['createdAt', 'viewCount', 'leadCount', 'minPrice'],
+      sortableAttributes: [
+        'createdAt',
+        'viewCount',
+        'leadCount',
+        'minPrice',
+        'searchBoost', // Sort by search boost for premium placement
+      ],
       rankingRules: [
         'words',
         'typo',
@@ -116,6 +136,7 @@ export class VendorIndexer implements OnModuleInit {
         'attribute',
         'sort',
         'exactness',
+        'searchBoost:desc', // Higher search boost = higher ranking
       ],
       distinctAttribute: 'id',
     };
@@ -137,22 +158,27 @@ export class VendorIndexer implements OnModuleInit {
   // ============================================================================
 
   async indexVendor(vendorId: string): Promise<void> {
-    const vendor = await this.fetchVendorData(vendorId);
+    const result = await this.fetchVendorData(vendorId);
 
-    if (!vendor) {
+    if (!result) {
       this.logger.warn(`Vendor not found for indexing: ${vendorId}`);
       return;
     }
 
-    const document = this.transformToSearchDocument(vendor);
+    const document = this.transformToSearchDocument(
+      result.vendor,
+      result.isProfileBoosted,
+    );
     await this.search.addDocumentsAndWait(VENDOR_INDEX_NAME, [document]);
 
     this.logger.debug(`Vendor indexed: ${vendorId}`);
   }
 
   async indexVendors(vendorIds: string[]): Promise<void> {
-    const vendors = await this.fetchVendorsData(vendorIds);
-    const documents = vendors.map((v) => this.transformToSearchDocument(v));
+    const vendorsData = await this.fetchVendorsData(vendorIds);
+    const documents = vendorsData.map((v) =>
+      this.transformToSearchDocument(v.vendor, v.isProfileBoosted),
+    );
 
     if (documents.length > 0) {
       await this.search.addDocumentsAndWait(VENDOR_INDEX_NAME, documents);
@@ -209,7 +235,13 @@ export class VendorIndexer implements OnModuleInit {
         },
       });
 
-      const documents = vendors.map((v) => this.transformToSearchDocument(v));
+      // Fetch active profile boosts for this batch
+      const vendorIds = vendors.map((v) => v.id);
+      const boostedVendors = await this.fetchActiveProfileBoosts(vendorIds);
+
+      const documents = vendors.map((v) =>
+        this.transformToSearchDocument(v, boostedVendors.has(v.id)),
+      );
 
       if (documents.length > 0) {
         await this.search.addDocumentsAndWait(VENDOR_INDEX_NAME, documents);
@@ -251,12 +283,104 @@ export class VendorIndexer implements OnModuleInit {
     await this.updateVendorIndex(payload.vendorId);
   }
 
+  @OnEvent('vendor.subscription.updated')
+  async handleSubscriptionUpdated(payload: {
+    vendorId: string;
+  }): Promise<void> {
+    this.logger.debug(`Vendor subscription updated: ${payload.vendorId}`);
+    await this.updateVendorIndex(payload.vendorId);
+  }
+
+  @OnEvent('campaign.status.changed')
+  async handleCampaignStatusChanged(payload: {
+    vendorProfileId: string;
+    campaignType: string;
+  }): Promise<void> {
+    // Only reindex if it's a PROFILE_BOOST campaign (affects search visibility)
+    if (payload.campaignType === 'PROFILE_BOOST') {
+      this.logger.debug(
+        `Campaign status changed for vendor: ${payload.vendorProfileId}`,
+      );
+      await this.updateVendorIndex(payload.vendorProfileId);
+    }
+  }
+
+  @OnEvent('campaign.created')
+  async handleCampaignCreated(payload: {
+    vendorProfileId: string;
+    campaignType: string;
+  }): Promise<void> {
+    if (payload.campaignType === 'PROFILE_BOOST') {
+      await this.updateVendorIndex(payload.vendorProfileId);
+    }
+  }
+
+  // ============================================================================
+  // PROFILE BOOST HELPER
+  // ============================================================================
+
+  /**
+   * Check if vendor has an active PROFILE_BOOST campaign
+   * @param vendorProfileId - The vendor profile ID to check
+   * @returns true if vendor has an active PROFILE_BOOST campaign
+   */
+  async isProfileBoosted(vendorProfileId: string): Promise<boolean> {
+    const now = new Date();
+    // Query campaigns table directly to check for active PROFILE_BOOST
+    const activeBoostCampaign = await (this.prisma as any).campaign?.findFirst({
+      where: {
+        vendorProfileId,
+        type: 'PROFILE_BOOST',
+        status: 'ACTIVE',
+        startDate: { lte: now },
+        OR: [{ endDate: null }, { endDate: { gte: now } }],
+      },
+    });
+
+    return activeBoostCampaign !== null;
+  }
+
+  /**
+   * Fetch active PROFILE_BOOST campaigns for a list of vendor profile IDs
+   * @private
+   */
+  private async fetchActiveProfileBoosts(
+    vendorProfileIds: string[],
+  ): Promise<Set<string>> {
+    const now = new Date();
+    try {
+      // Query campaigns table directly (with type assertion for pre-generated client compatibility)
+      const campaigns = await (this.prisma as any).campaign?.findMany({
+        where: {
+          vendorProfileId: { in: vendorProfileIds },
+          type: 'PROFILE_BOOST',
+          status: 'ACTIVE',
+          startDate: { lte: now },
+          OR: [{ endDate: null }, { endDate: { gte: now } }],
+        },
+        select: { vendorProfileId: true },
+      });
+
+      return new Set(
+        (campaigns || []).map((c: { vendorProfileId: string }) => c.vendorProfileId),
+      );
+    } catch {
+      // If campaign table doesn't exist yet, return empty set
+      this.logger.debug(
+        'Campaign table not available, skipping profile boost check',
+      );
+      return new Set();
+    }
+  }
+
   // ============================================================================
   // DATA FETCHING
   // ============================================================================
 
-  private async fetchVendorData(vendorId: string): Promise<unknown> {
-    return this.prisma.vendorProfile.findUnique({
+  private async fetchVendorData(
+    vendorId: string,
+  ): Promise<{ vendor: unknown; isProfileBoosted: boolean } | null> {
+    const vendor = await this.prisma.vendorProfile.findUnique({
       where: { id: vendorId },
       include: {
         category: true,
@@ -270,10 +394,22 @@ export class VendorIndexer implements OnModuleInit {
         tags: { include: { tag: true } },
       },
     });
+
+    if (!vendor) return null;
+
+    // Check for active PROFILE_BOOST campaign separately
+    const boostedVendors = await this.fetchActiveProfileBoosts([vendorId]);
+
+    return {
+      vendor,
+      isProfileBoosted: boostedVendors.has(vendorId),
+    };
   }
 
-  private async fetchVendorsData(vendorIds: string[]): Promise<unknown[]> {
-    return this.prisma.vendorProfile.findMany({
+  private async fetchVendorsData(
+    vendorIds: string[],
+  ): Promise<Array<{ vendor: unknown; isProfileBoosted: boolean }>> {
+    const vendors = await this.prisma.vendorProfile.findMany({
       where: { id: { in: vendorIds } },
       include: {
         category: true,
@@ -287,13 +423,24 @@ export class VendorIndexer implements OnModuleInit {
         tags: { include: { tag: true } },
       },
     });
+
+    // Fetch active profile boosts for all vendors
+    const boostedVendors = await this.fetchActiveProfileBoosts(vendorIds);
+
+    return vendors.map((vendor) => ({
+      vendor,
+      isProfileBoosted: boostedVendors.has(vendor.id),
+    }));
   }
 
   // ============================================================================
   // DATA TRANSFORMATION
   // ============================================================================
 
-  private transformToSearchDocument(vendor: any): VendorSearchDocument {
+  private transformToSearchDocument(
+    vendor: any,
+    isProfileBoosted: boolean = false,
+  ): VendorSearchDocument {
     const servicePrices = (vendor.services || [])
       .flatMap((service: any) => [service.startingPrice, service.maxPrice])
       .filter((price: any) => price !== null && price !== undefined)
@@ -311,6 +458,13 @@ export class VendorIndexer implements OnModuleInit {
     const longitude = vendor.address?.longitude
       ? Number(vendor.address.longitude)
       : undefined;
+
+    // Subscription & Visibility calculations
+    const planTier: string = vendor.planTier || 'FREE';
+    const searchBoost: number = vendor.searchBoost ?? 0;
+    const hasPremiumBadge = planTier === 'ENTERPRISE';
+    const hasProBadge = ['PROFESSIONAL', 'ENTERPRISE'].includes(planTier);
+    const isFeatured = ['PROFESSIONAL', 'ENTERPRISE'].includes(planTier);
 
     const document: VendorSearchDocument = {
       id: vendor.id,
@@ -343,6 +497,14 @@ export class VendorIndexer implements OnModuleInit {
           : undefined,
       createdAt: new Date(vendor.createdAt).getTime(),
       updatedAt: new Date(vendor.updatedAt).getTime(),
+
+      // Subscription & Visibility
+      planTier,
+      searchBoost,
+      hasPremiumBadge,
+      hasProBadge,
+      isProfileBoosted,
+      isFeatured,
     };
 
     return document;
@@ -364,7 +526,18 @@ export class VendorIndexer implements OnModuleInit {
       priceMax?: number;
       isVerified?: boolean;
       serviceAreaCityId?: string;
-      sortBy?: 'createdAt' | 'viewCount' | 'leadCount' | 'minPrice';
+      // Subscription & Visibility filters
+      planTier?: string | string[]; // Filter by plan tier(s)
+      hasProBadge?: boolean; // Filter to PRO+ vendors only
+      hasPremiumBadge?: boolean; // Filter to ENTERPRISE vendors only
+      isFeatured?: boolean; // Filter to featured vendors
+      isProfileBoosted?: boolean; // Filter to boosted profiles
+      sortBy?:
+        | 'createdAt'
+        | 'viewCount'
+        | 'leadCount'
+        | 'minPrice'
+        | 'searchBoost';
       sortOrder?: 'asc' | 'desc';
     },
   ) {
@@ -398,11 +571,40 @@ export class VendorIndexer implements OnModuleInit {
       filters.push(`serviceAreas = "${options.serviceAreaCityId}"`);
     }
 
+    // Subscription & Visibility filters
+    if (options?.planTier) {
+      if (Array.isArray(options.planTier)) {
+        const tierFilters = options.planTier
+          .map((tier) => `planTier = "${tier}"`)
+          .join(' OR ');
+        filters.push(`(${tierFilters})`);
+      } else {
+        filters.push(`planTier = "${options.planTier}"`);
+      }
+    }
+
+    if (options?.hasProBadge !== undefined) {
+      filters.push(`hasProBadge = ${options.hasProBadge}`);
+    }
+
+    if (options?.hasPremiumBadge !== undefined) {
+      filters.push(`hasPremiumBadge = ${options.hasPremiumBadge}`);
+    }
+
+    if (options?.isFeatured !== undefined) {
+      filters.push(`isFeatured = ${options.isFeatured}`);
+    }
+
+    if (options?.isProfileBoosted !== undefined) {
+      filters.push(`isProfileBoosted = ${options.isProfileBoosted}`);
+    }
+
     const sortField = {
       createdAt: 'createdAt',
       viewCount: 'viewCount',
       leadCount: 'leadCount',
       minPrice: 'minPrice',
+      searchBoost: 'searchBoost',
     }[options?.sortBy || 'createdAt'];
 
     const sortOrder = options?.sortOrder || 'desc';

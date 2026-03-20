@@ -11,22 +11,10 @@ import {
   IsUrl,
   MaxLength,
 } from 'class-validator';
+import { DocumentType, DocumentStatus } from '@prisma/client';
 
-export enum DocumentType {
-  BUSINESS_LICENSE = 'BUSINESS_LICENSE',
-  TAX_CERTIFICATE = 'TAX_CERTIFICATE',
-  INSURANCE = 'INSURANCE',
-  ID_DOCUMENT = 'ID_DOCUMENT',
-  ADDRESS_PROOF = 'ADDRESS_PROOF',
-  OTHER = 'OTHER',
-}
-
-export enum DocumentStatus {
-  PENDING = 'PENDING',
-  VERIFIED = 'VERIFIED',
-  REJECTED = 'REJECTED',
-  EXPIRED = 'EXPIRED',
-}
+// Re-export for convenience
+export { DocumentType, DocumentStatus };
 
 // ============================================================================
 // CREATE DTOs

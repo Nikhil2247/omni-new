@@ -1,0 +1,7 @@
+export { ProfileStep } from './profile-step'
+export { KycStep } from './kyc-step'
+export { KycPendingStep } from './kyc-pending-step'
+export { ConsentsStep } from './consents-step'
+export { ContractStep } from './contract-step'
+export { BankDetailsStep } from './bank-details-step'
+export { CompletionStep } from './completion-step'

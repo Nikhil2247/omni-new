@@ -17,6 +17,14 @@ import { MessagingController } from './controllers/messaging.controller';
 import { VendorReviewsController } from './controllers/vendor-reviews.controller';
 import { MediaTagsController } from './controllers/media-tags.controller';
 import { LookupsController } from './controllers/lookups.controller';
+import { KycController } from './controllers/kyc.controller';
+import { ContractController } from './controllers/contract.controller';
+import { ConsentController } from './controllers/consent.controller';
+import { CampaignsController } from './controllers/campaigns.controller';
+import { AdCreditsController } from './controllers/ad-credits.controller';
+import { BusinessPaymentController } from './controllers/payment.controller';
+import { BusinessInvoiceController } from './controllers/invoice.controller';
+import { BusinessSubscriptionController } from './controllers/subscription.controller';
 import { CatalogModule } from '../../domain/catalog/catalog.module';
 import { LeadsModule } from '../../domain/leads/leads.module';
 import { OperationsModule } from '../../domain/operations/operations.module';
@@ -24,11 +32,14 @@ import { InsightsModule } from '../../domain/insights/insights.module';
 import { PlanningModule } from '../../domain/planning/planning.module';
 import { MessagingModule } from '../../domain/messaging/messaging.module';
 import { StorageModule } from '../../infrastructure/storage/storage.module';
+import { SubscriptionModule } from '../../domain/subscription/subscription.module';
+import { DatabaseModule } from '../../core/database/database.module';
 import { NotificationService } from 'src/infrastructure/notifications/notification.service';
 import { AuditService } from 'src/core/audit';
 
 @Module({
   imports: [
+    DatabaseModule,
     CatalogModule,
     LeadsModule,
     OperationsModule,
@@ -36,6 +47,7 @@ import { AuditService } from 'src/core/audit';
     PlanningModule,
     MessagingModule,
     StorageModule,
+    SubscriptionModule,
   ],
   controllers: [
     ProfileController,
@@ -50,6 +62,14 @@ import { AuditService } from 'src/core/audit';
     VendorReviewsController,
     MediaTagsController,
     LookupsController,
+    KycController,
+    ContractController,
+    ConsentController,
+    CampaignsController,
+    AdCreditsController,
+    BusinessPaymentController,
+    BusinessInvoiceController,
+    BusinessSubscriptionController,
   ],
   providers: [NotificationService, AuditService],
 })

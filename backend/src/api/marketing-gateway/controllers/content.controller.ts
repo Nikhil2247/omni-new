@@ -31,6 +31,7 @@ import {
   UploadService,
   FileCategory,
 } from '../../../infrastructure/storage/upload.service';
+import { StoragePathHelper } from '../../../infrastructure/storage/storage-path.helper';
 
 const CONTENT_WRITER_ROLE = 'CONTENT_WRITER';
 const MARKETING_ADMIN_ROLES = ['ADMIN_SYSTEM', 'MARKETING_SERVICES_ADMIN'];
@@ -48,14 +49,36 @@ export class ContentController {
   constructor(
     private readonly blogService: BlogService,
     private readonly uploadService: UploadService,
+    private readonly storagePathHelper: StoragePathHelper,
   ) {}
 
   @Post('posts/upload-image')
   @Roles(...CONTENT_EDITOR_ROLES)
   @UseInterceptors(FileInterceptor('file'))
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('slug') slug?: string,
+    @Body('type') type?: 'featured' | 'content',
+  ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
+    }
+
+    // Generate path using StoragePathHelper if slug is provided
+    // Otherwise use generic media path
+    let customPath: string | undefined;
+    if (slug) {
+      if (type === 'featured') {
+        customPath = this.storagePathHelper.blogFeaturedImage(
+          { blogSlug: slug },
+          file.originalname,
+        );
+      } else {
+        customPath = this.storagePathHelper.blogContentImage(
+          { blogSlug: slug },
+          file.originalname,
+        );
+      }
     }
 
     const uploaded = await this.uploadService.uploadImage(
@@ -64,6 +87,7 @@ export class ContentController {
       FileCategory.MEDIA,
       file.mimetype,
       {
+        customPath,
         validation: {
           maxSize: 20 * 1024 * 1024, // 20MB
           allowedMimeTypes: [

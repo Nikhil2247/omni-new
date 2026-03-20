@@ -22,6 +22,7 @@ import type {
   CreateVendorAgreementRequest,
   UpdateVendorAgreementRequest,
   CreateDisputeRequest,
+  OpsVendorOnboardingData,
 } from '@/lib/api/types/ops.types'
 
 export const opsKeys = {
@@ -41,6 +42,7 @@ export const opsKeys = {
   allInvoices: (params?: { status?: string; activeEventId?: string; page?: number; limit?: number }) => [...opsKeys.all, 'all-invoices', params || {}] as const,
   vendors: () => [...opsKeys.all, 'vendors'] as const,
   vendor: (id: string) => [...opsKeys.vendors(), id] as const,
+  vendorOnboarding: (vendorProfileId: string) => [...opsKeys.all, 'vendor-onboarding', vendorProfileId] as const,
   support: () => [...opsKeys.all, 'support'] as const,
   team: {
     managers: () => [...opsKeys.all, 'team', 'managers'] as const,
@@ -587,6 +589,17 @@ export function useOpsVendor(id: string) {
       return response.data
     },
     enabled: !!id,
+  })
+}
+
+export function useOpsVendorOnboarding(vendorProfileId: string) {
+  return useQuery<OpsVendorOnboardingData>({
+    queryKey: opsKeys.vendorOnboarding(vendorProfileId),
+    queryFn: async () => {
+      const response = await opsService.getVendorOnboarding(vendorProfileId)
+      return response.data
+    },
+    enabled: !!vendorProfileId,
   })
 }
 

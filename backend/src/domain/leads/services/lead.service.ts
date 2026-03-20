@@ -104,7 +104,13 @@ export class LeadService {
       throw new NotFoundException('Vendor profile not found');
     }
 
-    this.logger.debug(`Vendor profile userId: ${vendorProfile.userId}`);
+    if (!vendorProfile.userId) {
+      this.logger.error(`Vendor profile has no associated user: ${dto.vendorProfileId}`);
+      throw new NotFoundException('Vendor profile has no associated user (unclaimed vendor)');
+    }
+
+    const vendorUserId = vendorProfile.userId; // Capture non-null value for use in transaction
+    this.logger.debug(`Vendor profile userId: ${vendorUserId}`);
 
     // Validate both users exist before creating conversation
     const [plannerUser, vendorUser] = await Promise.all([
@@ -113,7 +119,7 @@ export class LeadService {
         select: { id: true },
       }),
       this.prisma.user.findUnique({
-        where: { id: vendorProfile.userId },
+        where: { id: vendorUserId },
         select: { id: true },
       }),
     ]);
@@ -126,8 +132,8 @@ export class LeadService {
     }
 
     if (!vendorUser) {
-      this.logger.error(`Vendor user not found: ${vendorProfile.userId}`);
-      throw new NotFoundException(`Vendor user not found: ${vendorProfile.userId}`);
+      this.logger.error(`Vendor user not found: ${vendorUserId}`);
+      throw new NotFoundException(`Vendor user not found: ${vendorUserId}`);
     }
 
     this.logger.debug('Both users validated successfully');
@@ -175,11 +181,11 @@ export class LeadService {
           participants: {
             create: [
               {
-                user: { connect: { id: dto.plannerId } },
+                userId: dto.plannerId,
                 role: 'PLANNER',
               },
               {
-                user: { connect: { id: vendorProfile.userId } },
+                userId: vendorUserId,
                 role: 'VENDOR',
               },
             ],

@@ -45,6 +45,7 @@ import { SalesGatewayModule } from './api/sales-gateway/sales-gateway.module';
 import { BusinessGatewayModule } from './api/business-gateway/business-gateway.module';
 import { UserGatewayModule } from './api/user-gateway/user-gateway.module';
 import { PublicGatewayModule } from './api/public-gateway/public-gateway.module';
+import { PlansApiModule } from './api/plans-api/plans-api.module';
 
 // App-level components
 import { AppController } from './app.controller';
@@ -176,6 +177,11 @@ import { AppService } from './app.service';
     BusinessGatewayModule, // /api/business/*  - 200/min  - BUSINESS_ADMIN
     UserGatewayModule, // /api/user/*      - 100/min  - USER
     PublicGatewayModule, // /api/public/*    - 50/min   - Anonymous
+
+    // ===========================================================================
+    // STANDALONE API MODULES (No prefix from RouterModule)
+    // ===========================================================================
+    PlansApiModule, // /api/plans/*     - Public subscription plans
   ],
   controllers: [AppController],
   providers: [

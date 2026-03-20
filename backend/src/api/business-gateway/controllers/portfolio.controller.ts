@@ -29,6 +29,8 @@ import {
   FileCategory,
 } from '../../../infrastructure/storage/upload.service';
 import { MinioService } from '../../../infrastructure/storage/minio.service';
+import { StoragePathHelper } from '../../../infrastructure/storage/storage-path.helper';
+import { PrismaService } from '../../../core/database/prisma.service';
 
 @Controller('portfolio')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,7 +40,24 @@ export class PortfolioController {
     private readonly portfolioService: PortfolioService,
     private readonly uploadService: UploadService,
     private readonly minioService: MinioService,
+    private readonly storagePathHelper: StoragePathHelper,
+    private readonly prisma: PrismaService,
   ) {}
+
+  /**
+   * Get vendor slug from portfolio ID
+   */
+  private async getVendorSlugForPortfolio(portfolioId: string): Promise<string> {
+    const portfolio = await this.prisma.portfolio.findUnique({
+      where: { id: portfolioId },
+      include: {
+        vendorProfile: {
+          select: { slug: true },
+        },
+      },
+    });
+    return portfolio?.vendorProfile?.slug || 'unknown';
+  }
 
   @Post()
   create(@Body() dto: CreatePortfolioDto) {
@@ -118,6 +137,21 @@ export class PortfolioController {
       throw new BadRequestException('No file uploaded');
     }
 
+    // Get vendor slug for path generation
+    const vendorSlug = await this.getVendorSlugForPortfolio(portfolioId);
+
+    // Generate path using StoragePathHelper: vendors/{vendorSlug}/portfolio/{filename}.webp
+    const storagePath = this.storagePathHelper.vendorPortfolio(
+      { vendorSlug },
+      file.originalname,
+    );
+
+    // Generate thumbnail path: vendors/{vendorSlug}/portfolio/thumbnails/{filename}.webp
+    const thumbnailPath = this.storagePathHelper.vendorPortfolioThumbnail(
+      { vendorSlug },
+      file.originalname,
+    );
+
     // Upload to MinIO with WebP conversion
     const uploaded = await this.uploadService.uploadImage(
       file.buffer,
@@ -125,6 +159,7 @@ export class PortfolioController {
       FileCategory.PORTFOLIO,
       file.mimetype,
       {
+        customPath: storagePath,
         imageProcessing: {
           convertToWebP: true,
           quality: 70,
@@ -162,8 +197,17 @@ export class PortfolioController {
       throw new BadRequestException('No files uploaded');
     }
 
+    // Get vendor slug for path generation
+    const vendorSlug = await this.getVendorSlugForPortfolio(portfolioId);
+
     const results: Awaited<ReturnType<PortfolioService['addMediaItem']>>[] = [];
     for (const file of files) {
+      // Generate path using StoragePathHelper: vendors/{vendorSlug}/portfolio/{filename}.webp
+      const storagePath = this.storagePathHelper.vendorPortfolio(
+        { vendorSlug },
+        file.originalname,
+      );
+
       // Upload to MinIO with WebP conversion
       const uploaded = await this.uploadService.uploadImage(
         file.buffer,
@@ -171,6 +215,7 @@ export class PortfolioController {
         FileCategory.PORTFOLIO,
         file.mimetype,
         {
+          customPath: storagePath,
           imageProcessing: {
             convertToWebP: true,
             quality: 70,

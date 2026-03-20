@@ -1,0 +1,4270 @@
+Loaded Prisma config from prisma.config.ts.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["analytics", "catalog", "content", "interaction", "operations", "planning", "public", "subscription"]
+}
+
+/// User - Core user account for all platform participants
+/// Roles: Planner (end user), Vendor (business owner), Internal staff
+model User {
+  id                       String                    @id @default(uuid()) @db.Uuid
+  email                    String                    @unique
+  passwordHash             String                    @map("password_hash")
+  firstName                String?                   @map("first_name")
+  lastName                 String?                   @map("last_name")
+  phone                    String?
+  avatarUrl                String?                   @map("avatar_url")
+  status                   UserStatus                @default(PENDING)
+  emailVerified            Boolean                   @default(false) @map("email_verified")
+  emailVerifiedAt          DateTime?                 @map("email_verified_at")
+  emailVerifyToken         String?                   @map("email_verify_token")
+  twoFactorEnabled         Boolean                   @default(false) @map("two_factor_enabled")
+  twoFactorSecret          String?                   @map("two_factor_secret")
+  twoFactorBackupCodes     String[]                  @map("two_factor_backup_codes")
+  twoFactorVerifiedAt      DateTime?                 @map("two_factor_verified_at")
+  failedLoginAttempts      Int                       @default(0) @map("failed_login_attempts")
+  lockedUntil              DateTime?                 @map("locked_until")
+  passwordChangedAt        DateTime?                 @map("password_changed_at")
+  passwordResetToken       String?                   @map("password_reset_token")
+  passwordResetExpires     DateTime?                 @map("password_reset_expires")
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @updatedAt @map("updated_at")
+  deletedAt                DateTime?                 @map("deleted_at")
+  lastLoginAt              DateTime?                 @map("last_login_at")
+  hasCompletedOnboarding   Boolean                   @default(false) @map("has_completed_onboarding")
+  authProvider             AuthProvider              @default(LOCAL) @map("auth_provider")
+  vendorProfile            VendorProfile?
+  vendorReviews            VendorReview[]
+  blogPosts                BlogPost[]
+  conversationParticipants ConversationParticipant[]
+  leads                    Lead[]
+  messageDeletions         MessageDeletion[]
+  messageReactions         MessageReaction[]
+  messageReceipts          MessageReceipt[]
+  sentMessages             Message[]                 @relation("UserSentMessages")
+  vendorFollows            VendorFollow[]
+  chatbotConversations     ChatbotConversation[]
+  events                   Event[]
+  vibeQuizResult           VibeQuizResult?
+  weddingPartners          WeddingPartner[]
+  apiKeys                  ApiKey[]
+  loginActivities          LoginActivity[]
+  notifications            Notification[]
+  user_consents            user_consents[]
+  userRoles                UserRoleAssignment[]
+  sessions                 UserSession[]
+  campaignsApproved        Campaign[]                @relation("CampaignApprovedBy")
+  campaignsRejected        Campaign[]                @relation("CampaignRejectedBy")
+  userSubscription         UserSubscription?
+
+  @@index([email])
+  @@index([status])
+  @@index([emailVerified])
+  @@index([authProvider])
+  @@map("users")
+  @@schema("public")
+}
+
+/// Role - Normalized role definitions for RBAC
+/// Supports role hierarchy for permission inheritance
+model Role {
+  id           String               @id @default(uuid()) @db.Uuid
+  name         String               @unique
+  displayName  String               @map("display_name")
+  description  String?
+  isSystem     Boolean              @default(false) @map("is_system")
+  level        Int                  @default(0)
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  parentRoleId String?              @map("parent_role_id") @db.Uuid
+  parentRole   Role?                @relation("RoleHierarchy", fields: [parentRoleId], references: [id])
+  childRoles   Role[]               @relation("RoleHierarchy")
+  users        UserRoleAssignment[]
+
+  @@index([name])
+  @@index([level])
+  @@map("roles")
+  @@schema("public")
+}
+
+/// SystemConfig - Singleton platform configuration state
+model SystemConfig {
+  id                    String   @id @default(uuid()) @db.Uuid
+  maintenanceMode       Boolean  @default(false) @map("maintenance_mode")
+  registrationEnabled   Boolean  @default(true) @map("registration_enabled")
+  allowVendorOnboarding Boolean  @default(true) @map("allow_vendor_onboarding")
+  supportEmail          String?  @map("support_email")
+  updatedBy             String?  @map("updated_by") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("system_config")
+  @@schema("public")
+}
+
+/// FeatureFlag - System feature toggles
+model FeatureFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  description String?
+  enabled     Boolean  @default(false)
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("feature_flags")
+  @@schema("public")
+}
+
+/// UserRoleAssignment - Junction table for User-Role many-to-many
+/// Supports time-limited role assignments (e.g., temporary admin access)
+model UserRoleAssignment {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  roleId     String    @map("role_id") @db.Uuid
+  assignedBy String?   @map("assigned_by") @db.Uuid
+  expiresAt  DateTime? @map("expires_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  role       Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_role_assignments")
+  @@schema("public")
+}
+
+/// UserSession - JWT refresh token management
+/// Enables secure token rotation and multi-device session tracking
+model UserSession {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  refreshToken String?  @map("refresh_token")
+  version      Int      @default(1)
+  userAgent    String?  @map("user_agent")
+  ipAddress    String?  @map("ip_address")
+  deviceType   String?  @map("device_type")
+  deviceName   String?  @map("device_name")
+  location     String?
+  expiresAt    DateTime @map("expires_at")
+  lastActiveAt DateTime @default(now()) @map("last_active_at")
+  isRevoked    Boolean  @default(false) @map("is_revoked")
+  createdAt    DateTime @default(now()) @map("created_at")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isRevoked])
+  @@map("user_sessions")
+  @@schema("public")
+}
+
+/// ApiKey - API key management for external integrations
+/// Supports service-to-service authentication and public API access
+model ApiKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  name       String
+  key        String    @unique
+  keyPrefix  String    @map("key_prefix")
+  scopes     String[]  @default([])
+  rateLimit  Int       @default(1000) @map("rate_limit")
+  isActive   Boolean   @default(true) @map("is_active")
+  lastUsedAt DateTime? @map("last_used_at")
+  expiresAt  DateTime? @map("expires_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  revokedAt  DateTime? @map("revoked_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([key])
+  @@index([isActive])
+  @@map("api_keys")
+  @@schema("public")
+}
+
+/// LoginActivity - Comprehensive login attempt tracking
+/// Records all authentication attempts for security analysis and audit
+model LoginActivity {
+  id              String      @id @default(uuid()) @db.Uuid
+  userId          String?     @map("user_id") @db.Uuid
+  email           String
+  success         Boolean
+  failureReason   String?     @map("failure_reason")
+  loginMethod     LoginMethod @map("login_method")
+  ipAddress       String      @map("ip_address")
+  userAgent       String?     @map("user_agent")
+  deviceType      String?     @map("device_type")
+  browser         String?
+  os              String?
+  country         String?
+  city            String?
+  latitude        Decimal?    @db.Decimal(10, 8)
+  longitude       Decimal?    @db.Decimal(11, 8)
+  riskScore       Int         @default(0) @map("risk_score")
+  riskFactors     String[]    @map("risk_factors")
+  isSuspicious    Boolean     @default(false) @map("is_suspicious")
+  twoFactorUsed   Boolean     @default(false) @map("two_factor_used")
+  twoFactorMethod String?     @map("two_factor_method")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  user            User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([email])
+  @@index([ipAddress])
+  @@index([success])
+  @@index([createdAt])
+  @@index([isSuspicious])
+  @@map("login_activities")
+  @@schema("public")
+}
+
+/// Notification - User notifications for all channels
+/// Supports in-app, email, SMS, and push notifications
+model Notification {
+  id            String              @id @default(uuid()) @db.Uuid
+  userId        String              @map("user_id") @db.Uuid
+  type          NotificationType
+  title         String
+  message       String
+  data          Json?
+  channel       NotificationChannel @default(IN_APP)
+  actionUrl     String?             @map("action_url")
+  imageUrl      String?             @map("image_url")
+  isRead        Boolean             @default(false) @map("is_read")
+  readAt        DateTime?           @map("read_at")
+  isDismissed   Boolean             @default(false) @map("is_dismissed")
+  sentAt        DateTime?           @map("sent_at")
+  deliveredAt   DateTime?           @map("delivered_at")
+  failedAt      DateTime?           @map("failed_at")
+  failureReason String?             @map("failure_reason")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  expiresAt     DateTime?           @map("expires_at")
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, type])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("notifications")
+  @@schema("public")
+}
+
+/// ProfileView - Tracks vendor profile views
+/// Used for analytics and trending vendors
+model ProfileView {
+  id              String   @id @default(uuid()) @db.Uuid
+  vendorProfileId String   @map("vendor_profile_id") @db.Uuid
+  viewerId        String?  @map("viewer_id") @db.Uuid
+  sessionId       String?  @map("session_id")
+  source          String?
+  referrer        String?
+  utmSource       String?  @map("utm_source")
+  utmMedium       String?  @map("utm_medium")
+  utmCampaign     String?  @map("utm_campaign")
+  deviceType      String?  @map("device_type")
+  browser         String?
+  os              String?
+  duration        Int?
+  scrollDepth     Int?     @map("scroll_depth")
+  country         String?
+  city            String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([vendorProfileId])
+  @@index([viewerId])
+  @@index([createdAt])
+  @@index([source])
+  @@map("profile_views")
+  @@schema("public")
+}
+
+/// SearchQuery - Tracks search behavior and patterns
+/// Used for search analytics, autocomplete, and trending searches
+model SearchQuery {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String?  @map("user_id") @db.Uuid
+  sessionId       String?  @map("session_id")
+  query           String
+  queryNormalized String   @map("query_normalized")
+  categoryId      String?  @map("category_id") @db.Uuid
+  cityId          String?  @map("city_id") @db.Uuid
+  filters         Json?
+  resultCount     Int      @map("result_count")
+  hasResults      Boolean  @map("has_results")
+  clickedResults  String[] @map("clicked_results")
+  deviceType      String?  @map("device_type")
+  country         String?
+  city            String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([queryNormalized])
+  @@index([userId])
+  @@index([categoryId])
+  @@index([createdAt])
+  @@index([hasResults])
+  @@map("search_queries")
+  @@schema("public")
+}
+
+/// UserEngagement - Daily aggregated user engagement metrics
+/// Used for user retention analysis and engagement scoring
+model UserEngagement {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  date             DateTime @db.Date
+  sessionCount     Int      @default(0) @map("session_count")
+  totalDuration    Int      @default(0) @map("total_duration")
+  profileViews     Int      @default(0) @map("profile_views")
+  searchCount      Int      @default(0) @map("search_count")
+  leadsSent        Int      @default(0) @map("leads_sent")
+  messagesSent     Int      @default(0) @map("messages_sent")
+  wishlistAdds     Int      @default(0) @map("wishlist_adds")
+  checklistUpdates Int      @default(0) @map("checklist_updates")
+  budgetUpdates    Int      @default(0) @map("budget_updates")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("user_engagements")
+  @@schema("public")
+}
+
+/// VendorMetrics - Daily aggregated vendor performance metrics
+/// Used for vendor analytics dashboard and rankings
+model VendorMetrics {
+  id                String   @id @default(uuid()) @db.Uuid
+  vendorProfileId   String   @map("vendor_profile_id") @db.Uuid
+  date              DateTime @db.Date
+  profileViews      Int      @default(0) @map("profile_views")
+  searchAppearances Int      @default(0) @map("search_appearances")
+  searchClicks      Int      @default(0) @map("search_clicks")
+  clickThroughRate  Decimal? @map("click_through_rate") @db.Decimal(5, 4)
+  leadsReceived     Int      @default(0) @map("leads_received")
+  leadsResponded    Int      @default(0) @map("leads_responded")
+  responseRate      Decimal? @map("response_rate") @db.Decimal(5, 4)
+  avgResponseTime   Int?     @map("avg_response_time")
+  leadsConverted    Int      @default(0) @map("leads_converted")
+  conversionRate    Decimal? @map("conversion_rate") @db.Decimal(5, 4)
+  wishlistAdds      Int      @default(0) @map("wishlist_adds")
+  portfolioViews    Int      @default(0) @map("portfolio_views")
+  totalRevenue      Decimal? @map("total_revenue") @db.Decimal(12, 2)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([vendorProfileId, date])
+  @@index([vendorProfileId])
+  @@index([date])
+  @@map("vendor_metrics")
+  @@schema("public")
+}
+
+/// PlatformMetrics - Daily platform-wide aggregated metrics
+/// Used for admin dashboard and business intelligence
+model PlatformMetrics {
+  id                 String   @id @default(uuid()) @db.Uuid
+  date               DateTime @unique @db.Date
+  totalUsers         Int      @default(0) @map("total_users")
+  newUsers           Int      @default(0) @map("new_users")
+  activeUsers        Int      @default(0) @map("active_users")
+  returningUsers     Int      @default(0) @map("returning_users")
+  totalVendors       Int      @default(0) @map("total_vendors")
+  newVendors         Int      @default(0) @map("new_vendors")
+  activeVendors      Int      @default(0) @map("active_vendors")
+  verifiedVendors    Int      @default(0) @map("verified_vendors")
+  totalLeads         Int      @default(0) @map("total_leads")
+  leadsConverted     Int      @default(0) @map("leads_converted")
+  avgLeadValue       Decimal? @map("avg_lead_value") @db.Decimal(10, 2)
+  totalSessions      Int      @default(0) @map("total_sessions")
+  totalPageViews     Int      @default(0) @map("total_page_views")
+  avgSessionDuration Int?     @map("avg_session_duration")
+  bounceRate         Decimal? @map("bounce_rate") @db.Decimal(5, 4)
+  totalSearches      Int      @default(0) @map("total_searches")
+  zeroResultSearches Int      @default(0) @map("zero_result_searches")
+  eventsCreated      Int      @default(0) @map("events_created")
+  eventsCompleted    Int      @default(0) @map("events_completed")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@map("platform_metrics")
+  @@schema("public")
+}
+
+/// Country - ISO 3166-1 country codes
+model Country {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String  @unique
+  code     String  @unique @db.VarChar(3)
+  code2    String  @unique @db.VarChar(2)
+  dialCode String? @map("dial_code")
+  currency String? @db.VarChar(3)
+  isActive Boolean @default(true) @map("is_active")
+  states   State[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("countries")
+  @@schema("public")
+}
+
+/// State - Administrative divisions within countries
+model State {
+  id        String  @id @default(uuid()) @db.Uuid
+  name      String
+  code      String? @db.VarChar(10)
+  countryId String  @map("country_id") @db.Uuid
+  isActive  Boolean @default(true) @map("is_active")
+  cities    City[]
+  country   Country @relation(fields: [countryId], references: [id])
+
+  @@unique([countryId, name])
+  @@index([countryId])
+  @@index([isActive])
+  @@map("states")
+  @@schema("public")
+}
+
+/// City - Cities within states
+model City {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  stateId   String    @map("state_id") @db.Uuid
+  isActive  Boolean   @default(true) @map("is_active")
+  addresses Address[]
+  state     State     @relation(fields: [stateId], references: [id])
+
+  @@index([stateId])
+  @@index([name])
+  @@index([isActive])
+  @@map("cities")
+  @@schema("public")
+}
+
+/// Address - Physical addresses with optional geocoding
+model Address {
+  id             String          @id @default(uuid()) @db.Uuid
+  addressLine1   String          @map("address_line_1")
+  addressLine2   String?         @map("address_line_2")
+  cityId         String          @map("city_id") @db.Uuid
+  postalCode     String?         @map("postal_code")
+  latitude       Decimal?        @db.Decimal(10, 8)
+  longitude      Decimal?        @db.Decimal(11, 8)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  vendorProfiles VendorProfile[]
+  events         Event[]
+  city           City            @relation(fields: [cityId], references: [id])
+
+  @@index([cityId])
+  @@index([latitude, longitude])
+  @@map("addresses")
+  @@schema("public")
+}
+
+/// Category - Top-level vendor categories (supports hierarchy)
+/// Examples: Photography, Catering, Venues, Entertainment
+model Category {
+  id           String          @id @default(uuid()) @db.Uuid
+  name         String          @unique
+  slug         String          @unique
+  description  String?
+  icon         String?
+  sortOrder    Int             @default(0) @map("sort_order")
+  isActive     Boolean         @default(true) @map("is_active")
+  parentId     String?         @map("parent_id") @db.Uuid
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  parent       Category?       @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     Category[]      @relation("CategoryHierarchy")
+  serviceTypes ServiceType[]
+  vendors      VendorProfile[]
+
+  @@index([parentId])
+  @@index([slug])
+  @@index([isActive, sortOrder])
+  @@map("categories")
+  @@schema("catalog")
+}
+
+/// ServiceType - Normalized service types per category
+/// Examples: Under Photography: Wedding Photography, Portrait, Event Coverage
+model ServiceType {
+  id          String    @id @default(uuid()) @db.Uuid
+  categoryId  String    @map("category_id") @db.Uuid
+  name        String
+  slug        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  category    Category  @relation(fields: [categoryId], references: [id])
+  services    Service[]
+
+  @@unique([categoryId, slug])
+  @@index([categoryId])
+  @@map("service_types")
+  @@schema("catalog")
+}
+
+/// VendorProfile - Business profile for vendors
+/// One-to-one with User, contains all business-specific information
+model VendorProfile {
+  id                   String                @id @default(uuid()) @db.Uuid
+  userId               String?               @unique @map("user_id") @db.Uuid
+  businessName         String                @map("business_name")
+  slug                 String                @unique
+  categoryId           String                @map("category_id") @db.Uuid
+  description          String?
+  tagline              String?
+  profilePhotoUrl      String?               @map("profile_photo_url")
+  addressId            String?               @map("address_id") @db.Uuid
+  serviceRadius        Int?                  @map("service_radius")
+  contactEmail         String?               @map("contact_email")
+  contactPhone         String?               @map("contact_phone")
+  website              String?
+  leadCount            Int                   @default(0) @map("lead_count")
+  viewCount            Int                   @default(0) @map("view_count")
+  averageRating        Decimal?              @map("average_rating") @db.Decimal(3, 2)
+  totalReviews         Int                   @default(0) @map("total_reviews")
+  status               VendorStatus          @default(DRAFT)
+  verifiedAt           DateTime?             @map("verified_at")
+  featuredUntil        DateTime?             @map("featured_until")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  bannerImageUrl       String?               @map("banner_image_url")
+  adCredits            Int                   @default(0) @map("ad_credits")
+  planTier             PlanTier              @default(FREE) @map("plan_tier")
+  searchBoost          Int                   @default(0) @map("search_boost")
+  businessHours        BusinessHour[]
+  portfolios           Portfolio[]
+  serviceAreas         ServiceArea[]
+  services             Service[]
+  badges               VendorBadge[]
+  vendorClaim          VendorClaim?
+  address              Address?              @relation(fields: [addressId], references: [id])
+  category             Category              @relation(fields: [categoryId], references: [id])
+  user                 User?                 @relation(fields: [userId], references: [id])
+  reviews              VendorReview[]
+  tags                 VendorTag[]
+  leads                Lead[]
+  followers            VendorFollow[]
+  vendorConsents       VendorConsent[]
+  vendorContract       VendorContract?
+  kyc                  VendorKYC?
+  adCreditTransactions AdCreditTransaction[]
+  campaigns            Campaign[]
+  subscription         Subscription?
+
+  @@index([categoryId, status])
+  @@index([slug])
+  @@index([addressId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([categoryId, status, createdAt(sort: Desc)])
+  @@index([status, leadCount(sort: Desc)])
+  @@index([status, viewCount(sort: Desc)])
+  @@index([status, averageRating(sort: Desc)])
+  @@index([categoryId, status, averageRating(sort: Desc)])
+  @@index([featuredUntil])
+  @@index([planTier])
+  @@index([searchBoost])
+  @@index([status, searchBoost(sort: Desc)])
+  @@map("vendor_profiles")
+  @@schema("catalog")
+}
+
+/// BusinessHour - Vendor operating hours by day of week
+model BusinessHour {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  dayOfWeek       Int           @map("day_of_week")
+  openTime        String        @map("open_time")
+  closeTime       String        @map("close_time")
+  isClosed        Boolean       @default(false) @map("is_closed")
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorProfileId, dayOfWeek])
+  @@index([vendorProfileId])
+  @@map("business_hours")
+  @@schema("catalog")
+}
+
+/// Tag - Reusable tags for vendor categorization and search
+model Tag {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String      @unique
+  slug      String      @unique
+  createdAt DateTime    @default(now()) @map("created_at")
+  vendors   VendorTag[]
+
+  @@index([slug])
+  @@map("tags")
+  @@schema("catalog")
+}
+
+/// VendorTag - Junction table for Vendor-Tag many-to-many
+model VendorTag {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  tagId           String        @map("tag_id") @db.Uuid
+  tag             Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorProfileId, tagId])
+  @@index([vendorProfileId])
+  @@index([tagId])
+  @@map("vendor_tags")
+  @@schema("catalog")
+}
+
+/// VendorBadgeDefinition - Milestone badge definitions for vendors
+model VendorBadgeDefinition {
+  id           String            @id @default(uuid()) @db.Uuid
+  key          String            @unique @db.VarChar(64)
+  name         String
+  description  String?
+  metric       VendorBadgeMetric
+  threshold    Int
+  icon         String?           @map("icon")
+  color        String?           @map("color")
+  isActive     Boolean           @default(true) @map("is_active")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  vendorBadges VendorBadge[]
+
+  @@index([metric, threshold])
+  @@index([isActive])
+  @@map("vendor_badge_definitions")
+  @@schema("catalog")
+}
+
+/// VendorBadge - Badge awarded to a vendor profile
+model VendorBadge {
+  id                String                @id @default(uuid()) @db.Uuid
+  vendorProfileId   String                @map("vendor_profile_id") @db.Uuid
+  badgeDefinitionId String                @map("badge_definition_id") @db.Uuid
+  achievedAt        DateTime              @default(now()) @map("achieved_at")
+  definition        VendorBadgeDefinition @relation(fields: [badgeDefinitionId], references: [id], onDelete: Cascade)
+  vendorProfile     VendorProfile         @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorProfileId, badgeDefinitionId])
+  @@index([vendorProfileId])
+  @@index([badgeDefinitionId])
+  @@map("vendor_badges")
+  @@schema("catalog")
+}
+
+/// ServiceArea - Geographic areas where vendor provides services
+model ServiceArea {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  cityId          String        @map("city_id") @db.Uuid
+  radiusMiles     Int?          @map("radius_miles")
+  additionalFee   Decimal?      @map("additional_fee") @db.Decimal(10, 2)
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorProfileId, cityId])
+  @@index([vendorProfileId])
+  @@index([cityId])
+  @@map("service_areas")
+  @@schema("catalog")
+}
+
+/// Portfolio - Collection of vendor's work samples
+/// Each vendor can have multiple portfolios (e.g., by event type)
+model Portfolio {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  title           String
+  description     String?
+  sortOrder       Int           @default(0) @map("sort_order")
+  isFeatured      Boolean       @default(false) @map("is_featured")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  mediaItems      MediaItem[]
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId])
+  @@index([vendorProfileId, sortOrder])
+  @@map("portfolios")
+  @@schema("catalog")
+}
+
+/// MediaItem - Individual media files in a portfolio
+model MediaItem {
+  id            String           @id @default(uuid()) @db.Uuid
+  portfolioId   String           @map("portfolio_id") @db.Uuid
+  type          CatalogMediaType
+  url           String
+  thumbnailUrl  String?          @map("thumbnail_url")
+  cdnUrl        String?          @map("cdn_url")
+  altText       String?          @map("alt_text")
+  caption       String?          @map("caption")
+  width         Int?
+  height        Int?
+  duration      Int?
+  size          Int
+  mimeType      String           @map("mime_type")
+  sortOrder     Int              @default(0) @map("sort_order")
+  isApproved    Boolean          @default(true) @map("is_approved")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  tags          MediaItemTag[]
+  portfolio     Portfolio        @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  wishlistItems WishlistItem[]
+
+  @@index([portfolioId])
+  @@index([portfolioId, sortOrder])
+  @@map("media_items")
+  @@schema("catalog")
+}
+
+/// Hashtag - Instagram-style tags for media items
+model Hashtag {
+  id         String         @id @default(uuid()) @db.Uuid
+  tag        String         @unique @db.VarChar(80)
+  normalized String         @unique @db.VarChar(80)
+  createdAt  DateTime       @default(now()) @map("created_at")
+  mediaItems MediaItemTag[]
+
+  @@index([normalized])
+  @@map("hashtags")
+  @@schema("catalog")
+}
+
+/// MediaItemTag - Junction table for MediaItem-Hashtag many-to-many
+model MediaItemTag {
+  mediaItemId String    @map("media_item_id") @db.Uuid
+  hashtagId   String    @map("hashtag_id") @db.Uuid
+  hashtag     Hashtag   @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+  mediaItem   MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+
+  @@id([mediaItemId, hashtagId])
+  @@index([hashtagId])
+  @@map("media_item_tags")
+  @@schema("catalog")
+}
+
+/// VendorReview - Ratings and reviews for vendors
+model VendorReview {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  reviewerId      String        @map("reviewer_id") @db.Uuid
+  eventId         String?       @map("event_id") @db.Uuid
+  rating          Int
+  title           String?
+  body            String?
+  status          ReviewStatus  @default(PENDING)
+  reviewedBy      String?       @map("reviewed_by") @db.Uuid
+  reviewedAt      DateTime?     @map("reviewed_at")
+  reviewNotes     String?       @map("review_notes")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  media           ReviewMedia[]
+  event           Event?        @relation(fields: [eventId], references: [id])
+  reviewer        User          @relation(fields: [reviewerId], references: [id])
+  vendor          VendorProfile @relation(fields: [vendorProfileId], references: [id])
+
+  @@index([vendorProfileId])
+  @@index([reviewerId])
+  @@index([status])
+  @@map("vendor_reviews")
+  @@schema("catalog")
+}
+
+/// ReviewMedia - Media attached to vendor reviews
+model ReviewMedia {
+  id           String          @id @default(uuid()) @db.Uuid
+  reviewId     String          @map("review_id") @db.Uuid
+  type         ReviewMediaType
+  url          String
+  thumbnailUrl String?         @map("thumbnail_url")
+  mimeType     String          @map("mime_type")
+  fileSize     Int             @map("file_size")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  review       VendorReview    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@map("review_media")
+  @@schema("catalog")
+}
+
+/// Service - Individual services offered by a vendor
+model Service {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  serviceTypeId   String?       @map("service_type_id") @db.Uuid
+  name            String
+  description     String?
+  pricingType     PricingType   @map("pricing_type")
+  currency        String        @default("USD") @db.VarChar(3)
+  startingPrice   Decimal?      @map("starting_price") @db.Decimal(10, 2)
+  maxPrice        Decimal?      @map("max_price") @db.Decimal(10, 2)
+  isActive        Boolean       @default(true) @map("is_active")
+  sortOrder       Int           @default(0) @map("sort_order")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  pricingTiers    PricingTier[]
+  serviceType     ServiceType?  @relation(fields: [serviceTypeId], references: [id])
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId])
+  @@index([serviceTypeId])
+  @@index([vendorProfileId, isActive])
+  @@map("services")
+  @@schema("catalog")
+}
+
+/// PricingTier - Tiered pricing options for services
+/// Examples: Basic Package, Premium Package, Full Day Rate
+model PricingTier {
+  id          String   @id @default(uuid()) @db.Uuid
+  serviceId   String   @map("service_id") @db.Uuid
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  unit        String
+  minQuantity Int?     @map("min_quantity")
+  maxQuantity Int?     @map("max_quantity")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@map("pricing_tiers")
+  @@schema("catalog")
+}
+
+/// Lead - Inquiry from planner to vendor
+/// Tracks the entire lead lifecycle from inquiry to booking
+model Lead {
+  id              String              @id @default(uuid()) @db.Uuid
+  vendorProfileId String              @map("vendor_profile_id") @db.Uuid
+  plannerId       String              @map("planner_id") @db.Uuid
+  eventId         String?             @map("event_id") @db.Uuid
+  status          LeadStatus          @default(NEW)
+  source          LeadSource          @default(INQUIRY)
+  eventDate       DateTime?           @map("event_date")
+  eventType       String?             @map("event_type")
+  guestCount      Int?                @map("guest_count")
+  budget          Decimal?            @db.Decimal(10, 2)
+  initialMessage  String?             @map("initial_message")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  respondedAt     DateTime?           @map("responded_at")
+  convertedAt     DateTime?           @map("converted_at")
+  conversation    Conversation?
+  statusHistory   LeadStatusHistory[]
+  event           Event?              @relation(fields: [eventId], references: [id])
+  planner         User                @relation(fields: [plannerId], references: [id])
+  vendorProfile   VendorProfile       @relation(fields: [vendorProfileId], references: [id])
+  messages        Message[]
+
+  @@index([vendorProfileId])
+  @@index([vendorProfileId, status])
+  @@index([plannerId])
+  @@index([createdAt])
+  @@index([vendorProfileId, status, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([vendorProfileId, respondedAt])
+  @@index([eventDate])
+  @@map("leads")
+  @@schema("interaction")
+}
+
+/// LeadStatusHistory - Audit trail for lead status changes
+model LeadStatusHistory {
+  id         String      @id @default(uuid()) @db.Uuid
+  leadId     String      @map("lead_id") @db.Uuid
+  fromStatus LeadStatus? @map("from_status")
+  toStatus   LeadStatus  @map("to_status")
+  note       String?
+  changedBy  String      @map("changed_by") @db.Uuid
+  createdAt  DateTime    @default(now()) @map("created_at")
+  lead       Lead        @relation(fields: [leadId], references: [id])
+
+  @@map("lead_status_history")
+  @@schema("interaction")
+}
+
+/// Message - Individual messages within a lead conversation
+model Message {
+  id             String              @id @default(uuid()) @db.Uuid
+  leadId         String?             @map("lead_id") @db.Uuid
+  conversationId String?             @map("conversation_id") @db.Uuid
+  senderId       String              @map("sender_id") @db.Uuid
+  content        String
+  readAt         DateTime?           @map("read_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  attachments    MessageAttachment[]
+  deletions      MessageDeletion[]
+  reactions      MessageReaction[]
+  receipts       MessageReceipt[]
+  conversation   Conversation?       @relation(fields: [conversationId], references: [id])
+  lead           Lead?               @relation(fields: [leadId], references: [id])
+  sender         User                @relation("UserSentMessages", fields: [senderId], references: [id])
+
+  @@index([leadId, createdAt])
+  @@index([conversationId, createdAt])
+  @@map("messages")
+  @@schema("interaction")
+}
+
+/// Conversation - Standalone DM or lead-linked thread
+model Conversation {
+  id            String                    @id @default(uuid()) @db.Uuid
+  type          ConversationType          @default(DIRECT)
+  leadId        String?                   @unique @map("lead_id") @db.Uuid
+  createdAt     DateTime                  @default(now()) @map("created_at")
+  updatedAt     DateTime                  @updatedAt @map("updated_at")
+  lastMessageAt DateTime?                 @map("last_message_at")
+  participants  ConversationParticipant[]
+  lead          Lead?                     @relation(fields: [leadId], references: [id])
+  messages      Message[]
+
+  @@index([type])
+  @@index([lastMessageAt])
+  @@map("conversations")
+  @@schema("interaction")
+}
+
+/// ConversationParticipant - Users participating in a conversation
+model ConversationParticipant {
+  id             String          @id @default(uuid()) @db.Uuid
+  conversationId String          @map("conversation_id") @db.Uuid
+  userId         String          @map("user_id") @db.Uuid
+  role           ParticipantRole @default(PLANNER)
+  lastReadAt     DateTime?       @map("last_read_at")
+  isMuted        Boolean         @default(false) @map("is_muted")
+  isBlocked      Boolean         @default(false) @map("is_blocked")
+  joinedAt       DateTime        @default(now()) @map("joined_at")
+  conversation   Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("conversation_participants")
+  @@schema("interaction")
+}
+
+/// MessageAttachment - Files attached to a message
+model MessageAttachment {
+  id        String                @id @default(uuid()) @db.Uuid
+  messageId String                @map("message_id") @db.Uuid
+  type      MessageAttachmentType
+  url       String
+  fileName  String                @map("file_name")
+  fileSize  Int                   @map("file_size")
+  mimeType  String                @map("mime_type")
+  createdAt DateTime              @default(now()) @map("created_at")
+  message   Message               @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("message_attachments")
+  @@schema("interaction")
+}
+
+/// MessageReaction - Emoji reactions to messages
+model MessageReaction {
+  id        String   @id @default(uuid()) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  emoji     String
+  createdAt DateTime @default(now()) @map("created_at")
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_reactions")
+  @@schema("interaction")
+}
+
+/// MessageReceipt - Per-user read receipts for a message
+model MessageReceipt {
+  id        String   @id @default(uuid()) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  readAt    DateTime @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("message_receipts")
+  @@schema("interaction")
+}
+
+/// MessageDeletion - Soft delete messages per user
+model MessageDeletion {
+  id        String   @id @default(uuid()) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  deletedAt DateTime @default(now()) @map("deleted_at")
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@map("message_deletions")
+  @@schema("interaction")
+}
+
+/// VendorFollow - User follows a vendor profile
+model VendorFollow {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  createdAt       DateTime      @default(now()) @map("created_at")
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendor          VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vendorProfileId])
+  @@index([userId])
+  @@index([vendorProfileId])
+  @@map("vendor_follows")
+  @@schema("interaction")
+}
+
+/// EventType - Normalized event type definitions
+/// Examples: Wedding, Engagement, Birthday, Corporate Event
+model EventType {
+  id                 String              @id @default(uuid()) @db.Uuid
+  name               String              @unique
+  slug               String              @unique
+  description        String?
+  icon               String?
+  isActive           Boolean             @default(true) @map("is_active")
+  sortOrder          Int                 @default(0) @map("sort_order")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  checklistTemplates ChecklistTemplate[]
+  events             Event[]
+
+  @@index([slug])
+  @@index([isActive, sortOrder])
+  @@map("event_types")
+  @@schema("planning")
+}
+
+/// ChecklistTemplate - Pre-built checklist templates per event type
+/// Provides starting point for users when creating checklists
+model ChecklistTemplate {
+  id          String    @id @default(uuid()) @db.Uuid
+  eventTypeId String    @map("event_type_id") @db.Uuid
+  name        String
+  description String?
+  items       Json
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  eventType   EventType @relation(fields: [eventTypeId], references: [id])
+
+  @@index([eventTypeId])
+  @@map("checklist_templates")
+  @@schema("planning")
+}
+
+/// Event - User's event (wedding, party, etc.)
+/// Central entity for all planning features
+model Event {
+  id               String            @id @default(uuid()) @db.Uuid
+  userId           String            @map("user_id") @db.Uuid
+  eventTypeId      String            @map("event_type_id") @db.Uuid
+  name             String
+  date             DateTime?
+  endDate          DateTime?         @map("end_date")
+  addressId        String?           @map("address_id") @db.Uuid
+  venueName        String?           @map("venue_name")
+  guestCount       Int?              @map("guest_count")
+  description      String?
+  status           EventStatus       @default(PLANNING)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  vendorReviews    VendorReview[]
+  leads            Lead[]
+  budget           Budget?
+  checklists       Checklist[]
+  eventMemory      EventMemory?
+  vendors          EventVendor[]
+  address          Address?          @relation(fields: [addressId], references: [id])
+  eventType        EventType         @relation(fields: [eventTypeId], references: [id])
+  user             User              @relation(fields: [userId], references: [id])
+  guestlist        Guestlist?
+  timelines        Timeline[]
+  userUsageRecords UserUsageRecord[]
+
+  @@index([userId])
+  @@index([eventTypeId])
+  @@index([addressId])
+  @@index([date])
+  @@index([status])
+  @@index([userId, status])
+  @@index([userId, date(sort: Desc)])
+  @@index([status, date])
+  @@index([eventTypeId, status])
+  @@map("events")
+  @@schema("planning")
+}
+
+/// EventVendor - Junction table for Event-Vendor relationship
+/// Tracks vendor shortlisting and booking status per event
+model EventVendor {
+  id              String            @id @default(uuid()) @db.Uuid
+  eventId         String            @map("event_id") @db.Uuid
+  vendorProfileId String            @map("vendor_profile_id") @db.Uuid
+  status          EventVendorStatus @default(SHORTLISTED)
+  notes           String?
+  contractAmount  Decimal?          @map("contract_amount") @db.Decimal(10, 2)
+  depositPaid     Decimal?          @map("deposit_paid") @db.Decimal(10, 2)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  event           Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, vendorProfileId])
+  @@index([eventId])
+  @@index([vendorProfileId])
+  @@map("event_vendors")
+  @@schema("planning")
+}
+
+/// Checklist - Task list for event planning
+/// Users can have multiple checklists per event (e.g., by category)
+model Checklist {
+  id        String          @id @default(uuid()) @db.Uuid
+  eventId   String          @map("event_id") @db.Uuid
+  name      String
+  sortOrder Int             @default(0) @map("sort_order")
+  createdAt DateTime        @default(now()) @map("created_at")
+  items     ChecklistItem[]
+  event     Event           @relation(fields: [eventId], references: [id])
+
+  @@index([eventId])
+  @@map("checklists")
+  @@schema("planning")
+}
+
+/// ChecklistItem - Individual task in a checklist
+model ChecklistItem {
+  id          String    @id @default(uuid()) @db.Uuid
+  checklistId String    @map("checklist_id") @db.Uuid
+  title       String
+  description String?
+  dueDate     DateTime? @map("due_date")
+  isCompleted Boolean   @default(false) @map("is_completed")
+  completedAt DateTime? @map("completed_at")
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  checklist   Checklist @relation(fields: [checklistId], references: [id])
+
+  @@map("checklist_items")
+  @@schema("planning")
+}
+
+/// Guestlist - Container for event guests (one per event)
+model Guestlist {
+  id        String   @id @default(uuid()) @db.Uuid
+  eventId   String   @unique @map("event_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  event     Event    @relation(fields: [eventId], references: [id])
+  guests    Guest[]
+
+  @@map("guestlists")
+  @@schema("planning")
+}
+
+/// Guest - Individual guest in a guestlist
+model Guest {
+  id               String            @id @default(uuid()) @db.Uuid
+  guestlistId      String            @map("guestlist_id") @db.Uuid
+  firstName        String            @map("first_name")
+  lastName         String?           @map("last_name")
+  email            String?
+  phone            String?
+  rsvpStatus       RSVPStatus        @default(PENDING) @map("rsvp_status")
+  plusOne          Int               @default(0) @map("plus_one")
+  tableNumber      Int?              @map("table_number")
+  dietaryReq       String?           @map("dietary_req")
+  notes            String?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  rsvpAt           DateTime?         @map("rsvp_at")
+  rsvpMessage      String?           @map("rsvp_message")
+  rsvpToken        String?           @unique @map("rsvp_token")
+  guestlist        Guestlist         @relation(fields: [guestlistId], references: [id])
+  whatsappMessages WhatsAppMessage[]
+
+  @@map("guests")
+  @@schema("planning")
+}
+
+/// Budget - Event budget container (one per event)
+model Budget {
+  id          String       @id @default(uuid()) @db.Uuid
+  eventId     String       @unique @map("event_id") @db.Uuid
+  totalBudget Decimal?     @map("total_budget") @db.Decimal(10, 2)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  items       BudgetItem[]
+  event       Event        @relation(fields: [eventId], references: [id])
+
+  @@map("budgets")
+  @@schema("planning")
+}
+
+/// BudgetItem - Individual expense/budget line item
+model BudgetItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  budgetId      String   @map("budget_id") @db.Uuid
+  category      String
+  name          String
+  estimatedCost Decimal? @map("estimated_cost") @db.Decimal(10, 2)
+  actualCost    Decimal? @map("actual_cost") @db.Decimal(10, 2)
+  isPaid        Boolean  @default(false) @map("is_paid")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  budget        Budget   @relation(fields: [budgetId], references: [id])
+
+  @@map("budget_items")
+  @@schema("planning")
+}
+
+/// Timeline - Event day schedule/timeline
+model Timeline {
+  id        String   @id @default(uuid()) @db.Uuid
+  eventId   String   @map("event_id") @db.Uuid
+  name      String
+  date      DateTime
+  items     Json
+  createdAt DateTime @default(now()) @map("created_at")
+  event     Event    @relation(fields: [eventId], references: [id])
+
+  @@index([eventId])
+  @@map("timelines")
+  @@schema("planning")
+}
+
+/// Wishlist - User's vendor wishlist/board
+/// Users can save vendors to custom boards for later reference
+model Wishlist {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  name        String
+  description String?
+  isDefault   Boolean        @default(false) @map("is_default")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  items       WishlistItem[]
+
+  @@index([userId])
+  @@map("wishlists")
+  @@schema("planning")
+}
+
+/// WishlistItem - Individual vendor saved to a wishlist
+model WishlistItem {
+  id              String     @id @default(uuid()) @db.Uuid
+  wishlistId      String     @map("wishlist_id") @db.Uuid
+  vendorProfileId String?    @map("vendor_profile_id") @db.Uuid
+  notes           String?
+  createdAt       DateTime   @default(now()) @map("created_at")
+  mediaItemId     String?    @map("media_item_id") @db.Uuid
+  mediaItem       MediaItem? @relation(fields: [mediaItemId], references: [id])
+  wishlist        Wishlist   @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, vendorProfileId])
+  @@unique([wishlistId, mediaItemId])
+  @@index([vendorProfileId])
+  @@index([mediaItemId])
+  @@map("wishlist_items")
+  @@schema("planning")
+}
+
+/// EventMemory - QR code and settings for guest photo uploads
+/// Enables guests to upload photos/videos without login
+model EventMemory {
+  id              String        @id @default(uuid()) @db.Uuid
+  eventId         String        @unique @map("event_id") @db.Uuid
+  qrCode          String        @unique @map("qr_code")
+  qrCodeUrl       String?       @map("qr_code_url")
+  isActive        Boolean       @default(true) @map("is_active")
+  allowUploads    Boolean       @default(true) @map("allow_uploads")
+  requireApproval Boolean       @default(false) @map("require_approval")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  expiresAt       DateTime?     @map("expires_at")
+  event           Event         @relation(fields: [eventId], references: [id])
+  uploads         GuestUpload[]
+
+  @@map("event_memories")
+  @@schema("planning")
+}
+
+/// ChatbotConversation - Persistent AI assistant conversation (multiple per user allowed)
+model ChatbotConversation {
+  id            String                       @id @default(uuid()) @db.Uuid
+  userId        String                       @map("user_id") @db.Uuid
+  language      ChatbotConversationLanguage  @default(en)
+  filters       Json                         @default("{}")
+  turns         Int                          @default(0)
+  lastMessageAt DateTime?                    @map("last_message_at")
+  createdAt     DateTime                     @default(now()) @map("created_at")
+  updatedAt     DateTime                     @updatedAt @map("updated_at")
+  title         String                       @default("New Chat")
+  messages      ChatbotConversationMessage[]
+  user          User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lastMessageAt(sort: Desc)])
+  @@index([lastMessageAt])
+  @@map("chatbot_conversations")
+  @@schema("planning")
+}
+
+/// ChatbotConversationMessage - Individual user/assistant message turn
+model ChatbotConversationMessage {
+  id             String              @id @default(uuid()) @db.Uuid
+  conversationId String              @map("conversation_id") @db.Uuid
+  role           ChatbotMessageRole
+  content        String
+  createdAt      DateTime            @default(now()) @map("created_at")
+  conversation   ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("chatbot_conversation_messages")
+  @@schema("planning")
+}
+
+/// GuestUpload - Photo/video uploaded by event guests
+/// No login required - guests upload via QR code scan
+model GuestUpload {
+  id            String            @id @default(uuid()) @db.Uuid
+  eventMemoryId String            @map("event_memory_id") @db.Uuid
+  uploaderName  String?           @map("uploader_name")
+  uploaderEmail String?           @map("uploader_email")
+  mediaUrl      String            @map("media_url")
+  thumbnailUrl  String?           @map("thumbnail_url")
+  mediaType     PlanningMediaType @map("media_type")
+  fileSize      Int               @map("file_size")
+  caption       String?
+  status        UploadStatus      @default(PENDING)
+  approvedAt    DateTime?         @map("approved_at")
+  rejectedAt    DateTime?         @map("rejected_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  eventMemory   EventMemory       @relation(fields: [eventMemoryId], references: [id], onDelete: Cascade)
+
+  @@index([eventMemoryId])
+  @@index([status])
+  @@map("guest_uploads")
+  @@schema("planning")
+}
+
+/// VibeQuizImage - Curated images for the visual onboarding quiz
+/// Users select images to help personalize their discovery feed
+model VibeQuizImage {
+  id           String              @id @default(uuid()) @db.Uuid
+  url          String
+  thumbnailUrl String              @map("thumbnail_url")
+  category     String
+  style        String
+  tags         String[]
+  isActive     Boolean             @default(true) @map("is_active")
+  sortOrder    Int                 @default(0) @map("sort_order")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  selections   VibeQuizSelection[]
+
+  @@index([isActive, sortOrder])
+  @@index([category])
+  @@index([style])
+  @@map("vibe_quiz_images")
+  @@schema("planning")
+}
+
+/// VibeQuizResult - User's completed quiz results
+/// Stores selected images and derived style preferences
+model VibeQuizResult {
+  id            String              @id @default(uuid()) @db.Uuid
+  userId        String              @unique @map("user_id") @db.Uuid
+  topStyles     String[]            @map("top_styles")
+  topColors     String[]            @map("top_colors")
+  topCategories String[]            @map("top_categories")
+  completedAt   DateTime            @default(now()) @map("completed_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  selections    VibeQuizSelection[]
+
+  @@index([userId])
+  @@map("vibe_quiz_results")
+  @@schema("planning")
+}
+
+/// VibeQuizSelection - Individual image selections in the quiz
+model VibeQuizSelection {
+  id         String         @id @default(uuid()) @db.Uuid
+  resultId   String         @map("result_id") @db.Uuid
+  imageId    String         @map("image_id") @db.Uuid
+  selectedAt DateTime       @default(now()) @map("selected_at")
+  image      VibeQuizImage  @relation(fields: [imageId], references: [id])
+  result     VibeQuizResult @relation(fields: [resultId], references: [id], onDelete: Cascade)
+
+  @@unique([resultId, imageId])
+  @@map("vibe_quiz_selections")
+  @@schema("planning")
+}
+
+/// WeddingIdentity - Joint profile for couples planning together
+/// Allows two users to collaborate on the same planning board
+model WeddingIdentity {
+  id          String           @id @default(uuid()) @db.Uuid
+  displayName String           @map("display_name")
+  eventDate   DateTime?        @map("event_date")
+  eventType   WeddingEventType @default(WEDDING) @map("event_type")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  partners    WeddingPartner[]
+
+  @@map("wedding_identities")
+  @@schema("planning")
+}
+
+/// WeddingPartner - Members of a wedding identity
+/// Supports invite flow for adding a partner
+model WeddingPartner {
+  id                String              @id @default(uuid()) @db.Uuid
+  weddingIdentityId String              @map("wedding_identity_id") @db.Uuid
+  userId            String?             @map("user_id") @db.Uuid
+  name              String
+  email             String?
+  phone             String?
+  isOwner           Boolean             @default(false) @map("is_owner")
+  inviteStatus      PartnerInviteStatus @default(PENDING) @map("invite_status")
+  inviteToken       String?             @unique @map("invite_token")
+  invitedAt         DateTime?           @map("invited_at")
+  acceptedAt        DateTime?           @map("accepted_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  user              User?               @relation(fields: [userId], references: [id])
+  weddingIdentity   WeddingIdentity     @relation(fields: [weddingIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([weddingIdentityId, userId])
+  @@index([userId])
+  @@index([inviteToken])
+  @@map("wedding_partners")
+  @@schema("planning")
+}
+
+/// WhatsAppMessage - Log of WhatsApp messages sent to guests
+model WhatsAppMessage {
+  id            String                @id @default(uuid()) @db.Uuid
+  guestId       String                @map("guest_id") @db.Uuid
+  guestlistId   String                @map("guestlist_id") @db.Uuid
+  messageType   WhatsAppMessageType   @map("message_type")
+  templateId    String?               @map("template_id")
+  customMessage String?               @map("custom_message")
+  status        WhatsAppMessageStatus @default(PENDING)
+  sentAt        DateTime?             @map("sent_at")
+  deliveredAt   DateTime?             @map("delivered_at")
+  readAt        DateTime?             @map("read_at")
+  errorMessage  String?               @map("error_message")
+  externalId    String?               @map("external_id")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  guest         Guest                 @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([guestlistId])
+  @@index([guestId])
+  @@index([status])
+  @@map("whatsapp_messages")
+  @@schema("planning")
+}
+
+/// WhatsAppTemplate - Pre-defined message templates
+model WhatsAppTemplate {
+  id        String              @id @default(uuid()) @db.Uuid
+  name      String
+  type      WhatsAppMessageType
+  content   String
+  variables String[]
+  isActive  Boolean             @default(true) @map("is_active")
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  @@unique([name, type])
+  @@index([type, isActive])
+  @@map("whatsapp_templates")
+  @@schema("planning")
+}
+
+/// VendorKYC - Know Your Customer/Business verification
+/// Required for vendor onboarding and payout eligibility
+model VendorKYC {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @unique @map("vendor_profile_id") @db.Uuid
+  legalName       String        @map("legal_name")
+  businessType    String        @map("business_type")
+  taxId           String?       @map("tax_id")
+  status          KYCStatus     @default(PENDING)
+  submittedAt     DateTime?     @map("submitted_at")
+  approvedAt      DateTime?     @map("approved_at")
+  rejectedAt      DateTime?     @map("rejected_at")
+  rejectionReason String?       @map("rejection_reason")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  expiryDate      DateTime?     @map("expiry_date")
+  reviewedAt      DateTime?     @map("reviewed_at")
+  reviewerId      String?       @map("reviewer_id") @db.Uuid
+  documents       KYCDocument[]
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id])
+
+  @@index([reviewerId])
+  @@index([expiryDate])
+  @@index([status])
+  @@map("vendor_kyc")
+  @@schema("operations")
+}
+
+/// KYCDocument - Individual documents submitted for KYC
+model KYCDocument {
+  id         String         @id @default(uuid()) @db.Uuid
+  kycId      String         @map("kyc_id") @db.Uuid
+  type       DocumentType
+  url        String
+  status     DocumentStatus @default(PENDING)
+  notes      String?
+  createdAt  DateTime       @default(now()) @map("created_at")
+  fileName   String?        @map("file_name")
+  fileSize   Int?           @map("file_size")
+  mimeType   String?        @map("mime_type")
+  reviewedAt DateTime?      @map("reviewed_at")
+  reviewerId String?        @map("reviewer_id") @db.Uuid
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  kyc        VendorKYC      @relation(fields: [kycId], references: [id], onDelete: Cascade)
+
+  @@index([kycId])
+  @@index([status])
+  @@map("kyc_documents")
+  @@schema("operations")
+}
+
+/// Dispute - User complaints and vendor disputes
+model Dispute {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  reporterId      String        @map("reporter_id") @db.Uuid
+  type            DisputeType
+  status          DisputeStatus @default(OPEN)
+  description     String
+  resolution      String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  resolvedAt      DateTime?     @map("resolved_at")
+  resolvedBy      String?       @map("resolved_by") @db.Uuid
+
+  @@map("disputes")
+  @@schema("operations")
+}
+
+/// AuditLog - Immutable audit trail for compliance
+/// Records all significant actions in the system
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id") @db.Uuid
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([entityType, createdAt(sort: Desc)])
+  @@map("audit_logs")
+  @@schema("operations")
+}
+
+/// ActiveEvent - Unified event record for operational workflow
+/// Created either from Lead conversion or direct booking
+model ActiveEvent {
+  id                  String            @id @default(uuid()) @db.Uuid
+  origin              EventOrigin
+  convertedFromLeadId String?           @unique @map("converted_from_lead_id") @db.Uuid
+  referenceImageId    String?           @map("reference_image_id") @db.Uuid
+  clientName          String            @map("client_name")
+  clientPhone         String?           @map("client_phone")
+  clientEmail         String?           @map("client_email")
+  eventDate           DateTime?         @map("event_date")
+  eventEndDate        DateTime?         @map("event_end_date")
+  eventType           String            @map("event_type")
+  venueName           String?           @map("venue_name")
+  venueAddressId      String?           @map("venue_address_id") @db.Uuid
+  totalBudget         Decimal?          @map("total_budget") @db.Decimal(12, 2)
+  totalSpend          Decimal           @default(0) @map("total_spend") @db.Decimal(12, 2)
+  opsAdminId          String?           @map("ops_admin_id") @db.Uuid
+  opsManagerId        String?           @map("ops_manager_id") @db.Uuid
+  status              ActiveEventStatus @default(NEW)
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  completedAt         DateTime?         @map("completed_at")
+  eventNotes          EventNote[]
+  operationalTasks    OperationalTask[]
+  requirementSheet    RequirementSheet?
+  vendorAgreements    VendorAgreement[]
+
+  @@index([opsManagerId])
+  @@index([opsAdminId])
+  @@index([eventDate])
+  @@index([status])
+  @@index([origin])
+  @@index([status, eventDate])
+  @@index([opsManagerId, status])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([origin, status])
+  @@index([opsManagerId, status, eventDate])
+  @@map("active_events")
+  @@schema("operations")
+}
+
+/// EventNote - Internal notes/comments on an active event
+model EventNote {
+  id            String      @id @default(uuid()) @db.Uuid
+  activeEventId String      @map("active_event_id") @db.Uuid
+  authorId      String      @map("author_id") @db.Uuid
+  content       String
+  isInternal    Boolean     @default(true) @map("is_internal")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  activeEvent   ActiveEvent @relation(fields: [activeEventId], references: [id], onDelete: Cascade)
+
+  @@index([activeEventId])
+  @@map("event_notes")
+  @@schema("operations")
+}
+
+/// RequirementSheet - Requirements breakdown for an event
+/// Created by Ops Manager to list what vendors/services are needed
+model RequirementSheet {
+  id               String               @id @default(uuid()) @db.Uuid
+  activeEventId    String               @unique @map("active_event_id") @db.Uuid
+  notes            String?
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  createdBy        String               @map("created_by") @db.Uuid
+  approvalToken    String?              @unique @map("approval_token")
+  approvalStatus   ClientApprovalStatus @default(DRAFT) @map("approval_status")
+  sentToClientAt   DateTime?            @map("sent_to_client_at")
+  clientApprovedAt DateTime?            @map("client_approved_at")
+  clientRejectedAt DateTime?            @map("client_rejected_at")
+  rejectionReason  String?              @map("rejection_reason")
+  items            RequirementItem[]
+  activeEvent      ActiveEvent          @relation(fields: [activeEventId], references: [id], onDelete: Cascade)
+
+  @@index([approvalToken])
+  @@map("requirement_sheets")
+  @@schema("operations")
+}
+
+/// RequirementItem - Individual requirement in a requirement sheet
+/// Examples: "1 Photographer", "1 Decorator", "2 Security Guards"
+model RequirementItem {
+  id                 String            @id @default(uuid()) @db.Uuid
+  requirementSheetId String            @map("requirement_sheet_id") @db.Uuid
+  category           String
+  description        String
+  quantity           Int               @default(1)
+  estimatedBudget    Decimal?          @map("estimated_budget") @db.Decimal(10, 2)
+  notes              String?
+  status             RequirementStatus @default(PENDING)
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  requirementSheet   RequirementSheet  @relation(fields: [requirementSheetId], references: [id], onDelete: Cascade)
+  vendorAgreement    VendorAgreement?
+
+  @@index([requirementSheetId])
+  @@map("requirement_items")
+  @@schema("operations")
+}
+
+/// VendorAgreement - Contract/agreement with vendor for an event
+/// Links requirement to selected vendor with financial terms
+model VendorAgreement {
+  id                String              @id @default(uuid()) @db.Uuid
+  activeEventId     String              @map("active_event_id") @db.Uuid
+  requirementItemId String?             @unique @map("requirement_item_id") @db.Uuid
+  vendorProfileId   String              @map("vendor_profile_id") @db.Uuid
+  vendorName        String              @map("vendor_name")
+  agreedAmount      Decimal             @map("agreed_amount") @db.Decimal(10, 2)
+  advancePaid       Decimal             @default(0) @map("advance_paid") @db.Decimal(10, 2)
+  balanceDue        Decimal             @default(0) @map("balance_due") @db.Decimal(10, 2)
+  status            AgreementStatus     @default(DRAFT)
+  sentAt            DateTime?           @map("sent_at")
+  acceptedAt        DateTime?           @map("accepted_at")
+  declinedAt        DateTime?           @map("declined_at")
+  declineReason     String?             @map("decline_reason")
+  contractUrl       String?             @map("contract_url")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  terms_accepted_at DateTime?
+  terms_accepted_ip String?
+  invoice           ProvisionalInvoice?
+  quotation         Quotation?
+  activeEvent       ActiveEvent         @relation(fields: [activeEventId], references: [id], onDelete: Cascade)
+  requirementItem   RequirementItem?    @relation(fields: [requirementItemId], references: [id])
+
+  @@index([activeEventId])
+  @@index([vendorProfileId])
+  @@index([status])
+  @@map("vendor_agreements")
+  @@schema("operations")
+}
+
+/// ProvisionalInvoice - Invoice generated when agreement is locked or quotation is converted
+model ProvisionalInvoice {
+  id                String                   @id @default(uuid()) @db.Uuid
+  vendorAgreementId String                   @unique @map("vendor_agreement_id") @db.Uuid
+  invoiceNumber     String                   @unique @map("invoice_number")
+  amount            Decimal                  @db.Decimal(10, 2)
+  status            ProvisionalInvoiceStatus @default(PENDING)
+  issuedAt          DateTime                 @default(now()) @map("issued_at")
+  paidAt            DateTime?                @map("paid_at")
+  currency          String                   @default("INR")
+  dueDate           DateTime?                @map("due_date")
+  items             Json?                    @default("[]")
+  quotationId       String?                  @unique @map("quotation_id") @db.Uuid
+  quotation         Quotation?               @relation(fields: [quotationId], references: [id])
+  vendorAgreement   VendorAgreement          @relation(fields: [vendorAgreementId], references: [id])
+
+  @@index([status])
+  @@map("provisional_invoices")
+  @@schema("operations")
+}
+
+/// Quotation - Detailed quote with line items sent for vendor approval
+/// Created from VendorAgreement, converts to ProvisionalInvoice when accepted
+model Quotation {
+  id                 String              @id @default(uuid()) @db.Uuid
+  vendorAgreementId  String              @unique @map("vendor_agreement_id") @db.Uuid
+  quotationNumber    String              @unique @map("quotation_number")
+  currency           String              @default("INR")
+  items              Json                @default("[]")
+  subtotal           Decimal             @db.Decimal(12, 2)
+  taxRate            Decimal?            @map("tax_rate") @db.Decimal(5, 2)
+  taxAmount          Decimal?            @map("tax_amount") @db.Decimal(12, 2)
+  discount           Decimal?            @db.Decimal(12, 2)
+  discountType       String?             @map("discount_type")
+  totalAmount        Decimal             @map("total_amount") @db.Decimal(12, 2)
+  notes              String?
+  termsAndConditions String?             @map("terms_and_conditions")
+  validUntil         DateTime?           @map("valid_until")
+  status             QuotationStatus     @default(DRAFT)
+  sentAt             DateTime?           @map("sent_at")
+  acceptedAt         DateTime?           @map("accepted_at")
+  rejectedAt         DateTime?           @map("rejected_at")
+  rejectionReason    String?             @map("rejection_reason")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  invoice            ProvisionalInvoice?
+  vendorAgreement    VendorAgreement     @relation(fields: [vendorAgreementId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([vendorAgreementId])
+  @@map("quotations")
+  @@schema("operations")
+}
+
+/// OperationalTask - Tasks delegated by Ops Manager
+/// Assigned to Ops Assistants or Vendors for execution
+model OperationalTask {
+  id                 String                @id @default(uuid()) @db.Uuid
+  activeEventId      String                @map("active_event_id") @db.Uuid
+  title              String
+  description        String?
+  category           String?
+  priority           TaskPriority          @default(NORMAL)
+  dueDate            DateTime?             @map("due_date")
+  assignedToUserId   String?               @map("assigned_to_user_id") @db.Uuid
+  assignedToVendorId String?               @map("assigned_to_vendor_id") @db.Uuid
+  assignedBy         String                @map("assigned_by") @db.Uuid
+  status             OperationalTaskStatus @default(PENDING)
+  submittedAt        DateTime?             @map("submitted_at")
+  reviewedBy         String?               @map("reviewed_by") @db.Uuid
+  reviewedAt         DateTime?             @map("reviewed_at")
+  reviewNotes        String?               @map("review_notes")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+  completedAt        DateTime?             @map("completed_at")
+  activeEvent        ActiveEvent           @relation(fields: [activeEventId], references: [id], onDelete: Cascade)
+  attachments        TaskAttachment[]
+
+  @@index([activeEventId])
+  @@index([assignedToUserId])
+  @@index([assignedToVendorId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("operational_tasks")
+  @@schema("operations")
+}
+
+/// TaskAttachment - Proof of work attachments
+/// Photos, PDFs, receipts uploaded as evidence of task completion
+model TaskAttachment {
+  id          String          @id @default(uuid()) @db.Uuid
+  taskId      String          @map("task_id") @db.Uuid
+  type        AttachmentType
+  url         String
+  fileName    String          @map("file_name")
+  fileSize    Int             @map("file_size")
+  mimeType    String          @map("mime_type")
+  description String?
+  uploadedBy  String          @map("uploaded_by") @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at")
+  task        OperationalTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_attachments")
+  @@schema("operations")
+}
+
+/// BlogPost - SEO-optimized blog articles
+/// Supports vendor spotlights, planning guides, etc.
+model BlogPost {
+  id               String        @id @default(uuid()) @db.Uuid
+  title            String        @db.VarChar(200)
+  slug             String        @unique @db.VarChar(250)
+  excerpt          String?       @db.VarChar(300)
+  content          String
+  metaTitle        String?       @map("meta_title") @db.VarChar(70)
+  metaDescription  String?       @map("meta_description") @db.VarChar(160)
+  focusKeyword     String?       @map("focus_keyword") @db.VarChar(100)
+  keywords         String[]      @default([])
+  ogImage          String?       @map("og_image") @db.VarChar(500)
+  featuredImage    String?       @map("featured_image") @db.VarChar(500)
+  featuredImageAlt String?       @map("featured_image_alt") @db.VarChar(125)
+  status           BlogStatus    @default(DRAFT)
+  publishedAt      DateTime?     @map("published_at")
+  authorId         String        @map("author_id") @db.Uuid
+  categoryId       String?       @map("category_id") @db.Uuid
+  viewCount        Int           @default(0) @map("view_count")
+  readingTime      Int           @default(0) @map("reading_time")
+  vendorId         String?       @map("vendor_id") @db.Uuid
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  tags             BlogPostTag[]
+  author           User          @relation(fields: [authorId], references: [id])
+  category         BlogCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([slug])
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([publishedAt(sort: Desc)])
+  @@map("blog_posts")
+  @@schema("content")
+}
+
+/// BlogCategory - Blog post categories
+model BlogCategory {
+  id              String     @id @default(uuid()) @db.Uuid
+  name            String     @db.VarChar(100)
+  slug            String     @unique @db.VarChar(120)
+  description     String?    @db.VarChar(300)
+  metaTitle       String?    @map("meta_title") @db.VarChar(70)
+  metaDescription String?    @map("meta_description") @db.VarChar(160)
+  color           String?    @db.VarChar(7)
+  sortOrder       Int        @default(0) @map("sort_order")
+  isActive        Boolean    @default(true) @map("is_active")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  posts           BlogPost[]
+
+  @@index([slug])
+  @@index([isActive, sortOrder])
+  @@map("blog_categories")
+  @@schema("content")
+}
+
+/// BlogTag - Reusable tags for blog posts
+model BlogTag {
+  id        String        @id @default(uuid()) @db.Uuid
+  name      String        @unique @db.VarChar(50)
+  slug      String        @unique @db.VarChar(60)
+  createdAt DateTime      @default(now()) @map("created_at")
+  posts     BlogPostTag[]
+
+  @@index([slug])
+  @@map("blog_tags")
+  @@schema("content")
+}
+
+/// BlogPostTag - Junction table for BlogPost-BlogTag many-to-many
+model BlogPostTag {
+  postId String   @map("post_id") @db.Uuid
+  tagId  String   @map("tag_id") @db.Uuid
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("blog_post_tags")
+  @@schema("content")
+}
+
+/// SubscriptionPlan - Available subscription tiers for vendors
+/// Examples: FREE, STARTER, PROFESSIONAL, ENTERPRISE
+model SubscriptionPlan {
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String         @unique
+  slug          String         @unique
+  description   String?
+  tier          PlanTier       @default(FREE)
+  displayOrder  Int            @default(0) @map("display_order")
+  isPopular     Boolean        @default(false) @map("is_popular")
+  trialDays     Int            @default(0) @map("trial_days")
+  isActive      Boolean        @default(true) @map("is_active")
+  isPublic      Boolean        @default(true) @map("is_public")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  coupons       Coupon[]
+  features      PlanFeature[]
+  prices        PlanPrice[]
+  subscriptions Subscription[]
+
+  @@index([tier])
+  @@index([isActive, isPublic])
+  @@map("subscription_plans")
+  @@schema("subscription")
+}
+
+/// PlanFeature - Feature limits and access per plan
+/// Defines what features/limits are included in each plan
+model PlanFeature {
+  id            String           @id @default(uuid()) @db.Uuid
+  planId        String           @map("plan_id") @db.Uuid
+  featureKey    String           @map("feature_key")
+  featureName   String           @map("feature_name")
+  description   String?
+  limitType     FeatureLimitType @map("limit_type")
+  limitValue    Int?             @map("limit_value")
+  isHighlighted Boolean          @default(false) @map("is_highlighted")
+  sortOrder     Int              @default(0) @map("sort_order")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  plan          SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureKey])
+  @@index([planId])
+  @@map("plan_features")
+  @@schema("subscription")
+}
+
+/// PlanPrice - Pricing options for subscription plans
+/// Supports multiple currencies and billing cycles
+model PlanPrice {
+  id             String           @id @default(uuid()) @db.Uuid
+  planId         String           @map("plan_id") @db.Uuid
+  currency       String           @db.VarChar(3)
+  amount         Decimal          @db.Decimal(10, 2)
+  billingCycle   BillingCycle     @map("billing_cycle")
+  stripePriceId  String?          @map("stripe_price_id")
+  razorpayPlanId String?          @map("razorpay_plan_id")
+  savingsPercent Int?             @map("savings_percent")
+  isActive       Boolean          @default(true) @map("is_active")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  plan           SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  subscriptions  Subscription[]
+
+  @@unique([planId, currency, billingCycle])
+  @@index([planId])
+  @@index([currency])
+  @@map("plan_prices")
+  @@schema("subscription")
+}
+
+/// Subscription - Vendor's active subscription
+/// Tracks the subscription lifecycle for each vendor
+model Subscription {
+  id                     String                      @id @default(uuid()) @db.Uuid
+  vendorProfileId        String                      @unique @map("vendor_profile_id") @db.Uuid
+  planId                 String                      @map("plan_id") @db.Uuid
+  priceId                String                      @map("price_id") @db.Uuid
+  status                 SubscriptionStatus          @default(PENDING)
+  currentPeriodStart     DateTime                    @map("current_period_start")
+  currentPeriodEnd       DateTime                    @map("current_period_end")
+  trialStart             DateTime?                   @map("trial_start")
+  trialEnd               DateTime?                   @map("trial_end")
+  cancelAtPeriodEnd      Boolean                     @default(false) @map("cancel_at_period_end")
+  cancelledAt            DateTime?                   @map("cancelled_at")
+  cancellationReason     String?                     @map("cancellation_reason")
+  stripeSubscriptionId   String?                     @map("stripe_subscription_id")
+  stripeCustomerId       String?                     @map("stripe_customer_id")
+  razorpaySubscriptionId String?                     @map("razorpay_subscription_id")
+  couponId               String?                     @map("coupon_id") @db.Uuid
+  discountAmount         Decimal?                    @map("discount_amount") @db.Decimal(10, 2)
+  createdAt              DateTime                    @default(now()) @map("created_at")
+  updatedAt              DateTime                    @updatedAt @map("updated_at")
+  invoices               Invoice[]
+  paymentMethods         PaymentMethod[]
+  statusHistory          SubscriptionStatusHistory[]
+  coupon                 Coupon?                     @relation(fields: [couponId], references: [id])
+  plan                   SubscriptionPlan            @relation(fields: [planId], references: [id])
+  price                  PlanPrice                   @relation(fields: [priceId], references: [id])
+  vendorProfile          VendorProfile               @relation(fields: [vendorProfileId], references: [id])
+  usageRecords           UsageRecord[]
+
+  @@index([vendorProfileId])
+  @@index([planId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+  @@map("subscriptions")
+  @@schema("subscription")
+}
+
+/// SubscriptionStatusHistory - Audit trail for subscription changes
+model SubscriptionStatusHistory {
+  id             String              @id @default(uuid()) @db.Uuid
+  subscriptionId String              @map("subscription_id") @db.Uuid
+  fromStatus     SubscriptionStatus? @map("from_status")
+  toStatus       SubscriptionStatus  @map("to_status")
+  reason         String?
+  changedBy      String?             @map("changed_by") @db.Uuid
+  createdAt      DateTime            @default(now()) @map("created_at")
+  subscription   Subscription        @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@map("subscription_status_history")
+  @@schema("subscription")
+}
+
+/// PaymentMethod - Stored payment methods for subscriptions
+model PaymentMethod {
+  id                    String            @id @default(uuid()) @db.Uuid
+  subscriptionId        String            @map("subscription_id") @db.Uuid
+  type                  PaymentMethodType
+  cardBrand             String?           @map("card_brand")
+  cardLast4             String?           @map("card_last_4")
+  cardExpMonth          Int?              @map("card_exp_month")
+  cardExpYear           Int?              @map("card_exp_year")
+  upiId                 String?           @map("upi_id")
+  bankName              String?           @map("bank_name")
+  bankLast4             String?           @map("bank_last_4")
+  stripePaymentMethodId String?           @map("stripe_payment_method_id")
+  razorpayTokenId       String?           @map("razorpay_token_id")
+  isDefault             Boolean           @default(false) @map("is_default")
+  isActive              Boolean           @default(true) @map("is_active")
+  billingName           String?           @map("billing_name")
+  billingEmail          String?           @map("billing_email")
+  billingAddressLine1   String?           @map("billing_address_line_1")
+  billingAddressLine2   String?           @map("billing_address_line_2")
+  billingCity           String?           @map("billing_city")
+  billingState          String?           @map("billing_state")
+  billingPostalCode     String?           @map("billing_postal_code")
+  billingCountry        String?           @map("billing_country")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  subscription          Subscription      @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  payments              Payment[]
+
+  @@index([subscriptionId])
+  @@index([isDefault])
+  @@map("payment_methods")
+  @@schema("subscription")
+}
+
+/// Invoice - Billing invoices for subscriptions
+model Invoice {
+  id                String            @id @default(uuid()) @db.Uuid
+  subscriptionId    String            @map("subscription_id") @db.Uuid
+  invoiceNumber     String            @unique @map("invoice_number")
+  currency          String            @db.VarChar(3)
+  subtotal          Decimal           @db.Decimal(10, 2)
+  discountAmount    Decimal           @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  taxAmount         Decimal           @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  totalAmount       Decimal           @map("total_amount") @db.Decimal(10, 2)
+  taxRate           Decimal?          @map("tax_rate") @db.Decimal(5, 2)
+  taxType           String?           @map("tax_type")
+  periodStart       DateTime          @map("period_start")
+  periodEnd         DateTime          @map("period_end")
+  status            InvoiceStatus     @default(DRAFT)
+  issuedAt          DateTime?         @map("issued_at")
+  dueDate           DateTime?         @map("due_date")
+  paidAt            DateTime?         @map("paid_at")
+  voidedAt          DateTime?         @map("voided_at")
+  stripeInvoiceId   String?           @map("stripe_invoice_id")
+  razorpayInvoiceId String?           @map("razorpay_invoice_id")
+  pdfUrl            String?           @map("pdf_url")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  lineItems         InvoiceLineItem[]
+  subscription      Subscription      @relation(fields: [subscriptionId], references: [id])
+  payments          Payment[]
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([issuedAt])
+  @@map("invoices")
+  @@schema("subscription")
+}
+
+/// InvoiceLineItem - Individual line items on an invoice
+model InvoiceLineItem {
+  id          String    @id @default(uuid()) @db.Uuid
+  invoiceId   String    @map("invoice_id") @db.Uuid
+  description String
+  quantity    Int       @default(1)
+  unitPrice   Decimal   @map("unit_price") @db.Decimal(10, 2)
+  amount      Decimal   @db.Decimal(10, 2)
+  periodStart DateTime? @map("period_start")
+  periodEnd   DateTime? @map("period_end")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_line_items")
+  @@schema("subscription")
+}
+
+/// Payment - Payment transactions for invoices
+model Payment {
+  id               String         @id @default(uuid()) @db.Uuid
+  invoiceId        String         @map("invoice_id") @db.Uuid
+  paymentMethodId  String?        @map("payment_method_id") @db.Uuid
+  amount           Decimal        @db.Decimal(10, 2)
+  currency         String         @db.VarChar(3)
+  status           PaymentStatus  @default(PENDING)
+  gatewayProvider  String?        @map("gateway_provider")
+  gatewayPaymentId String?        @map("gateway_payment_id")
+  gatewayResponse  Json?          @map("gateway_response")
+  failureCode      String?        @map("failure_code")
+  failureMessage   String?        @map("failure_message")
+  refundedAmount   Decimal        @default(0) @map("refunded_amount") @db.Decimal(10, 2)
+  refundedAt       DateTime?      @map("refunded_at")
+  refundReason     String?        @map("refund_reason")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+  processedAt      DateTime?      @map("processed_at")
+  invoice          Invoice        @relation(fields: [invoiceId], references: [id])
+  paymentMethod    PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+
+  @@index([invoiceId])
+  @@index([paymentMethodId])
+  @@index([status])
+  @@map("payments")
+  @@schema("subscription")
+}
+
+/// UsageRecord - Feature usage tracking per subscription
+/// Records usage for metered features (leads used, photos uploaded, etc.)
+model UsageRecord {
+  id                String       @id @default(uuid()) @db.Uuid
+  subscriptionId    String       @map("subscription_id") @db.Uuid
+  featureKey        String       @map("feature_key")
+  periodStart       DateTime     @map("period_start")
+  periodEnd         DateTime     @map("period_end")
+  usageCount        Int          @default(0) @map("usage_count")
+  usageLimit        Int?         @map("usage_limit")
+  warningThreshold  Int?         @map("warning_threshold")
+  warningNotifiedAt DateTime?    @map("warning_notified_at")
+  limitNotifiedAt   DateTime?    @map("limit_notified_at")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  subscription      Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, featureKey, periodStart])
+  @@index([subscriptionId])
+  @@index([featureKey])
+  @@index([periodEnd])
+  @@map("usage_records")
+  @@schema("subscription")
+}
+
+/// Coupon - Discount codes for subscriptions
+model Coupon {
+  id                    String            @id @default(uuid()) @db.Uuid
+  code                  String            @unique
+  name                  String
+  description           String?
+  discountType          DiscountType      @map("discount_type")
+  discountValue         Decimal           @map("discount_value") @db.Decimal(10, 2)
+  appliesTo             CouponAppliesTo   @default(ALL_PLANS) @map("applies_to")
+  planId                String?           @map("plan_id") @db.Uuid
+  duration              CouponDuration
+  durationInMonths      Int?              @map("duration_in_months")
+  maxRedemptions        Int?              @map("max_redemptions")
+  timesRedeemed         Int               @default(0) @map("times_redeemed")
+  maxRedemptionsPerUser Int?              @map("max_redemptions_per_user")
+  validFrom             DateTime          @map("valid_from")
+  validUntil            DateTime?         @map("valid_until")
+  minAmount             Decimal?          @map("min_amount") @db.Decimal(10, 2)
+  isActive              Boolean           @default(true) @map("is_active")
+  stripeCouponId        String?           @map("stripe_coupon_id")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+  plan                  SubscriptionPlan? @relation(fields: [planId], references: [id])
+  subscriptions         Subscription[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([validFrom, validUntil])
+  @@map("coupons")
+  @@schema("subscription")
+}
+
+/// UserSubscriptionPlan - Available subscription plans for users
+model UserSubscriptionPlan {
+  id            String             @id @default(uuid()) @db.Uuid
+  name          String             @unique
+  slug          String             @unique
+  description   String?
+  tier          UserPlanTier       @default(FREE)
+  displayOrder  Int                @default(0) @map("display_order")
+  isPopular     Boolean            @default(false) @map("is_popular")
+  trialDays     Int                @default(0) @map("trial_days")
+  isActive      Boolean            @default(true) @map("is_active")
+  isPublic      Boolean            @default(true) @map("is_public")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+  features      UserPlanFeature[]
+  prices        UserPlanPrice[]
+  subscriptions UserSubscription[]
+
+  @@index([tier])
+  @@index([isActive, isPublic])
+  @@map("user_subscription_plans")
+  @@schema("subscription")
+}
+
+/// UserPlanFeature - Features included in user plans
+model UserPlanFeature {
+  id            String               @id @default(uuid()) @db.Uuid
+  planId        String               @map("plan_id") @db.Uuid
+  featureKey    String               @map("feature_key")
+  featureName   String               @map("feature_name")
+  description   String?
+  limitType     FeatureLimitType     @map("limit_type")
+  limitValue    Int?                 @map("limit_value")
+  isHighlighted Boolean              @default(false) @map("is_highlighted")
+  sortOrder     Int                  @default(0) @map("sort_order")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  plan          UserSubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureKey], name: "planId_featureKey")
+  @@index([planId])
+  @@map("user_plan_features")
+  @@schema("subscription")
+}
+
+/// UserPlanPrice - Pricing for user plans
+model UserPlanPrice {
+  id               String               @id @default(uuid()) @db.Uuid
+  planId           String               @map("plan_id") @db.Uuid
+  currency         String               @db.VarChar(3)
+  amount           Decimal              @db.Decimal(10, 2)
+  billingCycle     BillingCycle         @map("billing_cycle")
+  stripe_price_id  String?
+  razorpay_plan_id String?
+  savingsPercent   Int?                 @map("savings_percent")
+  isActive         Boolean              @default(true) @map("is_active")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  plan             UserSubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  subscriptions    UserSubscription[]
+
+  @@unique([planId, currency, billingCycle], name: "planId_currency_billingCycle")
+  @@index([planId])
+  @@index([currency])
+  @@map("user_plan_prices")
+  @@schema("subscription")
+}
+
+/// UserSubscription - User's subscription to a plan
+model UserSubscription {
+  id                       String               @id @default(uuid()) @db.Uuid
+  userId                   String               @unique @map("user_id") @db.Uuid
+  planId                   String               @map("plan_id") @db.Uuid
+  priceId                  String               @map("price_id") @db.Uuid
+  status                   SubscriptionStatus   @default(PENDING)
+  currentPeriodStart       DateTime             @map("current_period_start")
+  currentPeriodEnd         DateTime             @map("current_period_end")
+  trial_start              DateTime?
+  trialEnd                 DateTime?            @map("trial_end")
+  cancelAtPeriodEnd        Boolean              @default(false) @map("cancel_at_period_end")
+  cancelledAt              DateTime?            @map("cancelled_at")
+  cancellation_reason      String?
+  stripe_subscription_id   String?
+  stripe_customer_id       String?
+  razorpay_subscription_id String?
+  createdAt                DateTime             @default(now()) @map("created_at")
+  updatedAt                DateTime             @updatedAt @map("updated_at")
+  autoRenew                Boolean              @default(true) @map("auto_renew")
+  scheduledPlanId          String?              @map("scheduled_plan_id") @db.Uuid
+  scheduledPriceId         String?              @map("scheduled_price_id") @db.Uuid
+  plan                     UserSubscriptionPlan @relation(fields: [planId], references: [id])
+  price                    UserPlanPrice        @relation(fields: [priceId], references: [id])
+  user                     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageRecords             UserUsageRecord[]
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+  @@map("user_subscriptions")
+  @@schema("subscription")
+}
+
+/// UserUsageRecord - Usage tracking for user subscriptions
+model UserUsageRecord {
+  id             String           @id @default(uuid()) @db.Uuid
+  subscriptionId String           @map("subscription_id") @db.Uuid
+  eventId        String           @map("event_id") @db.Uuid
+  featureKey     String           @map("feature_key")
+  usageCount     Int              @default(0) @map("usage_count")
+  usage_limit    Int?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  event          Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  subscription   UserSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, eventId, featureKey])
+  @@index([subscriptionId])
+  @@index([featureKey])
+  @@index([eventId])
+  @@map("user_usage_records")
+  @@schema("subscription")
+}
+
+/// Campaign - Advertising campaign
+model Campaign {
+  id               String               @id @default(uuid()) @db.Uuid
+  vendorProfileId  String               @map("vendor_profile_id") @db.Uuid
+  type             CampaignType
+  name             String
+  description      String?
+  targetEntityId   String?              @map("target_entity_id") @db.Uuid
+  targetEntityType String?              @map("target_entity_type")
+  dailyBudget      Int                  @map("daily_budget")
+  totalBudget      Int                  @map("total_budget")
+  creditsSpent     Int                  @default(0) @map("credits_spent")
+  startDate        DateTime             @map("start_date")
+  endDate          DateTime?            @map("end_date")
+  status           CampaignStatus       @default(DRAFT)
+  impressions      Int                  @default(0)
+  clicks           Int                  @default(0)
+  conversions      Int                  @default(0)
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  submittedAt      DateTime?            @map("submitted_at")
+  approvedAt       DateTime?            @map("approved_at")
+  approvedById     String?              @map("approved_by_id") @db.Uuid
+  rejectedAt       DateTime?            @map("rejected_at")
+  rejectedById     String?              @map("rejected_by_id") @db.Uuid
+  rejectionReason  String?              @map("rejection_reason")
+  internalNotes    String?              @map("internal_notes")
+  dailyStats       CampaignDailyStats[]
+  approvedBy       User?                @relation("CampaignApprovedBy", fields: [approvedById], references: [id])
+  rejectedBy       User?                @relation("CampaignRejectedBy", fields: [rejectedById], references: [id])
+  vendorProfile    VendorProfile        @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId])
+  @@index([status])
+  @@index([type])
+  @@index([startDate, endDate])
+  @@index([approvedById])
+  @@index([rejectedById])
+  @@index([status, startDate])
+  @@map("campaigns")
+  @@schema("subscription")
+}
+
+/// CampaignDailyStats - Daily statistics for campaigns
+model CampaignDailyStats {
+  id           String   @id @default(uuid()) @db.Uuid
+  campaignId   String   @map("campaign_id") @db.Uuid
+  date         DateTime @db.Date
+  impressions  Int      @default(0)
+  clicks       Int      @default(0)
+  conversions  Int      @default(0)
+  creditsSpent Int      @default(0) @map("credits_spent")
+  createdAt    DateTime @default(now()) @map("created_at")
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+  @@index([campaignId])
+  @@index([date])
+  @@map("campaign_daily_stats")
+  @@schema("subscription")
+}
+
+/// AdCreditTransaction - Ad credit transaction history
+model AdCreditTransaction {
+  id              String                @id @default(uuid()) @db.Uuid
+  vendorProfileId String                @map("vendor_profile_id") @db.Uuid
+  type            CreditTransactionType
+  amount          Int
+  balance         Int
+  referenceType   String?               @map("reference_type")
+  referenceId     String?               @map("reference_id") @db.Uuid
+  paymentId       String?               @map("payment_id") @db.Uuid
+  description     String?
+  createdAt       DateTime              @default(now()) @map("created_at")
+  vendorProfile   VendorProfile         @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("ad_credit_transactions")
+  @@schema("subscription")
+}
+
+/// VendorClaim - Vendor profile claim requests
+model VendorClaim {
+  id                 String                  @id @default(uuid()) @db.Uuid
+  vendorProfileId    String                  @unique @map("vendor_profile_id") @db.Uuid
+  userId             String                  @map("user_id") @db.Uuid
+  status             ClaimStatus             @default(PENDING)
+  verificationMethod ClaimVerificationMethod @map("verification_method")
+  verificationCode   String?                 @map("verification_code")
+  verificationExpiry DateTime?               @map("verification_expiry")
+  verificationData   Json?                   @map("verification_data")
+  reviewedBy         String?                 @map("reviewed_by") @db.Uuid
+  reviewedAt         DateTime?               @map("reviewed_at")
+  reviewNotes        String?                 @map("review_notes")
+  createdAt          DateTime                @default(now()) @map("created_at")
+  updatedAt          DateTime                @updatedAt @map("updated_at")
+  vendorProfile      VendorProfile           @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("vendor_claims")
+  @@schema("catalog")
+}
+
+/// VendorConsent - Vendor consent records
+model VendorConsent {
+  id              String        @id @default(uuid()) @db.Uuid
+  vendorProfileId String        @map("vendor_profile_id") @db.Uuid
+  consentType     ConsentType   @map("consent_type")
+  version         String
+  documentUrl     String?       @map("document_url")
+  givenAt         DateTime      @map("given_at")
+  withdrawnAt     DateTime?     @map("withdrawn_at")
+  expires_at      DateTime?
+  ipAddress       String?       @map("ip_address")
+  userAgent       String?       @map("user_agent")
+  source          String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorProfileId, consentType, version], name: "vendorProfileId_consentType_version")
+  @@index([vendorProfileId])
+  @@index([consentType])
+  @@index([givenAt])
+  @@map("vendor_consents")
+  @@schema("operations")
+}
+
+/// VendorContract - Vendor contract with platform
+model VendorContract {
+  id                String              @id @default(uuid()) @db.Uuid
+  vendorProfileId   String              @unique @map("vendor_profile_id") @db.Uuid
+  contractNumber    String              @unique @map("contract_number")
+  version           Int                 @default(1)
+  commissionRate    Decimal             @map("commission_rate") @db.Decimal(5, 2)
+  minCommission     Decimal?            @map("min_commission") @db.Decimal(10, 2)
+  maxCommission     Decimal?            @map("max_commission") @db.Decimal(10, 2)
+  payoutFrequency   PayoutFrequency     @default(AFTER_EVENT) @map("payout_frequency")
+  payoutHoldDays    Int                 @default(7) @map("payout_hold_days")
+  minPayoutAmount   Decimal             @default(500) @map("min_payout_amount") @db.Decimal(10, 2)
+  bankAccountName   String?             @map("bank_account_name")
+  bankAccountNumber String?             @map("bank_account_number")
+  bankIfscCode      String?             @map("bank_ifsc_code")
+  bankName          String?             @map("bank_name")
+  upiId             String?             @map("upi_id")
+  status            ContractStatus      @default(DRAFT)
+  effectiveDate     DateTime?           @map("effective_date")
+  expiryDate        DateTime?           @map("expiry_date")
+  terminatedAt      DateTime?           @map("terminated_at")
+  terminationReason String?             @map("termination_reason")
+  contractDocUrl    String?             @map("contract_doc_url")
+  signedAt          DateTime?           @map("signed_at")
+  signedByVendor    Boolean             @default(false) @map("signed_by_vendor")
+  signedByPlatform  Boolean             @default(false) @map("signed_by_platform")
+  vendorSignatureIp String?             @map("vendor_signature_ip")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  amendments        ContractAmendment[]
+  payoutRecords     PayoutRecord[]
+  vendorProfile     VendorProfile       @relation(fields: [vendorProfileId], references: [id])
+
+  @@index([status])
+  @@index([effectiveDate])
+  @@map("vendor_contracts")
+  @@schema("operations")
+}
+
+/// ContractAmendment - Amendments to vendor contracts
+model ContractAmendment {
+  id                 String         @id @default(uuid()) @db.Uuid
+  contractId         String         @map("contract_id") @db.Uuid
+  amendmentNumber    Int            @map("amendment_number")
+  previousRate       Decimal?       @map("previous_rate") @db.Decimal(5, 2)
+  newRate            Decimal?       @map("new_rate") @db.Decimal(5, 2)
+  change_description String
+  effectiveDate      DateTime       @map("effective_date")
+  signedAt           DateTime?      @map("signed_at")
+  signedByVendor     Boolean        @default(false) @map("signed_by_vendor")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  contract           VendorContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, amendmentNumber])
+  @@index([contractId])
+  @@map("contract_amendments")
+  @@schema("operations")
+}
+
+/// PayoutRecord - Vendor payout records
+model PayoutRecord {
+  id              String             @id @default(uuid()) @db.Uuid
+  contractId      String             @map("contract_id") @db.Uuid
+  vendorProfileId String             @map("vendor_profile_id") @db.Uuid
+  periodStart     DateTime           @map("period_start")
+  periodEnd       DateTime           @map("period_end")
+  grossEarnings   Decimal            @map("gross_earnings") @db.Decimal(12, 2)
+  totalCommission Decimal            @map("total_commission") @db.Decimal(12, 2)
+  netPayout       Decimal            @map("net_payout") @db.Decimal(12, 2)
+  eventCount      Int                @default(0) @map("event_count")
+  deductions      Decimal            @default(0) @db.Decimal(12, 2)
+  deduction_notes String?
+  status          PayoutRecordStatus @default(PENDING)
+  scheduledFor    DateTime?          @map("scheduled_for")
+  processedAt     DateTime?          @map("processed_at")
+  failedAt        DateTime?          @map("failed_at")
+  failureReason   String?            @map("failure_reason")
+  transactionRef  String?            @map("transaction_ref")
+  paymentMethod   String?            @map("payment_method")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  contract        VendorContract     @relation(fields: [contractId], references: [id])
+
+  @@index([contractId])
+  @@index([vendorProfileId])
+  @@index([status])
+  @@index([periodStart, periodEnd])
+  @@map("payout_records")
+  @@schema("operations")
+}
+
+model consent_definitions {
+  id                 String      @id @db.Uuid
+  consent_type       ConsentType
+  version            String
+  title              String
+  description        String?
+  content            String?
+  summary            String?
+  document_url       String?
+  is_required        Boolean     @default(false)
+  is_active          Boolean     @default(true)
+  applies_to_users   Boolean     @default(true)
+  applies_to_vendors Boolean     @default(false)
+  display_order      Int         @default(0)
+  effective_from     DateTime    @default(now())
+  effective_until    DateTime?
+  created_at         DateTime    @default(now())
+  updated_at         DateTime
+
+  @@unique([consent_type, version])
+  @@index([consent_type])
+  @@index([is_active])
+  @@index([is_required])
+  @@schema("public")
+}
+
+model user_consents {
+  id           String      @id @db.Uuid
+  user_id      String      @db.Uuid
+  consent_type ConsentType
+  version      String
+  document_url String?
+  given_at     DateTime
+  withdrawn_at DateTime?
+  expires_at   DateTime?
+  ip_address   String?
+  user_agent   String?
+  source       String?
+  created_at   DateTime    @default(now())
+  updated_at   DateTime
+  users        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, consent_type, version])
+  @@index([consent_type])
+  @@index([given_at])
+  @@index([user_id])
+  @@schema("public")
+}
+
+/// UserStatus - Account lifecycle states
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DELETED
+
+  @@schema("public")
+}
+
+/// AuthProvider - How user authenticated/registered
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+
+  @@schema("public")
+}
+
+/// LoginMethod - Authentication methods used
+enum LoginMethod {
+  EMAIL_PASSWORD
+  TWO_FACTOR
+  MAGIC_LINK
+  SOCIAL_GOOGLE
+  SOCIAL_FACEBOOK
+  API_KEY
+  REFRESH_TOKEN
+
+  @@schema("public")
+}
+
+/// NotificationType - Categories of notifications
+enum NotificationType {
+  NEW_LEAD
+  LEAD_RESPONSE
+  NEW_MESSAGE
+  ACCOUNT_VERIFIED
+  PASSWORD_CHANGED
+  TWO_FACTOR_ENABLED
+  SUSPICIOUS_LOGIN
+  SESSION_EXPIRED
+  PROFILE_APPROVED
+  PROFILE_REJECTED
+  KYC_APPROVED
+  KYC_REJECTED
+  NEW_REVIEW
+  EVENT_REMINDER
+  TASK_ASSIGNED
+  TASK_DUE
+  VENDOR_BOOKED
+  SYSTEM_ANNOUNCEMENT
+  MAINTENANCE
+
+  @@schema("public")
+}
+
+/// NotificationChannel - Delivery channels
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+  ALL
+
+  @@schema("public")
+}
+
+/// VendorStatus - Vendor account/profile lifecycle states
+enum VendorStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+  UNCLAIMED
+
+  @@schema("catalog")
+}
+
+/// VendorBadgeMetric - Metric used to award a badge
+enum VendorBadgeMetric {
+  FOLLOWERS
+  REVIEWS
+  LEADS
+  VIEWS
+
+  @@schema("catalog")
+}
+
+/// ReviewStatus - Review moderation lifecycle
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@schema("catalog")
+}
+
+/// ReviewMediaType - Media types for review attachments
+enum ReviewMediaType {
+  IMAGE
+  VIDEO
+
+  @@schema("catalog")
+}
+
+/// CatalogMediaType - Media file types for portfolio items
+enum CatalogMediaType {
+  IMAGE
+  VIDEO
+
+  @@schema("catalog")
+}
+
+/// PricingType - How pricing is displayed/calculated
+enum PricingType {
+  FIXED
+  RANGE
+  STARTING_AT
+  TIERED
+  CONTACT_FOR_QUOTE
+
+  @@schema("catalog")
+}
+
+/// LeadStatus - Lead lifecycle stages
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATING
+  WON
+  LOST
+  ARCHIVED
+
+  @@schema("interaction")
+}
+
+/// LeadSource - Where the lead originated
+enum LeadSource {
+  INQUIRY
+  DIRECT_MESSAGE
+  PHONE
+  EXTERNAL
+  REFERRAL
+
+  @@schema("interaction")
+}
+
+/// ConversationType - Types of conversations
+enum ConversationType {
+  DIRECT
+  LEAD
+  SUPPORT
+
+  @@schema("interaction")
+}
+
+/// ParticipantRole - Role of a participant in a conversation
+enum ParticipantRole {
+  PLANNER
+  VENDOR
+  OPS
+
+  @@schema("interaction")
+}
+
+/// MessageAttachmentType - Attachment file types
+enum MessageAttachmentType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  OTHER
+
+  @@schema("interaction")
+}
+
+/// EventStatus - Event planning lifecycle states
+enum EventStatus {
+  PLANNING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+
+  @@schema("planning")
+}
+
+/// EventVendorStatus - Vendor relationship status for an event
+enum EventVendorStatus {
+  SHORTLISTED
+  CONTACTED
+  BOOKED
+  CONFIRMED
+  CANCELLED
+
+  @@schema("planning")
+}
+
+/// RSVPStatus - Guest RSVP states
+enum RSVPStatus {
+  PENDING
+  ATTENDING
+  NOT_ATTENDING
+  MAYBE
+
+  @@schema("planning")
+}
+
+enum ChatbotMessageRole {
+  user
+  assistant
+
+  @@schema("planning")
+}
+
+enum ChatbotConversationLanguage {
+  en
+  hi
+  hinglish
+
+  @@schema("planning")
+}
+
+/// PlanningMediaType - Media types for guest uploads
+enum PlanningMediaType {
+  IMAGE
+  VIDEO
+
+  @@schema("planning")
+}
+
+/// UploadStatus - Moderation status for guest uploads
+enum UploadStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@schema("planning")
+}
+
+/// WeddingEventType - Types of wedding-related events
+enum WeddingEventType {
+  WEDDING
+  ENGAGEMENT
+  OTHER
+
+  @@schema("planning")
+}
+
+/// PartnerInviteStatus - Status of partner invitation
+enum PartnerInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+
+  @@schema("planning")
+}
+
+/// WhatsAppMessageType - Types of WhatsApp messages
+enum WhatsAppMessageType {
+  INVITE
+  REMINDER
+  RSVP_REQUEST
+  THANK_YOU
+
+  @@schema("planning")
+}
+
+/// WhatsAppMessageStatus - Delivery status of WhatsApp messages
+enum WhatsAppMessageStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+
+  @@schema("planning")
+}
+
+/// KYCStatus - KYC verification lifecycle states
+enum KYCStatus {
+  PENDING
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+
+  @@schema("operations")
+}
+
+/// DocumentType - Types of KYC documents
+enum DocumentType {
+  BUSINESS_LICENSE
+  TAX_CERTIFICATE
+  INSURANCE
+  ID_DOCUMENT
+  ADDRESS_PROOF
+  OTHER
+
+  @@schema("operations")
+}
+
+/// DocumentStatus - Verification status for individual documents
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+
+  @@schema("operations")
+}
+
+/// DisputeType - Categories of disputes
+enum DisputeType {
+  SERVICE_QUALITY
+  PRICING
+  NO_SHOW
+  HARASSMENT
+  FRAUD
+  OTHER
+
+  @@schema("operations")
+}
+
+/// DisputeStatus - Dispute resolution lifecycle
+enum DisputeStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  ESCALATED
+  CLOSED
+
+  @@schema("operations")
+}
+
+/// EventOrigin - How the event entered the system
+enum EventOrigin {
+  DIGITAL_LEAD
+  DIRECT_BOOKING
+
+  @@schema("operations")
+}
+
+/// ActiveEventStatus - Operational event workflow states
+enum ActiveEventStatus {
+  NEW
+  ASSIGNED
+  REQUIREMENTS_SET
+  VENDOR_SOURCING
+  CONTRACTS_LOCKED
+  EXECUTION
+  COMPLETED
+  CANCELLED
+
+  @@schema("operations")
+}
+
+/// RequirementStatus - Requirement fulfillment lifecycle
+enum RequirementStatus {
+  PENDING
+  SOURCING
+  VENDOR_SELECTED
+  CONTRACTED
+  FULFILLED
+
+  @@schema("operations")
+}
+
+/// ClientApprovalStatus - Client approval lifecycle for requirement sheets
+enum ClientApprovalStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@schema("operations")
+}
+
+/// AgreementStatus - Vendor agreement lifecycle states
+enum AgreementStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  CONTRACT_LOCKED
+  COMPLETED
+  CANCELLED
+
+  @@schema("operations")
+}
+
+/// ProvisionalInvoiceStatus - Payment lifecycle states
+enum ProvisionalInvoiceStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+
+  @@schema("operations")
+}
+
+/// QuotationStatus - Quotation lifecycle states
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+
+  @@schema("operations")
+}
+
+/// TaskPriority - Task urgency levels
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+
+  @@schema("operations")
+}
+
+/// OperationalTaskStatus - Task execution lifecycle
+enum OperationalTaskStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+
+  @@schema("operations")
+}
+
+/// AttachmentType - Types of task proof attachments
+enum AttachmentType {
+  IMAGE
+  PDF
+  DOCUMENT
+  RECEIPT
+  VIDEO
+  OTHER
+
+  @@schema("operations")
+}
+
+/// BlogStatus - Blog post publishing lifecycle
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("content")
+}
+
+/// PlanTier - Subscription plan tier levels
+enum PlanTier {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+
+  @@schema("subscription")
+}
+
+/// FeatureLimitType - Types of feature limits
+enum FeatureLimitType {
+  BOOLEAN
+  COUNT
+  COUNT_PER_MONTH
+  COUNT_PER_YEAR
+  UNLIMITED
+
+  @@schema("subscription")
+}
+
+/// BillingCycle - Subscription billing frequencies
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  LIFETIME
+
+  @@schema("subscription")
+}
+
+/// SubscriptionStatus - Subscription lifecycle states
+enum SubscriptionStatus {
+  PENDING
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+  PAUSED
+
+  @@schema("subscription")
+}
+
+/// PaymentMethodType - Supported payment method types
+enum PaymentMethodType {
+  CARD
+  UPI
+  BANK_TRANSFER
+  WALLET
+
+  @@schema("subscription")
+}
+
+/// InvoiceStatus - Invoice lifecycle states
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  PARTIALLY_PAID
+  PAST_DUE
+  VOIDED
+  REFUNDED
+
+  @@schema("subscription")
+}
+
+/// PaymentStatus - Payment transaction states
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+
+  @@schema("subscription")
+}
+
+/// DiscountType - Types of discounts
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+
+  @@schema("subscription")
+}
+
+/// CouponAppliesTo - What the coupon can be applied to
+enum CouponAppliesTo {
+  ALL_PLANS
+  SPECIFIC_PLAN
+  PAID_PLANS_ONLY
+
+  @@schema("subscription")
+}
+
+/// CouponDuration - How long the discount lasts
+enum CouponDuration {
+  ONCE
+  REPEATING
+  FOREVER
+
+  @@schema("subscription")
+}
+
+/// UserPlanTier - User subscription plan tier levels
+enum UserPlanTier {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+
+  @@schema("subscription")
+}
+
+/// CampaignStatus - Campaign lifecycle states
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+
+  @@schema("subscription")
+}
+
+/// CampaignType - Types of ad campaigns
+enum CampaignType {
+  PROFILE_BOOST
+  ALBUM_PROMOTION
+  BANNER_AD
+  FEATURED_LISTING
+
+  @@schema("subscription")
+}
+
+/// CreditTransactionType - Types of ad credit transactions
+enum CreditTransactionType {
+  SUBSCRIPTION_GRANT
+  PURCHASE
+  CAMPAIGN_SPEND
+  REFUND
+  ADJUSTMENT
+  EXPIRY
+
+  @@schema("subscription")
+}
+
+/// ClaimStatus - Vendor claim status
+enum ClaimStatus {
+  PENDING
+  VERIFICATION_SENT
+  VERIFIED
+  APPROVED
+  REJECTED
+  EXPIRED
+
+  @@schema("catalog")
+}
+
+/// ClaimVerificationMethod - Methods for verifying vendor claims
+enum ClaimVerificationMethod {
+  PHONE
+  EMAIL
+  DOCUMENT
+  ADMIN_VERIFIED
+
+  @@schema("catalog")
+}
+
+/// ContractStatus - Vendor contract status
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+  EXPIRED
+
+  @@schema("operations")
+}
+
+/// PayoutFrequency - How often payouts are processed
+enum PayoutFrequency {
+  AFTER_EVENT
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+
+  @@schema("operations")
+}
+
+/// PayoutRecordStatus - Payout status
+enum PayoutRecordStatus {
+  PENDING
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+
+  @@schema("operations")
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  MARKETING_EMAIL
+  MARKETING_SMS
+  MARKETING_PUSH
+  DATA_PROCESSING
+  PLATFORM_COMMISSION
+  COOKIE_ESSENTIAL
+  COOKIE_ANALYTICS
+  COOKIE_MARKETING
+
+  @@schema("public")
+}
+
+
+// *** WARNING ***
+// 
+// These fields were enriched with `@map` information taken from the previous Prisma schema:
+//   - Model: "BusinessHour", field: "vendorProfileId"
+//   - Model: "BusinessHour", field: "dayOfWeek"
+//   - Model: "BusinessHour", field: "openTime"
+//   - Model: "BusinessHour", field: "closeTime"
+//   - Model: "BusinessHour", field: "isClosed"
+//   - Model: "Category", field: "sortOrder"
+//   - Model: "Category", field: "isActive"
+//   - Model: "Category", field: "parentId"
+//   - Model: "Category", field: "createdAt"
+//   - Model: "Category", field: "updatedAt"
+//   - Model: "Hashtag", field: "createdAt"
+//   - Model: "MediaItemTag", field: "mediaItemId"
+//   - Model: "MediaItemTag", field: "hashtagId"
+//   - Model: "MediaItem", field: "portfolioId"
+//   - Model: "MediaItem", field: "thumbnailUrl"
+//   - Model: "MediaItem", field: "cdnUrl"
+//   - Model: "MediaItem", field: "altText"
+//   - Model: "MediaItem", field: "caption"
+//   - Model: "MediaItem", field: "mimeType"
+//   - Model: "MediaItem", field: "sortOrder"
+//   - Model: "MediaItem", field: "isApproved"
+//   - Model: "MediaItem", field: "createdAt"
+//   - Model: "Portfolio", field: "vendorProfileId"
+//   - Model: "Portfolio", field: "sortOrder"
+//   - Model: "Portfolio", field: "isFeatured"
+//   - Model: "Portfolio", field: "createdAt"
+//   - Model: "Portfolio", field: "updatedAt"
+//   - Model: "PricingTier", field: "serviceId"
+//   - Model: "PricingTier", field: "minQuantity"
+//   - Model: "PricingTier", field: "maxQuantity"
+//   - Model: "PricingTier", field: "sortOrder"
+//   - Model: "PricingTier", field: "createdAt"
+//   - Model: "PricingTier", field: "updatedAt"
+//   - Model: "ReviewMedia", field: "reviewId"
+//   - Model: "ReviewMedia", field: "thumbnailUrl"
+//   - Model: "ReviewMedia", field: "mimeType"
+//   - Model: "ReviewMedia", field: "fileSize"
+//   - Model: "ReviewMedia", field: "createdAt"
+//   - Model: "ServiceArea", field: "vendorProfileId"
+//   - Model: "ServiceArea", field: "cityId"
+//   - Model: "ServiceArea", field: "radiusMiles"
+//   - Model: "ServiceArea", field: "additionalFee"
+//   - Model: "ServiceType", field: "categoryId"
+//   - Model: "ServiceType", field: "isActive"
+//   - Model: "ServiceType", field: "createdAt"
+//   - Model: "ServiceType", field: "updatedAt"
+//   - Model: "Service", field: "vendorProfileId"
+//   - Model: "Service", field: "serviceTypeId"
+//   - Model: "Service", field: "pricingType"
+//   - Model: "Service", field: "startingPrice"
+//   - Model: "Service", field: "maxPrice"
+//   - Model: "Service", field: "isActive"
+//   - Model: "Service", field: "sortOrder"
+//   - Model: "Service", field: "createdAt"
+//   - Model: "Service", field: "updatedAt"
+//   - Model: "Tag", field: "createdAt"
+//   - Model: "VendorBadgeDefinition", field: "icon"
+//   - Model: "VendorBadgeDefinition", field: "color"
+//   - Model: "VendorBadgeDefinition", field: "isActive"
+//   - Model: "VendorBadgeDefinition", field: "createdAt"
+//   - Model: "VendorBadgeDefinition", field: "updatedAt"
+//   - Model: "VendorBadge", field: "vendorProfileId"
+//   - Model: "VendorBadge", field: "badgeDefinitionId"
+//   - Model: "VendorBadge", field: "achievedAt"
+//   - Model: "VendorClaim", field: "vendorProfileId"
+//   - Model: "VendorClaim", field: "userId"
+//   - Model: "VendorClaim", field: "verificationMethod"
+//   - Model: "VendorClaim", field: "verificationCode"
+//   - Model: "VendorClaim", field: "verificationExpiry"
+//   - Model: "VendorClaim", field: "verificationData"
+//   - Model: "VendorClaim", field: "reviewedBy"
+//   - Model: "VendorClaim", field: "reviewedAt"
+//   - Model: "VendorClaim", field: "reviewNotes"
+//   - Model: "VendorClaim", field: "createdAt"
+//   - Model: "VendorClaim", field: "updatedAt"
+//   - Model: "VendorProfile", field: "userId"
+//   - Model: "VendorProfile", field: "businessName"
+//   - Model: "VendorProfile", field: "categoryId"
+//   - Model: "VendorProfile", field: "profilePhotoUrl"
+//   - Model: "VendorProfile", field: "addressId"
+//   - Model: "VendorProfile", field: "serviceRadius"
+//   - Model: "VendorProfile", field: "contactEmail"
+//   - Model: "VendorProfile", field: "contactPhone"
+//   - Model: "VendorProfile", field: "leadCount"
+//   - Model: "VendorProfile", field: "viewCount"
+//   - Model: "VendorProfile", field: "averageRating"
+//   - Model: "VendorProfile", field: "totalReviews"
+//   - Model: "VendorProfile", field: "verifiedAt"
+//   - Model: "VendorProfile", field: "featuredUntil"
+//   - Model: "VendorProfile", field: "createdAt"
+//   - Model: "VendorProfile", field: "updatedAt"
+//   - Model: "VendorProfile", field: "bannerImageUrl"
+//   - Model: "VendorProfile", field: "adCredits"
+//   - Model: "VendorProfile", field: "planTier"
+//   - Model: "VendorProfile", field: "searchBoost"
+//   - Model: "VendorReview", field: "vendorProfileId"
+//   - Model: "VendorReview", field: "reviewerId"
+//   - Model: "VendorReview", field: "eventId"
+//   - Model: "VendorReview", field: "reviewedBy"
+//   - Model: "VendorReview", field: "reviewedAt"
+//   - Model: "VendorReview", field: "reviewNotes"
+//   - Model: "VendorReview", field: "createdAt"
+//   - Model: "VendorReview", field: "updatedAt"
+//   - Model: "VendorTag", field: "vendorProfileId"
+//   - Model: "VendorTag", field: "tagId"
+//   - Model: "BlogCategory", field: "metaTitle"
+//   - Model: "BlogCategory", field: "metaDescription"
+//   - Model: "BlogCategory", field: "sortOrder"
+//   - Model: "BlogCategory", field: "isActive"
+//   - Model: "BlogCategory", field: "createdAt"
+//   - Model: "BlogCategory", field: "updatedAt"
+//   - Model: "BlogPostTag", field: "postId"
+//   - Model: "BlogPostTag", field: "tagId"
+//   - Model: "BlogPost", field: "metaTitle"
+//   - Model: "BlogPost", field: "metaDescription"
+//   - Model: "BlogPost", field: "focusKeyword"
+//   - Model: "BlogPost", field: "ogImage"
+//   - Model: "BlogPost", field: "featuredImage"
+//   - Model: "BlogPost", field: "featuredImageAlt"
+//   - Model: "BlogPost", field: "publishedAt"
+//   - Model: "BlogPost", field: "authorId"
+//   - Model: "BlogPost", field: "categoryId"
+//   - Model: "BlogPost", field: "viewCount"
+//   - Model: "BlogPost", field: "readingTime"
+//   - Model: "BlogPost", field: "vendorId"
+//   - Model: "BlogPost", field: "createdAt"
+//   - Model: "BlogPost", field: "updatedAt"
+//   - Model: "BlogTag", field: "createdAt"
+//   - Model: "ConversationParticipant", field: "conversationId"
+//   - Model: "ConversationParticipant", field: "userId"
+//   - Model: "ConversationParticipant", field: "lastReadAt"
+//   - Model: "ConversationParticipant", field: "isMuted"
+//   - Model: "ConversationParticipant", field: "isBlocked"
+//   - Model: "ConversationParticipant", field: "joinedAt"
+//   - Model: "Conversation", field: "leadId"
+//   - Model: "Conversation", field: "createdAt"
+//   - Model: "Conversation", field: "updatedAt"
+//   - Model: "Conversation", field: "lastMessageAt"
+//   - Model: "LeadStatusHistory", field: "leadId"
+//   - Model: "LeadStatusHistory", field: "fromStatus"
+//   - Model: "LeadStatusHistory", field: "toStatus"
+//   - Model: "LeadStatusHistory", field: "changedBy"
+//   - Model: "LeadStatusHistory", field: "createdAt"
+//   - Model: "Lead", field: "vendorProfileId"
+//   - Model: "Lead", field: "plannerId"
+//   - Model: "Lead", field: "eventId"
+//   - Model: "Lead", field: "eventDate"
+//   - Model: "Lead", field: "eventType"
+//   - Model: "Lead", field: "guestCount"
+//   - Model: "Lead", field: "initialMessage"
+//   - Model: "Lead", field: "createdAt"
+//   - Model: "Lead", field: "updatedAt"
+//   - Model: "Lead", field: "respondedAt"
+//   - Model: "Lead", field: "convertedAt"
+//   - Model: "MessageAttachment", field: "messageId"
+//   - Model: "MessageAttachment", field: "fileName"
+//   - Model: "MessageAttachment", field: "fileSize"
+//   - Model: "MessageAttachment", field: "mimeType"
+//   - Model: "MessageAttachment", field: "createdAt"
+//   - Model: "MessageDeletion", field: "messageId"
+//   - Model: "MessageDeletion", field: "userId"
+//   - Model: "MessageDeletion", field: "deletedAt"
+//   - Model: "MessageReaction", field: "messageId"
+//   - Model: "MessageReaction", field: "userId"
+//   - Model: "MessageReaction", field: "createdAt"
+//   - Model: "MessageReceipt", field: "messageId"
+//   - Model: "MessageReceipt", field: "userId"
+//   - Model: "MessageReceipt", field: "readAt"
+//   - Model: "MessageReceipt", field: "createdAt"
+//   - Model: "Message", field: "leadId"
+//   - Model: "Message", field: "conversationId"
+//   - Model: "Message", field: "senderId"
+//   - Model: "Message", field: "readAt"
+//   - Model: "Message", field: "createdAt"
+//   - Model: "VendorFollow", field: "userId"
+//   - Model: "VendorFollow", field: "vendorProfileId"
+//   - Model: "VendorFollow", field: "createdAt"
+//   - Model: "ActiveEvent", field: "convertedFromLeadId"
+//   - Model: "ActiveEvent", field: "referenceImageId"
+//   - Model: "ActiveEvent", field: "clientName"
+//   - Model: "ActiveEvent", field: "clientPhone"
+//   - Model: "ActiveEvent", field: "clientEmail"
+//   - Model: "ActiveEvent", field: "eventDate"
+//   - Model: "ActiveEvent", field: "eventEndDate"
+//   - Model: "ActiveEvent", field: "eventType"
+//   - Model: "ActiveEvent", field: "venueName"
+//   - Model: "ActiveEvent", field: "venueAddressId"
+//   - Model: "ActiveEvent", field: "totalBudget"
+//   - Model: "ActiveEvent", field: "totalSpend"
+//   - Model: "ActiveEvent", field: "opsAdminId"
+//   - Model: "ActiveEvent", field: "opsManagerId"
+//   - Model: "ActiveEvent", field: "createdAt"
+//   - Model: "ActiveEvent", field: "updatedAt"
+//   - Model: "ActiveEvent", field: "completedAt"
+//   - Model: "AuditLog", field: "userId"
+//   - Model: "AuditLog", field: "entityType"
+//   - Model: "AuditLog", field: "entityId"
+//   - Model: "AuditLog", field: "oldValue"
+//   - Model: "AuditLog", field: "newValue"
+//   - Model: "AuditLog", field: "ipAddress"
+//   - Model: "AuditLog", field: "userAgent"
+//   - Model: "AuditLog", field: "createdAt"
+//   - Model: "ContractAmendment", field: "contractId"
+//   - Model: "ContractAmendment", field: "amendmentNumber"
+//   - Model: "ContractAmendment", field: "previousRate"
+//   - Model: "ContractAmendment", field: "newRate"
+//   - Model: "ContractAmendment", field: "effectiveDate"
+//   - Model: "ContractAmendment", field: "signedAt"
+//   - Model: "ContractAmendment", field: "signedByVendor"
+//   - Model: "ContractAmendment", field: "createdAt"
+//   - Model: "Dispute", field: "vendorProfileId"
+//   - Model: "Dispute", field: "reporterId"
+//   - Model: "Dispute", field: "createdAt"
+//   - Model: "Dispute", field: "updatedAt"
+//   - Model: "Dispute", field: "resolvedAt"
+//   - Model: "Dispute", field: "resolvedBy"
+//   - Model: "EventNote", field: "activeEventId"
+//   - Model: "EventNote", field: "authorId"
+//   - Model: "EventNote", field: "isInternal"
+//   - Model: "EventNote", field: "createdAt"
+//   - Model: "KYCDocument", field: "kycId"
+//   - Model: "KYCDocument", field: "createdAt"
+//   - Model: "KYCDocument", field: "fileName"
+//   - Model: "KYCDocument", field: "fileSize"
+//   - Model: "KYCDocument", field: "mimeType"
+//   - Model: "KYCDocument", field: "reviewedAt"
+//   - Model: "KYCDocument", field: "reviewerId"
+//   - Model: "KYCDocument", field: "updatedAt"
+//   - Model: "OperationalTask", field: "activeEventId"
+//   - Model: "OperationalTask", field: "dueDate"
+//   - Model: "OperationalTask", field: "assignedToUserId"
+//   - Model: "OperationalTask", field: "assignedToVendorId"
+//   - Model: "OperationalTask", field: "assignedBy"
+//   - Model: "OperationalTask", field: "submittedAt"
+//   - Model: "OperationalTask", field: "reviewedBy"
+//   - Model: "OperationalTask", field: "reviewedAt"
+//   - Model: "OperationalTask", field: "reviewNotes"
+//   - Model: "OperationalTask", field: "createdAt"
+//   - Model: "OperationalTask", field: "updatedAt"
+//   - Model: "OperationalTask", field: "completedAt"
+//   - Model: "PayoutRecord", field: "contractId"
+//   - Model: "PayoutRecord", field: "vendorProfileId"
+//   - Model: "PayoutRecord", field: "periodStart"
+//   - Model: "PayoutRecord", field: "periodEnd"
+//   - Model: "PayoutRecord", field: "grossEarnings"
+//   - Model: "PayoutRecord", field: "totalCommission"
+//   - Model: "PayoutRecord", field: "netPayout"
+//   - Model: "PayoutRecord", field: "eventCount"
+//   - Model: "PayoutRecord", field: "scheduledFor"
+//   - Model: "PayoutRecord", field: "processedAt"
+//   - Model: "PayoutRecord", field: "failedAt"
+//   - Model: "PayoutRecord", field: "failureReason"
+//   - Model: "PayoutRecord", field: "transactionRef"
+//   - Model: "PayoutRecord", field: "paymentMethod"
+//   - Model: "PayoutRecord", field: "createdAt"
+//   - Model: "PayoutRecord", field: "updatedAt"
+//   - Model: "ProvisionalInvoice", field: "vendorAgreementId"
+//   - Model: "ProvisionalInvoice", field: "invoiceNumber"
+//   - Model: "ProvisionalInvoice", field: "issuedAt"
+//   - Model: "ProvisionalInvoice", field: "paidAt"
+//   - Model: "ProvisionalInvoice", field: "dueDate"
+//   - Model: "ProvisionalInvoice", field: "quotationId"
+//   - Model: "Quotation", field: "vendorAgreementId"
+//   - Model: "Quotation", field: "quotationNumber"
+//   - Model: "Quotation", field: "taxRate"
+//   - Model: "Quotation", field: "taxAmount"
+//   - Model: "Quotation", field: "discountType"
+//   - Model: "Quotation", field: "totalAmount"
+//   - Model: "Quotation", field: "termsAndConditions"
+//   - Model: "Quotation", field: "validUntil"
+//   - Model: "Quotation", field: "sentAt"
+//   - Model: "Quotation", field: "acceptedAt"
+//   - Model: "Quotation", field: "rejectedAt"
+//   - Model: "Quotation", field: "rejectionReason"
+//   - Model: "Quotation", field: "createdAt"
+//   - Model: "Quotation", field: "updatedAt"
+//   - Model: "RequirementItem", field: "requirementSheetId"
+//   - Model: "RequirementItem", field: "estimatedBudget"
+//   - Model: "RequirementItem", field: "createdAt"
+//   - Model: "RequirementItem", field: "updatedAt"
+//   - Model: "RequirementSheet", field: "activeEventId"
+//   - Model: "RequirementSheet", field: "createdAt"
+//   - Model: "RequirementSheet", field: "updatedAt"
+//   - Model: "RequirementSheet", field: "createdBy"
+//   - Model: "RequirementSheet", field: "approvalToken"
+//   - Model: "RequirementSheet", field: "approvalStatus"
+//   - Model: "RequirementSheet", field: "sentToClientAt"
+//   - Model: "RequirementSheet", field: "clientApprovedAt"
+//   - Model: "RequirementSheet", field: "clientRejectedAt"
+//   - Model: "RequirementSheet", field: "rejectionReason"
+//   - Model: "TaskAttachment", field: "taskId"
+//   - Model: "TaskAttachment", field: "fileName"
+//   - Model: "TaskAttachment", field: "fileSize"
+//   - Model: "TaskAttachment", field: "mimeType"
+//   - Model: "TaskAttachment", field: "uploadedBy"
+//   - Model: "TaskAttachment", field: "createdAt"
+//   - Model: "VendorAgreement", field: "activeEventId"
+//   - Model: "VendorAgreement", field: "requirementItemId"
+//   - Model: "VendorAgreement", field: "vendorProfileId"
+//   - Model: "VendorAgreement", field: "vendorName"
+//   - Model: "VendorAgreement", field: "agreedAmount"
+//   - Model: "VendorAgreement", field: "advancePaid"
+//   - Model: "VendorAgreement", field: "balanceDue"
+//   - Model: "VendorAgreement", field: "sentAt"
+//   - Model: "VendorAgreement", field: "acceptedAt"
+//   - Model: "VendorAgreement", field: "declinedAt"
+//   - Model: "VendorAgreement", field: "declineReason"
+//   - Model: "VendorAgreement", field: "contractUrl"
+//   - Model: "VendorAgreement", field: "createdAt"
+//   - Model: "VendorAgreement", field: "updatedAt"
+//   - Model: "VendorConsent", field: "vendorProfileId"
+//   - Model: "VendorConsent", field: "consentType"
+//   - Model: "VendorConsent", field: "documentUrl"
+//   - Model: "VendorConsent", field: "givenAt"
+//   - Model: "VendorConsent", field: "withdrawnAt"
+//   - Model: "VendorConsent", field: "ipAddress"
+//   - Model: "VendorConsent", field: "userAgent"
+//   - Model: "VendorConsent", field: "createdAt"
+//   - Model: "VendorConsent", field: "updatedAt"
+//   - Model: "VendorContract", field: "vendorProfileId"
+//   - Model: "VendorContract", field: "contractNumber"
+//   - Model: "VendorContract", field: "commissionRate"
+//   - Model: "VendorContract", field: "minCommission"
+//   - Model: "VendorContract", field: "maxCommission"
+//   - Model: "VendorContract", field: "payoutFrequency"
+//   - Model: "VendorContract", field: "payoutHoldDays"
+//   - Model: "VendorContract", field: "minPayoutAmount"
+//   - Model: "VendorContract", field: "bankAccountName"
+//   - Model: "VendorContract", field: "bankAccountNumber"
+//   - Model: "VendorContract", field: "bankIfscCode"
+//   - Model: "VendorContract", field: "bankName"
+//   - Model: "VendorContract", field: "upiId"
+//   - Model: "VendorContract", field: "effectiveDate"
+//   - Model: "VendorContract", field: "expiryDate"
+//   - Model: "VendorContract", field: "terminatedAt"
+//   - Model: "VendorContract", field: "terminationReason"
+//   - Model: "VendorContract", field: "contractDocUrl"
+//   - Model: "VendorContract", field: "signedAt"
+//   - Model: "VendorContract", field: "signedByVendor"
+//   - Model: "VendorContract", field: "signedByPlatform"
+//   - Model: "VendorContract", field: "vendorSignatureIp"
+//   - Model: "VendorContract", field: "createdAt"
+//   - Model: "VendorContract", field: "updatedAt"
+//   - Model: "VendorKYC", field: "vendorProfileId"
+//   - Model: "VendorKYC", field: "legalName"
+//   - Model: "VendorKYC", field: "businessType"
+//   - Model: "VendorKYC", field: "taxId"
+//   - Model: "VendorKYC", field: "submittedAt"
+//   - Model: "VendorKYC", field: "approvedAt"
+//   - Model: "VendorKYC", field: "rejectedAt"
+//   - Model: "VendorKYC", field: "rejectionReason"
+//   - Model: "VendorKYC", field: "createdAt"
+//   - Model: "VendorKYC", field: "updatedAt"
+//   - Model: "VendorKYC", field: "expiryDate"
+//   - Model: "VendorKYC", field: "reviewedAt"
+//   - Model: "VendorKYC", field: "reviewerId"
+//   - Model: "BudgetItem", field: "budgetId"
+//   - Model: "BudgetItem", field: "estimatedCost"
+//   - Model: "BudgetItem", field: "actualCost"
+//   - Model: "BudgetItem", field: "isPaid"
+//   - Model: "BudgetItem", field: "createdAt"
+//   - Model: "Budget", field: "eventId"
+//   - Model: "Budget", field: "totalBudget"
+//   - Model: "Budget", field: "createdAt"
+//   - Model: "Budget", field: "updatedAt"
+//   - Model: "ChatbotConversationMessage", field: "conversationId"
+//   - Model: "ChatbotConversationMessage", field: "createdAt"
+//   - Model: "ChatbotConversation", field: "userId"
+//   - Model: "ChatbotConversation", field: "lastMessageAt"
+//   - Model: "ChatbotConversation", field: "createdAt"
+//   - Model: "ChatbotConversation", field: "updatedAt"
+//   - Model: "ChecklistItem", field: "checklistId"
+//   - Model: "ChecklistItem", field: "dueDate"
+//   - Model: "ChecklistItem", field: "isCompleted"
+//   - Model: "ChecklistItem", field: "completedAt"
+//   - Model: "ChecklistItem", field: "sortOrder"
+//   - Model: "ChecklistItem", field: "createdAt"
+//   - Model: "ChecklistTemplate", field: "eventTypeId"
+//   - Model: "ChecklistTemplate", field: "sortOrder"
+//   - Model: "ChecklistTemplate", field: "createdAt"
+//   - Model: "ChecklistTemplate", field: "updatedAt"
+//   - Model: "Checklist", field: "eventId"
+//   - Model: "Checklist", field: "sortOrder"
+//   - Model: "Checklist", field: "createdAt"
+//   - Model: "EventMemory", field: "eventId"
+//   - Model: "EventMemory", field: "qrCode"
+//   - Model: "EventMemory", field: "qrCodeUrl"
+//   - Model: "EventMemory", field: "isActive"
+//   - Model: "EventMemory", field: "allowUploads"
+//   - Model: "EventMemory", field: "requireApproval"
+//   - Model: "EventMemory", field: "createdAt"
+//   - Model: "EventMemory", field: "expiresAt"
+//   - Model: "EventType", field: "isActive"
+//   - Model: "EventType", field: "sortOrder"
+//   - Model: "EventType", field: "createdAt"
+//   - Model: "EventType", field: "updatedAt"
+//   - Model: "EventVendor", field: "eventId"
+//   - Model: "EventVendor", field: "vendorProfileId"
+//   - Model: "EventVendor", field: "contractAmount"
+//   - Model: "EventVendor", field: "depositPaid"
+//   - Model: "EventVendor", field: "createdAt"
+//   - Model: "EventVendor", field: "updatedAt"
+//   - Model: "Event", field: "userId"
+//   - Model: "Event", field: "eventTypeId"
+//   - Model: "Event", field: "endDate"
+//   - Model: "Event", field: "addressId"
+//   - Model: "Event", field: "venueName"
+//   - Model: "Event", field: "guestCount"
+//   - Model: "Event", field: "createdAt"
+//   - Model: "Event", field: "updatedAt"
+//   - Model: "GuestUpload", field: "eventMemoryId"
+//   - Model: "GuestUpload", field: "uploaderName"
+//   - Model: "GuestUpload", field: "uploaderEmail"
+//   - Model: "GuestUpload", field: "mediaUrl"
+//   - Model: "GuestUpload", field: "thumbnailUrl"
+//   - Model: "GuestUpload", field: "mediaType"
+//   - Model: "GuestUpload", field: "fileSize"
+//   - Model: "GuestUpload", field: "approvedAt"
+//   - Model: "GuestUpload", field: "rejectedAt"
+//   - Model: "GuestUpload", field: "createdAt"
+//   - Model: "Guestlist", field: "eventId"
+//   - Model: "Guestlist", field: "createdAt"
+//   - Model: "Guest", field: "guestlistId"
+//   - Model: "Guest", field: "firstName"
+//   - Model: "Guest", field: "lastName"
+//   - Model: "Guest", field: "rsvpStatus"
+//   - Model: "Guest", field: "plusOne"
+//   - Model: "Guest", field: "tableNumber"
+//   - Model: "Guest", field: "dietaryReq"
+//   - Model: "Guest", field: "createdAt"
+//   - Model: "Guest", field: "rsvpAt"
+//   - Model: "Guest", field: "rsvpMessage"
+//   - Model: "Guest", field: "rsvpToken"
+//   - Model: "Timeline", field: "eventId"
+//   - Model: "Timeline", field: "createdAt"
+//   - Model: "VibeQuizImage", field: "thumbnailUrl"
+//   - Model: "VibeQuizImage", field: "isActive"
+//   - Model: "VibeQuizImage", field: "sortOrder"
+//   - Model: "VibeQuizImage", field: "createdAt"
+//   - Model: "VibeQuizImage", field: "updatedAt"
+//   - Model: "VibeQuizResult", field: "userId"
+//   - Model: "VibeQuizResult", field: "topStyles"
+//   - Model: "VibeQuizResult", field: "topColors"
+//   - Model: "VibeQuizResult", field: "topCategories"
+//   - Model: "VibeQuizResult", field: "completedAt"
+//   - Model: "VibeQuizResult", field: "createdAt"
+//   - Model: "VibeQuizResult", field: "updatedAt"
+//   - Model: "VibeQuizSelection", field: "resultId"
+//   - Model: "VibeQuizSelection", field: "imageId"
+//   - Model: "VibeQuizSelection", field: "selectedAt"
+//   - Model: "WeddingIdentity", field: "displayName"
+//   - Model: "WeddingIdentity", field: "eventDate"
+//   - Model: "WeddingIdentity", field: "eventType"
+//   - Model: "WeddingIdentity", field: "createdAt"
+//   - Model: "WeddingIdentity", field: "updatedAt"
+//   - Model: "WeddingPartner", field: "weddingIdentityId"
+//   - Model: "WeddingPartner", field: "userId"
+//   - Model: "WeddingPartner", field: "isOwner"
+//   - Model: "WeddingPartner", field: "inviteStatus"
+//   - Model: "WeddingPartner", field: "inviteToken"
+//   - Model: "WeddingPartner", field: "invitedAt"
+//   - Model: "WeddingPartner", field: "acceptedAt"
+//   - Model: "WeddingPartner", field: "createdAt"
+//   - Model: "WeddingPartner", field: "updatedAt"
+//   - Model: "WhatsAppMessage", field: "guestId"
+//   - Model: "WhatsAppMessage", field: "guestlistId"
+//   - Model: "WhatsAppMessage", field: "messageType"
+//   - Model: "WhatsAppMessage", field: "templateId"
+//   - Model: "WhatsAppMessage", field: "customMessage"
+//   - Model: "WhatsAppMessage", field: "sentAt"
+//   - Model: "WhatsAppMessage", field: "deliveredAt"
+//   - Model: "WhatsAppMessage", field: "readAt"
+//   - Model: "WhatsAppMessage", field: "errorMessage"
+//   - Model: "WhatsAppMessage", field: "externalId"
+//   - Model: "WhatsAppMessage", field: "createdAt"
+//   - Model: "WhatsAppTemplate", field: "isActive"
+//   - Model: "WhatsAppTemplate", field: "createdAt"
+//   - Model: "WhatsAppTemplate", field: "updatedAt"
+//   - Model: "WishlistItem", field: "wishlistId"
+//   - Model: "WishlistItem", field: "vendorProfileId"
+//   - Model: "WishlistItem", field: "createdAt"
+//   - Model: "WishlistItem", field: "mediaItemId"
+//   - Model: "Wishlist", field: "userId"
+//   - Model: "Wishlist", field: "isDefault"
+//   - Model: "Wishlist", field: "createdAt"
+//   - Model: "Wishlist", field: "updatedAt"
+//   - Model: "Address", field: "addressLine1"
+//   - Model: "Address", field: "addressLine2"
+//   - Model: "Address", field: "cityId"
+//   - Model: "Address", field: "postalCode"
+//   - Model: "Address", field: "createdAt"
+//   - Model: "Address", field: "updatedAt"
+//   - Model: "ApiKey", field: "userId"
+//   - Model: "ApiKey", field: "keyPrefix"
+//   - Model: "ApiKey", field: "rateLimit"
+//   - Model: "ApiKey", field: "isActive"
+//   - Model: "ApiKey", field: "lastUsedAt"
+//   - Model: "ApiKey", field: "expiresAt"
+//   - Model: "ApiKey", field: "createdAt"
+//   - Model: "ApiKey", field: "revokedAt"
+//   - Model: "City", field: "stateId"
+//   - Model: "City", field: "isActive"
+//   - Model: "Country", field: "dialCode"
+//   - Model: "Country", field: "isActive"
+//   - Model: "FeatureFlag", field: "updatedBy"
+//   - Model: "FeatureFlag", field: "createdAt"
+//   - Model: "FeatureFlag", field: "updatedAt"
+//   - Model: "LoginActivity", field: "userId"
+//   - Model: "LoginActivity", field: "failureReason"
+//   - Model: "LoginActivity", field: "loginMethod"
+//   - Model: "LoginActivity", field: "ipAddress"
+//   - Model: "LoginActivity", field: "userAgent"
+//   - Model: "LoginActivity", field: "deviceType"
+//   - Model: "LoginActivity", field: "riskScore"
+//   - Model: "LoginActivity", field: "riskFactors"
+//   - Model: "LoginActivity", field: "isSuspicious"
+//   - Model: "LoginActivity", field: "twoFactorUsed"
+//   - Model: "LoginActivity", field: "twoFactorMethod"
+//   - Model: "LoginActivity", field: "createdAt"
+//   - Model: "Notification", field: "userId"
+//   - Model: "Notification", field: "actionUrl"
+//   - Model: "Notification", field: "imageUrl"
+//   - Model: "Notification", field: "isRead"
+//   - Model: "Notification", field: "readAt"
+//   - Model: "Notification", field: "isDismissed"
+//   - Model: "Notification", field: "sentAt"
+//   - Model: "Notification", field: "deliveredAt"
+//   - Model: "Notification", field: "failedAt"
+//   - Model: "Notification", field: "failureReason"
+//   - Model: "Notification", field: "createdAt"
+//   - Model: "Notification", field: "expiresAt"
+//   - Model: "PlatformMetrics", field: "totalUsers"
+//   - Model: "PlatformMetrics", field: "newUsers"
+//   - Model: "PlatformMetrics", field: "activeUsers"
+//   - Model: "PlatformMetrics", field: "returningUsers"
+//   - Model: "PlatformMetrics", field: "totalVendors"
+//   - Model: "PlatformMetrics", field: "newVendors"
+//   - Model: "PlatformMetrics", field: "activeVendors"
+//   - Model: "PlatformMetrics", field: "verifiedVendors"
+//   - Model: "PlatformMetrics", field: "totalLeads"
+//   - Model: "PlatformMetrics", field: "leadsConverted"
+//   - Model: "PlatformMetrics", field: "avgLeadValue"
+//   - Model: "PlatformMetrics", field: "totalSessions"
+//   - Model: "PlatformMetrics", field: "totalPageViews"
+//   - Model: "PlatformMetrics", field: "avgSessionDuration"
+//   - Model: "PlatformMetrics", field: "bounceRate"
+//   - Model: "PlatformMetrics", field: "totalSearches"
+//   - Model: "PlatformMetrics", field: "zeroResultSearches"
+//   - Model: "PlatformMetrics", field: "eventsCreated"
+//   - Model: "PlatformMetrics", field: "eventsCompleted"
+//   - Model: "PlatformMetrics", field: "createdAt"
+//   - Model: "PlatformMetrics", field: "updatedAt"
+//   - Model: "ProfileView", field: "vendorProfileId"
+//   - Model: "ProfileView", field: "viewerId"
+//   - Model: "ProfileView", field: "sessionId"
+//   - Model: "ProfileView", field: "utmSource"
+//   - Model: "ProfileView", field: "utmMedium"
+//   - Model: "ProfileView", field: "utmCampaign"
+//   - Model: "ProfileView", field: "deviceType"
+//   - Model: "ProfileView", field: "scrollDepth"
+//   - Model: "ProfileView", field: "createdAt"
+//   - Model: "Role", field: "displayName"
+//   - Model: "Role", field: "isSystem"
+//   - Model: "Role", field: "createdAt"
+//   - Model: "Role", field: "updatedAt"
+//   - Model: "Role", field: "parentRoleId"
+//   - Model: "SearchQuery", field: "userId"
+//   - Model: "SearchQuery", field: "sessionId"
+//   - Model: "SearchQuery", field: "queryNormalized"
+//   - Model: "SearchQuery", field: "categoryId"
+//   - Model: "SearchQuery", field: "cityId"
+//   - Model: "SearchQuery", field: "resultCount"
+//   - Model: "SearchQuery", field: "hasResults"
+//   - Model: "SearchQuery", field: "clickedResults"
+//   - Model: "SearchQuery", field: "deviceType"
+//   - Model: "SearchQuery", field: "createdAt"
+//   - Model: "State", field: "countryId"
+//   - Model: "State", field: "isActive"
+//   - Model: "SystemConfig", field: "maintenanceMode"
+//   - Model: "SystemConfig", field: "registrationEnabled"
+//   - Model: "SystemConfig", field: "allowVendorOnboarding"
+//   - Model: "SystemConfig", field: "supportEmail"
+//   - Model: "SystemConfig", field: "updatedBy"
+//   - Model: "SystemConfig", field: "createdAt"
+//   - Model: "SystemConfig", field: "updatedAt"
+//   - Model: "UserEngagement", field: "userId"
+//   - Model: "UserEngagement", field: "sessionCount"
+//   - Model: "UserEngagement", field: "totalDuration"
+//   - Model: "UserEngagement", field: "profileViews"
+//   - Model: "UserEngagement", field: "searchCount"
+//   - Model: "UserEngagement", field: "leadsSent"
+//   - Model: "UserEngagement", field: "messagesSent"
+//   - Model: "UserEngagement", field: "wishlistAdds"
+//   - Model: "UserEngagement", field: "checklistUpdates"
+//   - Model: "UserEngagement", field: "budgetUpdates"
+//   - Model: "UserEngagement", field: "createdAt"
+//   - Model: "UserEngagement", field: "updatedAt"
+//   - Model: "UserRoleAssignment", field: "userId"
+//   - Model: "UserRoleAssignment", field: "roleId"
+//   - Model: "UserRoleAssignment", field: "assignedBy"
+//   - Model: "UserRoleAssignment", field: "expiresAt"
+//   - Model: "UserRoleAssignment", field: "createdAt"
+//   - Model: "UserSession", field: "userId"
+//   - Model: "UserSession", field: "refreshToken"
+//   - Model: "UserSession", field: "userAgent"
+//   - Model: "UserSession", field: "ipAddress"
+//   - Model: "UserSession", field: "deviceType"
+//   - Model: "UserSession", field: "deviceName"
+//   - Model: "UserSession", field: "expiresAt"
+//   - Model: "UserSession", field: "lastActiveAt"
+//   - Model: "UserSession", field: "isRevoked"
+//   - Model: "UserSession", field: "createdAt"
+//   - Model: "User", field: "passwordHash"
+//   - Model: "User", field: "firstName"
+//   - Model: "User", field: "lastName"
+//   - Model: "User", field: "avatarUrl"
+//   - Model: "User", field: "emailVerified"
+//   - Model: "User", field: "emailVerifiedAt"
+//   - Model: "User", field: "emailVerifyToken"
+//   - Model: "User", field: "twoFactorEnabled"
+//   - Model: "User", field: "twoFactorSecret"
+//   - Model: "User", field: "twoFactorBackupCodes"
+//   - Model: "User", field: "twoFactorVerifiedAt"
+//   - Model: "User", field: "failedLoginAttempts"
+//   - Model: "User", field: "lockedUntil"
+//   - Model: "User", field: "passwordChangedAt"
+//   - Model: "User", field: "passwordResetToken"
+//   - Model: "User", field: "passwordResetExpires"
+//   - Model: "User", field: "createdAt"
+//   - Model: "User", field: "updatedAt"
+//   - Model: "User", field: "deletedAt"
+//   - Model: "User", field: "lastLoginAt"
+//   - Model: "User", field: "hasCompletedOnboarding"
+//   - Model: "User", field: "authProvider"
+//   - Model: "VendorMetrics", field: "vendorProfileId"
+//   - Model: "VendorMetrics", field: "profileViews"
+//   - Model: "VendorMetrics", field: "searchAppearances"
+//   - Model: "VendorMetrics", field: "searchClicks"
+//   - Model: "VendorMetrics", field: "clickThroughRate"
+//   - Model: "VendorMetrics", field: "leadsReceived"
+//   - Model: "VendorMetrics", field: "leadsResponded"
+//   - Model: "VendorMetrics", field: "responseRate"
+//   - Model: "VendorMetrics", field: "avgResponseTime"
+//   - Model: "VendorMetrics", field: "leadsConverted"
+//   - Model: "VendorMetrics", field: "conversionRate"
+//   - Model: "VendorMetrics", field: "wishlistAdds"
+//   - Model: "VendorMetrics", field: "portfolioViews"
+//   - Model: "VendorMetrics", field: "totalRevenue"
+//   - Model: "VendorMetrics", field: "createdAt"
+//   - Model: "VendorMetrics", field: "updatedAt"
+//   - Model: "AdCreditTransaction", field: "vendorProfileId"
+//   - Model: "AdCreditTransaction", field: "referenceType"
+//   - Model: "AdCreditTransaction", field: "referenceId"
+//   - Model: "AdCreditTransaction", field: "paymentId"
+//   - Model: "AdCreditTransaction", field: "createdAt"
+//   - Model: "CampaignDailyStats", field: "campaignId"
+//   - Model: "CampaignDailyStats", field: "creditsSpent"
+//   - Model: "CampaignDailyStats", field: "createdAt"
+//   - Model: "Campaign", field: "vendorProfileId"
+//   - Model: "Campaign", field: "targetEntityId"
+//   - Model: "Campaign", field: "targetEntityType"
+//   - Model: "Campaign", field: "dailyBudget"
+//   - Model: "Campaign", field: "totalBudget"
+//   - Model: "Campaign", field: "creditsSpent"
+//   - Model: "Campaign", field: "startDate"
+//   - Model: "Campaign", field: "endDate"
+//   - Model: "Campaign", field: "createdAt"
+//   - Model: "Campaign", field: "updatedAt"
+//   - Model: "Campaign", field: "submittedAt"
+//   - Model: "Campaign", field: "approvedAt"
+//   - Model: "Campaign", field: "approvedById"
+//   - Model: "Campaign", field: "rejectedAt"
+//   - Model: "Campaign", field: "rejectedById"
+//   - Model: "Campaign", field: "rejectionReason"
+//   - Model: "Campaign", field: "internalNotes"
+//   - Model: "Coupon", field: "discountType"
+//   - Model: "Coupon", field: "discountValue"
+//   - Model: "Coupon", field: "appliesTo"
+//   - Model: "Coupon", field: "planId"
+//   - Model: "Coupon", field: "durationInMonths"
+//   - Model: "Coupon", field: "maxRedemptions"
+//   - Model: "Coupon", field: "timesRedeemed"
+//   - Model: "Coupon", field: "maxRedemptionsPerUser"
+//   - Model: "Coupon", field: "validFrom"
+//   - Model: "Coupon", field: "validUntil"
+//   - Model: "Coupon", field: "minAmount"
+//   - Model: "Coupon", field: "isActive"
+//   - Model: "Coupon", field: "stripeCouponId"
+//   - Model: "Coupon", field: "createdAt"
+//   - Model: "Coupon", field: "updatedAt"
+//   - Model: "InvoiceLineItem", field: "invoiceId"
+//   - Model: "InvoiceLineItem", field: "unitPrice"
+//   - Model: "InvoiceLineItem", field: "periodStart"
+//   - Model: "InvoiceLineItem", field: "periodEnd"
+//   - Model: "InvoiceLineItem", field: "createdAt"
+//   - Model: "Invoice", field: "subscriptionId"
+//   - Model: "Invoice", field: "invoiceNumber"
+//   - Model: "Invoice", field: "discountAmount"
+//   - Model: "Invoice", field: "taxAmount"
+//   - Model: "Invoice", field: "totalAmount"
+//   - Model: "Invoice", field: "taxRate"
+//   - Model: "Invoice", field: "taxType"
+//   - Model: "Invoice", field: "periodStart"
+//   - Model: "Invoice", field: "periodEnd"
+//   - Model: "Invoice", field: "issuedAt"
+//   - Model: "Invoice", field: "dueDate"
+//   - Model: "Invoice", field: "paidAt"
+//   - Model: "Invoice", field: "voidedAt"
+//   - Model: "Invoice", field: "stripeInvoiceId"
+//   - Model: "Invoice", field: "razorpayInvoiceId"
+//   - Model: "Invoice", field: "pdfUrl"
+//   - Model: "Invoice", field: "createdAt"
+//   - Model: "Invoice", field: "updatedAt"
+//   - Model: "PaymentMethod", field: "subscriptionId"
+//   - Model: "PaymentMethod", field: "cardBrand"
+//   - Model: "PaymentMethod", field: "cardLast4"
+//   - Model: "PaymentMethod", field: "cardExpMonth"
+//   - Model: "PaymentMethod", field: "cardExpYear"
+//   - Model: "PaymentMethod", field: "upiId"
+//   - Model: "PaymentMethod", field: "bankName"
+//   - Model: "PaymentMethod", field: "bankLast4"
+//   - Model: "PaymentMethod", field: "stripePaymentMethodId"
+//   - Model: "PaymentMethod", field: "razorpayTokenId"
+//   - Model: "PaymentMethod", field: "isDefault"
+//   - Model: "PaymentMethod", field: "isActive"
+//   - Model: "PaymentMethod", field: "billingName"
+//   - Model: "PaymentMethod", field: "billingEmail"
+//   - Model: "PaymentMethod", field: "billingAddressLine1"
+//   - Model: "PaymentMethod", field: "billingAddressLine2"
+//   - Model: "PaymentMethod", field: "billingCity"
+//   - Model: "PaymentMethod", field: "billingState"
+//   - Model: "PaymentMethod", field: "billingPostalCode"
+//   - Model: "PaymentMethod", field: "billingCountry"
+//   - Model: "PaymentMethod", field: "createdAt"
+//   - Model: "PaymentMethod", field: "updatedAt"
+//   - Model: "Payment", field: "invoiceId"
+//   - Model: "Payment", field: "paymentMethodId"
+//   - Model: "Payment", field: "gatewayProvider"
+//   - Model: "Payment", field: "gatewayPaymentId"
+//   - Model: "Payment", field: "gatewayResponse"
+//   - Model: "Payment", field: "failureCode"
+//   - Model: "Payment", field: "failureMessage"
+//   - Model: "Payment", field: "refundedAmount"
+//   - Model: "Payment", field: "refundedAt"
+//   - Model: "Payment", field: "refundReason"
+//   - Model: "Payment", field: "createdAt"
+//   - Model: "Payment", field: "updatedAt"
+//   - Model: "Payment", field: "processedAt"
+//   - Model: "PlanFeature", field: "planId"
+//   - Model: "PlanFeature", field: "featureKey"
+//   - Model: "PlanFeature", field: "featureName"
+//   - Model: "PlanFeature", field: "limitType"
+//   - Model: "PlanFeature", field: "limitValue"
+//   - Model: "PlanFeature", field: "isHighlighted"
+//   - Model: "PlanFeature", field: "sortOrder"
+//   - Model: "PlanFeature", field: "createdAt"
+//   - Model: "PlanPrice", field: "planId"
+//   - Model: "PlanPrice", field: "billingCycle"
+//   - Model: "PlanPrice", field: "stripePriceId"
+//   - Model: "PlanPrice", field: "razorpayPlanId"
+//   - Model: "PlanPrice", field: "savingsPercent"
+//   - Model: "PlanPrice", field: "isActive"
+//   - Model: "PlanPrice", field: "createdAt"
+//   - Model: "PlanPrice", field: "updatedAt"
+//   - Model: "SubscriptionPlan", field: "displayOrder"
+//   - Model: "SubscriptionPlan", field: "isPopular"
+//   - Model: "SubscriptionPlan", field: "trialDays"
+//   - Model: "SubscriptionPlan", field: "isActive"
+//   - Model: "SubscriptionPlan", field: "isPublic"
+//   - Model: "SubscriptionPlan", field: "createdAt"
+//   - Model: "SubscriptionPlan", field: "updatedAt"
+//   - Model: "SubscriptionStatusHistory", field: "subscriptionId"
+//   - Model: "SubscriptionStatusHistory", field: "fromStatus"
+//   - Model: "SubscriptionStatusHistory", field: "toStatus"
+//   - Model: "SubscriptionStatusHistory", field: "changedBy"
+//   - Model: "SubscriptionStatusHistory", field: "createdAt"
+//   - Model: "Subscription", field: "vendorProfileId"
+//   - Model: "Subscription", field: "planId"
+//   - Model: "Subscription", field: "priceId"
+//   - Model: "Subscription", field: "currentPeriodStart"
+//   - Model: "Subscription", field: "currentPeriodEnd"
+//   - Model: "Subscription", field: "trialStart"
+//   - Model: "Subscription", field: "trialEnd"
+//   - Model: "Subscription", field: "cancelAtPeriodEnd"
+//   - Model: "Subscription", field: "cancelledAt"
+//   - Model: "Subscription", field: "cancellationReason"
+//   - Model: "Subscription", field: "stripeSubscriptionId"
+//   - Model: "Subscription", field: "stripeCustomerId"
+//   - Model: "Subscription", field: "razorpaySubscriptionId"
+//   - Model: "Subscription", field: "couponId"
+//   - Model: "Subscription", field: "discountAmount"
+//   - Model: "Subscription", field: "createdAt"
+//   - Model: "Subscription", field: "updatedAt"
+//   - Model: "UsageRecord", field: "subscriptionId"
+//   - Model: "UsageRecord", field: "featureKey"
+//   - Model: "UsageRecord", field: "periodStart"
+//   - Model: "UsageRecord", field: "periodEnd"
+//   - Model: "UsageRecord", field: "usageCount"
+//   - Model: "UsageRecord", field: "usageLimit"
+//   - Model: "UsageRecord", field: "warningThreshold"
+//   - Model: "UsageRecord", field: "warningNotifiedAt"
+//   - Model: "UsageRecord", field: "limitNotifiedAt"
+//   - Model: "UsageRecord", field: "createdAt"
+//   - Model: "UsageRecord", field: "updatedAt"
+//   - Model: "UserPlanFeature", field: "planId"
+//   - Model: "UserPlanFeature", field: "featureKey"
+//   - Model: "UserPlanFeature", field: "featureName"
+//   - Model: "UserPlanFeature", field: "limitType"
+//   - Model: "UserPlanFeature", field: "limitValue"
+//   - Model: "UserPlanFeature", field: "isHighlighted"
+//   - Model: "UserPlanFeature", field: "sortOrder"
+//   - Model: "UserPlanFeature", field: "createdAt"
+//   - Model: "UserPlanPrice", field: "planId"
+//   - Model: "UserPlanPrice", field: "billingCycle"
+//   - Model: "UserPlanPrice", field: "savingsPercent"
+//   - Model: "UserPlanPrice", field: "isActive"
+//   - Model: "UserPlanPrice", field: "createdAt"
+//   - Model: "UserPlanPrice", field: "updatedAt"
+//   - Model: "UserSubscriptionPlan", field: "displayOrder"
+//   - Model: "UserSubscriptionPlan", field: "isPopular"
+//   - Model: "UserSubscriptionPlan", field: "trialDays"
+//   - Model: "UserSubscriptionPlan", field: "isActive"
+//   - Model: "UserSubscriptionPlan", field: "isPublic"
+//   - Model: "UserSubscriptionPlan", field: "createdAt"
+//   - Model: "UserSubscriptionPlan", field: "updatedAt"
+//   - Model: "UserSubscription", field: "userId"
+//   - Model: "UserSubscription", field: "planId"
+//   - Model: "UserSubscription", field: "priceId"
+//   - Model: "UserSubscription", field: "currentPeriodStart"
+//   - Model: "UserSubscription", field: "currentPeriodEnd"
+//   - Model: "UserSubscription", field: "trialEnd"
+//   - Model: "UserSubscription", field: "cancelAtPeriodEnd"
+//   - Model: "UserSubscription", field: "cancelledAt"
+//   - Model: "UserSubscription", field: "createdAt"
+//   - Model: "UserSubscription", field: "updatedAt"
+//   - Model: "UserSubscription", field: "autoRenew"
+//   - Model: "UserSubscription", field: "scheduledPlanId"
+//   - Model: "UserSubscription", field: "scheduledPriceId"
+//   - Model: "UserUsageRecord", field: "subscriptionId"
+//   - Model: "UserUsageRecord", field: "eventId"
+//   - Model: "UserUsageRecord", field: "featureKey"
+//   - Model: "UserUsageRecord", field: "usageCount"
+//   - Model: "UserUsageRecord", field: "createdAt"
+//   - Model: "UserUsageRecord", field: "updatedAt"
+// 
+// These models were enriched with `@@map` information taken from the previous Prisma schema:
+//   - "BusinessHour"
+//   - "Category"
+//   - "Hashtag"
+//   - "MediaItemTag"
+//   - "MediaItem"
+//   - "Portfolio"
+//   - "PricingTier"
+//   - "ReviewMedia"
+//   - "ServiceArea"
+//   - "ServiceType"
+//   - "Service"
+//   - "Tag"
+//   - "VendorBadgeDefinition"
+//   - "VendorBadge"
+//   - "VendorClaim"
+//   - "VendorProfile"
+//   - "VendorReview"
+//   - "VendorTag"
+//   - "BlogCategory"
+//   - "BlogPostTag"
+//   - "BlogPost"
+//   - "BlogTag"
+//   - "ConversationParticipant"
+//   - "Conversation"
+//   - "LeadStatusHistory"
+//   - "Lead"
+//   - "MessageAttachment"
+//   - "MessageDeletion"
+//   - "MessageReaction"
+//   - "MessageReceipt"
+//   - "Message"
+//   - "VendorFollow"
+//   - "ActiveEvent"
+//   - "AuditLog"
+//   - "ContractAmendment"
+//   - "Dispute"
+//   - "EventNote"
+//   - "KYCDocument"
+//   - "OperationalTask"
+//   - "PayoutRecord"
+//   - "ProvisionalInvoice"
+//   - "Quotation"
+//   - "RequirementItem"
+//   - "RequirementSheet"
+//   - "TaskAttachment"
+//   - "VendorAgreement"
+//   - "VendorConsent"
+//   - "VendorContract"
+//   - "VendorKYC"
+//   - "BudgetItem"
+//   - "Budget"
+//   - "ChatbotConversationMessage"
+//   - "ChatbotConversation"
+//   - "ChecklistItem"
+//   - "ChecklistTemplate"
+//   - "Checklist"
+//   - "EventMemory"
+//   - "EventType"
+//   - "EventVendor"
+//   - "Event"
+//   - "GuestUpload"
+//   - "Guestlist"
+//   - "Guest"
+//   - "Timeline"
+//   - "VibeQuizImage"
+//   - "VibeQuizResult"
+//   - "VibeQuizSelection"
+//   - "WeddingIdentity"
+//   - "WeddingPartner"
+//   - "WhatsAppMessage"
+//   - "WhatsAppTemplate"
+//   - "WishlistItem"
+//   - "Wishlist"
+//   - "Address"
+//   - "ApiKey"
+//   - "City"
+//   - "Country"
+//   - "FeatureFlag"
+//   - "LoginActivity"
+//   - "Notification"
+//   - "PlatformMetrics"
+//   - "ProfileView"
+//   - "Role"
+//   - "SearchQuery"
+//   - "State"
+//   - "SystemConfig"
+//   - "UserEngagement"
+//   - "UserRoleAssignment"
+//   - "UserSession"
+//   - "User"
+//   - "VendorMetrics"
+//   - "AdCreditTransaction"
+//   - "CampaignDailyStats"
+//   - "Campaign"
+//   - "Coupon"
+//   - "InvoiceLineItem"
+//   - "Invoice"
+//   - "PaymentMethod"
+//   - "Payment"
+//   - "PlanFeature"
+//   - "PlanPrice"
+//   - "SubscriptionPlan"
+//   - "SubscriptionStatusHistory"
+//   - "Subscription"
+//   - "UsageRecord"
+//   - "UserPlanFeature"
+//   - "UserPlanPrice"
+//   - "UserSubscriptionPlan"
+//   - "UserSubscription"
+//   - "UserUsageRecord"
+// 
+

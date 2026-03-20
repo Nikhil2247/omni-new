@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Heart, User, Bell, Shield } from 'lucide-react'
+import { Heart, User, Bell, Shield, CreditCard } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
 import { trackDashboard } from '@/lib/analytics/umami'
 
@@ -48,6 +48,14 @@ export default function UserSettingsPage() {
           href="/settings/security"
           icon={Shield}
           iconColor="text-green-500"
+        />
+
+        <SettingsCard
+          title="Subscription"
+          description="Manage your plan, view usage, and billing information."
+          href="/settings/subscription"
+          icon={CreditCard}
+          iconColor="text-purple-500"
         />
       </div>
     </div>

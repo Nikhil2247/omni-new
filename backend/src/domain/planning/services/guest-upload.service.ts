@@ -192,6 +192,7 @@ export class GuestUploadService {
             id: true,
             name: true,
             date: true,
+            userId: true, // Include owner ID for subscription limit checks
           },
         },
       },
