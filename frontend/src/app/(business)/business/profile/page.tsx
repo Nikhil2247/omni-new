@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/dialog'
 import {
   AlertTriangle,
+  Archive,
   Award,
   CalendarDays,
   Camera,
@@ -61,6 +62,7 @@ import {
   Trash2,
   Upload,
   User,
+  UserX,
   X,
   XCircle,
 } from 'lucide-react'
@@ -71,10 +73,11 @@ import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common'
 
 const statusConfig: Record<VendorStatus, { label: string; color: string; icon: ElementType }> = {
   DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: Edit },
+  UNCLAIMED: { label: 'Unclaimed', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: UserX },
   PENDING_REVIEW: { label: 'Pending Review', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Clock },
   ACTIVE: { label: 'Active', color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle },
   SUSPENDED: { label: 'Suspended', color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle },
-  INACTIVE: { label: 'Inactive', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: AlertTriangle },
+  ARCHIVED: { label: 'Archived', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: Archive },
 }
 
 const slugifyBusinessName = (value: string) =>

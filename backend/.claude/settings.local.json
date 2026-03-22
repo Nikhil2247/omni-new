@@ -8,7 +8,8 @@
       "Bash(gunzip:*)",
       "Bash(npm run migrate:extract:*)",
       "Bash(node -e:*)",
-      "Bash(npm run migrate:mongodb:*)"
+      "Bash(npm run migrate:mongodb:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

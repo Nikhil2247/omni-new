@@ -81,7 +81,7 @@ export function useFeatureFlags() {
 export function useCreateFeatureFlag() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { key: string; description?: string; enabled?: boolean }) =>
+    mutationFn: (payload: { key: string; name: string; description?: string; category?: string; enabled?: boolean; isSystem?: boolean }) =>
       adminService.createFeatureFlag(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.featureFlags() })
@@ -94,9 +94,11 @@ export function useCreateFeatureFlag() {
 export function useUpdateFeatureFlag() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: { id: string; description?: string; enabled?: boolean }) =>
+    mutationFn: (payload: { id: string; name?: string; description?: string; category?: string; enabled?: boolean }) =>
       adminService.updateFeatureFlag(payload.id, {
+        name: payload.name,
         description: payload.description,
+        category: payload.category,
         enabled: payload.enabled,
       }),
     onSuccess: () => {

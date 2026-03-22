@@ -109,7 +109,7 @@ export interface VendorBadge {
   definition?: VendorBadgeDefinition
 }
 
-export type VendorStatus = 'DRAFT' | 'PENDING_REVIEW' | 'ACTIVE' | 'SUSPENDED' | 'INACTIVE'
+export type VendorStatus = 'DRAFT' | 'UNCLAIMED' | 'PENDING_REVIEW' | 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED'
 
 export interface CreateVendorProfileRequest {
   businessName: string

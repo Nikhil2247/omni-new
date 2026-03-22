@@ -232,8 +232,8 @@ export function BannerAd({
     return <BannerSkeleton variant={variant} />
   }
 
+  if (!banners || banners.length === 0) return null
   const banner = banners[0]
-  if (!banner) return null
 
   return (
     <SingleBanner banner={banner} variant={variant} className={className} />

@@ -1,5 +1,6 @@
 export type VendorStatus =
   | 'DRAFT'
+  | 'UNCLAIMED'
   | 'PENDING_REVIEW'
   | 'ACTIVE'
   | 'SUSPENDED'

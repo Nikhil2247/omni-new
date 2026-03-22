@@ -44,7 +44,7 @@ function checkTierAccess(
 /**
  * Get vendor's current tier from subscription data
  */
-function getVendorTier(subscription: Subscription | undefined): PlanTier {
+function getVendorTier(subscription: Subscription | null | undefined): PlanTier {
   if (!subscription) return 'FREE'
   return subscription.plan?.tier || 'FREE'
 }

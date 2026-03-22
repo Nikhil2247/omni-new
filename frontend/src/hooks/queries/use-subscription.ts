@@ -254,7 +254,7 @@ export function useResumeSubscription() {
  * Get current vendor subscription
  */
 export function useVendorSubscription(options?: { enabled?: boolean }) {
-  return useQuery<Subscription>({
+  return useQuery<Subscription | null>({
     queryKey: subscriptionKeys.vendorSubscription(),
     queryFn: () => vendorSubscriptionService.getCurrentSubscription(),
     staleTime: 60_000,
