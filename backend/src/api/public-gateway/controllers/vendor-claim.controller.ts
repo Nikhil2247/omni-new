@@ -11,6 +11,7 @@ import {
   Body,
   Param,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,7 +20,9 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
+import { Public } from '../../../core/auth/decorators/public.decorator';
 import {
   CurrentUser,
   CurrentUserData,
@@ -30,6 +33,10 @@ import {
   VerifyClaimDto,
   VendorClaimResponseDto,
   ClaimStatusResponseDto,
+  InitiateGuestClaimDto,
+  VerifyGuestClaimDto,
+  GuestClaimInitiatedResponseDto,
+  GuestClaimVerifiedResponseDto,
 } from '../../../domain/catalog/dto/vendor-claim.dto';
 
 @ApiTags('Vendor Claims')
@@ -167,5 +174,95 @@ export class VendorClaimController {
       success: true,
       message: 'Verification code has been resent',
     };
+  }
+
+  // ============================================================================
+  // GUEST CLAIM ENDPOINTS - No authentication required
+  // ============================================================================
+
+  /**
+   * Check if a vendor profile can be claimed by a guest
+   */
+  @Get('can-claim/:vendorProfileId')
+  @Public()
+  @ApiOperation({ summary: 'Check if vendor can be claimed by guest' })
+  @ApiParam({
+    name: 'vendorProfileId',
+    description: 'Vendor profile ID to check',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Claim eligibility status',
+  })
+  async canGuestClaim(
+    @Param('vendorProfileId') vendorProfileId: string,
+  ): Promise<{ canClaim: boolean; reason?: string; vendorName?: string }> {
+    return this.vendorClaimService.canGuestClaim(vendorProfileId);
+  }
+
+  /**
+   * Initiate a guest claim (no authentication required)
+   * Sends verification code to the provided email
+   */
+  @Post('initiate-guest')
+  @Public()
+  @ApiOperation({ summary: 'Initiate guest claim for vendor profile' })
+  @ApiResponse({
+    status: 201,
+    description: 'Verification code sent',
+    type: GuestClaimInitiatedResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid request or email already registered' })
+  @ApiResponse({ status: 404, description: 'Vendor profile not found' })
+  @ApiResponse({ status: 409, description: 'Claim already in progress' })
+  async initiateGuestClaim(
+    @Body() dto: InitiateGuestClaimDto,
+  ): Promise<GuestClaimInitiatedResponseDto> {
+    return this.vendorClaimService.initiateGuestClaim(dto);
+  }
+
+  /**
+   * Verify guest claim and create user account
+   * Returns auth tokens so user is immediately logged in
+   */
+  @Post('verify-guest')
+  @Public()
+  @ApiOperation({ summary: 'Verify guest claim and create account' })
+  @ApiResponse({
+    status: 200,
+    description: 'Claim verified, account created, tokens returned',
+    type: GuestClaimVerifiedResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid or expired verification code' })
+  async verifyGuestClaim(
+    @Body() dto: VerifyGuestClaimDto,
+    @Req() req: Request,
+  ): Promise<GuestClaimVerifiedResponseDto> {
+    const context = {
+      ipAddress: req.ip || req.connection.remoteAddress || 'unknown',
+      userAgent: req.headers['user-agent'],
+    };
+    return this.vendorClaimService.verifyGuestClaimAndCreateUser(dto, context);
+  }
+
+  /**
+   * Resend guest claim verification code
+   */
+  @Post('resend-guest')
+  @Public()
+  @ApiOperation({ summary: 'Resend guest claim verification code' })
+  @ApiResponse({
+    status: 200,
+    description: 'New verification code sent',
+    type: GuestClaimInitiatedResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'No pending verification or rate limited' })
+  async resendGuestVerification(
+    @Body() dto: InitiateGuestClaimDto,
+  ): Promise<GuestClaimInitiatedResponseDto> {
+    return this.vendorClaimService.resendGuestVerification(
+      dto.vendorProfileId,
+      dto.email,
+    );
   }
 }

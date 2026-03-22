@@ -194,4 +194,141 @@ export class EmailEventHandler {
       this.logger.error(`Error handling password changed event:`, error);
     }
   }
+
+  /**
+   * Handle generic notification.send events for email notifications
+   */
+  @OnEvent('notification.send')
+  async handleNotificationSend(event: {
+    type: string;
+    recipient: string;
+    data: Record<string, any>;
+  }) {
+    try {
+      switch (event.type) {
+        case 'GUEST_CLAIM_VERIFICATION_EMAIL':
+          await this.sendGuestClaimVerificationEmail(
+            event.recipient,
+            event.data as { verificationCode: string; businessName: string; expiresIn: string },
+          );
+          break;
+        case 'VENDOR_CLAIM_SUCCESS':
+          await this.sendVendorClaimSuccessEmail(
+            event.recipient,
+            event.data as { businessName: string },
+          );
+          break;
+        case 'CLAIM_VERIFICATION_EMAIL':
+          // Existing claim verification for logged-in users
+          await this.sendClaimVerificationEmail(
+            event.recipient,
+            event.data as { verificationCode: string; businessName: string; expiresIn: string },
+          );
+          break;
+        default:
+          this.logger.debug(`Unhandled notification type: ${event.type}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error handling notification.send event (${event.type}):`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Send guest claim verification email
+   */
+  private async sendGuestClaimVerificationEmail(
+    email: string,
+    data: { verificationCode: string; businessName: string; expiresIn: string },
+  ) {
+    this.logger.log(`Sending guest claim verification email to ${email}`);
+
+    const result = await this.emailService.send({
+      to: email,
+      template: 'claim-verification',
+      context: {
+        verificationCode: data.verificationCode,
+        businessName: data.businessName,
+        expiresIn: data.expiresIn,
+        currentYear: new Date().getFullYear(),
+      },
+    });
+
+    if (result.success) {
+      this.logger.log(
+        `Guest claim verification email sent successfully to ${email}`,
+      );
+    } else {
+      this.logger.error(
+        `Failed to send guest claim verification email to ${email}: ${result.error}`,
+      );
+    }
+  }
+
+  /**
+   * Send vendor claim success email
+   */
+  private async sendVendorClaimSuccessEmail(
+    email: string,
+    data: { businessName: string },
+  ) {
+    this.logger.log(`Sending vendor claim success email to ${email}`);
+
+    // For now, send a welcome-like email
+    // You can create a dedicated template later
+    const result = await this.emailService.send({
+      to: email,
+      template: 'welcome',
+      context: {
+        email,
+        businessName: data.businessName,
+        loginUrl: `${this.frontendUrl}/login`,
+        dashboardUrl: `${this.frontendUrl}/business/onboarding`,
+        message: `Congratulations! You have successfully claimed ${data.businessName} on Omnicassion.`,
+      },
+    });
+
+    if (result.success) {
+      this.logger.log(
+        `Vendor claim success email sent successfully to ${email}`,
+      );
+    } else {
+      this.logger.error(
+        `Failed to send vendor claim success email to ${email}: ${result.error}`,
+      );
+    }
+  }
+
+  /**
+   * Send claim verification email (for logged-in users claiming)
+   */
+  private async sendClaimVerificationEmail(
+    email: string,
+    data: { verificationCode: string; businessName: string; expiresIn: string },
+  ) {
+    this.logger.log(`Sending claim verification email to ${email}`);
+
+    const result = await this.emailService.send({
+      to: email,
+      template: 'claim-verification',
+      context: {
+        verificationCode: data.verificationCode,
+        businessName: data.businessName,
+        expiresIn: data.expiresIn,
+        currentYear: new Date().getFullYear(),
+      },
+    });
+
+    if (result.success) {
+      this.logger.log(
+        `Claim verification email sent successfully to ${email}`,
+      );
+    } else {
+      this.logger.error(
+        `Failed to send claim verification email to ${email}: ${result.error}`,
+      );
+    }
+  }
 }

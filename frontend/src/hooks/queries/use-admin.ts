@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { adminService } from '@/lib/api/services/admin.service'
+import { featureKeys } from '@/hooks/use-feature'
 import type { AdminAuditParams, AdminUserListParams, SystemConfigState } from '@/lib/api/types/admin.types'
 
 const adminKeys = {
@@ -99,10 +100,31 @@ export function useUpdateFeatureFlag() {
         enabled: payload.enabled,
       }),
     onSuccess: () => {
+      // Invalidate admin feature flags list
       queryClient.invalidateQueries({ queryKey: adminKeys.featureFlags() })
+      // Also invalidate public feature flags cache so changes take effect immediately
+      queryClient.invalidateQueries({ queryKey: featureKeys.enabled() })
+      queryClient.invalidateQueries({ queryKey: featureKeys.all() })
       toast.success('Feature flag updated')
     },
     onError: () => toast.error('Failed to update feature flag'),
+  })
+}
+
+export function useBulkUpdateFeatureFlags() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { ids: string[]; enabled: boolean }) =>
+      adminService.bulkUpdateFeatureFlags(payload.ids, payload.enabled),
+    onSuccess: (_, variables) => {
+      // Invalidate admin feature flags list
+      queryClient.invalidateQueries({ queryKey: adminKeys.featureFlags() })
+      // Also invalidate public feature flags cache so changes take effect immediately
+      queryClient.invalidateQueries({ queryKey: featureKeys.enabled() })
+      queryClient.invalidateQueries({ queryKey: featureKeys.all() })
+      toast.success(`${variables.ids.length} feature flags ${variables.enabled ? 'enabled' : 'disabled'}`)
+    },
+    onError: () => toast.error('Failed to update feature flags'),
   })
 }
 

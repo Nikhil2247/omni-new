@@ -541,7 +541,7 @@ export class VendorIndexer implements OnModuleInit {
       sortOrder?: 'asc' | 'desc';
     },
   ) {
-    const filters: string[] = ['status = "ACTIVE"'];
+    const filters: string[] = ['(status = "ACTIVE" OR status = "UNCLAIMED")'];
 
     if (options?.categoryId) {
       filters.push(`categoryId = "${options.categoryId}"`);
@@ -632,7 +632,7 @@ export class VendorIndexer implements OnModuleInit {
       categoryId?: string;
     },
   ) {
-    const filters: string[] = ['status = "ACTIVE"'];
+    const filters: string[] = ['(status = "ACTIVE" OR status = "UNCLAIMED")'];
 
     if (options?.categoryId) {
       filters.push(`categoryId = "${options.categoryId}"`);

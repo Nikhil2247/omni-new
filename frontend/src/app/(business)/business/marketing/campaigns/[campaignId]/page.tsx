@@ -27,6 +27,7 @@ import {
 } from '@/hooks/queries/use-subscription';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common';
 
 function formatNumber(num: number): string {
   if (num >= 1000000) {
@@ -104,30 +105,44 @@ export default function CampaignDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="container py-8">
-        <Skeleton className="h-8 w-48 mb-6" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <FeatureFlagGate
+        feature="marketing.campaigns"
+        fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
+      >
+        <div className="container py-8">
+          <Skeleton className="h-8 w-48 mb-6" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </FeatureFlagGate>
     );
   }
 
   if (!campaign) {
     return (
-      <div className="container py-8">
-        <Card>
-          <CardContent className="py-10 text-center">
-            <h2 className="text-xl font-semibold mb-2">Campaign not found</h2>
-            <Link href="/business/marketing/campaigns">
-              <Button>Back to Campaigns</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+      <FeatureFlagGate
+        feature="marketing.campaigns"
+        fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
+      >
+        <div className="container py-8">
+          <Card>
+            <CardContent className="py-10 text-center">
+              <h2 className="text-xl font-semibold mb-2">Campaign not found</h2>
+              <Link href="/business/marketing/campaigns">
+                <Button>Back to Campaigns</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </FeatureFlagGate>
     );
   }
 
   return (
-    <div className="container py-8">
+    <FeatureFlagGate
+      feature="marketing.campaigns"
+      fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
+    >
+      <div className="container py-8">
       <Link
         href="/business/marketing/campaigns"
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
@@ -321,6 +336,7 @@ export default function CampaignDetailPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </FeatureFlagGate>
   );
 }

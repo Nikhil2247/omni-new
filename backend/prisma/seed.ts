@@ -49,6 +49,7 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 import * as bcrypt from 'bcryptjs'
 import { seedSubscriptionPlans } from './seeds/subscription-plans.seed'
+import { seedFeatureFlags } from './seeds/feature-flags.seed'
 import { randomUUID } from 'crypto'
 
 // Initialize Prisma with adapter
@@ -214,11 +215,11 @@ async function main() {
 
   await prisma.featureFlag.createMany({
     data: [
-      { key: 'VIBE_QUIZ_ENABLED', description: 'Enable visual onboarding quiz', enabled: true },
-      { key: 'WEDDING_IDENTITY_ENABLED', description: 'Enable couple profiles', enabled: true },
-      { key: 'WHATSAPP_INTEGRATION', description: 'Enable WhatsApp messaging', enabled: true },
-      { key: 'AI_RECOMMENDATIONS', description: 'Enable AI-powered recommendations', enabled: false },
-      { key: 'GUEST_UPLOADS', description: 'Enable guest photo uploads', enabled: true },
+      { key: 'VIBE_QUIZ_ENABLED', name: 'Vibe Quiz', description: 'Enable visual onboarding quiz', enabled: true },
+      { key: 'WEDDING_IDENTITY_ENABLED', name: 'Wedding Identity', description: 'Enable couple profiles', enabled: true },
+      { key: 'WHATSAPP_INTEGRATION', name: 'WhatsApp Integration', description: 'Enable WhatsApp messaging', enabled: true },
+      { key: 'AI_RECOMMENDATIONS', name: 'AI Recommendations', description: 'Enable AI-powered recommendations', enabled: false },
+      { key: 'GUEST_UPLOADS', name: 'Guest Uploads', description: 'Enable guest photo uploads', enabled: true },
     ],
   })
 
@@ -2249,6 +2250,13 @@ async function main() {
   })
 
   console.log('✅ Subscription plans created')
+
+  // ============================================================================
+  // STEP 22.5: FEATURE FLAGS
+  // ============================================================================
+  console.log('🚩 Creating feature flags...')
+  await seedFeatureFlags(prisma)
+  console.log('✅ Feature flags created')
 
   // ============================================================================
   // STEP 23: NOTIFICATIONS

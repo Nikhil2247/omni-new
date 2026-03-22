@@ -40,6 +40,7 @@ import {
   Sparkles,
   HeartHandshake,
   Wrench,
+  BadgeCheck,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -49,6 +50,7 @@ export interface NavItem {
   roles: Role[];
   badge?: string;
   children?: NavItem[];
+  feature?: string; // Feature flag key that must be enabled
 }
 
 export interface NavGroup {
@@ -123,6 +125,7 @@ export const adminNav: NavGroup[] = [
         href: '/admin/campaigns',
         icon: Megaphone,
         roles: [ROLES.ADMIN, ROLES.ADMIN_SYSTEM],
+        feature: 'marketing.campaigns',
       },
     ],
   },
@@ -277,6 +280,14 @@ export const opsAdminNav: NavGroup[] = [
         href: '/ops/kyc',
         icon: FileCheck,
         roles: [ROLES.OPERATIONAL_ADMIN],
+        feature: 'vendor.onboarding',
+      },
+      {
+        title: 'Claims',
+        href: '/ops/claims',
+        icon: BadgeCheck,
+        roles: [ROLES.OPERATIONAL_ADMIN],
+        feature: 'vendor.onboarding',
       },
     ],
   },
@@ -416,6 +427,7 @@ export const opsManagerNav: NavGroup[] = [
         href: '/ops/kyc',
         icon: FileCheck,
         roles: [ROLES.OPERATIONAL_MANAGER],
+        feature: 'vendor.onboarding',
       },
     ],
   },
@@ -487,6 +499,7 @@ export const opsAssistantNav: NavGroup[] = [
         href: '/ops/kyc',
         icon: FileCheck,
         roles: [ROLES.OPERATIONAL_ASSISTANT],
+        feature: 'vendor.onboarding',
       },
       {
         title: 'Content Moderation',
@@ -571,6 +584,7 @@ export const opsNav: NavGroup[] = [
         href: '/ops/kyc',
         icon: FileCheck,
         roles: ROLE_GROUPS.OPS,
+        feature: 'vendor.onboarding',
       },
       {
         title: 'Disputes',
@@ -660,12 +674,14 @@ export const marketingNav: NavGroup[] = [
         href: '/marketing/campaigns',
         icon: Megaphone,
         roles: [ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN],
+        feature: 'marketing.campaigns',
       },
       {
         title: 'Analytics',
         href: '/marketing/analytics',
         icon: TrendingUp,
         roles: [ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER],
+        feature: 'marketing.campaigns',
       },
     ],
   },
@@ -808,12 +824,14 @@ export const businessNav: NavGroup[] = [
         href: '/business/marketing/campaigns',
         icon: Megaphone,
         roles: [ROLES.BUSINESS_ADMIN],
+        feature: 'marketing.campaigns',
       },
       {
         title: 'Ad Credits',
         href: '/business/marketing/credits',
         icon: CreditCard,
         roles: [ROLES.BUSINESS_ADMIN],
+        feature: 'marketing.campaigns',
       },
     ],
   },

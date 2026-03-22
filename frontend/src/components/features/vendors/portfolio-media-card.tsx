@@ -4,7 +4,7 @@ import Link from 'next/link'
 import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Heart } from 'lucide-react'
+import { Heart, X, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import type { PortfolioMediaItem } from '@/lib/api/types/portfolio-media.types'
@@ -13,6 +13,8 @@ import { WishlistPickerDialog } from '@/components/common/wishlist-picker-dialog
 import { useAddWishlistItem, useCreateWishlist, useWishlistMine, wishlistKeys } from '@/hooks/queries/use-wishlists'
 import { useMediaItemTags } from '@/hooks/queries/use-media-tags'
 import { getMinioViewUrl } from '@/lib/utils/minio'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 
 interface PortfolioMediaCardProps {
   item: PortfolioMediaItem
@@ -29,6 +31,7 @@ export function PortfolioMediaCard({ item, priority = false }: PortfolioMediaCar
   const createWishlist = useCreateWishlist(userId ?? '')
   const addItem = useAddWishlistItem()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [locallySaved, setLocallySaved] = useState(false)
 
@@ -87,13 +90,14 @@ export function PortfolioMediaCard({ item, priority = false }: PortfolioMediaCar
   const { data: tags = [] } = useMediaItemTags(item.id)
 
   return (
-    <div 
+    <div
       className="group relative overflow-hidden rounded-xl sm:rounded-2xl border bg-card shadow-sm transition-all duration-300 hover:shadow-lg"
     >
-      <Link
-        href={`/vendors/${item.vendor.slug}`}
-        className="block w-full"
-        aria-label={`View ${item.vendor.businessName || 'vendor'} profile`}
+      <button
+        type="button"
+        onClick={() => setPreviewOpen(true)}
+        className="block w-full text-left"
+        aria-label={`Preview ${item.vendor.businessName || 'vendor'} portfolio`}
       >
         <NextImage
           src={imageUrl}
@@ -104,7 +108,7 @@ export function PortfolioMediaCard({ item, priority = false }: PortfolioMediaCar
           priority={priority}
           className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-      </Link>
+      </button>
       
       {/* Heart button — always visible, top-right corner */}
       <button
@@ -156,6 +160,71 @@ export function PortfolioMediaCard({ item, priority = false }: PortfolioMediaCar
         onConfirm={handleConfirm}
         isSaving={isSaving}
       />
+
+      {/* Preview Modal */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95 border-0">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(false)}
+            className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition"
+            aria-label="Close preview"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="relative">
+            <NextImage
+              src={imageUrl}
+              alt={item.altText || item.vendor.businessName || 'Portfolio image'}
+              width={1600}
+              height={1200}
+              unoptimized={true}
+              className="w-full h-auto max-h-[70vh] object-contain"
+            />
+
+            {/* Info overlay at bottom */}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-6">
+              <div className="flex items-end justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs uppercase tracking-wider text-white/70 mb-1">
+                    {item.vendor.categoryName ?? 'Featured Vendor'}
+                  </p>
+                  <h3 className="text-lg font-semibold text-white truncate">
+                    {item.vendor.businessName || 'View Vendor'}
+                  </h3>
+                  {item.caption && (
+                    <p className="text-sm text-white/80 mt-1 line-clamp-2">{item.caption}</p>
+                  )}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {tags.slice(0, 4).map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-xs font-medium text-white"
+                        >
+                          #{tag.tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  onClick={() => {
+                    setPreviewOpen(false)
+                    router.push(`/vendors/${item.vendor.slug}`)
+                  }}
+                  className="shrink-0"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Visit Profile
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

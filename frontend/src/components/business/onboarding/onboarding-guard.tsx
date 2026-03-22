@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -14,6 +15,7 @@ import {
   ShieldAlert,
   Clock,
   CheckCircle2,
+  Building2,
 } from 'lucide-react'
 import {
   useBusinessProfile,
@@ -49,6 +51,42 @@ export function OnboardingGuard({
   const isOnboardingPage = pathname?.includes('/onboarding')
   if (isOnboardingPage) {
     return <>{children}</>
+  }
+
+  // Block UNCLAIMED vendors from accessing dashboard
+  // They need to claim their business first through the public profile page
+  if (!isLoading && profile?.status === 'UNCLAIMED') {
+    return (
+      <div className="max-w-2xl mx-auto p-6 space-y-6">
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-4">
+                <Building2 className="h-8 w-8 text-amber-600" />
+              </div>
+              <h2 className="text-xl font-semibold">Business Not Yet Claimed</h2>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                This business profile is a public listing and hasn&apos;t been claimed yet.
+                To access the dashboard and manage your business, you need to claim ownership first.
+              </p>
+              <div className="pt-4 space-y-3">
+                {profile?.slug && (
+                  <Button asChild>
+                    <Link href={`/vendors/${profile.slug}`}>
+                      View Public Profile & Claim
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Visit your public business profile page to start the claim process.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   // Compute onboarding status

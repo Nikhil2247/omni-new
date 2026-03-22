@@ -89,15 +89,19 @@ export const adminService = {
   },
   listFeatureFlags: async (): Promise<FeatureFlag[]> => {
     const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.FEATURE_FLAGS)
-    return data
+    return data?.data ?? data ?? []
   },
-  createFeatureFlag: async (payload: { key: string; description?: string; enabled?: boolean }) => {
+  createFeatureFlag: async (payload: { key: string; name: string; description?: string; category?: string; enabled?: boolean; isSystem?: boolean }) => {
     const { data } = await apiClient.post(API_ENDPOINTS.ADMIN.FEATURE_FLAGS, payload)
-    return data
+    return data?.data ?? data
   },
-  updateFeatureFlag: async (id: string, payload: { description?: string; enabled?: boolean }) => {
+  updateFeatureFlag: async (id: string, payload: { name?: string; description?: string; category?: string; enabled?: boolean }) => {
     const { data } = await apiClient.patch(`${API_ENDPOINTS.ADMIN.FEATURE_FLAGS}/${id}`, payload)
-    return data
+    return data?.data ?? data
+  },
+  bulkUpdateFeatureFlags: async (ids: string[], enabled: boolean) => {
+    const { data } = await apiClient.post(`${API_ENDPOINTS.ADMIN.FEATURE_FLAGS}/bulk-update`, { ids, enabled })
+    return data?.data ?? data
   },
   getAdminDashboard: async (): Promise<AdminDashboard> => {
     const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.INSIGHTS.DASHBOARD)

@@ -22,6 +22,9 @@ import { useCreateUserVendorConversation } from '@/hooks/queries/use-messaging'
 import { useToggleVendorFollow, useVendorFollowStatus } from '@/hooks/queries/use-vendor-follows'
 import { useCreateVendorReview, useVendorReviews } from '@/hooks/queries/use-vendor-reviews'
 import { useMediaItemTags } from '@/hooks/queries/use-media-tags'
+import { useClaimStatus } from '@/hooks/queries/use-vendor-claim'
+import { ClaimVendorButton } from '@/components/vendors/claim-vendor-button'
+import { ClaimStatusBanner } from '@/components/vendors/claim-status-banner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -319,6 +322,7 @@ export default function VendorPageClient({
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
   const [hoveredRating, setHoveredRating] = useState(0)
   const [galleryPanelOpen, setGalleryPanelOpen] = useState(false)
+  const [selectedAlbum, setSelectedAlbum] = useState<typeof portfolios[0] | null>(null)
 
   const { mutateAsync: createConversation, isPending: isCreatingConversation } =
     useCreateUserVendorConversation()
@@ -396,6 +400,23 @@ export default function VendorPageClient({
   const followStatus = useVendorFollowStatus(vendor?.id || '', Boolean(userId))
   const toggleFollow = useToggleVendorFollow()
   const { data: vendorReviews = [] } = useVendorReviews(showReviews ? (vendor?.id || '') : '')
+
+  // Claim status query - only fetch if user is authenticated and vendor exists
+  const { data: claimStatus } = useClaimStatus(vendor?.id || '', {
+    enabled: isAuthenticated && !!vendor?.id
+  })
+
+  // Determine if vendor is claimable (PUBLIC/UNCLAIMED)
+  const isVendorUnclaimed = vendor?.status === 'UNCLAIMED'
+  const isOwnVendor = vendor?.userId === user?.id
+  const canShowClaimUI = isVendorUnclaimed && !isOwnVendor
+  // Show claim button for authenticated users who can claim, OR for non-authenticated users (will redirect to login)
+  const canShowClaimButton = canShowClaimUI && (
+    !isAuthenticated || // Non-authenticated users see button (redirects to login)
+    claimStatus?.canClaim === true ||
+    !claimStatus?.hasClaim
+  )
+
   const createReview = useCreateVendorReview()
 
   const handleFollow = async () => {
@@ -633,6 +654,16 @@ export default function VendorPageClient({
                   <TooltipContent>Open website</TooltipContent>
                 </Tooltip>
               )}
+
+              {canShowClaimButton && (
+                <ClaimVendorButton
+                  vendorProfileId={vendor.id}
+                  vendorName={vendor.businessName}
+                  contactEmail={vendor.contactEmail}
+                  contactPhone={vendor.contactPhone}
+                  className="h-9 gap-1.5 px-3"
+                />
+              )}
             </div>
           </div>
 
@@ -642,13 +673,19 @@ export default function VendorPageClient({
             animate={{ opacity: 1, y: 0 }}
             className="mt-3 pb-6"
           >
-            {/* Name + Verified */}
+            {/* Name + Verified + Unclaimed */}
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold text-foreground">{vendor.businessName}</h1>
               {isVerified && (
                 <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/20">
                   <Star className="h-3 w-3 fill-primary" />
                   Verified
+                </Badge>
+              )}
+              {isVendorUnclaimed && (
+                <Badge variant="outline" className="gap-1 border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  <Shield className="h-3 w-3" />
+                  Public Listing
                 </Badge>
               )}
             </div>
@@ -725,6 +762,11 @@ export default function VendorPageClient({
       {/* Main Content */}
       <div className="mx-auto max-w-5xl px-4 md:px-6">
 
+        {/* Claim Status Banner - show if user has a claim on this vendor */}
+        {isAuthenticated && canShowClaimUI && (
+          <ClaimStatusBanner vendorProfileId={vendor.id} />
+        )}
+
         <div className="border-t">
           <div className="flex justify-center">
             {tabs.map((tab) => {
@@ -760,44 +802,62 @@ export default function VendorPageClient({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {allMedia.length > 0 ? (
-                  <div className="space-y-6">
-                    {featuredMedia.length > 0 && (
+                {(featuredPortfolios.length > 0 || nonFeaturedMedia.length > 0) ? (
+                  <div className="space-y-8">
+                    {/* Featured Albums - 3 in a row */}
+                    {featuredPortfolios.length > 0 && (
                       <div>
-                        <div className="mb-3 flex items-center gap-2">
-                          <Badge variant="secondary">Featured Album</Badge>
-                          <span className="text-xs text-muted-foreground">{featuredMedia.length} items</span>
-                        </div>
+                        <h3 className="mb-4 text-sm font-medium text-muted-foreground uppercase tracking-wider">Featured Albums</h3>
+                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                          {featuredPortfolios.slice(0, 3).map((portfolio, idx) => {
+                            const albumMedia = portfolio.mediaItems || []
+                            if (albumMedia.length === 0) return null
+                            const coverImage = albumMedia[0]
 
-                        <div className="grid grid-cols-3 gap-1 md:gap-4">
-                          {featuredMedia.slice(0, 6).map((media) => {
-                            const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
                             return (
                               <motion.button
-                                key={media.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                onClick={() => {
-                                  setLightboxIndex(mediaIndex)
-                                  setLightboxOpen(true)
-                                }}
-                                className="group relative aspect-square overflow-hidden rounded-sm bg-muted"
+                                key={portfolio.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                onClick={() => setSelectedAlbum(portfolio)}
+                                className="group relative overflow-hidden rounded-xl border bg-card text-left transition-all hover:border-primary/50 hover:shadow-lg"
                               >
-                                <Image
-                                  src={media.cdnUrl || media.url}
-                                  alt={media.altText || 'Featured portfolio'}
-                                  fill
-                                  unoptimized={true}
-                                  priority={true}
-                                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                />
-                                {media.type === 'VIDEO' && (
-                                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90">
-                                      <Play className="h-5 w-5 text-foreground" />
+                                {/* Album Cover Image */}
+                                <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                                  <Image
+                                    src={coverImage.cdnUrl || coverImage.url}
+                                    alt={coverImage.altText || portfolio.title || 'Album'}
+                                    fill
+                                    unoptimized={true}
+                                    priority={idx < 3}
+                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                  {/* Photo count overlay */}
+                                  <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                                    <Images className="h-3.5 w-3.5" />
+                                    {albumMedia.length}
+                                  </div>
+                                  {/* Hover overlay */}
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/30">
+                                    <div className="opacity-0 transition-opacity group-hover:opacity-100">
+                                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                                        <Eye className="h-5 w-5 text-foreground" />
+                                      </div>
                                     </div>
                                   </div>
-                                )}
+                                </div>
+                                {/* Album Info */}
+                                <div className="p-4">
+                                  <h3 className="font-semibold text-foreground line-clamp-1">
+                                    {portfolio.title || 'Portfolio'}
+                                  </h3>
+                                  {portfolio.description && (
+                                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                                      {portfolio.description}
+                                    </p>
+                                  )}
+                                </div>
                               </motion.button>
                             )
                           })}
@@ -805,61 +865,52 @@ export default function VendorPageClient({
                       </div>
                     )}
 
+                    {/* Non-Featured Photos - 3 column grid, max 15 images */}
                     {nonFeaturedMedia.length > 0 && (
                       <div>
-                        <div className="mb-3 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-semibold">All Images</h3>
-                            <span className="text-xs text-muted-foreground">
-                              Showing {Math.min(15, nonFeaturedMedia.length)} of {nonFeaturedMedia.length}
-                            </span>
-                          </div>
+                        <div className="mb-4 flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">More Photos</h3>
                           {nonFeaturedMedia.length > 15 && (
-                            <Button variant="outline" size="sm" onClick={() => setGalleryPanelOpen(true)}>
-                              <Images className="mr-1.5 h-4 w-4" />
-                              See more
+                            <Button variant="ghost" size="sm" onClick={() => setGalleryPanelOpen(true)}>
+                              View all {nonFeaturedMedia.length} photos
+                              <ChevronRight className="ml-1 h-4 w-4" />
                             </Button>
                           )}
                         </div>
-
-                        <div className="grid grid-cols-3 gap-1 md:gap-4">
-                          {visibleNonFeaturedMedia.map((media, idx) => (
-                            <motion.button
-                              key={media.id}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: idx * 0.03 }}
-                              onClick={() => {
-                                const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
-                                setLightboxIndex(mediaIndex)
-                                setLightboxOpen(true)
-                              }}
-                              className="group relative aspect-square overflow-hidden rounded-sm bg-muted"
-                            >
-                              <Image
-                                src={media.cdnUrl || media.url}
-                                alt={media.altText || 'Portfolio'}
-                                fill
-                                unoptimized={true}
-                                priority={true}
-                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                              />
-                              {media.type === 'VIDEO' && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90">
-                                    <Play className="h-5 w-5 text-foreground" />
+                        <div className="grid grid-cols-3 gap-2">
+                          {nonFeaturedMedia.slice(0, 15).map((media, idx) => {
+                            const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
+                            return (
+                              <motion.button
+                                key={media.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: idx * 0.02 }}
+                                onClick={() => {
+                                  setLightboxIndex(mediaIndex >= 0 ? mediaIndex : 0)
+                                  setLightboxOpen(true)
+                                }}
+                                className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
+                              >
+                                <Image
+                                  src={media.cdnUrl || media.url}
+                                  alt={media.altText || 'Photo'}
+                                  fill
+                                  unoptimized={true}
+                                  priority={idx < 6}
+                                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                                {media.type === 'VIDEO' && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90">
+                                      <Play className="h-3.5 w-3.5 text-foreground" />
+                                    </div>
                                   </div>
-                                </div>
-                              )}
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/30 group-hover:opacity-100">
-                                <div className="flex items-center gap-4 text-white">
-                                  <span className="flex items-center gap-1">
-                                    <Star className="h-5 w-5 fill-white" />
-                                  </span>
-                                </div>
-                              </div>
-                            </motion.button>
-                          ))}
+                                )}
+                                <div className="absolute inset-0 bg-black/0 transition-all group-hover:bg-black/20" />
+                              </motion.button>
+                            )
+                          })}
                         </div>
                       </div>
                     )}
@@ -867,7 +918,7 @@ export default function VendorPageClient({
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <Camera className="mb-4 h-16 w-16 text-muted-foreground/30" />
-                    <h3 className="text-lg font-semibold text-foreground">No Posts Yet</h3>
+                    <h3 className="text-lg font-semibold text-foreground">No Albums Yet</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
                       When {vendor.businessName} shares photos, you&apos;ll see them here.
                     </p>
@@ -1319,44 +1370,146 @@ export default function VendorPageClient({
 
       {/* Full Gallery Panel */}
       <Dialog open={galleryPanelOpen} onOpenChange={setGalleryPanelOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto !max-w-6xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Images className="h-4 w-4" />
-              Full Portfolio
-            </DialogTitle>
-            <DialogDescription>
-              {allMedia.length} media item{allMedia.length !== 1 ? 's' : ''}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="h-[95vh] max-h-[95vh] w-[95vw] max-w-[95vw] flex flex-col p-0 gap-0 sm:rounded-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6 sm:py-4">
+            <div>
+              <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Images className="h-5 w-5 text-primary" />
+                Gallery
+              </DialogTitle>
+              <DialogDescription className="mt-0.5 text-sm">
+                {allMedia.length} photo{allMedia.length !== 1 ? 's' : ''} from {vendor.businessName}
+              </DialogDescription>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {allMedia.map((media) => (
-              <button
-                key={media.id}
-                type="button"
-                onClick={() => {
-                  const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
-                  setGalleryPanelOpen(false)
-                  setLightboxIndex(mediaIndex)
-                  setLightboxOpen(true)
-                }}
-                className="group relative aspect-square overflow-hidden rounded-md bg-muted"
-              >
-                <Image
-                  src={media.cdnUrl || media.url}
-                  alt={media.altText || 'Portfolio'}
-                  fill
-                  unoptimized={true}
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                {media.type === 'VIDEO' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                    <Play className="h-5 w-5 text-white" />
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 md:gap-2.5">
+              {allMedia.map((media, idx) => (
+                <motion.button
+                  key={media.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.01, duration: 0.2 }}
+                  type="button"
+                  onClick={() => {
+                    const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
+                    setGalleryPanelOpen(false)
+                    setLightboxIndex(mediaIndex)
+                    setLightboxOpen(true)
+                  }}
+                  className="group relative aspect-square overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 transition-all hover:ring-2 hover:ring-primary/50 hover:shadow-lg"
+                >
+                  <Image
+                    src={media.cdnUrl || media.url}
+                    alt={media.altText || 'Portfolio'}
+                    fill
+                    unoptimized={true}
+                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, (max-width: 1280px) 16vw, 12vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                  {media.type === 'VIDEO' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-lg sm:h-8 sm:w-8">
+                        <Play className="h-3 w-3 text-foreground sm:h-3.5 sm:w-3.5" />
+                      </div>
+                    </div>
+                  )}
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                  {/* Index badge on hover */}
+                  <div className="absolute bottom-1 right-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 sm:bottom-1.5 sm:right-1.5 sm:text-xs">
+                    {idx + 1}
                   </div>
-                )}
-              </button>
-            ))}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="border-t bg-muted/30 px-3 py-2 sm:px-6 sm:py-3">
+            <p className="text-center text-xs text-muted-foreground">
+              Click any photo to view in full screen
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Album Detail Dialog */}
+      <Dialog open={!!selectedAlbum} onOpenChange={(open) => !open && setSelectedAlbum(null)}>
+        <DialogContent className="h-[90vh] max-h-[90vh] w-[90vw] max-w-[900px] flex flex-col p-0 gap-0 sm:rounded-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6 sm:py-4">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Images className="h-5 w-5 shrink-0 text-primary" />
+                <span className="truncate">{selectedAlbum?.title || 'Album'}</span>
+              </DialogTitle>
+              {selectedAlbum?.description && (
+                <DialogDescription className="mt-0.5 text-sm line-clamp-1">
+                  {selectedAlbum.description}
+                </DialogDescription>
+              )}
+            </div>
+            <Badge variant="secondary" className="ml-3 shrink-0">
+              {(selectedAlbum?.mediaItems || []).length} photos
+            </Badge>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 md:grid-cols-5 md:gap-2.5">
+              {(selectedAlbum?.mediaItems || []).map((media, idx) => {
+                const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
+                return (
+                  <motion.button
+                    key={media.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: idx * 0.02, duration: 0.2 }}
+                    type="button"
+                    onClick={() => {
+                      setSelectedAlbum(null)
+                      setLightboxIndex(mediaIndex >= 0 ? mediaIndex : 0)
+                      setLightboxOpen(true)
+                    }}
+                    className="group relative aspect-square overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 transition-all hover:ring-2 hover:ring-primary/50 hover:shadow-lg"
+                  >
+                    <Image
+                      src={media.cdnUrl || media.url}
+                      alt={media.altText || selectedAlbum?.title || 'Photo'}
+                      fill
+                      unoptimized={true}
+                      sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
+                      priority={idx < 6}
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    {media.type === 'VIDEO' && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-lg sm:h-8 sm:w-8">
+                          <Play className="h-3 w-3 text-foreground sm:h-3.5 sm:w-3.5" />
+                        </div>
+                      </div>
+                    )}
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                    {/* Index badge on hover */}
+                    <div className="absolute bottom-1 right-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 sm:bottom-1.5 sm:right-1.5 sm:text-xs">
+                      {idx + 1}
+                    </div>
+                  </motion.button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="border-t bg-muted/30 px-3 py-2 sm:px-6 sm:py-3">
+            <p className="text-center text-xs text-muted-foreground">
+              Click any photo to view in full screen
+            </p>
           </div>
         </DialogContent>
       </Dialog>

@@ -30,9 +30,16 @@ import {
   VendorClaimResponseDto,
   ClaimStatusResponseDto,
   PendingClaimsResponseDto,
+  InitiateGuestClaimDto,
+  VerifyGuestClaimDto,
+  GuestClaimInitiatedResponseDto,
+  GuestClaimVerifiedResponseDto,
 } from '../dto/vendor-claim.dto';
 import { PlanTier } from '../../subscription/dto/subscription-plan.dto';
+import { TokenService, SessionContext } from '../../../core/auth/token.service';
+import { RoleLookupService, ROLE_NAMES } from '../../../core/lookup/role-lookup.service';
 import { randomBytes } from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 // Event constants for vendor claims
 export const VENDOR_CLAIM_EVENTS = {
@@ -57,6 +64,8 @@ export class VendorClaimService {
     private readonly subscriptionPlanService: SubscriptionPlanService,
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tokenService: TokenService,
+    private readonly roleLookupService: RoleLookupService,
   ) {}
 
   /**
@@ -759,6 +768,441 @@ export class VendorClaimService {
             status: claimWithRelations.vendorProfile.status,
           }
         : undefined,
+    };
+  }
+
+  // ============================================================================
+  // GUEST CLAIM METHODS - For unauthenticated users
+  // ============================================================================
+
+  /**
+   * Mask email for display (e.g., o***r@mybusiness.com)
+   */
+  private maskEmail(email: string): string {
+    const [localPart, domain] = email.split('@');
+    if (!localPart || !domain) return '***@***.***';
+    const maskedLocal =
+      localPart.length > 2
+        ? `${localPart[0]}***${localPart[localPart.length - 1]}`
+        : `${localPart[0]}***`;
+    return `${maskedLocal}@${domain}`;
+  }
+
+  /**
+   * Initiate a guest claim for an UNCLAIMED vendor profile
+   * This creates a verification record and sends a code to the user's email
+   */
+  async initiateGuestClaim(
+    dto: InitiateGuestClaimDto,
+  ): Promise<GuestClaimInitiatedResponseDto> {
+    this.logger.log(
+      `Initiating guest claim for vendor profile: ${dto.vendorProfileId} with email: ${dto.email}`,
+    );
+
+    const normalizedEmail = dto.email.toLowerCase().trim();
+
+    // 1. Check if vendor profile exists and is UNCLAIMED
+    const vendorProfile = await this.vendorProfileRepository.findById(
+      dto.vendorProfileId,
+    );
+
+    if (!vendorProfile) {
+      throw new NotFoundException('Vendor profile not found');
+    }
+
+    if (vendorProfile.status !== VendorStatus.UNCLAIMED) {
+      throw new BadRequestException(
+        'This vendor profile is not available for claiming. It may already be claimed.',
+      );
+    }
+
+    if (vendorProfile.userId) {
+      throw new BadRequestException(
+        'This vendor profile is already associated with a user',
+      );
+    }
+
+    // 2. Check if email is already used by an existing user
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException(
+        'This email is already registered. Please log in to claim this business.',
+      );
+    }
+
+    // 3. Check for existing pending claim for this vendor
+    const existingClaim = await this.vendorClaimRepository.findByVendorProfile(
+      dto.vendorProfileId,
+    );
+
+    if (existingClaim) {
+      if (
+        existingClaim.status === ClaimStatus.APPROVED ||
+        existingClaim.status === ClaimStatus.VERIFIED ||
+        existingClaim.status === ClaimStatus.PENDING ||
+        existingClaim.status === ClaimStatus.VERIFICATION_SENT
+      ) {
+        throw new ConflictException(
+          'A claim for this vendor profile is already in progress',
+        );
+      }
+    }
+
+    // 4. Delete any existing guest verification for this vendor/email combo
+    await this.prisma.guestClaimVerification.deleteMany({
+      where: {
+        vendorProfileId: dto.vendorProfileId,
+      },
+    });
+
+    // 5. Generate verification code and create record
+    const verificationCode = this.generateVerificationCode();
+    const verificationExpiry = new Date();
+    verificationExpiry.setMinutes(verificationExpiry.getMinutes() + 10); // 10 minutes expiry
+
+    await this.prisma.guestClaimVerification.create({
+      data: {
+        vendorProfileId: dto.vendorProfileId,
+        email: normalizedEmail,
+        verificationCode,
+        verificationExpiry,
+      },
+    });
+
+    // 6. Send verification email
+    this.eventEmitter.emit('notification.send', {
+      type: 'GUEST_CLAIM_VERIFICATION_EMAIL',
+      recipient: normalizedEmail,
+      data: {
+        verificationCode,
+        businessName: vendorProfile.businessName,
+        expiresIn: '10 minutes',
+      },
+    });
+
+    this.logger.log(
+      `Guest claim verification sent to ${normalizedEmail} for vendor ${dto.vendorProfileId}`,
+    );
+
+    return {
+      success: true,
+      message: 'Verification code sent to your email',
+      maskedEmail: this.maskEmail(normalizedEmail),
+      expiresAt: verificationExpiry,
+    };
+  }
+
+  /**
+   * Verify guest claim and create user account
+   * This creates a user, links them to the vendor, and returns auth tokens
+   */
+  async verifyGuestClaimAndCreateUser(
+    dto: VerifyGuestClaimDto,
+    context?: SessionContext,
+  ): Promise<GuestClaimVerifiedResponseDto> {
+    this.logger.log(
+      `Verifying guest claim for vendor: ${dto.vendorProfileId} with email: ${dto.email}`,
+    );
+
+    const normalizedEmail = dto.email.toLowerCase().trim();
+
+    // 1. Find the verification record
+    const verification = await this.prisma.guestClaimVerification.findFirst({
+      where: {
+        vendorProfileId: dto.vendorProfileId,
+        email: normalizedEmail,
+      },
+      include: {
+        vendorProfile: true,
+      },
+    });
+
+    if (!verification) {
+      throw new BadRequestException(
+        'No pending verification found. Please initiate a new claim.',
+      );
+    }
+
+    // 2. Check if expired
+    if (verification.verificationExpiry < new Date()) {
+      await this.prisma.guestClaimVerification.delete({
+        where: { id: verification.id },
+      });
+      throw new BadRequestException(
+        'Verification code has expired. Please request a new one.',
+      );
+    }
+
+    // 3. Check code
+    if (verification.verificationCode !== dto.verificationCode) {
+      // Increment attempts
+      const attempts = verification.attempts + 1;
+      if (attempts >= 5) {
+        await this.prisma.guestClaimVerification.delete({
+          where: { id: verification.id },
+        });
+        throw new BadRequestException(
+          'Too many failed attempts. Please request a new verification code.',
+        );
+      }
+      await this.prisma.guestClaimVerification.update({
+        where: { id: verification.id },
+        data: { attempts },
+      });
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    // 4. Verify vendor is still claimable
+    const vendorProfile = verification.vendorProfile;
+    if (vendorProfile.status !== VendorStatus.UNCLAIMED || vendorProfile.userId) {
+      await this.prisma.guestClaimVerification.delete({
+        where: { id: verification.id },
+      });
+      throw new BadRequestException(
+        'This vendor profile is no longer available for claiming',
+      );
+    }
+
+    // 5. Check if email got registered in the meantime
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingUser) {
+      await this.prisma.guestClaimVerification.delete({
+        where: { id: verification.id },
+      });
+      throw new BadRequestException(
+        'This email is now registered. Please log in to claim this business.',
+      );
+    }
+
+    // 6. Create user account in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Generate a random password (user will reset it)
+      const tempPassword = randomBytes(16).toString('hex');
+      const passwordHash = await bcrypt.hash(tempPassword, 12);
+
+      // Get BUSINESS_ADMIN role
+      const roleId = this.roleLookupService.getRoleIdByName(
+        ROLE_NAMES.BUSINESS_ADMIN,
+      );
+
+      if (!roleId) {
+        throw new Error('BUSINESS_ADMIN role not found');
+      }
+
+      // Create user
+      const user = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          passwordHash,
+          status: 'ACTIVE', // Verified through email code
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          userRoles: {
+            create: {
+              roleId,
+            },
+          },
+        },
+        include: {
+          userRoles: {
+            include: { role: true },
+          },
+        },
+      });
+
+      // Link vendor profile to user and update status
+      await tx.vendorProfile.update({
+        where: { id: dto.vendorProfileId },
+        data: {
+          userId: user.id,
+          status: VendorStatus.ACTIVE,
+          verifiedAt: new Date(),
+        },
+      });
+
+      // Create a VendorClaim record for audit trail
+      await tx.vendorClaim.create({
+        data: {
+          vendorProfileId: dto.vendorProfileId,
+          userId: user.id,
+          status: ClaimStatus.APPROVED,
+          verificationMethod: ClaimVerificationMethod.EMAIL,
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          reviewedAt: new Date(),
+          reviewNotes: 'Auto-approved via guest claim email verification',
+        },
+      });
+
+      // Delete the verification record
+      await tx.guestClaimVerification.delete({
+        where: { id: verification.id },
+      });
+
+      return user;
+    });
+
+    // 7. Create FREE subscription
+    await this.createFreeSubscription(dto.vendorProfileId, result.id);
+
+    // 8. Generate auth tokens
+    const roles = result.userRoles.map((ur: any) => ur.role.name);
+    const tokenPair = await this.tokenService.generateTokenPair(
+      {
+        sub: result.id,
+        email: result.email,
+        roles,
+        tenantId: dto.vendorProfileId,
+      },
+      context,
+    );
+
+    // 9. Emit events
+    this.eventEmitter.emit(VENDOR_CLAIM_EVENTS.APPROVED, {
+      vendorProfileId: dto.vendorProfileId,
+      userId: result.id,
+      claimMethod: 'GUEST_EMAIL',
+    });
+
+    this.eventEmitter.emit('vendor.claimed', {
+      vendorProfileId: dto.vendorProfileId,
+      userId: result.id,
+      businessName: vendorProfile.businessName,
+    });
+
+    // 10. Send welcome email with password reset link
+    this.eventEmitter.emit('notification.send', {
+      type: 'VENDOR_CLAIM_SUCCESS',
+      recipient: normalizedEmail,
+      data: {
+        businessName: vendorProfile.businessName,
+      },
+    });
+
+    this.logger.log(
+      `Guest claim successful - User ${result.id} now owns vendor ${dto.vendorProfileId}`,
+    );
+
+    return {
+      success: true,
+      message: 'Business claimed successfully! You are now logged in.',
+      userId: result.id,
+      vendorProfileId: dto.vendorProfileId,
+      accessToken: tokenPair.accessToken,
+      refreshToken: tokenPair.refreshToken,
+      user: {
+        id: result.id,
+        email: result.email,
+        role: ROLE_NAMES.BUSINESS_ADMIN,
+      },
+    };
+  }
+
+  /**
+   * Resend guest claim verification code
+   */
+  async resendGuestVerification(
+    vendorProfileId: string,
+    email: string,
+  ): Promise<GuestClaimInitiatedResponseDto> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find existing verification
+    const verification = await this.prisma.guestClaimVerification.findFirst({
+      where: {
+        vendorProfileId,
+        email: normalizedEmail,
+      },
+      include: {
+        vendorProfile: true,
+      },
+    });
+
+    if (!verification) {
+      throw new BadRequestException(
+        'No pending verification found. Please initiate a new claim.',
+      );
+    }
+
+    // Check if we can resend (rate limit - 1 minute)
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    if (verification.createdAt > oneMinuteAgo) {
+      throw new BadRequestException(
+        'Please wait at least 1 minute before requesting a new code.',
+      );
+    }
+
+    // Generate new code
+    const verificationCode = this.generateVerificationCode();
+    const verificationExpiry = new Date();
+    verificationExpiry.setMinutes(verificationExpiry.getMinutes() + 10);
+
+    await this.prisma.guestClaimVerification.update({
+      where: { id: verification.id },
+      data: {
+        verificationCode,
+        verificationExpiry,
+        attempts: 0,
+        createdAt: new Date(),
+      },
+    });
+
+    // Send email
+    this.eventEmitter.emit('notification.send', {
+      type: 'GUEST_CLAIM_VERIFICATION_EMAIL',
+      recipient: normalizedEmail,
+      data: {
+        verificationCode,
+        businessName: verification.vendorProfile.businessName,
+        expiresIn: '10 minutes',
+      },
+    });
+
+    return {
+      success: true,
+      message: 'New verification code sent to your email',
+      maskedEmail: this.maskEmail(normalizedEmail),
+      expiresAt: verificationExpiry,
+    };
+  }
+
+  /**
+   * Check if vendor can be claimed by a guest
+   */
+  async canGuestClaim(vendorProfileId: string): Promise<{
+    canClaim: boolean;
+    reason?: string;
+    vendorName?: string;
+  }> {
+    const vendorProfile = await this.vendorProfileRepository.findById(vendorProfileId);
+
+    if (!vendorProfile) {
+      return { canClaim: false, reason: 'Vendor profile not found' };
+    }
+
+    if (vendorProfile.status !== VendorStatus.UNCLAIMED) {
+      return { canClaim: false, reason: 'This business has already been claimed' };
+    }
+
+    if (vendorProfile.userId) {
+      return { canClaim: false, reason: 'This business is already owned' };
+    }
+
+    // Check for active claims
+    const existingClaim = await this.vendorClaimRepository.findByVendorProfile(vendorProfileId);
+    const activeStatuses: ClaimStatus[] = [ClaimStatus.PENDING, ClaimStatus.VERIFICATION_SENT, ClaimStatus.VERIFIED];
+    if (existingClaim && activeStatuses.includes(existingClaim.status)) {
+      return { canClaim: false, reason: 'A claim is already in progress for this business' };
+    }
+
+    return {
+      canClaim: true,
+      vendorName: vendorProfile.businessName,
     };
   }
 }

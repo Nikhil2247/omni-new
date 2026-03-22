@@ -30,6 +30,7 @@ import {
 import { useCampaigns, usePauseCampaign, useResumeCampaign, useStopCampaign, useCancelCampaign } from '@/hooks/queries/use-subscription';
 import { CampaignStatus, CampaignType } from '@/lib/api/types/subscription.types';
 import { toast } from 'sonner';
+import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common';
 
 const statusColors: Record<CampaignStatus, string> = {
   DRAFT: 'bg-gray-100 text-gray-800',
@@ -94,168 +95,173 @@ export default function CampaignsPage() {
   };
 
   return (
-    <div className="container py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Campaigns</h1>
-          <p className="text-muted-foreground">Manage your advertising campaigns</p>
+    <FeatureFlagGate
+      feature="marketing.campaigns"
+      fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing" backText="Back to Marketing" />}
+    >
+      <div className="container py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Campaigns</h1>
+            <p className="text-muted-foreground">Manage your advertising campaigns</p>
+          </div>
+          <Link href="/business/marketing/campaigns/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Campaign
+            </Button>
+          </Link>
         </div>
-        <Link href="/business/marketing/campaigns/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Campaign
-          </Button>
-        </Link>
-      </div>
 
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as CampaignStatus | 'ALL')}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="ALL">All</TabsTrigger>
-          <TabsTrigger value="ACTIVE">Active</TabsTrigger>
-          <TabsTrigger value="SCHEDULED">Scheduled</TabsTrigger>
-          <TabsTrigger value="PAUSED">Paused</TabsTrigger>
-          <TabsTrigger value="DRAFT">Draft</TabsTrigger>
-          <TabsTrigger value="COMPLETED">Completed</TabsTrigger>
-        </TabsList>
+        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as CampaignStatus | 'ALL')}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="ALL">All</TabsTrigger>
+            <TabsTrigger value="ACTIVE">Active</TabsTrigger>
+            <TabsTrigger value="SCHEDULED">Scheduled</TabsTrigger>
+            <TabsTrigger value="PAUSED">Paused</TabsTrigger>
+            <TabsTrigger value="DRAFT">Draft</TabsTrigger>
+            <TabsTrigger value="COMPLETED">Completed</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value={statusFilter} className="mt-0">
-          {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
-                  <CardHeader>
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-24" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-20 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : campaigns?.length === 0 ? (
-            <Card>
-              <CardContent className="py-10 text-center">
-                <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Create your first campaign to start promoting your business.
-                </p>
-                <Link href="/business/marketing/campaigns/new">
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Campaign
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {campaigns?.map((campaign) => (
-                <Card key={campaign.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{campaign.name}</CardTitle>
-                        <CardDescription>{typeLabels[campaign.type]}</CardDescription>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={statusColors[campaign.status]}>
-                          {campaign.status}
-                        </Badge>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <Link href={`/business/marketing/campaigns/${campaign.id}`}>
-                              <DropdownMenuItem>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                            </Link>
-                            {(campaign.status === 'DRAFT' || campaign.status === 'SCHEDULED') && (
-                              <Link href={`/business/marketing/campaigns/${campaign.id}/edit`}>
+          <TabsContent value={statusFilter} className="mt-0">
+            {isLoading ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-20 w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : campaigns?.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center">
+                  <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create your first campaign to start promoting your business.
+                  </p>
+                  <Link href="/business/marketing/campaigns/new">
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Campaign
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {campaigns?.map((campaign) => (
+                  <Card key={campaign.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-lg">{campaign.name}</CardTitle>
+                          <CardDescription>{typeLabels[campaign.type]}</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={statusColors[campaign.status]}>
+                            {campaign.status}
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <Link href={`/business/marketing/campaigns/${campaign.id}`}>
                                 <DropdownMenuItem>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
                                 </DropdownMenuItem>
                               </Link>
-                            )}
-                            {campaign.status === 'ACTIVE' && (
-                              <DropdownMenuItem onClick={() => handleAction('pause', campaign.id)}>
-                                <Pause className="mr-2 h-4 w-4" />
-                                Pause
-                              </DropdownMenuItem>
-                            )}
-                            {campaign.status === 'PAUSED' && (
-                              <DropdownMenuItem onClick={() => handleAction('resume', campaign.id)}>
-                                <Play className="mr-2 h-4 w-4" />
-                                Resume
-                              </DropdownMenuItem>
-                            )}
-                            {(campaign.status === 'ACTIVE' || campaign.status === 'PAUSED') && (
-                              <DropdownMenuItem onClick={() => handleAction('stop', campaign.id)}>
-                                <StopCircle className="mr-2 h-4 w-4" />
-                                Stop
-                              </DropdownMenuItem>
-                            )}
-                            {campaign.status === 'DRAFT' && (
-                              <DropdownMenuItem
-                                onClick={() => handleAction('cancel', campaign.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              {(campaign.status === 'DRAFT' || campaign.status === 'SCHEDULED') && (
+                                <Link href={`/business/marketing/campaigns/${campaign.id}/edit`}>
+                                  <DropdownMenuItem>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                </Link>
+                              )}
+                              {campaign.status === 'ACTIVE' && (
+                                <DropdownMenuItem onClick={() => handleAction('pause', campaign.id)}>
+                                  <Pause className="mr-2 h-4 w-4" />
+                                  Pause
+                                </DropdownMenuItem>
+                              )}
+                              {campaign.status === 'PAUSED' && (
+                                <DropdownMenuItem onClick={() => handleAction('resume', campaign.id)}>
+                                  <Play className="mr-2 h-4 w-4" />
+                                  Resume
+                                </DropdownMenuItem>
+                              )}
+                              {(campaign.status === 'ACTIVE' || campaign.status === 'PAUSED') && (
+                                <DropdownMenuItem onClick={() => handleAction('stop', campaign.id)}>
+                                  <StopCircle className="mr-2 h-4 w-4" />
+                                  Stop
+                                </DropdownMenuItem>
+                              )}
+                              {campaign.status === 'DRAFT' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleAction('cancel', campaign.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        <span>{formatNumber(campaign.impressions)} views</span>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatNumber(campaign.impressions)} views</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MousePointerClick className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatNumber(campaign.clicks)} clicks</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span>{campaign.creditsSpent} / {campaign.totalBudget}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-muted-foreground" />
+                          <span>{campaign.conversions} conv.</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <MousePointerClick className="h-4 w-4 text-muted-foreground" />
-                        <span>{formatNumber(campaign.clicks)} clicks</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span>{campaign.creditsSpent} / {campaign.totalBudget}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Target className="h-4 w-4 text-muted-foreground" />
-                        <span>{campaign.conversions} conv.</span>
-                      </div>
-                    </div>
 
-                    {/* Budget Progress */}
-                    <div className="mt-4">
-                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                        <span>Budget Used</span>
-                        <span>{Math.round((campaign.creditsSpent / campaign.totalBudget) * 100)}%</span>
+                      {/* Budget Progress */}
+                      <div className="mt-4">
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                          <span>Budget Used</span>
+                          <span>{Math.round((campaign.creditsSpent / campaign.totalBudget) * 100)}%</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${Math.min((campaign.creditsSpent / campaign.totalBudget) * 100, 100)}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all"
-                          style={{ width: `${Math.min((campaign.creditsSpent / campaign.totalBudget) * 100, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </FeatureFlagGate>
   );
 }

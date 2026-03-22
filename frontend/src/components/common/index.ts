@@ -19,7 +19,7 @@ export { ExportDropdown } from './export-dropdown'
 export { MaintenanceGuard } from './maintenance-guard'
 export { WishlistPickerDialog } from './wishlist-picker-dialog'
 
-// Feature Gate components
+// Feature Gate components (subscription-based)
 export { FeatureGate, useFeatureAccess } from './feature-gate'
 export { UpgradePrompt, VendorUpgradePrompt } from './upgrade-prompt'
 export { UsageMeter, UsageSummary, UsageBadge } from './usage-meter'
@@ -29,3 +29,11 @@ export {
   useVendorFeatureAccess,
   useVendorUsageLimit
 } from './vendor-feature-gate'
+
+// Feature Flag Gate components (feature flag-based)
+export {
+  FeatureFlagGate,
+  FeatureEnabled,
+  FeatureComingSoon,
+} from './feature-flag-gate'
+export { FeatureDisabledMessage } from './feature-disabled-message'

@@ -65,8 +65,8 @@ export default function BlogPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-8xl flex-col gap-5 px-6 py-12">
-      <section className="relative overflow-hidden rounded-3xl border bg-linear-to-br from-slate-950 via-slate-900 to-slate-800 p-6 text-white shadow-xl md:p-8">
-        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.25), transparent 60%)' }} />
+      <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-[#1370c6] via-[#1e5aa8] to-[#2d46a0] p-6 text-white shadow-xl md:p-8">
+        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at top, rgba(255,255,255,0.4), transparent 60%)' }} />
         <div className="relative space-y-2">
           <p className="text-xs uppercase tracking-[0.3em] text-slate-200">Omnicassion Journal</p>
           <h1 className="text-3xl font-semibold leading-tight md:text-4xl">Planning insights crafted for modern celebrations.</h1>

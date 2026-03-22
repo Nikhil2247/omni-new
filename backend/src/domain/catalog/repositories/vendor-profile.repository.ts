@@ -77,9 +77,9 @@ export class VendorProfileRepository extends BaseRepository<
       sortOrder = 'desc',
     } = searchDto;
 
-    // Build where clause
+    // Build where clause - show both ACTIVE and UNCLAIMED (public) vendors
     const where: Prisma.VendorProfileWhereInput = {
-      status: 'ACTIVE', // Only show active vendors publicly
+      status: { in: ['ACTIVE', 'UNCLAIMED'] },
     };
 
     // Text search across multiple fields
@@ -258,7 +258,7 @@ export class VendorProfileRepository extends BaseRepository<
 
     return this.prisma.vendorProfile.findMany({
       where: {
-        status: 'ACTIVE',
+        status: { in: ['ACTIVE', 'UNCLAIMED'] },
         featuredUntil: {
           gte: new Date(), // Featured until date is in the future
         },
@@ -336,7 +336,7 @@ export class VendorProfileRepository extends BaseRepository<
     return this.prisma.vendorProfile.findMany({
       where: {
         categoryId,
-        status: 'ACTIVE',
+        status: { in: ['ACTIVE', 'UNCLAIMED'] },
       },
       orderBy: {
         viewCount: 'desc',
@@ -363,7 +363,7 @@ export class VendorProfileRepository extends BaseRepository<
         category: {
           slug: categorySlug,
         },
-        status: 'ACTIVE',
+        status: { in: ['ACTIVE', 'UNCLAIMED'] },
       },
       orderBy: {
         viewCount: 'desc',
@@ -415,7 +415,7 @@ export class VendorProfileRepository extends BaseRepository<
             cityId,
           },
         },
-        status: 'ACTIVE',
+        status: { in: ['ACTIVE', 'UNCLAIMED'] },
       },
       orderBy: {
         viewCount: 'desc',

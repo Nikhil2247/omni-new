@@ -320,7 +320,7 @@ export class PortfolioService {
     const { query, categoryId, cityId, page = 1, limit = 24, orderBy = 'newest' } = dto;
 
     const vendorProfileWhere: Prisma.VendorProfileWhereInput = {
-      status: 'ACTIVE',
+      status: { in: ['ACTIVE', 'UNCLAIMED'] },
     };
 
     if (categoryId) {

@@ -1,10 +1,13 @@
+import 'dotenv/config'
 import {
   PrismaClient,
   PlanTier,
   UserPlanTier,
   FeatureLimitType,
   BillingCycle,
-} from '@prisma/client';
+} from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
 // ============================================================================
 // VENDOR SUBSCRIPTION PLANS SEED
@@ -16,6 +19,7 @@ interface VendorFeatureDefinition {
   description: string;
   limitType: FeatureLimitType;
   values: {
+    PUBLIC: number | null;  // For unclaimed vendor profiles
     FREE: number | null;
     PROFESSIONAL: number | null;
     ENTERPRISE: number | null;
@@ -30,7 +34,7 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'Direct Messaging',
     description: 'Send and receive messages with potential clients',
     limitType: FeatureLimitType.BOOLEAN,
-    values: { FREE: 0, PROFESSIONAL: 1, ENTERPRISE: 1 },
+    values: { PUBLIC: 0, FREE: 0, PROFESSIONAL: 1, ENTERPRISE: 1 },
     sortOrder: 1,
     isHighlighted: true,
   },
@@ -39,7 +43,7 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'AI Recommendations',
     description: 'Get AI-powered recommendations for your business',
     limitType: FeatureLimitType.BOOLEAN,
-    values: { FREE: 0, PROFESSIONAL: 1, ENTERPRISE: 1 },
+    values: { PUBLIC: 0, FREE: 0, PROFESSIONAL: 1, ENTERPRISE: 1 },
     sortOrder: 2,
   },
   {
@@ -47,7 +51,7 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'Portfolio Albums',
     description: 'Number of portfolio albums you can create',
     limitType: FeatureLimitType.COUNT,
-    values: { FREE: 2, PROFESSIONAL: 10, ENTERPRISE: null }, // null = unlimited
+    values: { PUBLIC: 0, FREE: 2, PROFESSIONAL: 10, ENTERPRISE: null }, // null = unlimited
     sortOrder: 3,
   },
   {
@@ -55,7 +59,7 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'Images per Album',
     description: 'Maximum images allowed per portfolio album',
     limitType: FeatureLimitType.COUNT,
-    values: { FREE: 25, PROFESSIONAL: 100, ENTERPRISE: null }, // null = unlimited
+    values: { PUBLIC: 0, FREE: 25, PROFESSIONAL: 100, ENTERPRISE: null }, // null = unlimited
     sortOrder: 4,
   },
   {
@@ -63,7 +67,7 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'Search Boost',
     description: 'Priority ranking in search results',
     limitType: FeatureLimitType.COUNT,
-    values: { FREE: 0, PROFESSIONAL: 50, ENTERPRISE: 100 },
+    values: { PUBLIC: 0, FREE: 0, PROFESSIONAL: 50, ENTERPRISE: 100 },
     sortOrder: 5,
     isHighlighted: true,
   },
@@ -72,7 +76,7 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'Featured Sections',
     description: 'Appear in featured vendor sections',
     limitType: FeatureLimitType.BOOLEAN,
-    values: { FREE: 0, PROFESSIONAL: 1, ENTERPRISE: 1 },
+    values: { PUBLIC: 0, FREE: 0, PROFESSIONAL: 1, ENTERPRISE: 1 },
     sortOrder: 6,
   },
   {
@@ -80,7 +84,7 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'Premium Badges',
     description: 'Display exclusive premium badges on your profile',
     limitType: FeatureLimitType.BOOLEAN,
-    values: { FREE: 0, PROFESSIONAL: 0, ENTERPRISE: 1 },
+    values: { PUBLIC: 0, FREE: 0, PROFESSIONAL: 0, ENTERPRISE: 1 },
     sortOrder: 7,
     isHighlighted: true,
   },
@@ -89,7 +93,7 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'Ad Credits (Monthly)',
     description: 'Monthly advertising credits for promotions',
     limitType: FeatureLimitType.COUNT_PER_MONTH,
-    values: { FREE: 0, PROFESSIONAL: 2000, ENTERPRISE: 5000 },
+    values: { PUBLIC: 0, FREE: 0, PROFESSIONAL: 2000, ENTERPRISE: 5000 },
     sortOrder: 8,
   },
   {
@@ -97,8 +101,16 @@ const vendorFeatures: VendorFeatureDefinition[] = [
     name: 'Services Limit',
     description: 'Maximum number of services you can list',
     limitType: FeatureLimitType.COUNT,
-    values: { FREE: 5, PROFESSIONAL: 20, ENTERPRISE: null }, // null = unlimited
+    values: { PUBLIC: 0, FREE: 5, PROFESSIONAL: 20, ENTERPRISE: null }, // null = unlimited
     sortOrder: 9,
+  },
+  {
+    key: 'profile_visible',
+    name: 'Profile Visibility',
+    description: 'Your profile is visible in search and listings',
+    limitType: FeatureLimitType.BOOLEAN,
+    values: { PUBLIC: 1, FREE: 1, PROFESSIONAL: 1, ENTERPRISE: 1 }, // All plans have visibility
+    sortOrder: 0,
   },
 ];
 
@@ -227,6 +239,33 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
   // ============================================================================
   console.log('  Creating vendor subscription plans...');
 
+  // Upsert PUBLIC vendor plan (for unclaimed/public vendor profiles)
+  const vendorPublicPlan = await prisma.subscriptionPlan.upsert({
+    where: { slug: 'vendor-public' },
+    update: {
+      name: 'Public',
+      description: 'Basic listing for unclaimed vendor profiles - read-only public visibility',
+      tier: PlanTier.PUBLIC,
+      displayOrder: -1, // Before FREE in display order
+      isPopular: false,
+      trialDays: 0,
+      isActive: true,
+      isPublic: false, // Not shown in public pricing pages
+    },
+    create: {
+      name: 'Public',
+      slug: 'vendor-public',
+      description: 'Basic listing for unclaimed vendor profiles - read-only public visibility',
+      tier: PlanTier.PUBLIC,
+      displayOrder: -1,
+      isPopular: false,
+      trialDays: 0,
+      isActive: true,
+      isPublic: false,
+    },
+  });
+  console.log('    ✓ Public plan (for unclaimed vendors)');
+
   // Upsert FREE vendor plan
   const vendorFreePlan = await prisma.subscriptionPlan.upsert({
     where: { slug: 'vendor-free' },
@@ -307,6 +346,31 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
 
   // Upsert vendor plan features
   for (const feature of vendorFeatures) {
+    // PUBLIC plan features
+    await prisma.planFeature.upsert({
+      where: {
+        planId_featureKey: { planId: vendorPublicPlan.id, featureKey: feature.key },
+      },
+      update: {
+        featureName: feature.name,
+        description: feature.description,
+        limitType: feature.values.PUBLIC === null ? FeatureLimitType.UNLIMITED : feature.limitType,
+        limitValue: feature.values.PUBLIC,
+        isHighlighted: feature.isHighlighted ?? false,
+        sortOrder: feature.sortOrder,
+      },
+      create: {
+        planId: vendorPublicPlan.id,
+        featureKey: feature.key,
+        featureName: feature.name,
+        description: feature.description,
+        limitType: feature.values.PUBLIC === null ? FeatureLimitType.UNLIMITED : feature.limitType,
+        limitValue: feature.values.PUBLIC,
+        isHighlighted: feature.isHighlighted ?? false,
+        sortOrder: feature.sortOrder,
+      },
+    });
+
     // FREE plan features
     await prisma.planFeature.upsert({
       where: {
@@ -384,6 +448,26 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
   }
 
   // Upsert vendor plan prices
+  // PUBLIC plan - always free (for unclaimed vendors)
+  await prisma.planPrice.upsert({
+    where: {
+      planId_currency_billingCycle: {
+        planId: vendorPublicPlan.id,
+        currency: 'INR',
+        billingCycle: BillingCycle.MONTHLY,
+      },
+    },
+    update: { amount: 0, savingsPercent: null, isActive: true },
+    create: {
+      planId: vendorPublicPlan.id,
+      currency: 'INR',
+      amount: 0,
+      billingCycle: BillingCycle.MONTHLY,
+      savingsPercent: null,
+      isActive: true,
+    },
+  });
+
   // FREE plan - only monthly at 0
   await prisma.planPrice.upsert({
     where: {
@@ -826,6 +910,7 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
 
   return {
     vendorPlans: {
+      public: vendorPublicPlan,
       free: vendorFreePlan,
       pro: vendorProPlan,
       enterprise: vendorEnterprisePlan,
@@ -836,4 +921,37 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
       premium: userPremiumPlan,
     },
   };
+}
+
+// ============================================================================
+// STANDALONE EXECUTION
+// ============================================================================
+// Run directly: npx ts-node prisma/seeds/subscription-plans.seed.ts
+
+// Only run if executed directly (not imported)
+if (require.main === module) {
+  const connectionString = process.env.DATABASE_URL || process.env.DIRECT_DATABASE_URL
+  const isAccelerate = connectionString?.startsWith('prisma://')
+
+  const prisma = isAccelerate
+    ? new PrismaClient({ log: ['info', 'warn', 'error'] })
+    : new PrismaClient({
+        adapter: new PrismaPg(new Pool({ connectionString })),
+        log: ['info', 'warn', 'error'],
+      })
+
+  seedSubscriptionPlans(prisma)
+    .then((result) => {
+      console.log('\n✓ Subscription plans seeded successfully!')
+      console.log(`  Vendor plans: ${Object.keys(result.vendorPlans).join(', ')}`)
+      console.log(`  User plans: ${Object.keys(result.userPlans).join(', ')}`)
+    })
+    .catch((error) => {
+      console.error('Seed failed:', error)
+      process.exit(1)
+    })
+    .finally(async () => {
+      await prisma.$disconnect()
+      console.log('\nPrisma disconnected.')
+    })
 }

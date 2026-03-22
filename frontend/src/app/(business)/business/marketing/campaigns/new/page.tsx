@@ -39,6 +39,7 @@ import { cn } from '@/lib/utils';
 import { useCreateCampaign, useAdCreditBalance } from '@/hooks/queries/use-subscription';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common';
 
 const campaignSchema = z.object({
   type: z.enum(['PROFILE_BOOST', 'ALBUM_PROMOTION', 'BANNER_AD', 'FEATURED_LISTING']),
@@ -200,33 +201,37 @@ export default function NewCampaignPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      {/* Header */}
-      <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/business/marketing/campaigns"
-                className="inline-flex items-center justify-center w-10 h-10 rounded-lg border bg-background hover:bg-muted transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-              <div>
-                <h1 className="text-xl font-semibold">Create Campaign</h1>
-                <p className="text-sm text-muted-foreground">Set up a new advertising campaign</p>
+    <FeatureFlagGate
+      feature="marketing.campaigns"
+      fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
+    >
+      <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+        {/* Header */}
+        <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="container py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/business/marketing/campaigns"
+                  className="inline-flex items-center justify-center w-10 h-10 rounded-lg border bg-background hover:bg-muted transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+                <div>
+                  <h1 className="text-xl font-semibold">Create Campaign</h1>
+                  <p className="text-sm text-muted-foreground">Set up a new advertising campaign</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-muted/50">
-              <Coins className="h-4 w-4 text-primary" />
-              <div className="text-sm">
-                <span className="text-muted-foreground">Balance: </span>
-                <span className="font-semibold">{availableCredits.toLocaleString()} credits</span>
+              <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-muted/50">
+                <Coins className="h-4 w-4 text-primary" />
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Balance: </span>
+                  <span className="font-semibold">{availableCredits.toLocaleString()} credits</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
       <div className="container py-8">
         {/* Progress Steps */}
@@ -632,6 +637,7 @@ export default function NewCampaignPage() {
           </form>
         </Form>
       </div>
-    </div>
+      </div>
+    </FeatureFlagGate>
   );
 }

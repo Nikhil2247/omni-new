@@ -113,6 +113,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   ].some((route) => pathname?.startsWith(route));
   const isVendorSlugPage = Boolean(pathname?.match(/^\/vendors\/[^/]+$/));
   const isMessagesPage = pathname === "/messages" || pathname === "/business-messages";
+  const isAssistantPage = pathname === "/assistant";
 
   const guestNavItems = [
     { href: "/discover", label: "Discover", icon: Compass },
@@ -339,7 +340,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
         <main className="flex-1 pt-0 pb-20 md:ml-16 md:pb-0">{children}</main>
       </div>
-      {!isVendorSlugPage && !isMessagesPage && (
+      {!isVendorSlugPage && !isMessagesPage && !isAssistantPage && (
         <div className="md:ml-16 hidden md:block">
           <PublicFooter />
         </div>

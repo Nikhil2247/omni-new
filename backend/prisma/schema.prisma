@@ -171,8 +171,11 @@ model SystemConfig {
 model FeatureFlag {
   id          String   @id @default(uuid()) @db.Uuid
   key         String   @unique
+  name        String   @default("")  // Display name - default empty for migration
   description String?
+  category    String   @default("system") // marketing, vendor, user, system
   enabled     Boolean  @default(false)
+  isSystem    Boolean  @default(false) // Cannot be deleted
   updatedBy   String?  @map("updated_by") @db.Uuid
 
   createdAt   DateTime @default(now()) @map("created_at")
@@ -787,7 +790,7 @@ model ServiceType {
 /// One-to-one with User, contains all business-specific information
 model VendorProfile {
   id              String    @id @default(uuid()) @db.Uuid
-  userId          String    @unique @map("user_id") @db.Uuid
+  userId          String?   @unique @map("user_id") @db.Uuid  // Nullable for UNCLAIMED vendors
   businessName    String    @map("business_name")
   slug            String    @unique
   categoryId      String    @map("category_id") @db.Uuid
@@ -828,7 +831,7 @@ model VendorProfile {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  user            User      @relation(fields: [userId], references: [id])
+  user            User?     @relation(fields: [userId], references: [id])  // Optional for UNCLAIMED vendors
   category        Category  @relation(fields: [categoryId], references: [id])
   address         Address?  @relation(fields: [addressId], references: [id])
   businessHours   BusinessHour[]
@@ -845,6 +848,7 @@ model VendorProfile {
   campaigns       Campaign[]
   adCreditTransactions AdCreditTransaction[]
   vendorClaim     VendorClaim?
+  guestClaimVerifications GuestClaimVerification[]
   vendorConsents  VendorConsent[]
   vendorContract  VendorContract?
   payoutRecords   PayoutRecord[]
@@ -2994,6 +2998,7 @@ model SubscriptionPlan {
 
 /// PlanTier - Subscription plan tier levels
 enum PlanTier {
+  PUBLIC        // For unclaimed/public vendor profiles (read-only listing)
   FREE
   STARTER
   PROFESSIONAL
@@ -3841,6 +3846,26 @@ model VendorClaim {
   @@index([status])
   @@index([createdAt])
   @@map("vendor_claims")
+  @@schema("catalog")
+}
+
+/// GuestClaimVerification - Temporary storage for guest claim email verifications
+/// Records are deleted after successful verification and user creation
+model GuestClaimVerification {
+  id                  String        @id @default(uuid()) @db.Uuid
+  vendorProfileId     String        @map("vendor_profile_id") @db.Uuid
+  email               String
+  verificationCode    String        @map("verification_code")
+  verificationExpiry  DateTime      @map("verification_expiry")
+  attempts            Int           @default(0)
+  createdAt           DateTime      @default(now()) @map("created_at")
+
+  vendorProfile       VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorProfileId, email])
+  @@index([email])
+  @@index([verificationExpiry])
+  @@map("guest_claim_verifications")
   @@schema("catalog")
 }
 

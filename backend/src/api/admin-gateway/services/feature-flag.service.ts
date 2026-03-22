@@ -3,6 +3,7 @@ import { AuditService } from '../../../core/audit/audit.service';
 import { AuditCategory, AuditSeverity } from '../../../core/audit/audit.types';
 import { PrismaService } from '../../../core/database/prisma.service';
 import {
+  BulkUpdateFeatureFlagsDto,
   CreateFeatureFlagDto,
   UpdateFeatureFlagDto,
 } from '../dto/feature-flag.dto';
@@ -15,15 +16,20 @@ export class FeatureFlagService {
   ) {}
 
   list() {
-    return this.prisma.featureFlag.findMany({ orderBy: { key: 'asc' } });
+    return this.prisma.featureFlag.findMany({
+      orderBy: [{ category: 'asc' }, { key: 'asc' }],
+    });
   }
 
   async create(dto: CreateFeatureFlagDto) {
     const created = await this.prisma.featureFlag.create({
       data: {
         key: dto.key,
+        name: dto.name,
         description: dto.description,
+        category: dto.category ?? 'system',
         enabled: dto.enabled ?? false,
+        isSystem: dto.isSystem ?? false,
       },
     });
 
@@ -48,7 +54,9 @@ export class FeatureFlagService {
     const updated = await this.prisma.featureFlag.update({
       where: { id },
       data: {
+        name: dto.name ?? current.name,
         description: dto.description ?? current.description,
+        category: dto.category ?? current.category,
         enabled: dto.enabled ?? current.enabled,
       },
     });
@@ -64,5 +72,23 @@ export class FeatureFlagService {
     });
 
     return updated;
+  }
+
+  async bulkUpdate(dto: BulkUpdateFeatureFlagsDto) {
+    const result = await this.prisma.featureFlag.updateMany({
+      where: { id: { in: dto.ids } },
+      data: { enabled: dto.enabled },
+    });
+
+    await this.auditService.log({
+      category: AuditCategory.SYSTEM,
+      action: 'FEATURE_FLAG_BULK_UPDATE',
+      entityType: 'FeatureFlag',
+      entityId: dto.ids.join(','),
+      newValue: { ids: dto.ids, enabled: dto.enabled },
+      severity: AuditSeverity.INFO,
+    });
+
+    return { updated: result.count };
   }
 }

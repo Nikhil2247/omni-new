@@ -96,21 +96,25 @@ async function upsertSystemConfigAndFlags() {
   const flags = [
     {
       key: 'CORE_LAUNCH_ENABLED',
+      name: 'Core Launch',
       description: 'Enable launch baseline modules',
       enabled: true,
     },
     {
       key: 'VENDOR_ONBOARDING_ENABLED',
+      name: 'Vendor Onboarding',
       description: 'Enable vendor onboarding flows',
       enabled: true,
     },
     {
       key: 'MARKETING_BLOG_ENABLED',
+      name: 'Marketing Blog',
       description: 'Enable blog and content workflows',
       enabled: true,
     },
     {
       key: 'OPS_DASHBOARD_ENABLED',
+      name: 'Ops Dashboard',
       description: 'Enable operations dashboard',
       enabled: true,
     },
@@ -120,6 +124,7 @@ async function upsertSystemConfigAndFlags() {
     await prisma.featureFlag.upsert({
       where: { key: flag.key },
       update: {
+        name: flag.name,
         description: flag.description,
         enabled: flag.enabled,
       },

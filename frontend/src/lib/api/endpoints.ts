@@ -23,6 +23,10 @@ export const API_ENDPOINTS = {
     HEALTH_READY: '/public/health/ready',
     HEALTH_LIVE: '/public/health/live',
     SYSTEM_STATUS: '/public/system/status',
+    FEATURES: {
+      ENABLED: '/public/features',
+      ALL: '/public/features/all',
+    },
     BLOG: {
       POSTS: '/public/blog/posts',
       POST_BY_SLUG: (slug: string) => `/public/blog/posts/${slug}`,
@@ -82,6 +86,11 @@ export const API_ENDPOINTS = {
       STATUS: (vendorProfileId: string) => `/vendors/claim/status/${vendorProfileId}`,
       MY_CLAIMS: '/vendors/claim/my-claims',
       RESEND: (claimId: string) => `/vendors/claim/resend/${claimId}`,
+      // Guest claim endpoints (no auth required)
+      CAN_CLAIM: (vendorProfileId: string) => `/vendors/claim/can-claim/${vendorProfileId}`,
+      INITIATE_GUEST: '/vendors/claim/initiate-guest',
+      VERIFY_GUEST: '/vendors/claim/verify-guest',
+      RESEND_GUEST: '/vendors/claim/resend-guest',
     },
     ADS: {
       FEATURED: '/public/ads/featured',
@@ -153,6 +162,14 @@ export const API_ENDPOINTS = {
       APPROVE: (id: string) => `/admin/campaigns/${id}/approve`,
       REJECT: (id: string) => `/admin/campaigns/${id}/reject`,
       STATS: (id: string) => `/admin/campaigns/${id}/stats`,
+    },
+    CLAIMS: {
+      LIST: '/admin/claims',
+      PENDING: '/admin/claims/pending',
+      COUNTS: '/admin/claims/counts',
+      BY_ID: (id: string) => `/admin/claims/${id}`,
+      APPROVE: (id: string) => `/admin/claims/${id}/approve`,
+      REJECT: (id: string) => `/admin/claims/${id}/reject`,
     },
   },
   MARKETING: {

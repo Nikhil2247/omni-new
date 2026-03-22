@@ -56,11 +56,16 @@ export interface AdminRole {
   parentRole?: { id: string; name: string } | null
 }
 
+export type FeatureFlagCategory = 'marketing' | 'vendor' | 'user' | 'system'
+
 export interface FeatureFlag {
   id: string
   key: string
+  name: string
   description?: string | null
+  category: FeatureFlagCategory
   enabled: boolean
+  isSystem: boolean
   createdAt: string
   updatedAt: string
 }

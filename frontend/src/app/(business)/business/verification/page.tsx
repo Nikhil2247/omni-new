@@ -42,6 +42,7 @@ import {
 import { toast } from 'sonner'
 import type { DocumentType, KYCStatus, DocumentStatus } from '@/lib/api/types/business.types'
 import { getMinioViewUrl } from '@/lib/utils/minio'
+import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common'
 
 const kycStatusConfig: Record<KYCStatus, { label: string; color: string; icon: typeof Clock; description: string }> = {
   PENDING: {
@@ -234,7 +235,18 @@ export default function VerificationPage() {
   const StatusIcon = statusInfo.icon
 
   return (
-    <div className="container max-w-4xl py-8 space-y-8">
+    <FeatureFlagGate
+      feature="vendor.onboarding"
+      fallback={
+        <FeatureDisabledMessage
+          feature="KYC Verification"
+          description="KYC verification is currently unavailable. Please check back later."
+          backUrl="/business/dashboard"
+          backText="Go to Dashboard"
+        />
+      }
+    >
+      <div className="container max-w-4xl py-8 space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">KYC Verification</h1>
@@ -550,6 +562,7 @@ export default function VerificationPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </FeatureFlagGate>
   )
 }

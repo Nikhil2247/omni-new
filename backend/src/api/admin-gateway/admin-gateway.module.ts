@@ -9,8 +9,10 @@ import { AdminPaymentController } from './controllers/admin-payment.controller';
 import { AdminSubscriptionController } from './controllers/admin-subscription.controller';
 import { AdminInvoiceController } from './controllers/admin-invoice.controller';
 import { AdminCampaignController } from './controllers/admin-campaign.controller';
+import { AdminClaimController } from './controllers/admin-claim.controller';
 import { InsightsModule } from 'src/domain';
 import { SubscriptionModule } from 'src/domain/subscription/subscription.module';
+import { CatalogModule } from 'src/domain/catalog/catalog.module';
 import { SearchModule } from '../../infrastructure/search/search.module';
 import { SystemConfigService } from './services/system-config.service';
 import { SystemHealthController } from './controllers/system-health.controller';
@@ -22,7 +24,7 @@ import { ChatbotAdminService } from './services/chatbot-admin.service';
 import { AuditService } from 'src/core/audit';
 
 @Module({
-  imports: [InsightsModule, SearchModule, SubscriptionModule],
+  imports: [InsightsModule, SearchModule, SubscriptionModule, CatalogModule],
   controllers: [
     UsersController,
     RolesController,
@@ -37,6 +39,7 @@ import { AuditService } from 'src/core/audit';
     AdminSubscriptionController,
     AdminInvoiceController,
     AdminCampaignController,
+    AdminClaimController,
   ],
   providers: [
     SystemConfigService,

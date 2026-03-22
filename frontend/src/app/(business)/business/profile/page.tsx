@@ -67,6 +67,7 @@ import {
 import { toast } from 'sonner'
 import type { VendorStatus } from '@/lib/api/types/business.types'
 import { getMinioViewUrl } from '@/lib/utils/minio'
+import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common'
 
 const statusConfig: Record<VendorStatus, { label: string; color: string; icon: ElementType }> = {
   DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: Edit },
@@ -542,22 +543,33 @@ export default function BusinessProfilePage() {
 
   if (error || !profile) {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <div className="rounded-3xl border bg-card p-8 text-center sm:p-10">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Store className="h-8 w-8 text-primary" />
+      <FeatureFlagGate
+        feature="vendor.onboarding"
+        fallback={
+          <FeatureDisabledMessage
+            feature="Business Profile Setup"
+            description="Business profile creation is currently unavailable. Please check back later."
+            backUrl="/business/dashboard"
+            backText="Go to Dashboard"
+          />
+        }
+      >
+        <main className="mx-auto max-w-5xl px-4 py-8">
+          <div className="rounded-3xl border bg-card p-8 text-center sm:p-10">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Store className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="font-serif text-2xl font-bold">Create your business profile</h1>
+            <p className="text-muted-foreground mx-auto mt-2 max-w-xl">
+              Set up your profile and publish your business identity.
+            </p>
+            <Button className="mt-6" size="lg" onClick={() => setShowCreateDialog(true)}>
+              <Store className="mr-2 h-4 w-4" />
+              Create Profile
+            </Button>
           </div>
-          <h1 className="font-serif text-2xl font-bold">Create your business profile</h1>
-          <p className="text-muted-foreground mx-auto mt-2 max-w-xl">
-            Set up your profile and publish your business identity.
-          </p>
-          <Button className="mt-6" size="lg" onClick={() => setShowCreateDialog(true)}>
-            <Store className="mr-2 h-4 w-4" />
-            Create Profile
-          </Button>
-        </div>
 
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Business Profile</DialogTitle>
@@ -764,7 +776,8 @@ export default function BusinessProfilePage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </main>
+        </main>
+      </FeatureFlagGate>
     )
   }
 
