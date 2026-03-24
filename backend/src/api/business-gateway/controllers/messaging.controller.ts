@@ -1,6 +1,9 @@
 // ============================================================================
 // BUSINESS GATEWAY - Messaging Controller
 // ============================================================================
+// Messaging endpoints for vendors (business users)
+// Messaging feature requires PROFESSIONAL or ENTERPRISE plan
+// ============================================================================
 
 import {
   Body,
@@ -32,6 +35,7 @@ import {
   MarkReadDto,
   SendMessageDto,
 } from '../../../domain/messaging/dto/message.dto';
+import { RequireMessaging } from '../../../domain/subscription/decorators/subscription.decorators';
 
 @Controller('messaging')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -43,6 +47,7 @@ export class MessagingController {
   ) {}
 
   @Post('conversations/direct')
+  @RequireMessaging()
   createDirectConversation(
     @Body() dto: CreateDirectConversationDto,
     @CurrentUser() user: CurrentUserData,
@@ -91,6 +96,7 @@ export class MessagingController {
   }
 
   @Post('conversations/:id/messages')
+  @RequireMessaging()
   sendMessage(
     @Param('id') conversationId: string,
     @Body() dto: SendMessageDto,
@@ -112,6 +118,7 @@ export class MessagingController {
   }
 
   @Post('messages/:id/reactions')
+  @RequireMessaging()
   addReaction(
     @Param('id') messageId: string,
     @Body() dto: AddReactionDto,

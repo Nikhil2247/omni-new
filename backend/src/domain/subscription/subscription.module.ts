@@ -133,6 +133,7 @@ import {
     PaymentRetryService,
 
     // Repositories (for use in other modules)
+    SubscriptionRepository,
     CampaignRepository,
     AdCreditRepository,
 

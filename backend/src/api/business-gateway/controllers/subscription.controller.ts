@@ -38,6 +38,7 @@ import { SubscriptionService } from '../../../domain/subscription/services/subsc
 import { SubscriptionPlanService } from '../../../domain/subscription/services/subscription-plan.service';
 import { CouponService } from '../../../domain/subscription/services/coupon.service';
 import { VendorProfileService } from '../../../domain/catalog/services/vendor-profile.service';
+import { UsageService } from '../../../domain/subscription/services/usage.service';
 import {
   CreateSubscriptionDto,
   UpdateSubscriptionDto,
@@ -130,6 +131,7 @@ export class BusinessSubscriptionController {
     private readonly planService: SubscriptionPlanService,
     private readonly couponService: CouponService,
     private readonly vendorProfileService: VendorProfileService,
+    private readonly usageService: UsageService,
   ) {}
 
   /**
@@ -191,7 +193,7 @@ export class BusinessSubscriptionController {
 
   /**
    * Get subscription usage details
-   * Returns current usage for metered features
+   * Returns feature limits and current usage for all features in the plan
    */
   @Get('usage')
   @ApiOperation({ summary: 'Get subscription usage details' })
@@ -219,15 +221,16 @@ export class BusinessSubscriptionController {
       throw new NotFoundException('No active subscription found');
     }
 
-    // Get usage records for this subscription
-    const usageDetails = await this.subscriptionService.getUsageDetails(
-      subscription.id,
+    // Get all feature limits and usage using UsageService
+    // This returns the proper FeatureLimitStatus format for all features
+    const featureLimits = await this.usageService.getAllFeatureLimits(
+      vendorProfileId,
     );
 
     return {
       subscriptionId: subscription.id,
       planId: subscription.planId,
-      usage: usageDetails,
+      usage: featureLimits,
     };
   }
 

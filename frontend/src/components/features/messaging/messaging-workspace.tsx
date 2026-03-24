@@ -18,6 +18,7 @@ import {
 } from '@/hooks/queries/use-messaging'
 import { useUserConversations } from '@/hooks/queries/use-messaging'
 import { useCreateBusinessLead } from '@/hooks/queries/use-business'
+import { useVendorSubscription, useVendorUsage } from '@/hooks/queries/use-subscription'
 import type { Conversation, ConversationParticipant, Message, MessageAttachment } from '@/lib/api/types/messaging.types'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
@@ -67,7 +68,10 @@ import {
   Calendar,
   Users,
   DollarSign,
+  Lock,
+  Sparkles,
 } from 'lucide-react'
+import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -180,6 +184,19 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
 
   const { user } = useAuthStore()
   const router = useRouter()
+
+  // Check vendor messaging access (only for business scope)
+  const { data: vendorSubscription } = useVendorSubscription({ enabled: scope === 'business' })
+  const { data: vendorUsage } = useVendorUsage({ enabled: scope === 'business' })
+
+  // Check if messaging feature is available for vendors
+  const hasMessagingAccess = useMemo(() => {
+    if (scope !== 'business') return true // Users always have messaging access
+    if (!vendorUsage) return false // Loading or no subscription
+    const messagingFeature = vendorUsage.find((f) => f.featureKey === 'messaging')
+    // For BOOLEAN features, limitValue of 1 or isUnlimited means access
+    return messagingFeature?.isUnlimited || (messagingFeature?.limit ?? 0) > 0
+  }, [scope, vendorUsage])
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const initialConversationId = searchParams.get('conversationId')
@@ -896,71 +913,94 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
 
             {/* Input Area */}
             <div className="border-t bg-background/80 px-2 py-2 backdrop-blur-sm md:px-4 md:py-3">
-              <div className="flex items-end gap-1 md:gap-2">
-                <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground md:h-10 md:w-10"
-                    >
-                      <Smile className="h-5 w-5 md:h-6 md:w-6" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" side="top" className="w-64 p-3 md:w-72">
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">Quick Reactions</p>
-                    <div className="grid grid-cols-6 gap-1">
-                      {QUICK_EMOJIS.map((emoji) => (
-                        <Button
-                          key={emoji}
-                          type="button"
-                          variant="ghost"
-                          className="h-9 w-9 text-lg hover:bg-muted md:h-10 md:w-10 md:text-xl"
-                          onClick={() => handleEmojiSelect(emoji)}
-                        >
-                          {emoji}
-                        </Button>
-                      ))}
+              {!hasMessagingAccess && scope === 'business' ? (
+                /* Upgrade prompt for vendors without messaging access */
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-3 md:px-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20">
+                      <Lock className="h-4 w-4 text-primary" />
                     </div>
-                  </PopoverContent>
-                </Popover>
-
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="hidden h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground md:flex md:h-10 md:w-10"
-                >
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-
-                <div className="flex-1">
-                  <Textarea
-                    ref={textareaRef}
-                    value={draft}
-                    onChange={(e) => handleDraftChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type a message..."
-                    rows={1}
-                    className="max-h-32 min-h-[40px] resize-none rounded-2xl border-0 bg-muted/50 px-3 py-2.5 text-sm focus-visible:ring-1 focus-visible:ring-primary md:min-h-[44px] md:px-4 md:py-3"
-                    disabled={!activeConversationId}
-                  />
+                    <div>
+                      <p className="text-sm font-medium">Messaging requires a Professional plan</p>
+                      <p className="text-xs text-muted-foreground">
+                        Upgrade to send messages and connect with potential clients
+                      </p>
+                    </div>
+                  </div>
+                  <Link href="/business/settings/subscription">
+                    <Button size="sm" className="gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Upgrade
+                    </Button>
+                  </Link>
                 </div>
+              ) : (
+                <div className="flex items-end gap-1 md:gap-2">
+                  <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground md:h-10 md:w-10"
+                      >
+                        <Smile className="h-5 w-5 md:h-6 md:w-6" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" side="top" className="w-64 p-3 md:w-72">
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">Quick Reactions</p>
+                      <div className="grid grid-cols-6 gap-1">
+                        {QUICK_EMOJIS.map((emoji) => (
+                          <Button
+                            key={emoji}
+                            type="button"
+                            variant="ghost"
+                            className="h-9 w-9 text-lg hover:bg-muted md:h-10 md:w-10 md:text-xl"
+                            onClick={() => handleEmojiSelect(emoji)}
+                          >
+                            {emoji}
+                          </Button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
 
-                <Button
-                  onClick={handleSend}
-                  disabled={!draft.trim() || sending || !activeConversationId}
-                  size="icon"
-                  className="h-9 w-9 flex-shrink-0 rounded-full md:h-10 md:w-10"
-                >
-                  {sending ? (
-                    <Loader2 className="h-4 w-4 animate-spin md:h-5 md:w-5" />
-                  ) : (
-                    <Send className="h-4 w-4 md:h-5 md:w-5" />
-                  )}
-                </Button>
-              </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="hidden h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground md:flex md:h-10 md:w-10"
+                  >
+                    <Paperclip className="h-5 w-5" />
+                  </Button>
+
+                  <div className="flex-1">
+                    <Textarea
+                      ref={textareaRef}
+                      value={draft}
+                      onChange={(e) => handleDraftChange(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Type a message..."
+                      rows={1}
+                      className="max-h-32 min-h-[40px] resize-none rounded-2xl border-0 bg-muted/50 px-3 py-2.5 text-sm focus-visible:ring-1 focus-visible:ring-primary md:min-h-[44px] md:px-4 md:py-3"
+                      disabled={!activeConversationId}
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handleSend}
+                    disabled={!draft.trim() || sending || !activeConversationId}
+                    size="icon"
+                    className="h-9 w-9 flex-shrink-0 rounded-full md:h-10 md:w-10"
+                  >
+                    {sending ? (
+                      <Loader2 className="h-4 w-4 animate-spin md:h-5 md:w-5" />
+                    ) : (
+                      <Send className="h-4 w-4 md:h-5 md:w-5" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </>
         ) : (

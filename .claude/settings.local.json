@@ -36,7 +36,8 @@
       "Bash(cut:*)",
       "Bash(cd:*)",
       "Bash(git checkout:*)",
-      "Bash(npx prisma db seed:*)"
+      "Bash(npx prisma db seed:*)",
+      "Bash(del \"D:\\\\omnicassion\\\\omni-new\\\\backend\\\\check-db.js\")"
     ]
   }
 }

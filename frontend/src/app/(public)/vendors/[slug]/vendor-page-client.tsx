@@ -490,6 +490,10 @@ export default function VendorPageClient({
   const address = (vendor as any).address as any
   const category = (vendor as VendorProfileType).category
 
+  // Check if vendor has messaging access based on their subscription plan
+  // Only PROFESSIONAL and ENTERPRISE plans include messaging
+  const vendorHasMessaging = vendor?.planTier === 'PROFESSIONAL' || vendor?.planTier === 'ENTERPRISE'
+
   const featuredPortfolios = portfolios.filter((portfolio) => portfolio.isFeatured)
   const nonFeaturedPortfolios = portfolios.filter((portfolio) => !portfolio.isFeatured)
   const featuredMedia = featuredPortfolios.flatMap((portfolio) => portfolio.mediaItems || [])
@@ -587,19 +591,21 @@ export default function VendorPageClient({
 
             {/* Action buttons */}
             <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 pb-3">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleMessageVendor}
-                    disabled={isCreatingConversation}
-                    className="h-9 gap-1.5 px-3"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Message
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Start chat with vendor</TooltipContent>
-              </Tooltip>
+              {vendorHasMessaging && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleMessageVendor}
+                      disabled={isCreatingConversation}
+                      className="h-9 gap-1.5 px-3"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Message
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Start chat with vendor</TooltipContent>
+                </Tooltip>
+              )}
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -1116,10 +1122,12 @@ export default function VendorPageClient({
                     <p className="mt-1 text-sm text-muted-foreground">
                       Contact the vendor directly for service information.
                     </p>
-                    <Button className="mt-4" variant="outline" onClick={handleMessageVendor}>
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Send Message
-                    </Button>
+                    {vendorHasMessaging && (
+                      <Button className="mt-4" variant="outline" onClick={handleMessageVendor}>
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Send Message
+                      </Button>
+                    )}
                   </div>
                 )}
               </motion.div>
