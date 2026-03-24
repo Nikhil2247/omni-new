@@ -366,4 +366,162 @@ export class UserUsageService {
       return usedPercent >= thresholdPercent;
     });
   }
+
+  /**
+   * Check storage limit for an event
+   * Returns whether adding fileSizeBytes would exceed the limit
+   */
+  async checkStorageLimit(
+    userId: string,
+    eventId: string,
+    fileSizeBytes: number,
+  ): Promise<{
+    allowed: boolean;
+    currentUsageMB: number;
+    limitMB: number;
+    remainingMB: number;
+    isUnlimited: boolean;
+    fileSizeMB: number;
+  }> {
+    const subscription =
+      await this.subscriptionService.findActiveByUserId(userId);
+
+    const fileSizeMB = fileSizeBytes / (1024 * 1024);
+
+    if (!subscription) {
+      return {
+        allowed: false,
+        currentUsageMB: 0,
+        limitMB: 0,
+        remainingMB: 0,
+        isUnlimited: false,
+        fileSizeMB,
+      };
+    }
+
+    // Get storage limit from plan
+    const subscriptionWithPlan = subscription as any;
+    const storageFeature = subscriptionWithPlan.plan?.features?.find(
+      (f: any) => f.featureKey === 'memory_storage_mb',
+    );
+
+    const isUnlimited = storageFeature?.limitType === 'UNLIMITED';
+    const limitMB = isUnlimited ? -1 : (storageFeature?.limitValue ?? 0);
+
+    // Get current storage usage for this event
+    const currentUsageMB = await this.subscriptionRepository.getUsageForEvent(
+      subscription.id,
+      eventId,
+      'memory_storage_mb',
+    );
+
+    if (isUnlimited) {
+      return {
+        allowed: true,
+        currentUsageMB,
+        limitMB: -1,
+        remainingMB: -1,
+        isUnlimited: true,
+        fileSizeMB,
+      };
+    }
+
+    const remainingMB = Math.max(0, limitMB - currentUsageMB);
+    const allowed = currentUsageMB + fileSizeMB <= limitMB;
+
+    return {
+      allowed,
+      currentUsageMB,
+      limitMB,
+      remainingMB,
+      isUnlimited: false,
+      fileSizeMB,
+    };
+  }
+
+  /**
+   * Record storage usage for an event (in MB)
+   */
+  async recordStorageUsage(
+    userId: string,
+    eventId: string,
+    fileSizeBytes: number,
+  ): Promise<void> {
+    const fileSizeMB = fileSizeBytes / (1024 * 1024);
+
+    this.logger.debug(
+      `Recording storage usage: ${fileSizeMB.toFixed(2)}MB for user ${userId} on event ${eventId}`,
+    );
+
+    const subscription =
+      await this.subscriptionService.findActiveByUserId(userId);
+
+    if (!subscription) {
+      this.logger.warn(`No active subscription for user ${userId} - skipping storage recording`);
+      return;
+    }
+
+    // Record the storage usage (accumulative)
+    await this.subscriptionRepository.incrementUsage({
+      subscriptionId: subscription.id,
+      eventId,
+      featureKey: 'memory_storage_mb',
+      incrementBy: fileSizeMB,
+    });
+
+    // Check if approaching limit
+    const storageStatus = await this.checkStorageLimit(userId, eventId, 0);
+
+    if (!storageStatus.isUnlimited) {
+      const usedPercent = (storageStatus.currentUsageMB / storageStatus.limitMB) * 100;
+
+      if (usedPercent >= 100) {
+        this.eventEmitter.emit('user-usage.storage-limit-reached', {
+          userId,
+          eventId,
+          currentUsageMB: storageStatus.currentUsageMB,
+          limitMB: storageStatus.limitMB,
+        });
+      } else if (usedPercent >= 80) {
+        this.eventEmitter.emit('user-usage.storage-limit-approaching', {
+          userId,
+          eventId,
+          currentUsageMB: storageStatus.currentUsageMB,
+          limitMB: storageStatus.limitMB,
+          remainingMB: storageStatus.remainingMB,
+          usedPercent: Math.round(usedPercent),
+        });
+      }
+    }
+  }
+
+  /**
+   * Get storage usage summary for an event
+   */
+  async getStorageUsageSummary(
+    userId: string,
+    eventId: string,
+  ): Promise<{
+    currentUsageMB: number;
+    limitMB: number;
+    remainingMB: number;
+    usedPercent: number;
+    isUnlimited: boolean;
+  }> {
+    const storageStatus = await this.checkStorageLimit(userId, eventId, 0);
+
+    const usedPercent = storageStatus.isUnlimited
+      ? 0
+      : storageStatus.limitMB > 0
+        ? Math.round((storageStatus.currentUsageMB / storageStatus.limitMB) * 100)
+        : 0;
+
+    return {
+      currentUsageMB: Math.round(storageStatus.currentUsageMB * 100) / 100,
+      limitMB: storageStatus.limitMB,
+      remainingMB: Math.round(storageStatus.remainingMB * 100) / 100,
+      usedPercent,
+      isUnlimited: storageStatus.isUnlimited,
+    };
+  }
 }

@@ -9,6 +9,7 @@ import { useSidebarStore } from '@/store/sidebar-store';
 import { useAuthStore } from '@/store/auth-store';
 import { Role } from '@/config/roles';
 import { getNavigationForRole, filterNavByRole, type NavGroup, type NavItem } from '@/config/navigation';
+import { useFilteredNavigationGroups } from '@/hooks/use-filtered-navigation';
 import { ChevronDown, ChevronRight, PanelLeftClose, PanelLeft, X } from 'lucide-react';
 
 export function Sidebar() {
@@ -18,7 +19,10 @@ export function Sidebar() {
   const userRole = user?.role as Role;
 
   // Get navigation based on user role
-  const navigation = userRole ? filterNavByRole(getNavigationForRole(userRole), userRole) : [];
+  const roleFilteredNav = userRole ? filterNavByRole(getNavigationForRole(userRole), userRole) : [];
+
+  // Filter by feature flags - items with disabled features are hidden
+  const navigation = useFilteredNavigationGroups(roleFilteredNav);
 
   return (
     <aside

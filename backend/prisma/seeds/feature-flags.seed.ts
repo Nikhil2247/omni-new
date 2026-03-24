@@ -189,6 +189,50 @@ const featureFlags: FeatureFlagDefinition[] = [
     enabled: true,
     isSystem: true,
   },
+  {
+    key: 'system.whatsapp',
+    name: 'WhatsApp Integration',
+    description: 'Enable WhatsApp messaging integration',
+    category: 'system',
+    enabled: false,
+    isSystem: true,
+  },
+  {
+    key: 'system.ai_recommendations',
+    name: 'AI Recommendations',
+    description: 'Enable AI-powered vendor recommendations',
+    category: 'system',
+    enabled: false,
+    isSystem: true,
+  },
+
+  // ============================================================================
+  // ONBOARDING FEATURES
+  // ============================================================================
+  {
+    key: 'user.vibe_quiz',
+    name: 'Vibe Quiz',
+    description: 'Enable visual onboarding quiz for style preferences',
+    category: 'user',
+    enabled: true,
+    isSystem: true,
+  },
+  {
+    key: 'user.wedding_identity',
+    name: 'Wedding Identity',
+    description: 'Enable couple profiles and wedding identity',
+    category: 'user',
+    enabled: true,
+    isSystem: true,
+  },
+  {
+    key: 'user.guest_uploads',
+    name: 'Guest Uploads',
+    description: 'Enable guests to upload photos to events',
+    category: 'user',
+    enabled: true,
+    isSystem: true,
+  },
 ];
 
 // ============================================================================

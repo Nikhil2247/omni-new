@@ -59,6 +59,8 @@ export interface VendorProfile {
   verifiedAt?: string
   featuredUntil?: string
   isFollowing?: boolean
+  planTier?: 'FREE' | 'PROFESSIONAL' | 'ENTERPRISE'
+  searchBoost?: number
   createdAt: string
   updatedAt: string
   badges?: VendorBadge[]

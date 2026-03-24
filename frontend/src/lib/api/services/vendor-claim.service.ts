@@ -12,6 +12,7 @@ import type {
   VendorClaimResponse,
   ClaimStatusResponse,
   InitiateGuestClaimRequest,
+  ResendGuestVerificationRequest,
   VerifyGuestClaimRequest,
   GuestClaimInitiatedResponse,
   GuestClaimVerifiedResponse,
@@ -96,7 +97,7 @@ export const vendorClaimService = {
   /**
    * Resend guest claim verification code
    */
-  resendGuestVerification: async (payload: InitiateGuestClaimRequest): Promise<GuestClaimInitiatedResponse> => {
+  resendGuestVerification: async (payload: ResendGuestVerificationRequest): Promise<GuestClaimInitiatedResponse> => {
     const { data } = await apiClient.post(API_ENDPOINTS.PUBLIC.VENDOR_CLAIM.RESEND_GUEST, payload)
     return data?.data || data
   },

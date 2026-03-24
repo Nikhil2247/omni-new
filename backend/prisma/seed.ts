@@ -213,15 +213,8 @@ async function main() {
     },
   })
 
-  await prisma.featureFlag.createMany({
-    data: [
-      { key: 'VIBE_QUIZ_ENABLED', name: 'Vibe Quiz', description: 'Enable visual onboarding quiz', enabled: true },
-      { key: 'WEDDING_IDENTITY_ENABLED', name: 'Wedding Identity', description: 'Enable couple profiles', enabled: true },
-      { key: 'WHATSAPP_INTEGRATION', name: 'WhatsApp Integration', description: 'Enable WhatsApp messaging', enabled: true },
-      { key: 'AI_RECOMMENDATIONS', name: 'AI Recommendations', description: 'Enable AI-powered recommendations', enabled: false },
-      { key: 'GUEST_UPLOADS', name: 'Guest Uploads', description: 'Enable guest photo uploads', enabled: true },
-    ],
-  })
+  // Feature flags are created by seedFeatureFlags() in Step 22.5
+  // Using consistent dot notation (e.g., marketing.campaigns, vendor.onboarding)
 
   console.log('✅ System configuration created')
 

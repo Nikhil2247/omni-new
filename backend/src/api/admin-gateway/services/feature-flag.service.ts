@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { AuditService } from '../../../core/audit/audit.service';
 import { AuditCategory, AuditSeverity } from '../../../core/audit/audit.types';
 import { PrismaService } from '../../../core/database/prisma.service';
@@ -21,7 +21,45 @@ export class FeatureFlagService {
     });
   }
 
+  /**
+   * Get a feature flag by its unique key
+   */
+  async getByKey(key: string) {
+    const flag = await this.prisma.featureFlag.findUnique({
+      where: { key },
+    });
+
+    if (!flag) {
+      throw new NotFoundException(`Feature flag with key '${key}' not found`);
+    }
+
+    return flag;
+  }
+
+  /**
+   * Check if a feature is enabled by key
+   */
+  async isEnabled(key: string): Promise<boolean> {
+    const flag = await this.prisma.featureFlag.findUnique({
+      where: { key },
+      select: { enabled: true },
+    });
+
+    return flag?.enabled ?? false;
+  }
+
   async create(dto: CreateFeatureFlagDto) {
+    // Check for duplicate key
+    const existing = await this.prisma.featureFlag.findUnique({
+      where: { key: dto.key },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        `Feature flag with key '${dto.key}' already exists`,
+      );
+    }
+
     const created = await this.prisma.featureFlag.create({
       data: {
         key: dto.key,

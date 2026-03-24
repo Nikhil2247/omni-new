@@ -11,6 +11,8 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { VendorClaimRepository } from '../repositories/vendor-claim.repository';
@@ -18,11 +20,13 @@ import { VendorProfileRepository } from '../repositories/vendor-profile.reposito
 import { PrismaService } from '../../../core/database/prisma.service';
 import { SubscriptionService } from '../../subscription/services/subscription.service';
 import { SubscriptionPlanService } from '../../subscription/services/subscription-plan.service';
+import { RateLimitingService } from '../../../infrastructure/rate-limiting/rate-limiting.service';
 import {
   VendorClaim,
   ClaimStatus,
   ClaimVerificationMethod,
   VendorStatus,
+  PlanTier as PrismaPlanTier,
 } from '@prisma/client';
 import {
   InitiateClaimDto,
@@ -54,8 +58,16 @@ export const VENDOR_CLAIM_EVENTS = {
 @Injectable()
 export class VendorClaimService {
   private readonly logger = new Logger(VendorClaimService.name);
-  private readonly VERIFICATION_CODE_EXPIRY_HOURS = 24;
   private readonly VERIFICATION_CODE_LENGTH = 6;
+
+  // Security constants for rate limiting and expiry
+  private readonly VERIFICATION_CODE_EXPIRY_MINUTES_SHORT = 15; // For EMAIL/PHONE methods
+  private readonly VERIFICATION_CODE_EXPIRY_HOURS_LONG = 24; // For DOCUMENT/ADMIN methods
+  private readonly MAX_VERIFICATION_ATTEMPTS = 5;
+  private readonly VERIFICATION_LOCKOUT_MINUTES = 15;
+  private readonly MAX_RESEND_PER_HOUR = 3;
+  private readonly RESEND_WINDOW_SECONDS = 3600; // 1 hour
+  private readonly BCRYPT_SALT_ROUNDS = 10;
 
   constructor(
     private readonly vendorClaimRepository: VendorClaimRepository,
@@ -66,6 +78,7 @@ export class VendorClaimService {
     private readonly eventEmitter: EventEmitter2,
     private readonly tokenService: TokenService,
     private readonly roleLookupService: RoleLookupService,
+    private readonly rateLimitingService: RateLimitingService,
   ) {}
 
   /**
@@ -79,12 +92,125 @@ export class VendorClaimService {
   }
 
   /**
-   * Calculate verification expiry date
+   * Hash verification code with bcrypt for secure storage
    */
-  private getVerificationExpiry(): Date {
+  private async hashVerificationCode(code: string): Promise<string> {
+    return bcrypt.hash(code, this.BCRYPT_SALT_ROUNDS);
+  }
+
+  /**
+   * Verify a code against its hashed version
+   */
+  private async verifyHashedCode(
+    plainCode: string,
+    hashedCode: string,
+  ): Promise<boolean> {
+    return bcrypt.compare(plainCode, hashedCode);
+  }
+
+  /**
+   * Calculate verification expiry date based on verification method
+   * EMAIL/PHONE methods get shorter expiry (15 minutes) for security
+   * DOCUMENT/ADMIN methods get longer expiry (24 hours) as they require manual review
+   */
+  private getVerificationExpiry(method: ClaimVerificationMethod): Date {
     const expiry = new Date();
-    expiry.setHours(expiry.getHours() + this.VERIFICATION_CODE_EXPIRY_HOURS);
+    if (
+      method === ClaimVerificationMethod.EMAIL ||
+      method === ClaimVerificationMethod.PHONE
+    ) {
+      expiry.setMinutes(
+        expiry.getMinutes() + this.VERIFICATION_CODE_EXPIRY_MINUTES_SHORT,
+      );
+    } else {
+      expiry.setHours(
+        expiry.getHours() + this.VERIFICATION_CODE_EXPIRY_HOURS_LONG,
+      );
+    }
     return expiry;
+  }
+
+  /**
+   * Check if verification attempts are rate limited (locked out)
+   * Returns the lockout expiry time if locked, null otherwise
+   */
+  private async checkVerificationAttemptLockout(
+    claimId: string,
+  ): Promise<{ locked: boolean; lockoutExpiresAt?: Date; attemptsRemaining?: number }> {
+    const rateLimitResult = await this.rateLimitingService.getStatus(
+      `claim_verify:${claimId}`,
+      {
+        limit: this.MAX_VERIFICATION_ATTEMPTS,
+        window: this.VERIFICATION_LOCKOUT_MINUTES * 60,
+        prefix: 'vendor_claim',
+      },
+    );
+
+    if (!rateLimitResult.allowed) {
+      const lockoutExpiresAt = new Date(
+        Date.now() + rateLimitResult.resetIn * 1000,
+      );
+      return { locked: true, lockoutExpiresAt };
+    }
+
+    return { locked: false, attemptsRemaining: rateLimitResult.remaining };
+  }
+
+  /**
+   * Record a verification attempt and check rate limit
+   */
+  private async recordVerificationAttempt(
+    claimId: string,
+  ): Promise<{ allowed: boolean; attemptsRemaining: number; lockoutExpiresAt?: Date }> {
+    const rateLimitResult = await this.rateLimitingService.checkLimit(
+      `claim_verify:${claimId}`,
+      {
+        limit: this.MAX_VERIFICATION_ATTEMPTS,
+        window: this.VERIFICATION_LOCKOUT_MINUTES * 60,
+        prefix: 'vendor_claim',
+      },
+    );
+
+    if (!rateLimitResult.allowed) {
+      const lockoutExpiresAt = new Date(
+        Date.now() + rateLimitResult.resetIn * 1000,
+      );
+      return { allowed: false, attemptsRemaining: 0, lockoutExpiresAt };
+    }
+
+    return { allowed: true, attemptsRemaining: rateLimitResult.remaining };
+  }
+
+  /**
+   * Check IP-based rate limit for code resend
+   */
+  private async checkResendRateLimit(
+    ipAddress: string,
+  ): Promise<{ allowed: boolean; resetIn: number; remaining: number }> {
+    const rateLimitResult = await this.rateLimitingService.checkLimit(
+      `resend:${ipAddress}`,
+      {
+        limit: this.MAX_RESEND_PER_HOUR,
+        window: this.RESEND_WINDOW_SECONDS,
+        prefix: 'vendor_claim',
+      },
+    );
+
+    return {
+      allowed: rateLimitResult.allowed,
+      resetIn: rateLimitResult.resetIn,
+      remaining: rateLimitResult.remaining,
+    };
+  }
+
+  /**
+   * Reset verification attempt counter after successful verification
+   */
+  private async resetVerificationAttempts(claimId: string): Promise<void> {
+    await this.rateLimitingService.resetLimit(
+      `claim_verify:${claimId}`,
+      'vendor_claim',
+    );
   }
 
   /**
@@ -190,6 +316,7 @@ export class VendorClaimService {
 
   /**
    * Validate that the verification method can be used with the vendor profile
+   * Note: PHONE verification is not supported - email only
    */
   private validateVerificationMethod(
     method: ClaimVerificationMethod,
@@ -204,12 +331,10 @@ export class VendorClaimService {
         }
         break;
       case ClaimVerificationMethod.PHONE:
-        if (!vendorProfile.contactPhone) {
-          throw new BadRequestException(
-            'This vendor profile does not have a phone number. Please choose a different verification method.',
-          );
-        }
-        break;
+        // Phone verification is not supported
+        throw new BadRequestException(
+          'Phone verification is not currently available. Please use email or document verification.',
+        );
       case ClaimVerificationMethod.DOCUMENT:
       case ClaimVerificationMethod.ADMIN_VERIFIED:
         // These methods are always available
@@ -219,9 +344,29 @@ export class VendorClaimService {
 
   /**
    * Send verification code/link to the vendor
+   * Includes IP-based rate limiting for resend protection
    */
-  async sendVerification(claimId: string): Promise<void> {
+  async sendVerification(claimId: string, ipAddress?: string): Promise<void> {
     this.logger.log(`Sending verification for claim: ${claimId}`);
+
+    // Check IP-based rate limit for resend if IP address provided
+    if (ipAddress) {
+      const resendRateLimit = await this.checkResendRateLimit(ipAddress);
+      if (!resendRateLimit.allowed) {
+        const minutesUntilReset = Math.ceil(resendRateLimit.resetIn / 60);
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            message: `Too many verification code requests. Please wait ${minutesUntilReset} minutes before requesting another code.`,
+            retryAfter: resendRateLimit.resetIn,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      this.logger.debug(
+        `Resend rate limit: ${resendRateLimit.remaining} remaining for IP ${ipAddress}`,
+      );
+    }
 
     const claim = await this.vendorClaimRepository.findById(claimId, {
       vendorProfile: true,
@@ -240,33 +385,42 @@ export class VendorClaimService {
       );
     }
 
+    // Generate plain code for sending, then hash for storage
     const verificationCode = this.generateVerificationCode();
-    const verificationExpiry = this.getVerificationExpiry();
+    const hashedVerificationCode = await this.hashVerificationCode(verificationCode);
+    const verificationExpiry = this.getVerificationExpiry(claim.verificationMethod);
 
-    // Update claim with verification code
+    // Calculate expiry time for notification message
+    const expiryMinutes =
+      claim.verificationMethod === ClaimVerificationMethod.EMAIL ||
+      claim.verificationMethod === ClaimVerificationMethod.PHONE
+        ? this.VERIFICATION_CODE_EXPIRY_MINUTES_SHORT
+        : this.VERIFICATION_CODE_EXPIRY_HOURS_LONG * 60;
+
+    // Update claim with HASHED verification code (never store plain text)
     await this.vendorClaimRepository.update(claimId, {
       status: ClaimStatus.VERIFICATION_SENT,
-      verificationCode,
+      verificationCode: hashedVerificationCode,
       verificationExpiry,
     });
 
-    // Send the verification based on method
+    // Send the verification based on method (send PLAIN code to user)
     const vendorProfile = (claim as any).vendorProfile;
 
     switch (claim.verificationMethod) {
       case ClaimVerificationMethod.EMAIL:
         await this.sendEmailVerification(
           vendorProfile.contactEmail,
-          verificationCode,
+          verificationCode, // Send plain code
           vendorProfile.businessName,
+          expiryMinutes,
         );
         break;
       case ClaimVerificationMethod.PHONE:
-        await this.sendPhoneVerification(
-          vendorProfile.contactPhone,
-          verificationCode,
+        // Phone verification is not supported - reject
+        throw new BadRequestException(
+          'Phone verification is not currently available. Please use email or document verification.',
         );
-        break;
       case ClaimVerificationMethod.DOCUMENT:
         // For document verification, no code is sent - user uploads docs
         this.logger.log(
@@ -289,61 +443,59 @@ export class VendorClaimService {
   }
 
   /**
-   * Send email verification (placeholder - integrate with notification service)
+   * Send email verification via notification event
+   * The EmailNotificationListener picks up this event and sends via EmailService
    */
   private async sendEmailVerification(
     email: string,
     code: string,
     businessName: string,
+    expiryMinutes: number,
   ): Promise<void> {
-    // TODO: Integrate with notification/email service
     this.logger.log(
-      `Email verification would be sent to: ${email} with code: ${code} for business: ${businessName}`,
+      `Sending email verification to: ${email} for business: ${businessName} (expires in ${expiryMinutes} minutes)`,
     );
 
-    // Example event emission for notification service to pick up
+    // Emit event for EmailNotificationListener to handle
     this.eventEmitter.emit('notification.send', {
       type: 'CLAIM_VERIFICATION_EMAIL',
       recipient: email,
       data: {
         verificationCode: code,
         businessName,
-        expiresIn: `${this.VERIFICATION_CODE_EXPIRY_HOURS} hours`,
+        expiresIn: `${expiryMinutes} minutes`,
       },
     });
   }
 
-  /**
-   * Send phone verification (placeholder - integrate with SMS service)
-   */
-  private async sendPhoneVerification(
-    phone: string,
-    code: string,
-  ): Promise<void> {
-    // TODO: Integrate with SMS/OTP service
-    this.logger.log(
-      `Phone verification would be sent to: ${phone} with code: ${code}`,
-    );
-
-    // Example event emission for SMS service to pick up
-    this.eventEmitter.emit('notification.send', {
-      type: 'CLAIM_VERIFICATION_SMS',
-      recipient: phone,
-      data: {
-        verificationCode: code,
-        expiresIn: `${this.VERIFICATION_CODE_EXPIRY_HOURS} hours`,
-      },
-    });
-  }
 
   /**
    * Verify the code submitted by the user
+   * Includes rate limiting: max 5 attempts, then 15 minute lockout
+   * Uses bcrypt comparison for secure verification against hashed codes
    */
   async verifyCode(
     dto: VerifyClaimDto,
     userId: string,
   ): Promise<VendorClaimResponseDto> {
     this.logger.log(`Verifying code for claim: ${dto.claimId}`);
+
+    // Check if the claim is locked out due to too many failed attempts
+    const lockoutStatus = await this.checkVerificationAttemptLockout(dto.claimId);
+    if (lockoutStatus.locked) {
+      const minutesRemaining = lockoutStatus.lockoutExpiresAt
+        ? Math.ceil((lockoutStatus.lockoutExpiresAt.getTime() - Date.now()) / 60000)
+        : this.VERIFICATION_LOCKOUT_MINUTES;
+      const retryAfterSeconds = minutesRemaining * 60;
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          message: `Too many failed verification attempts. Please wait ${minutesRemaining} minutes before trying again.`,
+          retryAfter: retryAfterSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
 
     const claim = await this.vendorClaimRepository.findById(dto.claimId, {
       vendorProfile: true,
@@ -375,10 +527,48 @@ export class VendorClaimService {
       );
     }
 
-    // Verify code
-    if (claim.verificationCode !== dto.verificationCode) {
-      throw new BadRequestException('Invalid verification code');
+    // Verify code using bcrypt comparison (code is stored hashed)
+    if (!claim.verificationCode) {
+      throw new BadRequestException(
+        'No verification code found. Please request a new one.',
+      );
     }
+
+    const isCodeValid = await this.verifyHashedCode(
+      dto.verificationCode,
+      claim.verificationCode,
+    );
+
+    if (!isCodeValid) {
+      // Record failed attempt and check rate limit
+      const attemptResult = await this.recordVerificationAttempt(dto.claimId);
+
+      if (!attemptResult.allowed) {
+        const minutesRemaining = attemptResult.lockoutExpiresAt
+          ? Math.ceil((attemptResult.lockoutExpiresAt.getTime() - Date.now()) / 60000)
+          : this.VERIFICATION_LOCKOUT_MINUTES;
+        const retryAfterSeconds = minutesRemaining * 60;
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            message: `Too many failed verification attempts. Please wait ${minutesRemaining} minutes before trying again.`,
+            retryAfter: retryAfterSeconds,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+
+      const attemptsRemaining = attemptResult.attemptsRemaining;
+      this.logger.warn(
+        `Invalid verification code for claim ${dto.claimId}. Attempts remaining: ${attemptsRemaining}`,
+      );
+      throw new BadRequestException(
+        `Invalid verification code. ${attemptsRemaining} attempts remaining.`,
+      );
+    }
+
+    // Reset rate limit counter on successful verification
+    await this.resetVerificationAttempts(dto.claimId);
 
     // Update claim status to VERIFIED
     const updatedClaim = await this.vendorClaimRepository.update(dto.claimId, {
@@ -394,14 +584,9 @@ export class VendorClaimService {
 
     this.logger.log(`Claim verified: ${dto.claimId}`);
 
-    // For certain verification methods, auto-approve
-    if (
-      claim.verificationMethod === ClaimVerificationMethod.EMAIL ||
-      claim.verificationMethod === ClaimVerificationMethod.PHONE
-    ) {
-      // Auto-approve verified claims for EMAIL and PHONE methods
-      return this.approveClaim(dto.claimId, undefined, 'Auto-approved after verification');
-    }
+    // All claims must now go through admin review - no auto-approval
+    // Admin will review submitted documents and decide to approve or reject
+    this.logger.log(`Claim ${dto.claimId} awaiting admin review`);
 
     return this.mapToResponseDto(updatedClaim);
   }
@@ -452,12 +637,13 @@ export class VendorClaimService {
         include: { vendorProfile: true },
       });
 
-      // 2. Link userId to VendorProfile and update status to ACTIVE
+      // 2. Link userId to VendorProfile, update status to ACTIVE, and set plan to FREE
       await tx.vendorProfile.update({
         where: { id: claim.vendorProfileId },
         data: {
           userId: claim.userId,
           status: VendorStatus.ACTIVE,
+          planTier: PrismaPlanTier.FREE,
           verifiedAt: new Date(),
         },
       });
@@ -503,23 +689,23 @@ export class VendorClaimService {
       );
 
       if (!freePlan) {
-        this.logger.warn(
-          'No FREE subscription plan found, skipping subscription creation',
+        this.logger.error(
+          'No FREE subscription plan found - cannot create subscription for claimed vendor',
         );
-        return;
+        throw new Error('FREE subscription plan not found');
       }
 
-      // Get the price for the FREE plan (should be 0)
+      // Get the price for the FREE plan (must be amount = 0)
       const prices = await this.subscriptionPlanService.getPrices(freePlan.id);
-      const freePrice = prices.find(
-        (p: any) => p.amount === 0 || p.billingCycle === 'MONTHLY',
-      );
+      // Prioritize finding a free price (amount = 0), fallback to monthly
+      const freePrice = prices.find((p: any) => p.amount === 0) ||
+        prices.find((p: any) => p.billingCycle === 'MONTHLY');
 
       if (!freePrice) {
-        this.logger.warn(
-          'No price found for FREE plan, skipping subscription creation',
+        this.logger.error(
+          'No price found for FREE plan - cannot create subscription for claimed vendor',
         );
-        return;
+        throw new Error('FREE plan price not found');
       }
 
       // Check if vendor already has a subscription
@@ -530,25 +716,27 @@ export class VendorClaimService {
 
       if (existingSubscription) {
         this.logger.log(
-          `Vendor profile ${vendorProfileId} already has an active subscription`,
+          `Vendor profile ${vendorProfileId} already has an active subscription, skipping`,
         );
         return;
       }
 
-      // Create the subscription
-      await this.subscriptionService.create({
+      // Create the subscription linking vendor to FREE plan
+      const subscription = await this.subscriptionService.create({
         vendorProfileId,
         planId: freePlan.id,
         priceId: freePrice.id,
       });
 
       this.logger.log(
-        `Created FREE subscription for vendor profile: ${vendorProfileId}`,
+        `Created FREE subscription (${subscription.id}) for vendor profile: ${vendorProfileId}`,
       );
     } catch (error) {
-      // Don't fail the claim approval if subscription creation fails
+      // Log but don't fail the claim approval - planTier is already set on VendorProfile
+      // The subscription record is for billing tracking, planTier is the authoritative source
       this.logger.error(
         `Failed to create FREE subscription for vendor ${vendorProfileId}: ${error.message}`,
+        error.stack,
       );
     }
   }
@@ -791,13 +979,34 @@ export class VendorClaimService {
   /**
    * Initiate a guest claim for an UNCLAIMED vendor profile
    * This creates a verification record and sends a code to the user's email
+   * Includes IP-based rate limiting for resend protection
    */
   async initiateGuestClaim(
     dto: InitiateGuestClaimDto,
+    ipAddress?: string,
   ): Promise<GuestClaimInitiatedResponseDto> {
     this.logger.log(
       `Initiating guest claim for vendor profile: ${dto.vendorProfileId} with email: ${dto.email}`,
     );
+
+    // Check IP-based rate limit for code requests if IP address provided
+    if (ipAddress) {
+      const resendRateLimit = await this.checkResendRateLimit(ipAddress);
+      if (!resendRateLimit.allowed) {
+        const minutesUntilReset = Math.ceil(resendRateLimit.resetIn / 60);
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            message: `Too many verification code requests. Please wait ${minutesUntilReset} minutes before requesting another code.`,
+            retryAfter: resendRateLimit.resetIn,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      this.logger.debug(
+        `Guest claim rate limit: ${resendRateLimit.remaining} remaining for IP ${ipAddress}`,
+      );
+    }
 
     const normalizedEmail = dto.email.toLowerCase().trim();
 
@@ -858,28 +1067,36 @@ export class VendorClaimService {
       },
     });
 
-    // 5. Generate verification code and create record
+    // 5. Generate verification code, hash both code and password, and create record
     const verificationCode = this.generateVerificationCode();
+    const hashedVerificationCode = await this.hashVerificationCode(verificationCode);
     const verificationExpiry = new Date();
-    verificationExpiry.setMinutes(verificationExpiry.getMinutes() + 10); // 10 minutes expiry
+    verificationExpiry.setMinutes(
+      verificationExpiry.getMinutes() + this.VERIFICATION_CODE_EXPIRY_MINUTES_SHORT,
+    );
+
+    // Hash the password for secure storage
+    const passwordHash = await bcrypt.hash(dto.password, this.BCRYPT_SALT_ROUNDS);
 
     await this.prisma.guestClaimVerification.create({
       data: {
         vendorProfileId: dto.vendorProfileId,
         email: normalizedEmail,
-        verificationCode,
+        passwordHash,
+        verificationCode: hashedVerificationCode, // Store HASHED code
         verificationExpiry,
+        documentUrls: dto.documentUrls || [],
       },
     });
 
-    // 6. Send verification email
+    // 6. Send verification email with PLAIN code
     this.eventEmitter.emit('notification.send', {
       type: 'GUEST_CLAIM_VERIFICATION_EMAIL',
       recipient: normalizedEmail,
       data: {
-        verificationCode,
+        verificationCode, // Send PLAIN code to user
         businessName: vendorProfile.businessName,
-        expiresIn: '10 minutes',
+        expiresIn: `${this.VERIFICATION_CODE_EXPIRY_MINUTES_SHORT} minutes`,
       },
     });
 
@@ -898,6 +1115,8 @@ export class VendorClaimService {
   /**
    * Verify guest claim and create user account
    * This creates a user, links them to the vendor, and returns auth tokens
+   * Includes rate limiting: max 5 attempts, then lockout
+   * Uses bcrypt comparison for secure verification against hashed codes
    */
   async verifyGuestClaimAndCreateUser(
     dto: VerifyGuestClaimDto,
@@ -908,6 +1127,26 @@ export class VendorClaimService {
     );
 
     const normalizedEmail = dto.email.toLowerCase().trim();
+
+    // Create a unique key for rate limiting based on vendor + email
+    const rateLimitKey = `guest_claim:${dto.vendorProfileId}:${normalizedEmail}`;
+
+    // Check if locked out due to too many failed attempts
+    const lockoutStatus = await this.checkVerificationAttemptLockout(rateLimitKey);
+    if (lockoutStatus.locked) {
+      const minutesRemaining = lockoutStatus.lockoutExpiresAt
+        ? Math.ceil((lockoutStatus.lockoutExpiresAt.getTime() - Date.now()) / 60000)
+        : this.VERIFICATION_LOCKOUT_MINUTES;
+      const retryAfterSeconds = minutesRemaining * 60;
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          message: `Too many failed verification attempts. Please wait ${minutesRemaining} minutes before trying again.`,
+          retryAfter: retryAfterSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
 
     // 1. Find the verification record
     const verification = await this.prisma.guestClaimVerification.findFirst({
@@ -936,24 +1175,46 @@ export class VendorClaimService {
       );
     }
 
-    // 3. Check code
-    if (verification.verificationCode !== dto.verificationCode) {
-      // Increment attempts
-      const attempts = verification.attempts + 1;
-      if (attempts >= 5) {
+    // 3. Check code using bcrypt comparison (code is stored hashed)
+    const isCodeValid = await this.verifyHashedCode(
+      dto.verificationCode,
+      verification.verificationCode,
+    );
+
+    if (!isCodeValid) {
+      // Record failed attempt and check rate limit
+      const attemptResult = await this.recordVerificationAttempt(rateLimitKey);
+
+      if (!attemptResult.allowed) {
+        // Delete the verification record on lockout
         await this.prisma.guestClaimVerification.delete({
           where: { id: verification.id },
         });
-        throw new BadRequestException(
-          'Too many failed attempts. Please request a new verification code.',
+        const minutesRemaining = attemptResult.lockoutExpiresAt
+          ? Math.ceil((attemptResult.lockoutExpiresAt.getTime() - Date.now()) / 60000)
+          : this.VERIFICATION_LOCKOUT_MINUTES;
+        const retryAfterSeconds = minutesRemaining * 60;
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            message: `Too many failed verification attempts. Please wait ${minutesRemaining} minutes before trying again.`,
+            retryAfter: retryAfterSeconds,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
         );
       }
-      await this.prisma.guestClaimVerification.update({
-        where: { id: verification.id },
-        data: { attempts },
-      });
-      throw new BadRequestException('Invalid verification code');
+
+      const attemptsRemaining = attemptResult.attemptsRemaining;
+      this.logger.warn(
+        `Invalid guest claim verification code for ${normalizedEmail}. Attempts remaining: ${attemptsRemaining}`,
+      );
+      throw new BadRequestException(
+        `Invalid verification code. ${attemptsRemaining} attempts remaining.`,
+      );
     }
+
+    // Reset rate limit counter on successful verification
+    await this.resetVerificationAttempts(rateLimitKey);
 
     // 4. Verify vendor is still claimable
     const vendorProfile = verification.vendorProfile;
@@ -980,11 +1241,11 @@ export class VendorClaimService {
       );
     }
 
-    // 6. Create user account in a transaction
+    // 6. Create user account and PENDING claim in a transaction
+    // Vendor profile is NOT linked until admin approves the claim
     const result = await this.prisma.$transaction(async (tx) => {
-      // Generate a random password (user will reset it)
-      const tempPassword = randomBytes(16).toString('hex');
-      const passwordHash = await bcrypt.hash(tempPassword, 12);
+      // Use the password hash stored during claim initiation
+      const passwordHash = verification.passwordHash;
 
       // Get BUSINESS_ADMIN role
       const roleId = this.roleLookupService.getRoleIdByName(
@@ -995,7 +1256,7 @@ export class VendorClaimService {
         throw new Error('BUSINESS_ADMIN role not found');
       }
 
-      // Create user
+      // Create user account (can login but no vendor access yet)
       const user = await tx.user.create({
         data: {
           email: normalizedEmail,
@@ -1016,26 +1277,27 @@ export class VendorClaimService {
         },
       });
 
-      // Link vendor profile to user and update status
-      await tx.vendorProfile.update({
-        where: { id: dto.vendorProfileId },
-        data: {
-          userId: user.id,
-          status: VendorStatus.ACTIVE,
-          verifiedAt: new Date(),
-        },
-      });
+      // DO NOT link vendor profile yet - this happens on admin approval
+      // Vendor profile stays UNCLAIMED until approved
 
-      // Create a VendorClaim record for audit trail
-      await tx.vendorClaim.create({
+      // Create a PENDING VendorClaim - requires admin approval
+      const claim = await tx.vendorClaim.create({
         data: {
           vendorProfileId: dto.vendorProfileId,
           userId: user.id,
-          status: ClaimStatus.APPROVED,
+          status: ClaimStatus.PENDING, // PENDING - awaiting admin review
           verificationMethod: ClaimVerificationMethod.EMAIL,
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          reviewedAt: new Date(),
-          reviewNotes: 'Auto-approved via guest claim email verification',
+          // Create document records if documents were provided
+          documents: verification.documentUrls && verification.documentUrls.length > 0
+            ? {
+                create: verification.documentUrls.map((url: string) => ({
+                  type: 'OTHER' as const, // Default type, admin can verify
+                  url,
+                  status: 'PENDING' as const,
+                })),
+              }
+            : undefined,
         },
       });
 
@@ -1044,60 +1306,69 @@ export class VendorClaimService {
         where: { id: verification.id },
       });
 
-      return user;
+      return { user, claim };
     });
 
-    // 7. Create FREE subscription
-    await this.createFreeSubscription(dto.vendorProfileId, result.id);
+    // 7. DO NOT create subscription yet - that happens when admin approves
+    // Subscription will be created in approveClaim()
 
-    // 8. Generate auth tokens
-    const roles = result.userRoles.map((ur: any) => ur.role.name);
+    // 8. Generate auth tokens (user can login but has no vendor access yet)
+    const roles = result.user.userRoles.map((ur: any) => ur.role.name);
     const tokenPair = await this.tokenService.generateTokenPair(
       {
-        sub: result.id,
-        email: result.email,
+        sub: result.user.id,
+        email: result.user.email,
         roles,
-        tenantId: dto.vendorProfileId,
+        // NO tenantId yet - user doesn't own vendor until approved
       },
       context,
     );
 
-    // 9. Emit events
-    this.eventEmitter.emit(VENDOR_CLAIM_EVENTS.APPROVED, {
+    // 9. Emit claim initiated event (NOT approved yet)
+    this.eventEmitter.emit(VENDOR_CLAIM_EVENTS.INITIATED, {
+      claimId: result.claim.id,
       vendorProfileId: dto.vendorProfileId,
-      userId: result.id,
+      userId: result.user.id,
       claimMethod: 'GUEST_EMAIL',
     });
 
-    this.eventEmitter.emit('vendor.claimed', {
-      vendorProfileId: dto.vendorProfileId,
-      userId: result.id,
-      businessName: vendorProfile.businessName,
-    });
-
-    // 10. Send welcome email with password reset link
+    // 10. Send email notifying user their claim is pending review
     this.eventEmitter.emit('notification.send', {
-      type: 'VENDOR_CLAIM_SUCCESS',
+      type: 'VENDOR_CLAIM_PENDING_REVIEW',
       recipient: normalizedEmail,
       data: {
         businessName: vendorProfile.businessName,
+        claimId: result.claim.id,
+      },
+    });
+
+    // Notify admins about new claim for review
+    this.eventEmitter.emit('notification.send', {
+      type: 'ADMIN_NEW_CLAIM_FOR_REVIEW',
+      data: {
+        claimId: result.claim.id,
+        businessName: vendorProfile.businessName,
+        claimantEmail: normalizedEmail,
+        documentsCount: verification.documentUrls?.length || 0,
       },
     });
 
     this.logger.log(
-      `Guest claim successful - User ${result.id} now owns vendor ${dto.vendorProfileId}`,
+      `Guest claim submitted - User ${result.user.id} claim ${result.claim.id} pending review for vendor ${dto.vendorProfileId}`,
     );
 
     return {
       success: true,
-      message: 'Business claimed successfully! You are now logged in.',
-      userId: result.id,
+      message: 'Account created! Your claim is pending admin review. You will be notified once reviewed.',
+      userId: result.user.id,
       vendorProfileId: dto.vendorProfileId,
+      claimId: result.claim.id,
+      claimStatus: ClaimStatus.PENDING,
       accessToken: tokenPair.accessToken,
       refreshToken: tokenPair.refreshToken,
       user: {
-        id: result.id,
-        email: result.email,
+        id: result.user.id,
+        email: result.user.email,
         role: ROLE_NAMES.BUSINESS_ADMIN,
       },
     };
@@ -1105,12 +1376,34 @@ export class VendorClaimService {
 
   /**
    * Resend guest claim verification code
+   * Includes IP-based rate limiting (max 3 resends per hour per IP)
+   * Codes are hashed before storage
    */
   async resendGuestVerification(
     vendorProfileId: string,
     email: string,
+    ipAddress?: string,
   ): Promise<GuestClaimInitiatedResponseDto> {
     const normalizedEmail = email.toLowerCase().trim();
+
+    // Check IP-based rate limit for resend if IP address provided
+    if (ipAddress) {
+      const resendRateLimit = await this.checkResendRateLimit(ipAddress);
+      if (!resendRateLimit.allowed) {
+        const minutesUntilReset = Math.ceil(resendRateLimit.resetIn / 60);
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            message: `Too many verification code requests. Please wait ${minutesUntilReset} minutes before requesting another code.`,
+            retryAfter: resendRateLimit.resetIn,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      this.logger.debug(
+        `Guest resend rate limit: ${resendRateLimit.remaining} remaining for IP ${ipAddress}`,
+      );
+    }
 
     // Find existing verification
     const verification = await this.prisma.guestClaimVerification.findFirst({
@@ -1129,7 +1422,7 @@ export class VendorClaimService {
       );
     }
 
-    // Check if we can resend (rate limit - 1 minute)
+    // Check if we can resend (rate limit - 1 minute minimum between resends)
     const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
     if (verification.createdAt > oneMinuteAgo) {
       throw new BadRequestException(
@@ -1137,29 +1430,36 @@ export class VendorClaimService {
       );
     }
 
-    // Generate new code
+    // Generate new code and hash it
     const verificationCode = this.generateVerificationCode();
+    const hashedVerificationCode = await this.hashVerificationCode(verificationCode);
     const verificationExpiry = new Date();
-    verificationExpiry.setMinutes(verificationExpiry.getMinutes() + 10);
+    verificationExpiry.setMinutes(
+      verificationExpiry.getMinutes() + this.VERIFICATION_CODE_EXPIRY_MINUTES_SHORT,
+    );
 
     await this.prisma.guestClaimVerification.update({
       where: { id: verification.id },
       data: {
-        verificationCode,
+        verificationCode: hashedVerificationCode, // Store HASHED code
         verificationExpiry,
         attempts: 0,
         createdAt: new Date(),
       },
     });
 
-    // Send email
+    // Reset the verification attempt rate limit for this claim
+    const rateLimitKey = `guest_claim:${vendorProfileId}:${normalizedEmail}`;
+    await this.resetVerificationAttempts(rateLimitKey);
+
+    // Send email with PLAIN code
     this.eventEmitter.emit('notification.send', {
       type: 'GUEST_CLAIM_VERIFICATION_EMAIL',
       recipient: normalizedEmail,
       data: {
-        verificationCode,
+        verificationCode, // Send PLAIN code to user
         businessName: verification.vendorProfile.businessName,
-        expiresIn: '10 minutes',
+        expiresIn: `${this.VERIFICATION_CODE_EXPIRY_MINUTES_SHORT} minutes`,
       },
     });
 

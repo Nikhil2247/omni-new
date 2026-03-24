@@ -11,6 +11,10 @@ import {
   IsDate,
   IsEmail,
   Length,
+  MinLength,
+  MaxLength,
+  IsArray,
+  Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -238,6 +242,7 @@ export class PendingClaimsResponseDto {
 /**
  * Request DTO for initiating a guest claim
  * This is used when an unauthenticated user wants to claim a vendor profile
+ * User provides email, password, and business documents for admin verification
  */
 export class InitiateGuestClaimDto {
   @ApiProperty({
@@ -253,6 +258,30 @@ export class InitiateGuestClaimDto {
   })
   @IsEmail()
   email: string;
+
+  @ApiProperty({
+    description: 'Password for the new account (min 8 characters)',
+    example: 'SecureP@ss123',
+    minLength: 8,
+    maxLength: 128,
+  })
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @MaxLength(128)
+  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+    message: 'Password must contain uppercase, lowercase, and number/special character',
+  })
+  password: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of document URLs uploaded for business verification',
+    type: [String],
+    example: ['https://storage.example.com/docs/business-license.pdf'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  documentUrls?: string[];
 }
 
 /**
@@ -312,7 +341,7 @@ export class GuestClaimInitiatedResponseDto {
 
 /**
  * Response DTO for successful guest claim verification
- * Returns auth tokens so the user is immediately logged in
+ * Returns auth tokens so the user can login, but claim is pending admin approval
  */
 export class GuestClaimVerifiedResponseDto {
   @ApiProperty({
@@ -334,6 +363,17 @@ export class GuestClaimVerifiedResponseDto {
     description: 'Vendor profile ID that was claimed',
   })
   vendorProfileId: string;
+
+  @ApiProperty({
+    description: 'Claim ID for tracking the claim status',
+  })
+  claimId: string;
+
+  @ApiProperty({
+    description: 'Current status of the claim (PENDING = awaiting admin review)',
+    enum: ClaimStatus,
+  })
+  claimStatus: ClaimStatus;
 
   @ApiProperty({
     description: 'JWT access token for authentication',

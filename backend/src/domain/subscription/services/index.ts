@@ -25,3 +25,9 @@ export * from './invoice-generator.service';
 
 // Email services
 export * from './subscription-email.service';
+
+// Coupon services
+export * from './coupon.service';
+
+// Payment retry & dunning services
+export * from './payment-retry.service';

@@ -16,7 +16,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ClaimStatus } from '@prisma/client';
+import { ClaimStatus, DocumentStatus, DocumentType } from '@prisma/client';
 import { VendorClaimResponseDto } from '../../../domain/catalog/dto/vendor-claim.dto';
 
 // Re-export enum for convenience
@@ -128,12 +128,47 @@ export class AdminClaimUserDto {
   lastName?: string | null;
 }
 
+export class ClaimDocumentDto {
+  @ApiProperty({ description: 'Document ID' })
+  id: string;
+
+  @ApiProperty({ description: 'Document URL' })
+  url: string;
+
+  @ApiPropertyOptional({ description: 'Original file name' })
+  fileName?: string | null;
+
+  @ApiPropertyOptional({ description: 'File size in bytes' })
+  fileSize?: number | null;
+
+  @ApiPropertyOptional({ description: 'MIME type' })
+  mimeType?: string | null;
+
+  @ApiProperty({ description: 'Document type', enum: DocumentType })
+  type: DocumentType;
+
+  @ApiProperty({ description: 'Document verification status', enum: DocumentStatus })
+  status: DocumentStatus;
+
+  @ApiPropertyOptional({ description: 'When document was reviewed' })
+  reviewedAt?: Date | null;
+
+  @ApiPropertyOptional({ description: 'Reason for rejection if rejected' })
+  rejectionReason?: string | null;
+}
+
 export class AdminClaimResponseDto extends VendorClaimResponseDto {
   @ApiPropertyOptional({
     description: 'User details for the claimant',
     type: AdminClaimUserDto,
   })
   user?: AdminClaimUserDto;
+
+  @ApiPropertyOptional({
+    description: 'Documents submitted for claim verification',
+    type: [ClaimDocumentDto],
+  })
+  documents?: ClaimDocumentDto[];
 }
 
 export class ClaimStatusCountsDto {

@@ -93,42 +93,36 @@ async function upsertSystemConfigAndFlags() {
     })
   }
 
-  const flags = [
-    {
-      key: 'CORE_LAUNCH_ENABLED',
-      name: 'Core Launch',
-      description: 'Enable launch baseline modules',
-      enabled: true,
-    },
-    {
-      key: 'VENDOR_ONBOARDING_ENABLED',
-      name: 'Vendor Onboarding',
-      description: 'Enable vendor onboarding flows',
-      enabled: true,
-    },
-    {
-      key: 'MARKETING_BLOG_ENABLED',
-      name: 'Marketing Blog',
-      description: 'Enable blog and content workflows',
-      enabled: true,
-    },
-    {
-      key: 'OPS_DASHBOARD_ENABLED',
-      name: 'Ops Dashboard',
-      description: 'Enable operations dashboard',
-      enabled: true,
-    },
+  // Feature flags using consistent dot notation (matching feature-flags.seed.ts)
+  // These are the launch-essential flags that should be enabled
+  const launchFlags = [
+    { key: 'vendor.onboarding', enabled: true },
+    { key: 'vendor.claiming', enabled: true },
+    { key: 'vendor.portfolio', enabled: true },
+    { key: 'vendor.services', enabled: true },
+    { key: 'vendor.calendar', enabled: true },
+    { key: 'vendor.messaging', enabled: true },
+    { key: 'user.events', enabled: true },
+    { key: 'user.wishlists', enabled: true },
+    { key: 'user.messaging', enabled: true },
+    { key: 'user.reviews', enabled: true },
+    { key: 'system.search', enabled: true },
+    { key: 'system.notifications', enabled: true },
+    { key: 'marketing.featured_vendors', enabled: true },
   ]
 
-  for (const flag of flags) {
+  for (const flag of launchFlags) {
     await prisma.featureFlag.upsert({
       where: { key: flag.key },
-      update: {
-        name: flag.name,
-        description: flag.description,
+      update: { enabled: flag.enabled },
+      create: {
+        key: flag.key,
+        name: flag.key.split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
+        description: `Enable ${flag.key.replace('.', ' ')} feature`,
+        category: flag.key.split('.')[0],
         enabled: flag.enabled,
+        isSystem: true,
       },
-      create: flag,
     })
   }
 }

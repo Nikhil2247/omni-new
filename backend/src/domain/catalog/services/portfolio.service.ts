@@ -2,9 +2,9 @@
 // PORTFOLIO SERVICE - Catalog Domain
 // ============================================================================
 
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Portfolio, Prisma } from '@prisma/client';
+import { Portfolio, Prisma, CampaignStatus, CampaignType, VendorStatus } from '@prisma/client';
 import { PortfolioRepository } from '../repositories/portfolio.repository';
 import {
   CreatePortfolioDto,
@@ -15,6 +15,7 @@ import {
 } from '../dto/portfolio.dto';
 import { PrismaService } from '../../../core/database/prisma.service';
 import { PaginatedResult } from '../../../core/database/repositories/base.repository';
+import { UsageService } from '../../subscription/services/usage.service';
 
 @Injectable()
 export class PortfolioService {
@@ -24,10 +25,49 @@ export class PortfolioService {
     private readonly portfolioRepository: PortfolioRepository,
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly usageService: UsageService,
   ) {}
 
   async create(dto: CreatePortfolioDto): Promise<Portfolio> {
     this.logger.log(`Creating portfolio for vendor: ${dto.vendorProfileId}`);
+
+    // Check portfolios_limit before creating
+    try {
+      const limitStatus = await this.usageService.checkFeatureLimit(
+        dto.vendorProfileId,
+        'portfolios_limit',
+      );
+
+      if (!limitStatus.isUnlimited && limitStatus.limit > 0) {
+        // Get current portfolio count for this vendor
+        const currentCount = await this.prisma.portfolio.count({
+          where: { vendorProfileId: dto.vendorProfileId },
+        });
+
+        if (currentCount >= limitStatus.limit) {
+          throw new ForbiddenException({
+            message: 'Portfolio album limit reached',
+            error: 'PORTFOLIO_LIMIT_EXCEEDED',
+            details: {
+              currentCount,
+              limit: limitStatus.limit,
+              planUpgradeRequired: true,
+            },
+            userMessage: `You have reached the maximum of ${limitStatus.limit} portfolio albums on your current plan. Please upgrade your subscription to create more albums.`,
+          });
+        }
+
+        this.logger.debug(
+          `Portfolio limit check passed: ${currentCount}/${limitStatus.limit} albums used`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      // Log but don't block if usage service fails - graceful degradation for new vendors
+      this.logger.warn(`Failed to check portfolio limit: ${error.message}`);
+    }
 
     const portfolio = await this.portfolioRepository.create(
       {
@@ -143,7 +183,53 @@ export class PortfolioService {
       sortOrder?: number;
     },
   ) {
-    await this.findById(portfolioId);
+    // Get portfolio with vendor profile ID for limit check
+    const portfolio = await this.prisma.portfolio.findUnique({
+      where: { id: portfolioId },
+      select: { id: true, vendorProfileId: true },
+    });
+
+    if (!portfolio) {
+      throw new NotFoundException('Portfolio not found');
+    }
+
+    // Check images_per_album limit before adding
+    try {
+      const limitStatus = await this.usageService.checkFeatureLimit(
+        portfolio.vendorProfileId,
+        'images_per_album',
+      );
+
+      if (!limitStatus.isUnlimited && limitStatus.limit > 0) {
+        // Get current image count for this portfolio
+        const currentCount = await this.prisma.mediaItem.count({
+          where: { portfolioId },
+        });
+
+        if (currentCount >= limitStatus.limit) {
+          throw new ForbiddenException({
+            message: 'Images per album limit reached',
+            error: 'IMAGES_PER_ALBUM_LIMIT_EXCEEDED',
+            details: {
+              portfolioId,
+              currentCount,
+              limit: limitStatus.limit,
+              planUpgradeRequired: true,
+            },
+            userMessage: `You have reached the maximum of ${limitStatus.limit} images per album on your current plan. Please upgrade your subscription to add more images.`,
+          });
+        }
+
+        this.logger.debug(
+          `Images per album limit check passed: ${currentCount}/${limitStatus.limit} images in portfolio`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      this.logger.warn(`Failed to check images_per_album limit: ${error.message}`);
+    }
 
     const item = await this.prisma.mediaItem.create({
       data: {
@@ -220,7 +306,9 @@ export class PortfolioService {
     // Add vendor profile conditions if needed
     const vendorWhere = (where.portfolio as any)?.vendorProfile;
     if (vendorWhere) {
-      conditions.push('vp."status" = \'ACTIVE\'');
+      // Include ACTIVE and UNCLAIMED vendors (both claimed and unclaimed profiles)
+      // Cast to text to avoid PostgreSQL enum comparison issues
+      conditions.push('vp."status"::text IN (\'ACTIVE\', \'UNCLAIMED\')');
 
       if (vendorWhere.categoryId) {
         conditions.push(`vp."category_id" = '${vendorWhere.categoryId}'`);
@@ -267,11 +355,19 @@ export class PortfolioService {
         mi."height",
         mi."created_at" as "createdAt",
         p."id" as "portfolio_id",
+        p."title" as "portfolio_title",
+        p."description" as "portfolio_description",
         vp."id" as "vendor_id",
         vp."slug" as "vendor_slug",
         vp."business_name" as "vendor_businessName",
         vp."category_id" as "vendor_categoryId",
-        c."name" as "category_name"
+        vp."profile_photo_url" as "vendor_profilePhotoUrl",
+        vp."plan_tier" as "vendor_planTier",
+        vp."verified_at" as "vendor_verifiedAt",
+        vp."average_rating" as "vendor_averageRating",
+        vp."total_reviews" as "vendor_totalReviews",
+        c."name" as "category_name",
+        (SELECT COUNT(*) FROM "catalog"."media_items" m2 WHERE m2."portfolio_id" = p."id") as "portfolio_mediaCount"
       FROM "catalog"."media_items" mi
       INNER JOIN "catalog"."portfolios" p ON mi."portfolio_id" = p."id"
       INNER JOIN "catalog"."vendor_profiles" vp ON p."vendor_profile_id" = vp."id"
@@ -299,11 +395,19 @@ export class PortfolioService {
       createdAt: item.createdAt,
       portfolio: {
         id: item.portfolio_id,
+        title: item.portfolio_title,
+        description: item.portfolio_description,
+        mediaCount: Number(item.portfolio_mediaCount) || 0,
         vendorProfile: {
           id: item.vendor_id,
           slug: item.vendor_slug,
           businessName: item.vendor_businessName,
           categoryId: item.vendor_categoryId,
+          profilePhotoUrl: item.vendor_profilePhotoUrl,
+          planTier: item.vendor_planTier,
+          verifiedAt: item.vendor_verifiedAt,
+          averageRating: item.vendor_averageRating,
+          totalReviews: item.vendor_totalReviews,
           category: item.category_name ? {
             id: item.vendor_categoryId,
             name: item.category_name,
@@ -320,8 +424,10 @@ export class PortfolioService {
     const { query, categoryId, cityId, page = 1, limit = 24, orderBy = 'newest' } = dto;
 
     const vendorProfileWhere: Prisma.VendorProfileWhereInput = {
-      status: { in: ['ACTIVE', 'UNCLAIMED'] },
+      status: { in: [VendorStatus.ACTIVE, VendorStatus.UNCLAIMED] },
     };
+
+    this.logger.debug(`Public media feed request: orderBy=${orderBy}, page=${page}, limit=${limit}`);
 
     if (categoryId) {
       vendorProfileWhere.categoryId = categoryId;
@@ -402,6 +508,10 @@ export class PortfolioService {
             take: limit,
           }),
     ]);
+
+    this.logger.debug(
+      `Public media feed result: total=${total}, items=${items.length}, vendors=${new Set(items.map((i: any) => i.portfolio?.vendorProfile?.id || i.vendor_id)).size}`,
+    );
 
     const data: PortfolioMediaItemResponseDto[] = items.map((item) => ({
       id: item.id,

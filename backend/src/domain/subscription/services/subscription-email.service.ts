@@ -51,6 +51,24 @@ export interface PaymentReceiptContext extends SubscriptionEmailContext {
   totalAmount: number;
 }
 
+export interface UsageAlertContext {
+  userName: string;
+  userEmail: string;
+  featureName: string;
+  featureKey: string;
+  currentUsage: number;
+  limit: number;
+  usedPercent: number;
+  remaining: number;
+  isUnlimited?: boolean;
+  planName?: string;
+  upgradeUrl?: string;
+  dashboardUrl?: string;
+  eventName?: string; // For user event-specific alerts
+  eventId?: string;
+  unit?: string; // e.g., "MB", "uploads", "guests"
+}
+
 // ============================================================================
 // SERVICE
 // ============================================================================
@@ -203,6 +221,116 @@ export class SubscriptionEmailService {
       subject: `Your ${context.planName} Subscription Has Expired`,
       html: this.renderSubscriptionExpiredTemplate(context),
       text: this.renderSubscriptionExpiredTextTemplate(context),
+    });
+  }
+
+  /**
+   * Send usage limit approaching alert email (80%+ usage)
+   */
+  async sendUsageLimitApproachingEmail(
+    context: UsageAlertContext,
+  ): Promise<EmailResult> {
+    this.logger.log(
+      `Sending usage limit approaching email to ${context.userEmail} for ${context.featureKey}`,
+    );
+
+    const subject = context.eventName
+      ? `Usage Alert: ${context.featureName} at ${context.usedPercent}% for ${context.eventName}`
+      : `Usage Alert: ${context.featureName} at ${context.usedPercent}%`;
+
+    return this.emailService.send({
+      to: context.userEmail,
+      subject,
+      html: this.renderUsageLimitApproachingTemplate(context),
+      text: this.renderUsageLimitApproachingTextTemplate(context),
+    });
+  }
+
+  /**
+   * Send usage limit reached alert email (100% usage)
+   */
+  async sendUsageLimitReachedEmail(
+    context: UsageAlertContext,
+  ): Promise<EmailResult> {
+    this.logger.log(
+      `Sending usage limit reached email to ${context.userEmail} for ${context.featureKey}`,
+    );
+
+    const subject = context.eventName
+      ? `Limit Reached: ${context.featureName} for ${context.eventName}`
+      : `Limit Reached: ${context.featureName}`;
+
+    return this.emailService.send({
+      to: context.userEmail,
+      subject,
+      html: this.renderUsageLimitReachedTemplate(context),
+      text: this.renderUsageLimitReachedTextTemplate(context),
+    });
+  }
+
+  /**
+   * Send storage limit approaching alert email
+   */
+  async sendStorageLimitApproachingEmail(
+    context: UsageAlertContext,
+  ): Promise<EmailResult> {
+    this.logger.log(
+      `Sending storage limit approaching email to ${context.userEmail}`,
+    );
+
+    const subject = context.eventName
+      ? `Storage Alert: ${context.usedPercent}% used for ${context.eventName}`
+      : `Storage Alert: ${context.usedPercent}% of storage used`;
+
+    return this.emailService.send({
+      to: context.userEmail,
+      subject,
+      html: this.renderStorageLimitApproachingTemplate(context),
+      text: this.renderStorageLimitApproachingTextTemplate(context),
+    });
+  }
+
+  /**
+   * Send storage limit reached alert email
+   */
+  async sendStorageLimitReachedEmail(
+    context: UsageAlertContext,
+  ): Promise<EmailResult> {
+    this.logger.log(
+      `Sending storage limit reached email to ${context.userEmail}`,
+    );
+
+    const subject = context.eventName
+      ? `Storage Full: ${context.eventName}`
+      : `Storage Full: Unable to upload new files`;
+
+    return this.emailService.send({
+      to: context.userEmail,
+      subject,
+      html: this.renderStorageLimitReachedTemplate(context),
+      text: this.renderStorageLimitReachedTextTemplate(context),
+    });
+  }
+
+  /**
+   * Send auto-renew status changed email
+   */
+  async sendAutoRenewStatusEmail(
+    context: SubscriptionEmailContext & { autoRenewEnabled: boolean },
+  ): Promise<EmailResult> {
+    this.logger.log(
+      `Sending auto-renew ${context.autoRenewEnabled ? 'enabled' : 'disabled'} email to ${context.userEmail}`,
+    );
+
+    const subject = context.autoRenewEnabled
+      ? `Auto-Renewal Enabled for ${context.planName}`
+      : `Auto-Renewal Disabled for ${context.planName}`;
+
+    return this.emailService.send({
+      to: context.userEmail,
+      subject,
+      html: this.renderAutoRenewStatusTemplate(context),
+      text: this.renderAutoRenewStatusTextTemplate(context),
     });
   }
 
@@ -813,6 +941,369 @@ We'd love to have you back! Resubscribe to regain access to all premium features
 ${context.upgradeUrl || `${this.frontendUrl}/pricing`}
 
 If you have any questions or need assistance, please don't hesitate to contact our support team.
+
+Best regards,
+The Omnicassion Team
+
+Support: ${this.supportEmail}
+    `.trim();
+  }
+
+  // ============================================================================
+  // USAGE ALERT TEMPLATES - HTML
+  // ============================================================================
+
+  private renderUsageLimitApproachingTemplate(context: UsageAlertContext): string {
+    const upgradeUrl = context.upgradeUrl || `${this.frontendUrl}/pricing`;
+    const dashboardUrl = context.dashboardUrl || `${this.frontendUrl}/dashboard`;
+    const unit = context.unit || '';
+
+    const content = `
+    <div class="header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+      <h1>Usage Alert</h1>
+    </div>
+    <div class="content">
+      <p>Hi ${context.userName},</p>
+      <p>You're approaching your <strong>${context.featureName}</strong> limit${context.eventName ? ` for <strong>${context.eventName}</strong>` : ''}.</p>
+
+      <div class="warning-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+        <p style="color: #92400e;"><strong>${context.usedPercent}% of your limit has been used</strong></p>
+      </div>
+
+      <div class="highlight-box">
+        <p><strong>Usage Details:</strong></p>
+        <div class="detail-row">
+          <span class="detail-label">Feature</span>
+          <span class="detail-value">${context.featureName}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Current Usage</span>
+          <span class="detail-value">${context.currentUsage}${unit} / ${context.limit}${unit}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Remaining</span>
+          <span class="detail-value">${context.remaining}${unit}</span>
+        </div>
+        ${context.planName ? `
+        <div class="detail-row">
+          <span class="detail-label">Current Plan</span>
+          <span class="detail-value">${context.planName}</span>
+        </div>
+        ` : ''}
+      </div>
+
+      <p>To avoid interruption, consider upgrading your plan for higher limits:</p>
+      <p><a href="${upgradeUrl}" class="button">Upgrade Plan</a></p>
+      <p><a href="${dashboardUrl}" class="button button-secondary">View Dashboard</a></p>
+
+      <p>Best regards,<br>The Omnicassion Team</p>
+    </div>
+    `;
+
+    return this.wrapInLayout(content, 'Usage Alert');
+  }
+
+  private renderUsageLimitReachedTemplate(context: UsageAlertContext): string {
+    const upgradeUrl = context.upgradeUrl || `${this.frontendUrl}/pricing`;
+    const unit = context.unit || '';
+
+    const content = `
+    <div class="header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+      <h1>Limit Reached</h1>
+    </div>
+    <div class="content">
+      <p>Hi ${context.userName},</p>
+      <p>You've reached your <strong>${context.featureName}</strong> limit${context.eventName ? ` for <strong>${context.eventName}</strong>` : ''}.</p>
+
+      <div class="warning-box">
+        <p><strong>Action Required:</strong> You've used 100% of your ${context.featureName.toLowerCase()} allowance. Upgrade your plan to continue using this feature.</p>
+      </div>
+
+      <div class="highlight-box">
+        <p><strong>Usage Details:</strong></p>
+        <div class="detail-row">
+          <span class="detail-label">Feature</span>
+          <span class="detail-value">${context.featureName}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Usage</span>
+          <span class="detail-value">${context.currentUsage}${unit} / ${context.limit}${unit} (100%)</span>
+        </div>
+        ${context.planName ? `
+        <div class="detail-row">
+          <span class="detail-label">Current Plan</span>
+          <span class="detail-value">${context.planName}</span>
+        </div>
+        ` : ''}
+      </div>
+
+      <p>Upgrade now to get higher limits and continue without interruption:</p>
+      <p><a href="${upgradeUrl}" class="button">Upgrade Plan</a></p>
+
+      <p>Best regards,<br>The Omnicassion Team</p>
+    </div>
+    `;
+
+    return this.wrapInLayout(content, 'Limit Reached');
+  }
+
+  private renderStorageLimitApproachingTemplate(context: UsageAlertContext): string {
+    const upgradeUrl = context.upgradeUrl || `${this.frontendUrl}/pricing`;
+
+    const content = `
+    <div class="header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+      <h1>Storage Alert</h1>
+    </div>
+    <div class="content">
+      <p>Hi ${context.userName},</p>
+      <p>Your storage is running low${context.eventName ? ` for <strong>${context.eventName}</strong>` : ''}.</p>
+
+      <div class="warning-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+        <p style="color: #92400e;"><strong>${context.usedPercent}% of your storage has been used</strong></p>
+      </div>
+
+      <div class="highlight-box">
+        <p><strong>Storage Details:</strong></p>
+        <div class="detail-row">
+          <span class="detail-label">Used Storage</span>
+          <span class="detail-value">${context.currentUsage} MB</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Total Storage</span>
+          <span class="detail-value">${context.limit} MB</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Remaining</span>
+          <span class="detail-value">${context.remaining} MB</span>
+        </div>
+      </div>
+
+      <p>Upgrade your plan for more storage space:</p>
+      <p><a href="${upgradeUrl}" class="button">Upgrade Plan</a></p>
+
+      <p>Best regards,<br>The Omnicassion Team</p>
+    </div>
+    `;
+
+    return this.wrapInLayout(content, 'Storage Alert');
+  }
+
+  private renderStorageLimitReachedTemplate(context: UsageAlertContext): string {
+    const upgradeUrl = context.upgradeUrl || `${this.frontendUrl}/pricing`;
+
+    const content = `
+    <div class="header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+      <h1>Storage Full</h1>
+    </div>
+    <div class="content">
+      <p>Hi ${context.userName},</p>
+      <p>Your storage is full${context.eventName ? ` for <strong>${context.eventName}</strong>` : ''}. New uploads will be blocked until you free up space or upgrade your plan.</p>
+
+      <div class="warning-box">
+        <p><strong>Action Required:</strong> Your storage limit of ${context.limit} MB has been reached. Upgrade to continue uploading files.</p>
+      </div>
+
+      <div class="highlight-box">
+        <p><strong>Storage Details:</strong></p>
+        <div class="detail-row">
+          <span class="detail-label">Used Storage</span>
+          <span class="detail-value">${context.currentUsage} MB</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Total Storage</span>
+          <span class="detail-value">${context.limit} MB</span>
+        </div>
+      </div>
+
+      <p>Upgrade now for more storage:</p>
+      <p><a href="${upgradeUrl}" class="button">Upgrade Plan</a></p>
+
+      <p>Best regards,<br>The Omnicassion Team</p>
+    </div>
+    `;
+
+    return this.wrapInLayout(content, 'Storage Full');
+  }
+
+  private renderAutoRenewStatusTemplate(
+    context: SubscriptionEmailContext & { autoRenewEnabled: boolean },
+  ): string {
+    const billingUrl = context.billingUrl || `${this.frontendUrl}/settings/subscription`;
+
+    const content = `
+    <div class="header">
+      <h1>Auto-Renewal ${context.autoRenewEnabled ? 'Enabled' : 'Disabled'}</h1>
+    </div>
+    <div class="content">
+      <p>Hi ${context.userName},</p>
+
+      ${context.autoRenewEnabled ? `
+      <p>Auto-renewal has been <strong>enabled</strong> for your <strong>${context.planName}</strong> subscription.</p>
+
+      <div class="success-box">
+        <p>Your subscription will automatically renew at the end of each billing period. No action is required on your part.</p>
+      </div>
+      ` : `
+      <p>Auto-renewal has been <strong>disabled</strong> for your <strong>${context.planName}</strong> subscription.</p>
+
+      <div class="warning-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
+        <p style="color: #92400e;"><strong>Important:</strong> Your subscription will not renew automatically. Make sure to manually renew before your current period ends to avoid losing access to premium features.</p>
+      </div>
+      `}
+
+      <div class="highlight-box">
+        <p><strong>Subscription Details:</strong></p>
+        <div class="detail-row">
+          <span class="detail-label">Plan</span>
+          <span class="detail-value">${context.planName}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Auto-Renewal</span>
+          <span class="detail-value">${context.autoRenewEnabled ? 'Enabled' : 'Disabled'}</span>
+        </div>
+        ${context.nextBillingDate ? `
+        <div class="detail-row">
+          <span class="detail-label">${context.autoRenewEnabled ? 'Next Renewal' : 'Current Period Ends'}</span>
+          <span class="detail-value">${this.formatDate(context.nextBillingDate)}</span>
+        </div>
+        ` : ''}
+      </div>
+
+      <p><a href="${billingUrl}" class="button">Manage Subscription</a></p>
+
+      <p>Best regards,<br>The Omnicassion Team</p>
+    </div>
+    `;
+
+    return this.wrapInLayout(content, `Auto-Renewal ${context.autoRenewEnabled ? 'Enabled' : 'Disabled'}`);
+  }
+
+  // ============================================================================
+  // USAGE ALERT TEMPLATES - PLAIN TEXT
+  // ============================================================================
+
+  private renderUsageLimitApproachingTextTemplate(context: UsageAlertContext): string {
+    const unit = context.unit || '';
+    return `
+Usage Alert: ${context.featureName} at ${context.usedPercent}%
+
+Hi ${context.userName},
+
+You're approaching your ${context.featureName} limit${context.eventName ? ` for ${context.eventName}` : ''}.
+
+${context.usedPercent}% of your limit has been used.
+
+Usage Details:
+- Feature: ${context.featureName}
+- Current Usage: ${context.currentUsage}${unit} / ${context.limit}${unit}
+- Remaining: ${context.remaining}${unit}
+${context.planName ? `- Current Plan: ${context.planName}` : ''}
+
+To avoid interruption, consider upgrading your plan:
+${context.upgradeUrl || `${this.frontendUrl}/pricing`}
+
+Best regards,
+The Omnicassion Team
+
+Support: ${this.supportEmail}
+    `.trim();
+  }
+
+  private renderUsageLimitReachedTextTemplate(context: UsageAlertContext): string {
+    const unit = context.unit || '';
+    return `
+Limit Reached: ${context.featureName}
+
+Hi ${context.userName},
+
+You've reached your ${context.featureName} limit${context.eventName ? ` for ${context.eventName}` : ''}.
+
+Action Required: You've used 100% of your ${context.featureName.toLowerCase()} allowance.
+
+Usage Details:
+- Feature: ${context.featureName}
+- Usage: ${context.currentUsage}${unit} / ${context.limit}${unit} (100%)
+${context.planName ? `- Current Plan: ${context.planName}` : ''}
+
+Upgrade now to get higher limits:
+${context.upgradeUrl || `${this.frontendUrl}/pricing`}
+
+Best regards,
+The Omnicassion Team
+
+Support: ${this.supportEmail}
+    `.trim();
+  }
+
+  private renderStorageLimitApproachingTextTemplate(context: UsageAlertContext): string {
+    return `
+Storage Alert: ${context.usedPercent}% used
+
+Hi ${context.userName},
+
+Your storage is running low${context.eventName ? ` for ${context.eventName}` : ''}.
+
+${context.usedPercent}% of your storage has been used.
+
+Storage Details:
+- Used: ${context.currentUsage} MB
+- Total: ${context.limit} MB
+- Remaining: ${context.remaining} MB
+
+Upgrade your plan for more storage:
+${context.upgradeUrl || `${this.frontendUrl}/pricing`}
+
+Best regards,
+The Omnicassion Team
+
+Support: ${this.supportEmail}
+    `.trim();
+  }
+
+  private renderStorageLimitReachedTextTemplate(context: UsageAlertContext): string {
+    return `
+Storage Full
+
+Hi ${context.userName},
+
+Your storage is full${context.eventName ? ` for ${context.eventName}` : ''}. New uploads will be blocked.
+
+Action Required: Your storage limit of ${context.limit} MB has been reached.
+
+Storage Details:
+- Used: ${context.currentUsage} MB
+- Total: ${context.limit} MB
+
+Upgrade now for more storage:
+${context.upgradeUrl || `${this.frontendUrl}/pricing`}
+
+Best regards,
+The Omnicassion Team
+
+Support: ${this.supportEmail}
+    `.trim();
+  }
+
+  private renderAutoRenewStatusTextTemplate(
+    context: SubscriptionEmailContext & { autoRenewEnabled: boolean },
+  ): string {
+    return `
+Auto-Renewal ${context.autoRenewEnabled ? 'Enabled' : 'Disabled'}
+
+Hi ${context.userName},
+
+Auto-renewal has been ${context.autoRenewEnabled ? 'enabled' : 'disabled'} for your ${context.planName} subscription.
+
+${context.autoRenewEnabled
+  ? 'Your subscription will automatically renew at the end of each billing period. No action is required on your part.'
+  : 'Important: Your subscription will not renew automatically. Make sure to manually renew before your current period ends to avoid losing access to premium features.'}
+
+Subscription Details:
+- Plan: ${context.planName}
+- Auto-Renewal: ${context.autoRenewEnabled ? 'Enabled' : 'Disabled'}
+${context.nextBillingDate ? `- ${context.autoRenewEnabled ? 'Next Renewal' : 'Current Period Ends'}: ${this.formatDate(context.nextBillingDate)}` : ''}
+
+Manage your subscription: ${context.billingUrl || `${this.frontendUrl}/settings/subscription`}
 
 Best regards,
 The Omnicassion Team

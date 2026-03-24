@@ -31,6 +31,12 @@ export class FeatureFlagController {
     return this.featureFlags.list();
   }
 
+  @Get('key/:key')
+  @ApiOperation({ summary: 'Get a feature flag by key' })
+  getByKey(@Param('key') key: string) {
+    return this.featureFlags.getByKey(key);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a feature flag' })
   create(@Body() dto: CreateFeatureFlagDto) {

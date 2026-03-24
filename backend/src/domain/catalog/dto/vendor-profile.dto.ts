@@ -378,6 +378,17 @@ export class VendorProfileResponseDto {
   })
   isFollowing?: boolean;
 
+  @ApiPropertyOptional({
+    description: 'Vendor subscription plan tier',
+    enum: ['FREE', 'PROFESSIONAL', 'ENTERPRISE'],
+  })
+  planTier?: string;
+
+  @ApiPropertyOptional({
+    description: 'Search boost score (0-100)',
+  })
+  searchBoost?: number;
+
   @ApiProperty()
   createdAt: Date;
 

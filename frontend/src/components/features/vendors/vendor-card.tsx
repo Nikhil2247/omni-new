@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Heart, MapPin, Star, ArrowRight, CheckCircle2, Sparkles, UserPlus, UserCheck } from 'lucide-react'
+import { Heart, MapPin, Star, ArrowRight, CheckCircle2, Sparkles, UserPlus, UserCheck, Crown, Award } from 'lucide-react'
 import { toast } from 'sonner'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
 import { useAuthStore } from '@/store/auth-store'
@@ -81,6 +81,8 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
 
   const isVerified = !!vendor.verifiedAt
   const isFeatured = vendor.featuredUntil && new Date(vendor.featuredUntil) > new Date()
+  const isPremium = vendor.planTier === 'ENTERPRISE'
+  const isPro = vendor.planTier === 'PROFESSIONAL' || vendor.planTier === 'ENTERPRISE'
 
   const reviewCount = vendor.reviewsCount ?? 0
   const averageRating =
@@ -269,9 +271,21 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
             </TooltipProvider>
           </div>
 
-          {/* Featured/Verified Badge */}
-          {(isFeatured || isVerified) && (
-            <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3">
+          {/* Plan/Featured Badges */}
+          {(isPremium || isPro || isFeatured) && (
+            <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 flex flex-col gap-1 items-end">
+              {isPremium && (
+                <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold shadow-lg flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  Premium
+                </span>
+              )}
+              {isPro && !isPremium && (
+                <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold shadow-lg flex items-center gap-1">
+                  <Award className="w-3 h-3" />
+                  Pro
+                </span>
+              )}
               {isFeatured && (
                 <span className="bg-primary text-white text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold shadow-lg flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />

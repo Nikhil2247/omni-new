@@ -6,7 +6,9 @@ import {
   CheckCircle,
   Clock,
   Eye,
+  ExternalLink,
   FileCheck,
+  FileText,
   RefreshCcw,
   ShieldCheck,
   XCircle,
@@ -315,16 +317,38 @@ export default function AdminClaimsPage() {
           </DialogHeader>
           {selectedClaim && (
             <div className="space-y-4">
+              {/* Business Info */}
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">Business Name</Label>
+                    <p className="font-semibold text-lg">
+                      {selectedClaim.vendorProfile?.businessName || 'Unknown'}
+                    </p>
+                    {selectedClaim.vendorProfile?.slug && (
+                      <p className="text-xs text-muted-foreground">/{selectedClaim.vendorProfile.slug}</p>
+                    )}
+                  </div>
+                  {selectedClaim.vendorProfile?.contactEmail && (
+                    <div>
+                      <Label className="text-muted-foreground">Business Email</Label>
+                      <p className="text-sm">{selectedClaim.vendorProfile.contactEmail}</p>
+                    </div>
+                  )}
+                  {selectedClaim.vendorProfile?.contactPhone && (
+                    <div>
+                      <Label className="text-muted-foreground">Business Phone</Label>
+                      <p className="text-sm">{selectedClaim.vendorProfile.contactPhone}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Claim Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Business Name</Label>
-                  <p className="font-semibold">
-                    {selectedClaim.vendorProfile?.businessName || 'Unknown'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Status</Label>
-                  <div>
+                  <Label className="text-muted-foreground">Claim Status</Label>
+                  <div className="mt-1">
                     <Badge
                       variant="outline"
                       className={STATUS_BADGE_STYLES[selectedClaim.status]}
@@ -334,25 +358,22 @@ export default function AdminClaimsPage() {
                   </div>
                 </div>
                 <div>
+                  <Label className="text-muted-foreground">Verification Method</Label>
+                  <p className="text-sm">
+                    {VERIFICATION_METHOD_LABELS[selectedClaim.verificationMethod]}
+                  </p>
+                </div>
+                <div>
                   <Label className="text-muted-foreground">Claimant</Label>
                   <p className="text-sm">
                     {selectedClaim.user?.firstName || selectedClaim.user?.lastName
                       ? `${selectedClaim.user?.firstName ?? ''} ${selectedClaim.user?.lastName ?? ''}`.trim()
                       : selectedClaim.user?.email || 'Unknown'}
                   </p>
-                  {selectedClaim.user?.email && selectedClaim.user?.firstName && (
+                  {selectedClaim.user?.email && (selectedClaim.user?.firstName || selectedClaim.user?.lastName) && (
                     <p className="text-xs text-muted-foreground">{selectedClaim.user.email}</p>
                   )}
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Verification Method</Label>
-                  <p className="text-sm">
-                    {VERIFICATION_METHOD_LABELS[selectedClaim.verificationMethod]}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Created At</Label>
                   <p className="text-sm">{formatDate(selectedClaim.createdAt)}</p>
@@ -385,6 +406,69 @@ export default function AdminClaimsPage() {
                       Approved on {formatDate(selectedClaim.reviewedAt)}
                     </p>
                   )}
+                </div>
+              )}
+
+              {/* Documents Section */}
+              {selectedClaim.documents && selectedClaim.documents.length > 0 && (
+                <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">Supporting Documents</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {selectedClaim.documents.length} file{selectedClaim.documents.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {selectedClaim.documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between rounded-md border bg-background p-3 hover:bg-muted/50"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {doc.fileName || getFileNameFromUrl(doc.url)}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span className="capitalize">{doc.type?.toLowerCase().replace('_', ' ')}</span>
+                              {doc.fileSize && (
+                                <span>({(doc.fileSize / 1024).toFixed(1)} KB)</span>
+                              )}
+                              {doc.status === 'VERIFIED' && (
+                                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                                  Verified
+                                </Badge>
+                              )}
+                              {doc.status === 'REJECTED' && (
+                                <Badge variant="outline" className="bg-red-500/10 text-red-700 border-red-500/20">
+                                  Rejected
+                                </Badge>
+                              )}
+                              {doc.status === 'PENDING' && (
+                                <Badge variant="outline" className="bg-gray-500/10 text-gray-700 border-gray-500/20">
+                                  Pending
+                                </Badge>
+                              )}
+                            </div>
+                            {doc.rejectionReason && doc.status === 'REJECTED' && (
+                              <p className="mt-1 text-xs text-destructive">
+                                {doc.rejectionReason}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-2 shrink-0"
+                          onClick={() => window.open(doc.url, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -702,4 +786,16 @@ function formatDate(value: string) {
     return '---'
   }
   return format(date, 'MMM d, yyyy h:mm a')
+}
+
+function getFileNameFromUrl(url: string, fallback = 'Document'): string {
+  try {
+    const pathname = new URL(url).pathname
+    const fileName = decodeURIComponent(pathname.split('/').pop() || '')
+    // Remove UUID prefix if present (e.g., "1774337802945-29175e70-8858-49ce-a8ee-f162cddae8ca.png")
+    const cleanName = fileName.replace(/^\d+-[a-f0-9-]+\./, '.')
+    return cleanName.length > 1 ? cleanName : fileName || fallback
+  } catch {
+    return fallback
+  }
 }

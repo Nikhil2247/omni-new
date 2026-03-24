@@ -118,26 +118,65 @@ export class GuestUploadController {
     const ownerId = (memory.event as any)?.userId;
 
     if (eventId && ownerId) {
+      // Check upload count limit
       try {
-        const status = await this.userUsageService.checkFeatureLimit(
+        const uploadCountStatus = await this.userUsageService.checkFeatureLimit(
           ownerId,
           eventId,
           'memory_uploads_per_event',
         );
 
-        if (!status.isUnlimited && status.remaining <= 0) {
-          throw new ForbiddenException(
-            'The event owner has reached the upload limit for this event. ' +
-              'Please contact the event organizer.',
-          );
+        if (!uploadCountStatus.isUnlimited && uploadCountStatus.remaining <= 0) {
+          throw new ForbiddenException({
+            message: 'Upload limit reached',
+            error: 'MEMORY_UPLOADS_LIMIT_EXCEEDED',
+            details: {
+              eventId,
+              currentCount: uploadCountStatus.used,
+              limit: uploadCountStatus.limit,
+              planUpgradeRequired: true,
+            },
+            userMessage: `The event has reached its upload limit of ${uploadCountStatus.limit} files. Please contact the event organizer to upgrade their plan.`,
+          });
         }
       } catch (error) {
-        // Log but don't block if usage service fails - graceful degradation
         if (error instanceof ForbiddenException) {
           throw error;
         }
         this.logger.warn(
-          `Failed to check upload limit for event ${eventId}: ${error.message}`,
+          `Failed to check upload count limit for event ${eventId}: ${error.message}`,
+        );
+      }
+
+      // Check storage limit
+      try {
+        const storageStatus = await this.userUsageService.checkStorageLimit(
+          ownerId,
+          eventId,
+          file.size,
+        );
+
+        if (!storageStatus.isUnlimited && !storageStatus.allowed) {
+          throw new ForbiddenException({
+            message: 'Storage limit reached',
+            error: 'MEMORY_STORAGE_LIMIT_EXCEEDED',
+            details: {
+              eventId,
+              currentUsageMB: Math.round(storageStatus.currentUsageMB * 100) / 100,
+              limitMB: storageStatus.limitMB,
+              remainingMB: Math.round(storageStatus.remainingMB * 100) / 100,
+              fileSizeMB: Math.round(storageStatus.fileSizeMB * 100) / 100,
+              planUpgradeRequired: true,
+            },
+            userMessage: `The event has reached its storage limit of ${storageStatus.limitMB}MB (used: ${Math.round(storageStatus.currentUsageMB)}MB). This file (${Math.round(storageStatus.fileSizeMB * 100) / 100}MB) cannot be uploaded. Please contact the event organizer.`,
+          });
+        }
+      } catch (error) {
+        if (error instanceof ForbiddenException) {
+          throw error;
+        }
+        this.logger.warn(
+          `Failed to check storage limit for event ${eventId}: ${error.message}`,
         );
       }
     }
@@ -184,6 +223,7 @@ export class GuestUploadController {
 
     // Record usage for event owner after successful upload
     if (eventId && ownerId) {
+      // Record upload count
       try {
         await this.userUsageService.recordUsage(
           ownerId,
@@ -192,9 +232,21 @@ export class GuestUploadController {
           1,
         );
       } catch (error) {
-        // Log but don't fail the upload if usage recording fails
         this.logger.warn(
-          `Failed to record upload usage for event ${eventId}: ${error.message}`,
+          `Failed to record upload count for event ${eventId}: ${error.message}`,
+        );
+      }
+
+      // Record storage usage
+      try {
+        await this.userUsageService.recordStorageUsage(
+          ownerId,
+          eventId,
+          guestUpload.fileSize || file.size,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Failed to record storage usage for event ${eventId}: ${error.message}`,
         );
       }
     }

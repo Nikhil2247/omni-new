@@ -87,6 +87,45 @@ const normalizePaginated = <T>(
   }
 }
 
+const toPaginatedResponse = <T>(
+  payload: unknown,
+): PaginatedResponse<T> => {
+  if (
+    payload &&
+    typeof payload === 'object' &&
+    Array.isArray((payload as { data?: unknown }).data)
+  ) {
+    return payload as PaginatedResponse<T>
+  }
+
+  if (Array.isArray(payload)) {
+    const data = payload as T[]
+    return {
+      data,
+      meta: {
+        total: data.length,
+        page: 1,
+        limit: data.length,
+        totalPages: data.length > 0 ? 1 : 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    }
+  }
+
+  return {
+    data: [],
+    meta: {
+      total: 0,
+      page: 1,
+      limit: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+  }
+}
+
 export const publicService = {
   getVendors: async (
     params: VendorSearchParams = {},
@@ -117,7 +156,22 @@ export const publicService = {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.DISCOVERY.MEDIA, {
       params,
     })
-    return normalizePaginated(data, normalizeDiscoveryMedia)
+    // Supports both shapes:
+    // 1) { success, data: [...], meta }
+    // 2) { success, data: { data: [...], meta }, meta }
+    // 3) { data: [...], meta }
+    const envelopeData = data?.data
+    const paginatedLike =
+      envelopeData &&
+      typeof envelopeData === 'object' &&
+      Array.isArray(envelopeData.data)
+        ? envelopeData
+        : data
+
+    const normalizedPaginated = toPaginatedResponse<PortfolioMediaItem>(
+      paginatedLike,
+    )
+    return normalizePaginated(normalizedPaginated, normalizeDiscoveryMedia)
   },
 
   getByCategory: async (

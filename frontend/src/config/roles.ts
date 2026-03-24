@@ -41,9 +41,10 @@ export const ROLE_GROUPS = {
     ROLES.SALES_MANAGER,
   ] as Role[],
 
-  // Operations team
+  // Operations team (includes ADMIN for full access)
   OPS: [
     ROLES.ADMIN_SYSTEM,
+    ROLES.ADMIN,
     ROLES.OPERATIONAL_ADMIN,
     ROLES.OPERATIONAL_MANAGER,
     ROLES.OPERATIONAL_ASSISTANT,

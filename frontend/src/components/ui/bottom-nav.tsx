@@ -24,8 +24,7 @@ interface NavItem {
   dynamicHref?: (role?: Role) => string
 }
 
-const getWishlistPath = (role?: Role) =>
-  role === ROLES.BUSINESS_ADMIN ? '/business/wishlists' : '/wishlists'
+const getWishlistPath = (_role?: Role) => '/wishlists'
 
 // Public page navigation items
 const baseNavItems: NavItem[] = [

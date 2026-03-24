@@ -8,6 +8,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../../../infrastructure/notifications/email.service';
+import { VENDOR_CLAIM_EVENTS } from '../event-constants';
+import { PrismaService } from '../../database/prisma.service';
 
 interface UserRegisteredEvent {
   userId: string;
@@ -29,6 +31,21 @@ interface PasswordResetRequestedEvent {
   expiresAt: Date;
 }
 
+interface VendorClaimApprovedEvent {
+  claimId: string;
+  vendorProfileId: string;
+  userId: string;
+  adminUserId?: string;
+}
+
+interface VendorClaimRejectedEvent {
+  claimId: string;
+  vendorProfileId: string;
+  userId: string;
+  adminUserId: string;
+  reason: string;
+}
+
 @Injectable()
 export class EmailEventHandler {
   private readonly logger = new Logger(EmailEventHandler.name);
@@ -37,6 +54,7 @@ export class EmailEventHandler {
   constructor(
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
   ) {
     this.frontendUrl = this.configService.get<string>(
       'FRONTEND_URL',
@@ -225,6 +243,24 @@ export class EmailEventHandler {
             event.data as { verificationCode: string; businessName: string; expiresIn: string },
           );
           break;
+        case 'VENDOR_CLAIM_PENDING_REVIEW':
+          await this.sendClaimPendingReviewEmail(
+            event.recipient,
+            event.data as { businessName: string; claimId: string },
+          );
+          break;
+        case 'VENDOR_CLAIM_APPROVED':
+          await this.sendClaimApprovedEmail(
+            event.recipient,
+            event.data as { businessName: string; reviewNotes?: string },
+          );
+          break;
+        case 'VENDOR_CLAIM_REJECTED':
+          await this.sendClaimRejectedEmail(
+            event.recipient,
+            event.data as { businessName: string; rejectionReason: string },
+          );
+          break;
         default:
           this.logger.debug(`Unhandled notification type: ${event.type}`);
       }
@@ -328,6 +364,188 @@ export class EmailEventHandler {
     } else {
       this.logger.error(
         `Failed to send claim verification email to ${email}: ${result.error}`,
+      );
+    }
+  }
+
+  /**
+   * Send claim pending review email
+   */
+  private async sendClaimPendingReviewEmail(
+    email: string,
+    data: { businessName: string; claimId: string },
+  ) {
+    this.logger.log(`Sending claim pending review email to ${email}`);
+
+    const result = await this.emailService.send({
+      to: email,
+      template: 'claim-pending-review',
+      context: {
+        businessName: data.businessName,
+        claimId: data.claimId,
+        dashboardUrl: `${this.frontendUrl}/dashboard`,
+        currentYear: new Date().getFullYear(),
+      },
+    });
+
+    if (result.success) {
+      this.logger.log(
+        `Claim pending review email sent successfully to ${email}`,
+      );
+    } else {
+      this.logger.error(
+        `Failed to send claim pending review email to ${email}: ${result.error}`,
+      );
+    }
+  }
+
+  /**
+   * Send claim approved email
+   */
+  private async sendClaimApprovedEmail(
+    email: string,
+    data: { businessName: string; reviewNotes?: string },
+  ) {
+    this.logger.log(`Sending claim approved email to ${email}`);
+
+    const result = await this.emailService.send({
+      to: email,
+      template: 'claim-approved',
+      context: {
+        businessName: data.businessName,
+        reviewNotes: data.reviewNotes,
+        dashboardUrl: `${this.frontendUrl}/business/dashboard`,
+        helpUrl: `${this.frontendUrl}/help/vendor-guide`,
+        currentYear: new Date().getFullYear(),
+      },
+    });
+
+    if (result.success) {
+      this.logger.log(`Claim approved email sent successfully to ${email}`);
+    } else {
+      this.logger.error(
+        `Failed to send claim approved email to ${email}: ${result.error}`,
+      );
+    }
+  }
+
+  /**
+   * Send claim rejected email
+   */
+  private async sendClaimRejectedEmail(
+    email: string,
+    data: { businessName: string; rejectionReason: string },
+  ) {
+    this.logger.log(`Sending claim rejected email to ${email}`);
+
+    const result = await this.emailService.send({
+      to: email,
+      template: 'claim-rejected',
+      context: {
+        businessName: data.businessName,
+        rejectionReason: data.rejectionReason,
+        supportUrl: `${this.frontendUrl}/support`,
+        currentYear: new Date().getFullYear(),
+      },
+    });
+
+    if (result.success) {
+      this.logger.log(`Claim rejected email sent successfully to ${email}`);
+    } else {
+      this.logger.error(
+        `Failed to send claim rejected email to ${email}: ${result.error}`,
+      );
+    }
+  }
+
+  // ============================================================================
+  // VENDOR CLAIM EVENT HANDLERS
+  // ============================================================================
+
+  /**
+   * Handle vendor claim approved event
+   */
+  @OnEvent(VENDOR_CLAIM_EVENTS.APPROVED)
+  async handleVendorClaimApproved(event: VendorClaimApprovedEvent) {
+    try {
+      this.logger.log(
+        `Vendor claim approved event received: ${event.claimId} for user ${event.userId}`,
+      );
+
+      // Fetch user email and vendor profile info
+      const [user, vendorProfile] = await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: event.userId },
+          select: { email: true },
+        }),
+        this.prisma.vendorProfile.findUnique({
+          where: { id: event.vendorProfileId },
+          select: { businessName: true },
+        }),
+      ]);
+
+      if (!user || !vendorProfile) {
+        this.logger.warn(
+          `Cannot send claim approved email: user or vendor profile not found`,
+        );
+        return;
+      }
+
+      // Fetch review notes from the claim
+      const claim = await this.prisma.vendorClaim.findUnique({
+        where: { id: event.claimId },
+        select: { reviewNotes: true },
+      });
+
+      await this.sendClaimApprovedEmail(user.email, {
+        businessName: vendorProfile.businessName,
+        reviewNotes: claim?.reviewNotes || undefined,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error handling vendor claim approved event:`,
+        error,
+      );
+    }
+  }
+
+  /**
+   * Handle vendor claim rejected event
+   */
+  @OnEvent(VENDOR_CLAIM_EVENTS.REJECTED)
+  async handleVendorClaimRejected(event: VendorClaimRejectedEvent) {
+    try {
+      this.logger.log(
+        `Vendor claim rejected event received: ${event.claimId} for user ${event.userId}`,
+      );
+
+      // Fetch user email and vendor profile info
+      const [user, vendorProfile] = await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: event.userId },
+          select: { email: true },
+        }),
+        this.prisma.vendorProfile.findUnique({
+          where: { id: event.vendorProfileId },
+          select: { businessName: true },
+        }),
+      ]);
+
+      if (!user || !vendorProfile) {
+        this.logger.warn(
+          `Cannot send claim rejected email: user or vendor profile not found`,
+        );
+        return;
+      }
+
+      await this.sendClaimRejectedEmail(user.email, {
+        businessName: vendorProfile.businessName,
+        rejectionReason: event.reason,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error handling vendor claim rejected event:`,
+        error,
       );
     }
   }

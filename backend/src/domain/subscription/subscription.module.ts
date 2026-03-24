@@ -20,6 +20,8 @@ import {
   UserUsageService,
   InvoiceGeneratorService,
   SubscriptionEmailService,
+  CouponService,
+  PaymentRetryService,
 } from './services';
 import { CampaignDisplayService } from './services/campaign-display.service';
 
@@ -78,6 +80,8 @@ import {
     InvoiceGeneratorService,
     SubscriptionEmailService,
     CampaignDisplayService,
+    CouponService,
+    PaymentRetryService,
 
     // Repositories
     SubscriptionPlanRepository,
@@ -125,6 +129,8 @@ import {
     InvoiceGeneratorService,
     SubscriptionEmailService,
     CampaignDisplayService,
+    CouponService,
+    PaymentRetryService,
 
     // Repositories (for use in other modules)
     CampaignRepository,

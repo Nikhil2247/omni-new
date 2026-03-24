@@ -3841,6 +3841,7 @@ model VendorClaim {
 
   vendorProfile       VendorProfile           @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
   user                User                    @relation(fields: [userId], references: [id])
+  documents           VendorClaimDocument[]   @relation("claimDocuments")
 
   @@index([userId])
   @@index([status])
@@ -3849,14 +3850,16 @@ model VendorClaim {
   @@schema("catalog")
 }
 
-/// GuestClaimVerification - Temporary storage for guest claim email verifications
+/// GuestClaimVerification - Temporary storage for guest claim verifications
 /// Records are deleted after successful verification and user creation
 model GuestClaimVerification {
   id                  String        @id @default(uuid()) @db.Uuid
   vendorProfileId     String        @map("vendor_profile_id") @db.Uuid
   email               String
+  passwordHash        String        @map("password_hash")
   verificationCode    String        @map("verification_code")
   verificationExpiry  DateTime      @map("verification_expiry")
+  documentUrls        String[]      @default([]) @map("document_urls")
   attempts            Int           @default(0)
   createdAt           DateTime      @default(now()) @map("created_at")
 
@@ -3866,6 +3869,32 @@ model GuestClaimVerification {
   @@index([email])
   @@index([verificationExpiry])
   @@map("guest_claim_verifications")
+  @@schema("catalog")
+}
+
+/// VendorClaimDocument - Documents submitted for vendor claim verification
+model VendorClaimDocument {
+  id              String         @id @default(uuid()) @db.Uuid
+  vendorClaimId   String         @map("vendor_claim_id") @db.Uuid
+  type            DocumentType
+  url             String
+  fileName        String?        @map("file_name")
+  fileSize        Int?           @map("file_size")
+  mimeType        String?        @map("mime_type")
+  status          DocumentStatus @default(PENDING)
+  notes           String?
+  reviewerId      String?        @map("reviewer_id") @db.Uuid
+  reviewedAt      DateTime?      @map("reviewed_at")
+  rejectionReason String?        @map("rejection_reason")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  vendorClaim     VendorClaim    @relation("claimDocuments", fields: [vendorClaimId], references: [id], onDelete: Cascade)
+
+  @@index([vendorClaimId])
+  @@index([reviewerId])
+  @@index([status])
+  @@map("vendor_claim_documents")
   @@schema("catalog")
 }
 

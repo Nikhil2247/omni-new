@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -12,6 +12,11 @@ import {
   Clock,
   Loader2,
   ArrowRight,
+  Eye,
+  EyeOff,
+  Upload,
+  X,
+  AlertCircle,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
 import {
@@ -34,6 +39,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { cn } from '@/lib/utils'
+import { uploadService } from '@/lib/api/services/upload.service'
 import type { ClaimVerificationMethod, VendorClaimResponse } from '@/lib/api/types/vendor-claim.types'
 
 // ============================================================================
@@ -118,12 +124,20 @@ export function ClaimVendorModal({
   // State
   const [step, setStep] = useState<Step>('enter-email')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [documentUrls, setDocumentUrls] = useState<string[]>([])
+  const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: number }[]>([])
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedMethod, setSelectedMethod] = useState<ClaimVerificationMethod | null>(null)
   const [verificationCode, setVerificationCode] = useState('')
   const [claimData, setClaimData] = useState<VendorClaimResponse | null>(null)
   const [maskedEmailFromServer, setMaskedEmailFromServer] = useState('')
   const [timeRemaining, setTimeRemaining] = useState<number>(0)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [claimPending, setClaimPending] = useState(false)
 
   // Authenticated user hooks
   const initiateClaim = useInitiateClaim()
@@ -205,12 +219,19 @@ export function ClaimVendorModal({
         setTimeout(() => {
           setStep(isAuthenticated ? 'select-method' : 'enter-email')
           setEmail('')
+          setPassword('')
+          setConfirmPassword('')
+          setShowPassword(false)
+          setDocumentUrls([])
+          setUploadingFiles([])
+          setUploadError(null)
           setSelectedMethod(null)
           setVerificationCode('')
           setClaimData(null)
           setMaskedEmailFromServer('')
           setTimeRemaining(0)
           setIsSuccess(false)
+          setClaimPending(false)
         }, 300)
       }
       onOpenChange(nextOpen)
@@ -222,13 +243,96 @@ export function ClaimVendorModal({
   // Guest Claim Handlers
   // ============================================================================
 
+  // Password validation
+  const isPasswordValid = (pwd: string): boolean => {
+    return pwd.length >= 8 && /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /[\d\W]/.test(pwd)
+  }
+
+  const passwordsMatch = password === confirmPassword
+
+  // Document upload handlers
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setUploadError(null)
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+
+      // Validate file type
+      if (!allowedTypes.includes(file.type)) {
+        setUploadError(`File "${file.name}" is not supported. Please upload PDF or image files.`)
+        continue
+      }
+
+      // Validate file size
+      if (file.size > maxSize) {
+        setUploadError(`File "${file.name}" is too large. Maximum size is 10MB.`)
+        continue
+      }
+
+      // Add to uploading list
+      setUploadingFiles((prev) => [...prev, { name: file.name, progress: 30 }])
+
+      try {
+        // Get presigned URL
+        const presigned = await uploadService.getPresignedUrl(
+          file.name,
+          file.type,
+          'documents'
+        )
+
+        // Update progress
+        setUploadingFiles((prev) =>
+          prev.map((f) => (f.name === file.name ? { ...f, progress: 60 } : f))
+        )
+
+        // Upload to presigned URL
+        await uploadService.uploadToPresignedUrl(presigned.uploadUrl, file)
+
+        // Add the file URL to documentUrls
+        setDocumentUrls((prev) => [...prev, presigned.fileUrl])
+
+        // Remove from uploading list
+        setUploadingFiles((prev) => prev.filter((f) => f.name !== file.name))
+      } catch (error) {
+        setUploadError(`Failed to upload "${file.name}". Please try again.`)
+        setUploadingFiles((prev) => prev.filter((f) => f.name !== file.name))
+      }
+    }
+
+    // Reset the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveDocument = (urlToRemove: string) => {
+    setDocumentUrls((prev) => prev.filter((url) => url !== urlToRemove))
+  }
+
+  const getFileNameFromUrl = (url: string): string => {
+    try {
+      const pathname = new URL(url).pathname
+      return decodeURIComponent(pathname.split('/').pop() || 'document')
+    } catch {
+      return url.split('/').pop() || 'document'
+    }
+  }
+
   const handleInitiateGuestClaim = async () => {
-    if (!email.trim()) return
+    // Require email, valid password, and at least one document
+    if (!email.trim() || !password || !passwordsMatch || !isPasswordValid(password) || documentUrls.length === 0) return
 
     try {
       const result = await initiateGuestClaim.mutateAsync({
         vendorProfileId,
         email: email.trim(),
+        password,
+        documentUrls,
       })
       setMaskedEmailFromServer(result.maskedEmail)
       setStep('verify-guest-code')
@@ -257,6 +361,11 @@ export function ClaimVendorModal({
           firstName: null,
           lastName: null,
         })
+      }
+
+      // Check if claim is pending review (new flow)
+      if (result.claimStatus === 'PENDING') {
+        setClaimPending(true)
       }
 
       setStep('guest-success')
@@ -359,7 +468,7 @@ export function ClaimVendorModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto scrollbar-thin sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
@@ -388,11 +497,12 @@ export function ClaimVendorModal({
               <div className="space-y-4">
                 <div className="rounded-lg border bg-muted/30 p-4">
                   <p className="text-sm text-muted-foreground">
-                    Enter your personal email address. We&apos;ll send you a verification code
-                    and create your account automatically.
+                    Create your account to claim this business. After email verification,
+                    your claim will be reviewed by our admin team.
                   </p>
                 </div>
 
+                {/* Email Field */}
                 <div className="space-y-2">
                   <Label htmlFor="claim-email">Email Address</Label>
                   <Input
@@ -402,15 +512,135 @@ export function ClaimVendorModal({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && isValidEmail(email)) {
-                        handleInitiateGuestClaim()
-                      }
-                    }}
                   />
                   <p className="text-xs text-muted-foreground">
                     This will be your login email for managing the business.
                   </p>
+                </div>
+
+                {/* Password Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="claim-password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="claim-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Create a password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {password && !isPasswordValid(password) && (
+                    <p className="text-xs text-destructive">
+                      Password must be at least 8 characters with uppercase, lowercase, and number/special character.
+                    </p>
+                  )}
+                </div>
+
+                {/* Confirm Password Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="claim-confirm-password">Confirm Password</Label>
+                  <Input
+                    id="claim-confirm-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  {confirmPassword && !passwordsMatch && (
+                    <p className="text-xs text-destructive">Passwords do not match.</p>
+                  )}
+                </div>
+
+                {/* Document Upload */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Business Documents <span className="text-destructive">*</span></Label>
+                    <span className="text-xs text-muted-foreground">
+                      PDF, JPG, PNG (max 10MB)
+                    </span>
+                  </div>
+
+                  {/* Upload Area */}
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center">
+                      Click to upload business registration, license, or proof of ownership
+                    </p>
+                  </div>
+
+                  {/* Upload Error */}
+                  {uploadError && (
+                    <div className="flex items-center gap-2 text-destructive text-sm">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{uploadError}</span>
+                    </div>
+                  )}
+
+                  {/* Uploading Files */}
+                  {uploadingFiles.length > 0 && (
+                    <div className="space-y-2">
+                      {uploadingFiles.map((file) => (
+                        <div
+                          key={file.name}
+                          className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3 min-w-0"
+                        >
+                          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                          <span className="text-sm flex-1 min-w-0 truncate">{file.name}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">{file.progress}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Uploaded Documents */}
+                  {documentUrls.length > 0 && (
+                    <div className="space-y-2">
+                      {documentUrls.map((url) => (
+                        <div
+                          key={url}
+                          className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3 min-w-0"
+                        >
+                          <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
+                          <span className="text-sm flex-1 min-w-0 truncate">
+                            {getFileNameFromUrl(url)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDocument(url)}
+                            className="shrink-0 text-muted-foreground hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {documentUrls.length === 0 && uploadingFiles.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      At least one document is required for claim verification.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -426,13 +656,19 @@ export function ClaimVendorModal({
                 <Button
                   type="button"
                   className="flex-1"
-                  disabled={!isValidEmail(email) || initiateGuestClaim.isPending}
+                  disabled={
+                    !isValidEmail(email) ||
+                    !isPasswordValid(password) ||
+                    !passwordsMatch ||
+                    documentUrls.length === 0 ||
+                    initiateGuestClaim.isPending
+                  }
                   onClick={handleInitiateGuestClaim}
                 >
                   {initiateGuestClaim.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
+                      Creating...
                     </>
                   ) : (
                     <>
@@ -572,17 +808,38 @@ export function ClaimVendorModal({
                 variants={successIconVariants}
                 initial="initial"
                 animate="animate"
-                className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30"
+                className={cn(
+                  'mb-4 flex h-16 w-16 items-center justify-center rounded-full',
+                  claimPending
+                    ? 'bg-amber-100 dark:bg-amber-900/30'
+                    : 'bg-green-100 dark:bg-green-900/30'
+                )}
               >
-                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                {claimPending ? (
+                  <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                ) : (
+                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                )}
               </motion.div>
-              <h3 className="text-lg font-semibold">Business Claimed Successfully!</h3>
+              <h3 className="text-lg font-semibold">
+                {claimPending ? 'Claim Submitted for Review!' : 'Business Claimed Successfully!'}
+              </h3>
               <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-                Your account has been created and you&apos;re now logged in.
-                Let&apos;s complete your business profile setup.
+                {claimPending ? (
+                  <>
+                    Your account has been created and your claim is now pending admin review.
+                    We&apos;ll notify you once your claim is approved.
+                    You can log in to check your claim status.
+                  </>
+                ) : (
+                  <>
+                    Your account has been created and you&apos;re now logged in.
+                    Let&apos;s complete your business profile setup.
+                  </>
+                )}
               </p>
               <Button className="mt-6" onClick={handleGoToDashboard}>
-                Go to Dashboard
+                {claimPending ? 'Check Claim Status' : 'Go to Dashboard'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>

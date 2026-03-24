@@ -32,6 +32,9 @@ import {
 // Event Handlers
 import { VendorProfileEventHandler } from './events';
 
+// Schedulers
+import { ClaimScheduler } from './schedulers';
+
 @Module({
   imports: [DatabaseModule, CacheModule, forwardRef(() => SubscriptionModule)],
   providers: [
@@ -53,6 +56,9 @@ import { VendorProfileEventHandler } from './events';
 
     // Event Handlers
     VendorProfileEventHandler,
+
+    // Schedulers
+    ClaimScheduler,
   ],
   exports: [
     // Export services for use in other modules

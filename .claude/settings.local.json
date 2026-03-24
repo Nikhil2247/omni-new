@@ -35,7 +35,8 @@
       "Bash(npx prisma validate:*)",
       "Bash(cut:*)",
       "Bash(cd:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(npx prisma db seed:*)"
     ]
   }
 }

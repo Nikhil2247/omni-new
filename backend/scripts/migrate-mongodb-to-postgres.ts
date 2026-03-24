@@ -143,18 +143,22 @@ function mapOldRoleToNew(oldRole: string): string {
 }
 
 function mapOldCategoryToNew(oldCategory: string): string {
-  // Map old category names to launch-seeded category slugs
+  // Map old category names to existing database category slugs
   const categoryMap: Record<string, string> = {
-    'photographer': 'photography',
-    'photography': 'photography',
-    'videographer': 'videography',
-    'videography': 'videography',
-    'catering': 'catering',
-    'caterers': 'catering',
-    'venue': 'venues',
-    'venues': 'venues',
-    'florist': 'florist',
-    'florists': 'florist',
+    'photographer': 'photo-videography',
+    'photography': 'photo-videography',
+    'photo': 'photo-videography',
+    'videographer': 'photo-videography',
+    'videography': 'photo-videography',
+    'photo-videography': 'photo-videography',
+    'catering': 'food-catering',
+    'caterers': 'food-catering',
+    'food': 'food-catering',
+    'food-catering': 'food-catering',
+    'venue': 'venue',
+    'venues': 'venue',
+    'florist': 'decor-design',
+    'florists': 'decor-design',
     'decorator': 'decor-design',
     'decor': 'decor-design',
     'decoration': 'decor-design',
@@ -168,25 +172,27 @@ function mapOldCategoryToNew(oldCategory: string): string {
     'hair': 'makeup-hair',
     'mehndi': 'mehndi-artists',
     'mehndi-artists': 'mehndi-artists',
-    'planner': 'wedding-planning',
-    'wedding-planner': 'wedding-planning',
-    'wedding-planning': 'wedding-planning',
+    'planner': 'planner',
+    'wedding-planner': 'planner',
+    'wedding-planning': 'planner',
     'event planner': 'event-planner',
     'event-planner': 'event-planner',
     'event management': 'event-management-company',
     'event-management-company': 'event-management-company',
     'hospitality': 'hospitality',
-    'cake': 'wedding-planning',
-    'cakes': 'wedding-planning',
-    'bakery': 'wedding-planning',
-    'invitation': 'wedding-planning',
-    'invitations': 'wedding-planning',
+    'cake': 'food-catering',
+    'cakes': 'food-catering',
+    'bakery': 'food-catering',
+    'invitation': 'planner',
+    'invitations': 'planner',
     'rental': 'event-management-company',
     'rentals': 'event-management-company',
+    'audio-visual': 'audio-visual',
+    'av': 'audio-visual',
   };
 
   const normalized = oldCategory.toLowerCase().trim();
-  return categoryMap[normalized] || 'wedding-planning';
+  return categoryMap[normalized] || 'planner';
 }
 
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
@@ -292,59 +298,21 @@ function readCollection<T>(collectionName: string): T[] {
 // MIGRATION FUNCTIONS
 // ============================================================================
 
-async function migrateCategories(prisma: PrismaClient): Promise<void> {
-  console.log('\n📂 Ensuring launch-aligned categories...');
+async function loadExistingCategories(prisma: PrismaClient): Promise<void> {
+  console.log('\n📂 Loading existing categories from database...');
 
-  const categories = [
-    { name: 'Photo & Videography', slug: 'photography', icon: 'camera' },
-    { name: 'Food & Catering', slug: 'food-catering', icon: 'utensils' },
-    { name: 'Venues', slug: 'venues', icon: 'building' },
-    { name: 'Entertainment', slug: 'entertainment', icon: 'music' },
-    { name: 'Decor & Design', slug: 'decor-design', icon: 'palette' },
-    { name: 'Makeup & Hair', slug: 'makeup-hair', icon: 'sparkles' },
-    { name: 'Mehndi & Artists', slug: 'mehndi-artists', icon: 'brush' },
-    { name: 'Wedding Planner', slug: 'wedding-planning', icon: 'clipboard-list' },
-    { name: 'Event Planner', slug: 'event-planner', icon: 'calendar-check' },
-    { name: 'Event Management Company', slug: 'event-management-company', icon: 'briefcase' },
-    { name: 'Hospitality', slug: 'hospitality', icon: 'hotel' },
-  ];
-
-  const slugs = categories.map((category) => category.slug);
-  const existing = await prisma.category.findMany({
-    where: { slug: { in: slugs } },
-    select: { id: true, slug: true },
+  // Load ALL existing categories from database
+  const existingCategories = await prisma.category.findMany({
+    where: { isActive: true },
+    select: { id: true, slug: true, name: true },
   });
 
-  const existingBySlug = new Map(existing.map((category) => [category.slug, category.id]));
-
-  const toCreate = categories
-    .filter((category) => !existingBySlug.has(category.slug))
-    .map((category, index) => ({
-      id: randomUUID(),
-      name: category.name,
-      slug: category.slug,
-      icon: category.icon,
-      isActive: true,
-      sortOrder: index,
-    }));
-
-  if (toCreate.length > 0) {
-    await prisma.category.createMany({
-      data: toCreate,
-      skipDuplicates: true,
-    });
-  }
-
-  const finalCategories = await prisma.category.findMany({
-    where: { slug: { in: slugs } },
-    select: { id: true, slug: true },
-  });
-
-  for (const category of finalCategories) {
+  for (const category of existingCategories) {
     categoryIdMap.set(category.slug, category.id);
   }
 
-  console.log(`✅ Created/found ${categories.length} categories`);
+  console.log(`✅ Loaded ${existingCategories.length} categories from database`);
+  console.log(`   Categories: ${existingCategories.map(c => c.slug).join(', ')}`);
 }
 
 async function migrateRoles(prisma: PrismaClient): Promise<Map<string, string>> {
@@ -894,6 +862,389 @@ async function migrateVendorProfiles(
   return categoryDistribution;
 }
 
+// ============================================================================
+// UNCLAIMED VENDOR PROFILES MIGRATION
+// ============================================================================
+// Migrates vendor profiles as UNCLAIMED with PUBLIC plan (no user accounts)
+// These can be claimed later by vendors
+// ============================================================================
+
+async function migrateUnclaimedVendorProfiles(
+  prisma: PrismaClient,
+  oldProfiles: OldVendorProfile[],
+  targetCategories: string[] // e.g., ['decorator', 'decoration', 'photographer', 'photography']
+): Promise<Map<string, number>> {
+  // Filter profiles for target categories only
+  const filteredProfiles = oldProfiles.filter((profile) => {
+    const category = profile.category?.toLowerCase().trim() || '';
+    return targetCategories.some((target) => category.includes(target.toLowerCase()));
+  });
+
+  console.log(`\n🏪 Migrating ${filteredProfiles.length} UNCLAIMED vendor profiles (from ${oldProfiles.length} total)...`);
+  console.log(`   Target categories: ${targetCategories.join(', ')}`);
+
+  let migrated = 0;
+  let skipped = 0;
+  const categoryDistribution = new Map<string, number>();
+
+  // Collect all tags from profiles
+  const incomingTagMap = new Map<string, string>();
+  for (const oldProfile of filteredProfiles) {
+    for (const tagName of oldProfile.tags || []) {
+      const tagSlug = generateSlug(tagName);
+      if (!tagSlug) continue;
+      if (!incomingTagMap.has(tagSlug)) {
+        incomingTagMap.set(tagSlug, tagName);
+      }
+    }
+  }
+
+  // Check existing tags
+  const tagSlugs = [...incomingTagMap.keys()];
+  const existingTags = new Map<string, string>();
+
+  for (const tagSlugBatch of chunkArray(tagSlugs, BATCH_SIZE)) {
+    const foundTags = await prisma.tag.findMany({
+      where: { slug: { in: tagSlugBatch } },
+      select: { id: true, slug: true },
+    });
+    for (const tag of foundTags) {
+      existingTags.set(tag.slug, tag.id);
+    }
+  }
+
+  // Create missing tags
+  const tagsToCreate = tagSlugs
+    .filter((slug) => !existingTags.has(slug))
+    .map((slug) => ({
+      id: randomUUID(),
+      slug,
+      name: incomingTagMap.get(slug) || slug,
+    }));
+
+  if (tagsToCreate.length > 0) {
+    await prisma.tag.createMany({
+      data: tagsToCreate,
+      skipDuplicates: true,
+    });
+  }
+
+  // Build final tag map
+  const finalTagMap = new Map<string, string>();
+  for (const tagSlugBatch of chunkArray(tagSlugs, BATCH_SIZE)) {
+    const foundTags = await prisma.tag.findMany({
+      where: { slug: { in: tagSlugBatch } },
+      select: { id: true, slug: true },
+    });
+    for (const tag of foundTags) {
+      finalTagMap.set(tag.slug, tag.id);
+    }
+  }
+
+  // Get existing slugs to avoid duplicates
+  const existingSlugs = await prisma.vendorProfile.findMany({
+    select: { slug: true },
+  });
+  const usedSlugs = new Set(existingSlugs.map((profile) => profile.slug));
+
+  // Also check existing business names to avoid duplicates
+  const existingNames = await prisma.vendorProfile.findMany({
+    select: { businessName: true },
+  });
+  const usedNames = new Set(existingNames.map((profile) => profile.businessName.toLowerCase()));
+
+  type UnclaimedVendorBatchPayload = {
+    oldId: string;
+    profileId: string;
+    profileData: {
+      id: string;
+      userId: null;
+      businessName: string;
+      slug: string;
+      categoryId: string;
+      description: string | null;
+      tagline: string | null;
+      profilePhotoUrl: string | null;
+      serviceRadius: number | null;
+      status: 'UNCLAIMED';
+      planTier: 'PUBLIC';
+      verifiedAt: null;
+      featuredUntil: Date | null;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    portfolioData?: {
+      id: string;
+      vendorProfileId: string;
+      title: string;
+      description: string;
+      sortOrder: number;
+      isFeatured: boolean;
+    };
+    mediaData: Array<{
+      id: string;
+      portfolioId: string;
+      type: 'IMAGE';
+      url: string;
+      thumbnailUrl: string;
+      mimeType: string;
+      size: number;
+      sortOrder: number;
+      isApproved: boolean;
+    }>;
+    vendorTagData: Array<{
+      id: string;
+      vendorProfileId: string;
+      tagId: string;
+    }>;
+    serviceData?: {
+      id: string;
+      vendorProfileId: string;
+      name: string;
+      description: string;
+      pricingType: 'STARTING_AT';
+      currency: string;
+      startingPrice: number | null;
+      isActive: boolean;
+      sortOrder: number;
+    };
+  };
+
+  const profilesToMigrate: UnclaimedVendorBatchPayload[] = [];
+
+  for (const oldProfile of filteredProfiles) {
+    const oldId = getMongoId(oldProfile._id);
+    const businessName = oldProfile.name || 'Unnamed Business';
+
+    // Skip if business name already exists
+    if (usedNames.has(businessName.toLowerCase())) {
+      console.log(`   ⏭️  Skipping duplicate: ${businessName}`);
+      skipped++;
+      continue;
+    }
+
+    const categorySlug = mapOldCategoryToNew(oldProfile.category);
+    const categoryId = categoryIdMap.get(categorySlug);
+
+    if (!categoryId) {
+      console.log(`   ⚠️  Category not found for: ${oldProfile.category}`);
+      skipped++;
+      continue;
+    }
+
+    const profileId = randomUUID();
+    let slug = oldProfile.slug || generateSlug(oldProfile.name || `vendor-${Date.now()}`);
+    if (!slug) {
+      slug = `vendor-${profileId}`;
+    }
+
+    if (usedSlugs.has(slug)) {
+      slug = `${slug}-${Date.now()}`;
+    }
+    usedSlugs.add(slug);
+    usedNames.add(businessName.toLowerCase());
+
+    const profileData = {
+      id: profileId,
+      userId: null, // UNCLAIMED - no user
+      businessName,
+      slug,
+      categoryId,
+      description: oldProfile.description || oldProfile.shortDescription || null,
+      tagline: oldProfile.shortDescription || null,
+      profilePhotoUrl: oldProfile.profilePhoto || null,
+      serviceRadius: oldProfile.serviceCities ? 50 : null,
+      status: 'UNCLAIMED' as const,
+      planTier: 'PUBLIC' as const,
+      verifiedAt: null,
+      featuredUntil: oldProfile.featured ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null,
+      createdAt: parseMongoDate(oldProfile.createdAt),
+      updatedAt: parseMongoDate(oldProfile.updatedAt),
+    };
+
+    const mediaData: UnclaimedVendorBatchPayload['mediaData'] = [];
+    let portfolioData: UnclaimedVendorBatchPayload['portfolioData'];
+
+    if (oldProfile.photos && oldProfile.photos.length > 0) {
+      const portfolioId = randomUUID();
+      portfolioData = {
+        id: portfolioId,
+        vendorProfileId: profileId,
+        title: 'Main Portfolio',
+        description: 'Migrated from previous system',
+        sortOrder: 0,
+        isFeatured: true,
+      };
+
+      for (let index = 0; index < oldProfile.photos.length; index++) {
+        const photoUrl = oldProfile.photos[index];
+        mediaData.push({
+          id: randomUUID(),
+          portfolioId,
+          type: 'IMAGE',
+          url: photoUrl,
+          thumbnailUrl: photoUrl,
+          mimeType: 'image/jpeg',
+          size: 0,
+          sortOrder: index,
+          isApproved: true,
+        });
+      }
+    }
+
+    const vendorTagData: UnclaimedVendorBatchPayload['vendorTagData'] = [];
+    for (const tagName of oldProfile.tags || []) {
+      const tagSlug = generateSlug(tagName);
+      const tagId = finalTagMap.get(tagSlug);
+      if (!tagId) continue;
+      vendorTagData.push({
+        id: randomUUID(),
+        vendorProfileId: profileId,
+        tagId,
+      });
+    }
+
+    const hasServiceData = oldProfile.startingPackage || oldProfile.pricing;
+    const serviceData = hasServiceData
+      ? {
+          id: randomUUID(),
+          vendorProfileId: profileId,
+          name: 'Main Service',
+          description: `Experience: ${oldProfile.experence || 'Not specified'}\nDelivery Time: ${oldProfile.deliveryTime || 'Not specified'}\nPayment Terms: ${oldProfile.paymentTerm || 'Not specified'}`,
+          pricingType: 'STARTING_AT' as const,
+          currency: 'INR',
+          startingPrice: parseFloat(oldProfile.startingPackage?.replace(/[^0-9.]/g, '') || '0') || null,
+          isActive: true,
+          sortOrder: 0,
+        }
+      : undefined;
+
+    profilesToMigrate.push({
+      oldId,
+      profileId,
+      profileData,
+      portfolioData,
+      mediaData,
+      vendorTagData,
+      serviceData,
+    });
+
+    incrementMapCount(categoryDistribution, categorySlug);
+  }
+
+  // Batch insert profiles
+  for (const batch of chunkArray(profilesToMigrate, PROFILE_BATCH_SIZE)) {
+    await prisma.vendorProfile.createMany({
+      data: batch.map((item) => item.profileData),
+      skipDuplicates: true,
+    });
+
+    // Get persisted profile IDs
+    const batchSlugs = batch.map((item) => item.profileData.slug);
+    const persistedProfiles = await prisma.vendorProfile.findMany({
+      where: { slug: { in: batchSlugs } },
+      select: { id: true, slug: true },
+    });
+    const persistedProfileIdBySlug = new Map(
+      persistedProfiles.map((profile) => [profile.slug, profile.id]),
+    );
+
+    const resolvedBatch = batch
+      .map((item) => {
+        const resolvedProfileId = persistedProfileIdBySlug.get(item.profileData.slug);
+        if (!resolvedProfileId) return null;
+        return {
+          oldId: item.oldId,
+          resolvedProfileId,
+          portfolioData: item.portfolioData
+            ? {
+                ...item.portfolioData,
+                vendorProfileId: resolvedProfileId,
+              }
+            : undefined,
+          mediaData: item.mediaData,
+          vendorTagData: item.vendorTagData.map((row) => ({
+            ...row,
+            vendorProfileId: resolvedProfileId,
+          })),
+          serviceData: item.serviceData
+            ? {
+                ...item.serviceData,
+                vendorProfileId: resolvedProfileId,
+              }
+            : undefined,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+    // Create portfolios
+    const portfolioData = resolvedBatch
+      .map((item) => item.portfolioData)
+      .filter((portfolio): portfolio is NonNullable<typeof portfolio> => Boolean(portfolio));
+
+    if (portfolioData.length > 0) {
+      await prisma.portfolio.createMany({
+        data: portfolioData,
+        skipDuplicates: true,
+      });
+    }
+
+    // Map portfolio IDs
+    const portfolioIdMapByOldProfileId = new Map<string, string>();
+    for (const item of resolvedBatch) {
+      if (item.portfolioData) {
+        portfolioIdMapByOldProfileId.set(item.oldId, item.portfolioData.id);
+      }
+    }
+
+    // Create media items
+    const mediaData = resolvedBatch.flatMap((item) => {
+      const oldPortfolioId = portfolioIdMapByOldProfileId.get(item.oldId);
+      if (!oldPortfolioId) return [];
+      return item.mediaData.map((media) => ({
+        ...media,
+        portfolioId: oldPortfolioId,
+      }));
+    });
+
+    if (mediaData.length > 0) {
+      await prisma.mediaItem.createMany({
+        data: mediaData,
+        skipDuplicates: true,
+      });
+    }
+
+    // Create vendor tags
+    const vendorTagData = resolvedBatch.flatMap((item) => item.vendorTagData);
+    if (vendorTagData.length > 0) {
+      await prisma.vendorTag.createMany({
+        data: vendorTagData,
+        skipDuplicates: true,
+      });
+    }
+
+    // Create services
+    const serviceData = resolvedBatch
+      .map((item) => item.serviceData)
+      .filter((service): service is NonNullable<typeof service> => Boolean(service));
+
+    if (serviceData.length > 0) {
+      await prisma.service.createMany({
+        data: serviceData,
+        skipDuplicates: true,
+      });
+    }
+
+    for (const migratedProfile of resolvedBatch) {
+      vendorProfileIdMap.set(migratedProfile.oldId, migratedProfile.resolvedProfileId);
+    }
+    migrated += resolvedBatch.length;
+  }
+
+  console.log(`✅ Migrated ${migrated} UNCLAIMED vendor profiles, skipped ${skipped}`);
+  return categoryDistribution;
+}
+
 async function migrateReviews(
   prisma: PrismaClient,
   oldReviews: OldReview[]
@@ -985,17 +1336,41 @@ async function runMigration(): Promise<void> {
     console.log(`   Found ${oldVendorProfiles.length} vendor profiles`);
     console.log(`   Found ${oldReviews.length} reviews`);
 
-    // Step 3: Create categories and roles
-    await migrateCategories(prisma);
+    // Step 3: Load existing categories and ensure roles
+    await loadExistingCategories(prisma);
     const roleMap = await migrateRoles(prisma);
 
     // Step 4: Migrate users
     const roleDistribution = await migrateUsers(prisma, oldUsers, roleMap);
 
-    // Step 5: Migrate vendor profiles with portfolios
+    // Step 5: Migrate vendor profiles with portfolios (claimed vendors with users)
     const categoryDistribution = await migrateVendorProfiles(prisma, oldVendorProfiles);
 
-    // Step 6: Migrate reviews
+    // Step 6: Migrate UNCLAIMED vendor profiles (decoration & photographer)
+    // These are added with PUBLIC plan and can be claimed later
+    const unclaimedCategories = [
+      'decorator',
+      'decoration',
+      'decor',
+      'photographer',
+      'photography',
+      'photo',
+    ];
+    const unclaimedCategoryDistribution = await migrateUnclaimedVendorProfiles(
+      prisma,
+      oldVendorProfiles,
+      unclaimedCategories,
+    );
+
+    // Merge category distributions
+    for (const [key, value] of unclaimedCategoryDistribution) {
+      categoryDistribution.set(
+        `${key} (unclaimed)`,
+        (categoryDistribution.get(`${key} (unclaimed)`) || 0) + value,
+      );
+    }
+
+    // Step 7: Migrate reviews
     await migrateReviews(prisma, oldReviews);
 
     // Summary

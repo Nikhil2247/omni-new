@@ -210,7 +210,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
             {hasHydrated && isAuthenticated && (isUser || isVendor) && (
               <div className="pt-2">
                 <Link
-                  href={isVendor ? '/business/wishlists' : '/wishlists'}
+                  href="/wishlists"
                   className="hover:bg-muted mx-auto flex h-9 w-9 items-center justify-center rounded-lg text-foreground/90 transition-all"
                   aria-label={isVendor ? 'Wishlist Boards' : 'Wishlist'}
                   title={isVendor ? 'Wishlist Boards' : 'Wishlist'}

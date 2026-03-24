@@ -43,11 +43,11 @@ import {
   ClaimApprovalResultDto,
 } from '../dto/admin-claim.dto';
 
-@Controller('admin/claims')
+@Controller('claims')
 @ApiTags('Admin - Vendor Claims')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN_SYSTEM', 'OPERATIONAL_ADMIN')
+@Roles('ADMIN_SYSTEM', 'ADMIN', 'OPERATIONAL_ADMIN')
 export class AdminClaimController {
   constructor(
     private readonly vendorClaimService: VendorClaimService,
@@ -97,6 +97,19 @@ export class AdminClaimController {
               email: true,
               firstName: true,
               lastName: true,
+            },
+          },
+          documents: {
+            select: {
+              id: true,
+              url: true,
+              fileName: true,
+              fileSize: true,
+              mimeType: true,
+              type: true,
+              status: true,
+              reviewedAt: true,
+              rejectionReason: true,
             },
           },
         },
@@ -149,6 +162,19 @@ export class AdminClaimController {
             email: true,
             firstName: true,
             lastName: true,
+          },
+        },
+        documents: {
+          select: {
+            id: true,
+            url: true,
+            fileName: true,
+            fileSize: true,
+            mimeType: true,
+            type: true,
+            status: true,
+            reviewedAt: true,
+            rejectionReason: true,
           },
         },
       },
@@ -238,6 +264,19 @@ export class AdminClaimController {
             email: true,
             firstName: true,
             lastName: true,
+          },
+        },
+        documents: {
+          select: {
+            id: true,
+            url: true,
+            fileName: true,
+            fileSize: true,
+            mimeType: true,
+            type: true,
+            status: true,
+            reviewedAt: true,
+            rejectionReason: true,
           },
         },
       },
@@ -397,6 +436,17 @@ export class AdminClaimController {
             lastName: claim.user.lastName,
           }
         : undefined,
+      documents: claim.documents?.map((doc: any) => ({
+        id: doc.id,
+        url: doc.url,
+        fileName: doc.fileName,
+        fileSize: doc.fileSize,
+        mimeType: doc.mimeType,
+        type: doc.type,
+        status: doc.status,
+        reviewedAt: doc.reviewedAt,
+        rejectionReason: doc.rejectionReason,
+      })),
     };
   }
 }

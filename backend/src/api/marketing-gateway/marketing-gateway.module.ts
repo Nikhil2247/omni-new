@@ -12,10 +12,12 @@ import { PromotionsController } from './controllers/promotions.controller';
 import { CategoriesController } from './controllers/categories.controller';
 import { ContentModule } from '../../domain/content/content.module';
 import { StorageModule } from '../../infrastructure/storage/storage.module';
+import { SubscriptionModule } from '../../domain/subscription/subscription.module';
 import { NotificationService } from 'src/infrastructure/notifications/notification.service';
+import { AuditService } from '@/core/audit';
 
 @Module({
-  imports: [ContentModule, StorageModule],
+  imports: [ContentModule, StorageModule, SubscriptionModule],
   controllers: [
     CampaignsController,
     ContentController,
@@ -23,6 +25,6 @@ import { NotificationService } from 'src/infrastructure/notifications/notificati
     PromotionsController,
     CategoriesController,
   ],
-  providers: [NotificationService],
+  providers: [NotificationService, AuditService],
 })
 export class MarketingGatewayModule {}

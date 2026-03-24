@@ -2,7 +2,7 @@
 // SERVICE SERVICE - Catalog Domain
 // ============================================================================
 
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PricingType as PrismaPricingType, Service } from '@prisma/client';
 import { ServiceRepository } from '../repositories/service.repository';
@@ -13,6 +13,7 @@ import {
 } from '../dto/service.dto';
 import { PrismaService } from '../../../core/database/prisma.service';
 import { Prisma } from '@prisma/client';
+import { UsageService } from '../../subscription/services/usage.service';
 const { Decimal } = Prisma;
 
 @Injectable()
@@ -23,6 +24,7 @@ export class ServiceService {
     private readonly serviceRepository: ServiceRepository,
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly usageService: UsageService,
   ) {}
 
   private normalizeDurationToMinutes(
@@ -55,6 +57,44 @@ export class ServiceService {
 
   async create(dto: CreateServiceDto): Promise<Service> {
     this.logger.log(`Creating service for vendor: ${dto.vendorProfileId}`);
+
+    // Check services_limit before creating
+    try {
+      const limitStatus = await this.usageService.checkFeatureLimit(
+        dto.vendorProfileId,
+        'services_limit',
+      );
+
+      if (!limitStatus.isUnlimited && limitStatus.limit > 0) {
+        // Get current service count for this vendor
+        const currentCount = await this.prisma.service.count({
+          where: { vendorProfileId: dto.vendorProfileId },
+        });
+
+        if (currentCount >= limitStatus.limit) {
+          throw new ForbiddenException({
+            message: 'Services limit reached',
+            error: 'SERVICES_LIMIT_EXCEEDED',
+            details: {
+              currentCount,
+              limit: limitStatus.limit,
+              planUpgradeRequired: true,
+            },
+            userMessage: `You have reached the maximum of ${limitStatus.limit} services on your current plan. Please upgrade your subscription to add more services.`,
+          });
+        }
+
+        this.logger.debug(
+          `Services limit check passed: ${currentCount}/${limitStatus.limit} services used`,
+        );
+      }
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      // Log but don't block if usage service fails - graceful degradation for new vendors
+      this.logger.warn(`Failed to check services limit: ${error.message}`);
+    }
 
     const resolvedPricingType =
       dto.pricingType ??

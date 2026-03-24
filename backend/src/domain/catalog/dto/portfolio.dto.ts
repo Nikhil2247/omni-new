@@ -245,6 +245,43 @@ export class PortfolioMediaVendorDto {
 
   @ApiPropertyOptional({ description: 'Category name', nullable: true })
   categoryName?: string | null;
+
+  @ApiPropertyOptional({ description: 'Profile photo URL', nullable: true })
+  profilePhotoUrl?: string | null;
+
+  @ApiPropertyOptional({ description: 'Plan tier (FREE, PROFESSIONAL, ENTERPRISE)', nullable: true })
+  planTier?: string | null;
+
+  @ApiPropertyOptional({ description: 'Whether vendor is verified', nullable: true })
+  isVerified?: boolean;
+
+  @ApiPropertyOptional({ description: 'Average rating', nullable: true })
+  averageRating?: number | null;
+
+  @ApiPropertyOptional({ description: 'Total reviews count', nullable: true })
+  totalReviews?: number | null;
+}
+
+export class PortfolioInfoDto {
+  @ApiProperty({ description: 'Portfolio ID' })
+  id: string;
+
+  @ApiProperty({ description: 'Portfolio title' })
+  title: string;
+
+  @ApiPropertyOptional({ description: 'Portfolio description', nullable: true })
+  description?: string | null;
+
+  @ApiProperty({ description: 'Total media count in portfolio' })
+  mediaCount: number;
+}
+
+export class AlbumPromotionDto {
+  @ApiProperty({ description: 'Whether this album is promoted' })
+  isPromoted: boolean;
+
+  @ApiPropertyOptional({ description: 'Campaign ID if promoted', nullable: true })
+  campaignId?: string | null;
 }
 
 export class PortfolioMediaItemResponseDto {
@@ -283,4 +320,10 @@ export class PortfolioMediaItemResponseDto {
 
   @ApiProperty({ description: 'Vendor info' })
   vendor: PortfolioMediaVendorDto;
+
+  @ApiPropertyOptional({ description: 'Portfolio info' })
+  portfolio?: PortfolioInfoDto;
+
+  @ApiPropertyOptional({ description: 'Album promotion info' })
+  promotion?: AlbumPromotionDto;
 }

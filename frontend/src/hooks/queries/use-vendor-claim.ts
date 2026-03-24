@@ -13,6 +13,7 @@ import type {
   VerifyClaimRequest,
   VendorClaimResponse,
   InitiateGuestClaimRequest,
+  ResendGuestVerificationRequest,
   VerifyGuestClaimRequest,
   GuestClaimInitiatedResponse,
   GuestClaimVerifiedResponse,
@@ -176,7 +177,7 @@ export function useVerifyGuestClaim() {
  * Resend guest claim verification code
  */
 export function useResendGuestVerification() {
-  return useMutation<GuestClaimInitiatedResponse, Error, InitiateGuestClaimRequest>({
+  return useMutation<GuestClaimInitiatedResponse, Error, ResendGuestVerificationRequest>({
     mutationFn: (payload) => vendorClaimService.resendGuestVerification(payload),
     onSuccess: (data) => {
       toast.success(data.message || 'New verification code sent')

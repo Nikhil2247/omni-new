@@ -29,7 +29,24 @@ export class WishlistRepository extends BaseRepository<
   async findByUserId(userId: string) {
     return this.model.findMany({
       where: { userId },
-      include: { items: true },
+      include: {
+        items: {
+          include: {
+            mediaItem: {
+              select: {
+                id: true,
+                type: true,
+                url: true,
+                cdnUrl: true,
+                thumbnailUrl: true,
+                altText: true,
+                caption: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

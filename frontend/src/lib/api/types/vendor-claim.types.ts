@@ -49,6 +49,19 @@ export interface VendorClaimVendorProfile {
   status: string
 }
 
+// Document attached to a claim for admin review
+export interface VendorClaimDocument {
+  id: string
+  url: string
+  fileName?: string | null
+  fileSize?: number | null
+  mimeType?: string | null
+  type: string // DocumentType enum (BUSINESS_LICENSE, ID_DOCUMENT, etc.)
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED'
+  reviewedAt?: string | null
+  rejectionReason?: string | null
+}
+
 export interface VendorClaimResponse {
   id: string
   vendorProfileId: string
@@ -62,6 +75,7 @@ export interface VendorClaimResponse {
   createdAt: string
   updatedAt: string
   vendorProfile?: VendorClaimVendorProfile
+  documents?: VendorClaimDocument[]
 }
 
 export interface ClaimStatusResponse {
@@ -107,6 +121,13 @@ export const VERIFICATION_METHOD_LABELS: Record<ClaimVerificationMethod, string>
 export interface InitiateGuestClaimRequest {
   vendorProfileId: string
   email: string
+  password: string
+  documentUrls?: string[]
+}
+
+export interface ResendGuestVerificationRequest {
+  vendorProfileId: string
+  email: string
 }
 
 export interface VerifyGuestClaimRequest {
@@ -127,6 +148,8 @@ export interface GuestClaimVerifiedResponse {
   message: string
   userId: string
   vendorProfileId: string
+  claimId: string
+  claimStatus: ClaimStatus
   accessToken: string
   refreshToken: string
   user: {

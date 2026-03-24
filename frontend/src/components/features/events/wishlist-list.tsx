@@ -130,23 +130,26 @@ export function WishlistList({ basePath = '/wishlists' }: { basePath?: string } 
         <div className="space-y-3">
           {wishlistArray.map((wishlist) => {
             const firstItem = wishlist.items?.[0]
-            const fallbackMediaItem = wishlist.items?.find(
-              (item) => item.mediaItem && (item.mediaItem.thumbnailUrl || item.mediaItem.cdnUrl || item.mediaItem.url)
-            )?.mediaItem
-            const vendorImageFromFirstItem =
-              ((firstItem?.vendor as unknown as { bannerImageUrl?: string | null; avatarUrl?: string | null })
-                ?.bannerImageUrl) ||
-              ((firstItem?.vendor as unknown as { bannerImageUrl?: string | null; avatarUrl?: string | null })
-                ?.avatarUrl)
 
+            // Get vendor image from first item
+            const vendorData = firstItem?.vendor as { bannerImageUrl?: string | null; profilePhotoUrl?: string | null } | null | undefined
+            const vendorImageFromFirstItem = vendorData?.bannerImageUrl || vendorData?.profilePhotoUrl
+
+            // Get media item image from first item
             const firstItemMediaUrl =
               firstItem?.mediaItem?.thumbnailUrl ||
               firstItem?.mediaItem?.cdnUrl ||
-              firstItem?.mediaItem?.url ||
-              vendorImageFromFirstItem
+              firstItem?.mediaItem?.url
 
+            // Find any item with media as fallback
+            const fallbackMediaItem = wishlist.items?.find(
+              (item) => item.mediaItem && (item.mediaItem.thumbnailUrl || item.mediaItem.cdnUrl || item.mediaItem.url)
+            )?.mediaItem
+
+            // Priority: first item's media > first item's vendor image > any media item
             const coverSource =
               firstItemMediaUrl ||
+              vendorImageFromFirstItem ||
               fallbackMediaItem?.thumbnailUrl ||
               fallbackMediaItem?.cdnUrl ||
               fallbackMediaItem?.url

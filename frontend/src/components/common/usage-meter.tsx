@@ -11,11 +11,22 @@ import { cn } from '@/lib/utils'
 // ============================================================================
 
 const FEATURE_DISPLAY_NAMES: Record<string, string> = {
-  // Event features
+  // Event features (User)
   max_events: 'Events',
   max_guests_per_event: 'Guests per Event',
+  guests_per_event: 'Guests per Event',
   event_photos: 'Event Photos',
   event_custom_branding: 'Custom Branding',
+  memory_enabled: 'Event Memories',
+  memory_uploads_per_event: 'Memory Uploads',
+  memory_storage_mb: 'Memory Storage (MB)',
+  memory_download_enabled: 'Memory Downloads',
+  einvite_enabled: 'E-Invitations',
+  whatsapp_invites_per_event: 'WhatsApp Invites',
+  custom_invite_templates: 'Custom Templates',
+  rsvp_tracking: 'RSVP Tracking',
+  priority_support: 'Priority Support',
+  export_data: 'Data Export',
 
   // Usage features
   api_calls: 'API Calls',
@@ -24,6 +35,16 @@ const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   shared_events: 'Shared Events',
 
   // Vendor features
+  messaging: 'Direct Messaging',
+  ai_recommendations: 'AI Recommendations',
+  portfolios_limit: 'Portfolio Albums',
+  images_per_album: 'Images per Album',
+  search_boost: 'Search Boost',
+  featured_sections: 'Featured Sections',
+  premium_badges: 'Premium Badges',
+  ad_credits_monthly: 'Ad Credits',
+  services_limit: 'Services',
+  profile_visible: 'Profile Visibility',
   listings: 'Listings',
   albums: 'Albums',
   leads: 'Leads',
@@ -411,4 +432,182 @@ export function UsageBadge({
       {displayLabel}: {formatNumber(used)}/{formatNumber(limit)}
     </Badge>
   )
+}
+
+// ============================================================================
+// Feature Limit Alert Component
+// ============================================================================
+
+interface FeatureLimitAlertProps {
+  /**
+   * Feature key for display name lookup
+   */
+  featureKey: string
+
+  /**
+   * Current usage count
+   */
+  used: number
+
+  /**
+   * Maximum limit
+   */
+  limit: number
+
+  /**
+   * Whether the feature has unlimited usage
+   */
+  isUnlimited?: boolean
+
+  /**
+   * Custom message to display
+   */
+  message?: string
+
+  /**
+   * Callback when upgrade button is clicked
+   */
+  onUpgrade?: () => void
+
+  /**
+   * Whether to show the alert (auto-hides if usage is low)
+   * @default true when usage >= 80%
+   */
+  showAlert?: boolean
+
+  /**
+   * Custom className
+   */
+  className?: string
+}
+
+export function FeatureLimitAlert({
+  featureKey,
+  used,
+  limit,
+  isUnlimited = false,
+  message,
+  onUpgrade,
+  showAlert,
+  className,
+}: FeatureLimitAlertProps) {
+  const percentage = useMemo(() => {
+    if (isUnlimited || limit === 0) return 0
+    return (used / limit) * 100
+  }, [used, limit, isUnlimited])
+
+  const displayLabel = FEATURE_DISPLAY_NAMES[featureKey] || featureKey
+  const { status, textColor } = getUsageColor(percentage)
+
+  // Auto-determine if alert should show based on usage
+  const shouldShow = showAlert ?? (!isUnlimited && percentage >= 80)
+
+  if (!shouldShow) return null
+
+  const defaultMessage = percentage >= 100
+    ? `You've reached your ${displayLabel.toLowerCase()} limit (${formatNumber(limit)}). Upgrade your plan to continue.`
+    : `You're approaching your ${displayLabel.toLowerCase()} limit (${formatNumber(used)}/${formatNumber(limit)}). Consider upgrading soon.`
+
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-3 rounded-lg border p-4",
+        status === 'critical' && "border-destructive/50 bg-destructive/10",
+        status === 'high' && "border-amber-500/50 bg-amber-500/10",
+        className
+      )}
+    >
+      <AlertTriangle className={cn("h-5 w-5 mt-0.5 flex-shrink-0", textColor)} />
+      <div className="flex-1 space-y-2">
+        <p className="text-sm font-medium">
+          {status === 'critical' ? 'Limit Reached' : 'Approaching Limit'}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {message || defaultMessage}
+        </p>
+        <UsageMeter
+          featureKey={featureKey}
+          used={used}
+          limit={limit}
+          isUnlimited={isUnlimited}
+          size="sm"
+          showLabel={false}
+          showStatus
+        />
+        {onUpgrade && (
+          <button
+            onClick={onUpgrade}
+            className="mt-2 text-sm font-medium text-primary hover:underline"
+          >
+            Upgrade Plan →
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Feature Limit Error Parser
+// ============================================================================
+
+export interface FeatureLimitError {
+  error: string
+  message: string
+  userMessage: string
+  details: {
+    currentCount?: number
+    limit?: number
+    availableSlots?: number
+    requestedCount?: number
+    currentUsageMB?: number
+    limitMB?: number
+    remainingMB?: number
+    fileSizeMB?: number
+    planUpgradeRequired: boolean
+    portfolioId?: string
+    eventId?: string
+  }
+}
+
+/**
+ * Check if an error is a feature limit error
+ */
+export function isFeatureLimitError(error: unknown): error is { response?: { data?: FeatureLimitError } } {
+  if (!error || typeof error !== 'object') return false
+  const err = error as { response?: { data?: { error?: string; planUpgradeRequired?: boolean; details?: { planUpgradeRequired?: boolean } } } }
+  const data = err?.response?.data
+  if (!data) return false
+
+  const limitErrors = [
+    'PORTFOLIO_LIMIT_EXCEEDED',
+    'IMAGES_PER_ALBUM_LIMIT_EXCEEDED',
+    'IMAGES_PER_ALBUM_LIMIT_WOULD_EXCEED',
+    'SERVICES_LIMIT_EXCEEDED',
+    'MEMORY_UPLOADS_LIMIT_EXCEEDED',
+    'MEMORY_STORAGE_LIMIT_EXCEEDED',
+  ]
+
+  return limitErrors.includes(data.error || '') || data.details?.planUpgradeRequired === true
+}
+
+/**
+ * Extract user-friendly message from feature limit error
+ */
+export function getFeatureLimitErrorMessage(error: unknown): string {
+  if (!isFeatureLimitError(error)) {
+    return 'An unexpected error occurred'
+  }
+
+  const data = (error as { response?: { data?: FeatureLimitError } })?.response?.data
+  return data?.userMessage || data?.message || 'You have reached a plan limit. Please upgrade to continue.'
+}
+
+/**
+ * Get feature limit error details
+ */
+export function getFeatureLimitErrorDetails(error: unknown): FeatureLimitError['details'] | null {
+  if (!isFeatureLimitError(error)) return null
+  const data = (error as { response?: { data?: FeatureLimitError } })?.response?.data
+  return data?.details || null
 }

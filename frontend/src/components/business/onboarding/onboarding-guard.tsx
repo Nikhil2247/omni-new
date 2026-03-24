@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
@@ -11,10 +11,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   AlertCircle,
   ArrowRight,
-  Loader2,
   ShieldAlert,
   Clock,
-  CheckCircle2,
   Building2,
 } from 'lucide-react'
 import {
@@ -23,6 +21,7 @@ import {
   useBusinessContract,
   useConsentStatus,
 } from '@/hooks/queries/use-business'
+import { useFeature } from '@/hooks/use-feature'
 
 interface OnboardingGuardProps {
   children: ReactNode
@@ -40,16 +39,22 @@ export function OnboardingGuard({
   const router = useRouter()
   const pathname = usePathname()
 
+  const { isEnabled: isOnboardingEnabled, isLoading: featureLoading } = useFeature('vendor.onboarding')
   const { data: profile, isLoading: profileLoading } = useBusinessProfile()
   const { data: kyc, isLoading: kycLoading } = useBusinessKyc()
   const { data: contract, isLoading: contractLoading } = useBusinessContract()
   const { data: consentStatus, isLoading: consentLoading } = useConsentStatus()
 
-  const isLoading = profileLoading || kycLoading || contractLoading || consentLoading
+  const isLoading = featureLoading || profileLoading || kycLoading || contractLoading || consentLoading
 
   // Skip guard for onboarding page itself
   const isOnboardingPage = pathname?.includes('/onboarding')
   if (isOnboardingPage) {
+    return <>{children}</>
+  }
+
+  // If vendor.onboarding feature is disabled, skip all onboarding checks
+  if (!featureLoading && !isOnboardingEnabled) {
     return <>{children}</>
   }
 

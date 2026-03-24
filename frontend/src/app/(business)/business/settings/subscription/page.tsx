@@ -393,18 +393,28 @@ export default function VendorSubscriptionSettingsPage() {
                   )}
                 </div>
 
-                {/* Plan Features Highlights */}
+                {/* Plan Features */}
                 {subscription.plan.features && subscription.plan.features.length > 0 && (
                   <div className="pt-2 border-t">
                     <p className="text-sm font-medium mb-2">Included in your plan:</p>
                     <div className="grid gap-1">
                       {subscription.plan.features
-                        .filter((f) => f.isHighlighted)
-                        .slice(0, 4)
+                        .filter((f) => f.limitValue !== 0 && f.limitValue !== null)
+                        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                        .slice(0, 6)
                         .map((feature) => (
-                          <div key={feature.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <CheckCircle2 className="h-3 w-3 text-green-500" />
-                            <span>{feature.featureName}</span>
+                          <div key={feature.id} className="flex items-center justify-between text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-3 w-3 text-green-500" />
+                              <span>{feature.featureName}</span>
+                            </div>
+                            <span className="text-xs">
+                              {feature.limitType === 'BOOLEAN'
+                                ? (feature.limitValue === 1 ? 'Yes' : 'No')
+                                : feature.limitType === 'UNLIMITED'
+                                ? 'Unlimited'
+                                : feature.limitValue}
+                            </span>
                           </div>
                         ))}
                     </div>

@@ -40,6 +40,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from '@/components/ui/carousel'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   MapPin,
@@ -490,8 +497,6 @@ export default function VendorPageClient({
 
   // Get all media items from portfolios in featured-first order
   const allMedia = [...featuredMedia, ...nonFeaturedMedia]
-  // For display: show only non-featured media in "All Images" section (featured already shown separately)
-  const visibleNonFeaturedMedia = nonFeaturedMedia.slice(0, 15)
 
   // Calculate member since year (guard against invalid dates yielding NaN)
   const _memberSinceRaw = vendor.createdAt ? new Date(vendor.createdAt).getFullYear() : null
@@ -802,84 +807,98 @@ export default function VendorPageClient({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {(featuredPortfolios.length > 0 || nonFeaturedMedia.length > 0) ? (
+                {(featuredPortfolios.length > 0 || allMedia.length > 0) ? (
                   <div className="space-y-8">
-                    {/* Featured Albums - 3 in a row */}
+                    {/* Featured Albums - Carousel */}
                     {featuredPortfolios.length > 0 && (
                       <div>
                         <h3 className="mb-4 text-sm font-medium text-muted-foreground uppercase tracking-wider">Featured Albums</h3>
-                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                          {featuredPortfolios.slice(0, 3).map((portfolio, idx) => {
-                            const albumMedia = portfolio.mediaItems || []
-                            if (albumMedia.length === 0) return null
-                            const coverImage = albumMedia[0]
+                        <Carousel
+                          opts={{
+                            align: 'start',
+                            loop: featuredPortfolios.length > 3,
+                          }}
+                          className="w-full"
+                        >
+                          <CarouselContent className="-ml-2 md:-ml-4">
+                            {featuredPortfolios.map((portfolio, idx) => {
+                              const albumMedia = portfolio.mediaItems || []
+                              if (albumMedia.length === 0) return null
+                              const coverImage = albumMedia[0]
 
-                            return (
-                              <motion.button
-                                key={portfolio.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.05 }}
-                                onClick={() => setSelectedAlbum(portfolio)}
-                                className="group relative overflow-hidden rounded-xl border bg-card text-left transition-all hover:border-primary/50 hover:shadow-lg"
-                              >
-                                {/* Album Cover Image */}
-                                <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                                  <Image
-                                    src={coverImage.cdnUrl || coverImage.url}
-                                    alt={coverImage.altText || portfolio.title || 'Album'}
-                                    fill
-                                    unoptimized={true}
-                                    priority={idx < 3}
-                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                  />
-                                  {/* Photo count overlay */}
-                                  <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                                    <Images className="h-3.5 w-3.5" />
-                                    {albumMedia.length}
-                                  </div>
-                                  {/* Hover overlay */}
-                                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/30">
-                                    <div className="opacity-0 transition-opacity group-hover:opacity-100">
-                                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
-                                        <Eye className="h-5 w-5 text-foreground" />
+                              return (
+                                <CarouselItem key={portfolio.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+                                  <motion.button
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    onClick={() => setSelectedAlbum(portfolio)}
+                                    className="group relative w-full overflow-hidden rounded-xl border bg-card text-left transition-all hover:border-primary/50 hover:shadow-lg"
+                                  >
+                                    {/* Album Cover Image */}
+                                    <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                                      <Image
+                                        src={coverImage.cdnUrl || coverImage.url}
+                                        alt={coverImage.altText || portfolio.title || 'Album'}
+                                        fill
+                                        unoptimized={true}
+                                        priority={idx < 3}
+                                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                      />
+                                      {/* Photo count overlay */}
+                                      <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                                        <Images className="h-3.5 w-3.5" />
+                                        {albumMedia.length}
+                                      </div>
+                                      {/* Hover overlay */}
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/30">
+                                        <div className="opacity-0 transition-opacity group-hover:opacity-100">
+                                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                                            <Eye className="h-5 w-5 text-foreground" />
+                                          </div>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </div>
-                                {/* Album Info */}
-                                <div className="p-4">
-                                  <h3 className="font-semibold text-foreground line-clamp-1">
-                                    {portfolio.title || 'Portfolio'}
-                                  </h3>
-                                  {portfolio.description && (
-                                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                                      {portfolio.description}
-                                    </p>
-                                  )}
-                                </div>
-                              </motion.button>
-                            )
-                          })}
-                        </div>
+                                    {/* Album Info */}
+                                    <div className="p-4">
+                                      <h3 className="font-semibold text-foreground line-clamp-1">
+                                        {portfolio.title || 'Portfolio'}
+                                      </h3>
+                                      {portfolio.description && (
+                                        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                                          {portfolio.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </motion.button>
+                                </CarouselItem>
+                              )
+                            })}
+                          </CarouselContent>
+                          {featuredPortfolios.length > 3 && (
+                            <>
+                              <CarouselPrevious className="left-0 -translate-x-1/2 bg-background/80 backdrop-blur-sm hover:bg-background" />
+                              <CarouselNext className="right-0 translate-x-1/2 bg-background/80 backdrop-blur-sm hover:bg-background" />
+                            </>
+                          )}
+                        </Carousel>
                       </div>
                     )}
 
-                    {/* Non-Featured Photos - 3 column grid, max 15 images */}
-                    {nonFeaturedMedia.length > 0 && (
+                    {/* All Photos - 3 column grid, max 15 images */}
+                    {allMedia.length > 0 && (
                       <div>
                         <div className="mb-4 flex items-center justify-between">
-                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">More Photos</h3>
-                          {nonFeaturedMedia.length > 15 && (
+                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">All Photos</h3>
+                          {allMedia.length > 15 && (
                             <Button variant="ghost" size="sm" onClick={() => setGalleryPanelOpen(true)}>
-                              View all {nonFeaturedMedia.length} photos
+                              View all {allMedia.length} photos
                               <ChevronRight className="ml-1 h-4 w-4" />
                             </Button>
                           )}
                         </div>
                         <div className="grid grid-cols-3 gap-2">
-                          {nonFeaturedMedia.slice(0, 15).map((media, idx) => {
-                            const mediaIndex = allMedia.findIndex((item) => item.id === media.id)
+                          {allMedia.slice(0, 15).map((media, idx) => {
                             return (
                               <motion.button
                                 key={media.id}
@@ -887,7 +906,7 @@ export default function VendorPageClient({
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: idx * 0.02 }}
                                 onClick={() => {
-                                  setLightboxIndex(mediaIndex >= 0 ? mediaIndex : 0)
+                                  setLightboxIndex(idx)
                                   setLightboxOpen(true)
                                 }}
                                 className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
@@ -1114,60 +1133,121 @@ export default function VendorPageClient({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {(vendor.badges?.length || 0) > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {vendor.badges?.map((badge, idx) => {
-                      const iconName = badge.definition?.icon || 'award'
-                      const colorName = badge.definition?.color || 'amber'
-                      const IconComponent = badgeIconMap[iconName] || Award
-                      const colorClasses = badgeColorMap[colorName] || badgeColorMap.amber
+                {(() => {
+                  type BadgeType = NonNullable<typeof vendor.badges>[number]
+                  // Group badges by metric type and get highest threshold for each
+                  const badgesByMetric = (vendor.badges || []).reduce((acc, badge) => {
+                    const metric = badge.definition?.metric
+                    if (!metric) return acc
+                    if (!acc[metric] || (badge.definition?.threshold ?? 0) > (acc[metric].definition?.threshold ?? 0)) {
+                      acc[metric] = badge
+                    }
+                    return acc
+                  }, {} as Record<string, BadgeType>)
 
-                      return (
-                        <motion.div
-                          key={badge.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: idx * 0.05 }}
-                          className={cn(
-                            'flex items-center gap-4 rounded-xl border bg-card p-4 ring-1',
-                            colorClasses.ring
-                          )}
-                        >
-                          <div className={cn(
-                            'flex h-12 w-12 shrink-0 items-center justify-center rounded-full',
-                            colorClasses.bg
-                          )}>
-                            <IconComponent className={cn('h-6 w-6', colorClasses.text)} />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground truncate">
-                              {badge.definition?.name || 'Achievement'}
-                            </h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {badge.definition?.description || 'Earned badge'}
-                            </p>
-                            {badge.achievedAt && (
-                              <p className="mt-1 text-xs text-muted-foreground/70">
-                                Earned {new Date(badge.achievedAt).toLocaleDateString('en-IN', {
-                                  month: 'short',
-                                  year: 'numeric'
-                                })}
-                              </p>
+                  // Get current counts for each metric
+                  const metricData = [
+                    {
+                      metric: 'VIEWS',
+                      label: 'Profile Views',
+                      currentCount: vendor.viewCount ?? 0,
+                      icon: Eye,
+                      color: 'sky',
+                    },
+                    {
+                      metric: 'LEADS',
+                      label: 'Lead Inquiries',
+                      currentCount: vendor.leadCount ?? 0,
+                      icon: Mail,
+                      color: 'emerald',
+                    },
+                    {
+                      metric: 'FOLLOWERS',
+                      label: 'Followers',
+                      currentCount: vendor.followersCount ?? 0,
+                      icon: Users,
+                      color: 'violet',
+                    },
+                    {
+                      metric: 'REVIEWS',
+                      label: 'Reviews',
+                      currentCount: vendorReviews?.length ?? 0,
+                      icon: Star,
+                      color: 'amber',
+                    },
+                  ]
+
+                  // Filter to only show metrics where vendor has earned at least one badge
+                  const earnedMetrics = metricData.filter(m => badgesByMetric[m.metric])
+
+                  if (earnedMetrics.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <Award className="mb-4 h-16 w-16 text-muted-foreground/30" />
+                        <h3 className="text-lg font-semibold text-foreground">No Badges Yet</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Badges are earned as this vendor reaches milestones for followers, reviews, leads, and profile views.
+                        </p>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {earnedMetrics.map((data, idx) => {
+                        const badge = badgesByMetric[data.metric]
+                        const iconName = badge?.definition?.icon || 'award'
+                        const colorName = badge?.definition?.color || data.color
+                        const IconComponent = badgeIconMap[iconName] || data.icon
+                        const colorClasses = badgeColorMap[colorName] || badgeColorMap.amber
+                        const threshold = badge?.definition?.threshold ?? 0
+
+                        // Format the threshold for display
+                        const formatThreshold = (num: number) => {
+                          if (num >= 1000000) return `${(num / 1000000).toFixed(num % 1000000 === 0 ? 0 : 1)}M+`
+                          if (num >= 1000) return `${(num / 1000).toFixed(num % 1000 === 0 ? 0 : 1)}K+`
+                          return `${num}+`
+                        }
+
+                        return (
+                          <motion.div
+                            key={data.metric}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: idx * 0.05 }}
+                            className={cn(
+                              'flex items-center gap-4 rounded-xl border bg-card p-4 ring-1',
+                              colorClasses.ring
                             )}
-                          </div>
-                        </motion.div>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <Award className="mb-4 h-16 w-16 text-muted-foreground/30" />
-                    <h3 className="text-lg font-semibold text-foreground">No Badges Yet</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Badges are earned as this vendor reaches milestones for followers, reviews, leads, and profile views.
-                    </p>
-                  </div>
-                )}
+                          >
+                            <div className={cn(
+                              'flex h-12 w-12 shrink-0 items-center justify-center rounded-full',
+                              colorClasses.bg
+                            )}>
+                              <IconComponent className={cn('h-6 w-6', colorClasses.text)} />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="font-semibold text-foreground truncate">
+                                {formatThreshold(threshold)} {data.label}
+                              </h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {badge?.definition?.name || 'Achievement unlocked'}
+                              </p>
+                              {badge?.achievedAt && (
+                                <p className="mt-1 text-xs text-muted-foreground/70">
+                                  Earned {new Date(badge.achievedAt).toLocaleDateString('en-IN', {
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })}
+                                </p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
               </motion.div>
             )}
           </AnimatePresence>

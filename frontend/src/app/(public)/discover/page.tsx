@@ -73,12 +73,14 @@ function InspirationGrid({
 }) {
   const [page, setPage] = useState(1)
   const [allMedia, setAllMedia] = useState<any[]>([])
+  const [hasReachedEnd, setHasReachedEnd] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // Reset pagination when query changes
   useEffect(() => {
     setPage(1)
     setAllMedia([])
+    setHasReachedEnd(false)
   }, [query])
 
   const filters = useMemo(
@@ -93,26 +95,36 @@ function InspirationGrid({
 
   const { data: mediaData, isLoading: mediaLoading, isFetching } = usePublicMediaFeed(filters)
 
+  const mediaItems = useMemo(() => mediaData?.data ?? [], [mediaData])
+  const hasNextPage = mediaData?.meta?.hasNextPage === true
+
   useEffect(() => {
-    if (mediaData?.data) {
+    if (mediaItems.length > 0 || page === 1) {
       if (page === 1) {
-        setAllMedia(mediaData.data)
+        setAllMedia(mediaItems)
+        setHasReachedEnd(mediaItems.length === 0 || !hasNextPage)
       } else {
         // Deduplicate by ID to prevent duplicate keys
         setAllMedia(prev => {
           const existingIds = new Set(prev.map(item => item.id))
-          const newItems = mediaData.data.filter(item => !existingIds.has(item.id))
+          const newItems = mediaItems.filter(item => !existingIds.has(item.id))
+          // If no new unique items and API says no more pages, we've reached the end
+          if (newItems.length === 0 || !hasNextPage) {
+            setHasReachedEnd(true)
+          }
           return [...prev, ...newItems]
         })
       }
     }
-  }, [mediaData, page])
+  }, [mediaItems, hasNextPage, page])
 
   useEffect(() => {
+    if (hasReachedEnd) return
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !mediaLoading && !isFetching) {
-          const hasMore = mediaData?.meta?.hasNextPage ?? (allMedia.length < (mediaData?.meta?.total || 0))
+        if (entries[0].isIntersecting && !mediaLoading && !isFetching && !hasReachedEnd) {
+          const hasMore = hasNextPage
           if (hasMore) {
             setPage(prev => prev + 1)
           }
@@ -126,7 +138,7 @@ function InspirationGrid({
     }
 
     return () => observer.disconnect()
-  }, [mediaLoading, isFetching, mediaData?.meta, allMedia.length])
+  }, [mediaLoading, isFetching, hasNextPage, hasReachedEnd])
 
   if (mediaLoading && page === 1) {
     const heights = [280, 320, 240, 360, 300, 260, 340, 280, 320, 380, 260, 300]
@@ -168,7 +180,7 @@ function InspirationGrid({
     <>
       <MasonryGrid items={allMedia} />
 
-      {(allMedia.length < (mediaData?.meta?.total || 0) || isFetching) && (
+      {!hasReachedEnd && (
         <div ref={loadMoreRef} className="py-12 flex justify-center w-full">
           {isFetching && (
             <div className="flex items-center gap-3">

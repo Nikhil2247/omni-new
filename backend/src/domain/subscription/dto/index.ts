@@ -16,3 +16,6 @@ export * from './user-subscription.dto';
 
 // Payment gateway DTOs
 export * from './razorpay.dto';
+
+// Coupon DTOs
+export * from './coupon.dto';

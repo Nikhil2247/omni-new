@@ -28,7 +28,8 @@ export const adminClaimService = {
     params: AdminClaimFilterParams = {}
   ): Promise<AdminClaimListResponse> => {
     const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.CLAIMS.LIST, { params })
-    return data
+    // API returns { success, data: { claims, total, limit, offset }, meta }
+    return data?.data ?? data
   },
 
   /**
@@ -62,7 +63,8 @@ export const adminClaimService = {
     id: string,
     payload?: ApproveClaimRequest
   ): Promise<ClaimApprovalResult> => {
-    const { data } = await apiClient.post(API_ENDPOINTS.ADMIN.CLAIMS.APPROVE(id), payload)
+    // Always send an object (even empty) to avoid validation pipe errors
+    const { data } = await apiClient.post(API_ENDPOINTS.ADMIN.CLAIMS.APPROVE(id), payload ?? {})
     return data?.data ?? data
   },
 

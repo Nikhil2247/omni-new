@@ -121,6 +121,13 @@ export const adminNav: NavGroup[] = [
     title: 'Moderation',
     items: [
       {
+        title: 'Vendor Claims',
+        href: '/ops/claims',
+        icon: BadgeCheck,
+        roles: [ROLES.ADMIN, ROLES.ADMIN_SYSTEM],
+        feature: 'vendor.onboarding',
+      },
+      {
         title: 'Campaign Approval',
         href: '/admin/campaigns',
         icon: Megaphone,

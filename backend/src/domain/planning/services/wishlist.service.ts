@@ -197,8 +197,84 @@ export class WishlistService {
     };
   }
 
-  async findByUserId(userId: string): Promise<Wishlist[]> {
-    return this.wishlistRepository.findByUserId(userId);
+  async findByUserId(userId: string) {
+    const wishlists = await this.wishlistRepository.findByUserId(userId);
+
+    if (!wishlists.length) {
+      return [];
+    }
+
+    // Collect all vendor IDs across all wishlists
+    const allVendorIds: string[] = [];
+    for (const wishlist of wishlists) {
+      const items = wishlist.items as Array<{
+        vendorProfileId: string | null;
+      }>;
+      for (const item of items) {
+        if (item.vendorProfileId) {
+          allVendorIds.push(item.vendorProfileId);
+        }
+      }
+    }
+
+    // Fetch all vendor profiles at once
+    const vendorMap = new Map<
+      string,
+      {
+        id: string;
+        businessName: string;
+        slug: string;
+        profilePhotoUrl: string | null;
+        bannerImageUrl: string | null;
+      }
+    >();
+
+    if (allVendorIds.length > 0) {
+      const vendors = await this.prisma.vendorProfile.findMany({
+        where: { id: { in: allVendorIds } },
+        select: {
+          id: true,
+          businessName: true,
+          slug: true,
+          profilePhotoUrl: true,
+          bannerImageUrl: true,
+        },
+      });
+      for (const vendor of vendors) {
+        vendorMap.set(vendor.id, vendor);
+      }
+    }
+
+    // Enrich each wishlist's items with vendor data
+    return wishlists.map((wishlist) => {
+      const items = wishlist.items as Array<{
+        id: string;
+        wishlistId: string;
+        vendorProfileId: string | null;
+        mediaItemId: string | null;
+        notes: string | null;
+        createdAt: Date;
+        mediaItem?: {
+          id: string;
+          type: string;
+          url: string;
+          cdnUrl: string | null;
+          thumbnailUrl: string | null;
+          altText: string | null;
+          caption: string | null;
+        } | null;
+      }>;
+
+      return {
+        ...wishlist,
+        items: items.map((item) => ({
+          ...item,
+          vendor: item.vendorProfileId
+            ? (vendorMap.get(item.vendorProfileId) ?? null)
+            : null,
+        })),
+      };
+    });
   }
 
   async delete(id: string): Promise<void> {

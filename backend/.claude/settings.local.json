@@ -9,7 +9,14 @@
       "Bash(npm run migrate:extract:*)",
       "Bash(node -e:*)",
       "Bash(npm run migrate:mongodb:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(dir:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(findstr:*)",
+      "Bash(cd:*)",
+      "Bash(ls:*)",
+      "Bash(npx tsx:*)"
     ]
   }
 }

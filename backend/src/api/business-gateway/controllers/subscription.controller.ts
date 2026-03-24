@@ -36,6 +36,7 @@ import {
 } from '../../../core/auth/decorators/current-user.decorator';
 import { SubscriptionService } from '../../../domain/subscription/services/subscription.service';
 import { SubscriptionPlanService } from '../../../domain/subscription/services/subscription-plan.service';
+import { CouponService } from '../../../domain/subscription/services/coupon.service';
 import { VendorProfileService } from '../../../domain/catalog/services/vendor-profile.service';
 import {
   CreateSubscriptionDto,
@@ -61,6 +62,11 @@ class UpgradeSubscriptionDto {
   @IsOptional()
   @IsBoolean()
   immediateUpgrade?: boolean;
+
+  @ApiPropertyOptional({ description: 'Coupon code to apply' })
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
 }
 
 class DowngradeSubscriptionDto {
@@ -76,6 +82,11 @@ class DowngradeSubscriptionDto {
   @IsOptional()
   @IsString()
   reason?: string;
+
+  @ApiPropertyOptional({ description: 'Coupon code to apply' })
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
 }
 
 // ============================================================================
@@ -117,6 +128,7 @@ export class BusinessSubscriptionController {
   constructor(
     private readonly subscriptionService: SubscriptionService,
     private readonly planService: SubscriptionPlanService,
+    private readonly couponService: CouponService,
     private readonly vendorProfileService: VendorProfileService,
   ) {}
 
@@ -262,7 +274,7 @@ export class BusinessSubscriptionController {
   async upgradeSubscription(
     @Body() dto: UpgradeSubscriptionDto,
     @CurrentUser() user: CurrentUserData,
-  ): Promise<SubscriptionResponseDto> {
+  ): Promise<SubscriptionResponseDto & { couponApplied?: boolean; discountAmount?: number }> {
     const vendorProfileId = await this.getVendorProfileId(user.id);
 
     this.logger.log(
@@ -289,7 +301,34 @@ export class BusinessSubscriptionController {
       priceId: dto.newPriceId,
     });
 
-    return updated as SubscriptionResponseDto;
+    // Apply coupon if provided
+    let couponApplied = false;
+    let discountAmount: number | undefined;
+
+    if (dto.couponCode) {
+      const couponResult = await this.couponService.applyCoupon(
+        dto.couponCode,
+        updated.id,
+      );
+
+      if (couponResult.success) {
+        couponApplied = true;
+        discountAmount = couponResult.subscription?.discountAmount;
+        this.logger.log(
+          `Coupon ${dto.couponCode} applied to upgraded subscription ${updated.id}`,
+        );
+      } else {
+        this.logger.warn(
+          `Failed to apply coupon ${dto.couponCode}: ${couponResult.errorMessage}`,
+        );
+      }
+    }
+
+    return {
+      ...(updated as SubscriptionResponseDto),
+      couponApplied,
+      discountAmount,
+    };
   }
 
   /**
@@ -318,7 +357,7 @@ export class BusinessSubscriptionController {
   async downgradeSubscription(
     @Body() dto: DowngradeSubscriptionDto,
     @CurrentUser() user: CurrentUserData,
-  ): Promise<SubscriptionResponseDto> {
+  ): Promise<SubscriptionResponseDto & { couponApplied?: boolean; discountAmount?: number }> {
     const vendorProfileId = await this.getVendorProfileId(user.id);
 
     this.logger.log(
@@ -346,7 +385,34 @@ export class BusinessSubscriptionController {
       priceId: dto.newPriceId,
     });
 
-    return updated as SubscriptionResponseDto;
+    // Apply coupon if provided
+    let couponApplied = false;
+    let discountAmount: number | undefined;
+
+    if (dto.couponCode) {
+      const couponResult = await this.couponService.applyCoupon(
+        dto.couponCode,
+        updated.id,
+      );
+
+      if (couponResult.success) {
+        couponApplied = true;
+        discountAmount = couponResult.subscription?.discountAmount;
+        this.logger.log(
+          `Coupon ${dto.couponCode} applied to downgraded subscription ${updated.id}`,
+        );
+      } else {
+        this.logger.warn(
+          `Failed to apply coupon ${dto.couponCode}: ${couponResult.errorMessage}`,
+        );
+      }
+    }
+
+    return {
+      ...(updated as SubscriptionResponseDto),
+      couponApplied,
+      discountAmount,
+    };
   }
 
   /**

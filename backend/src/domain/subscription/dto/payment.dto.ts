@@ -211,41 +211,7 @@ export class PaymentResponseDto {
 }
 
 // ============================================================================
-// Coupon DTOs
+// Coupon DTOs (Basic - see coupon.dto.ts for full coupon DTOs)
 // ============================================================================
 
-export class ApplyCouponDto {
-  @ApiProperty({ description: 'Coupon code' })
-  @IsString()
-  code: string;
-
-  @ApiProperty({ description: 'Plan ID to apply coupon to' })
-  @IsUUID()
-  planId: string;
-}
-
-export class CouponResponseDto {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
-  code: string;
-
-  @ApiProperty()
-  discountType: string;
-
-  @ApiProperty()
-  discountValue: number;
-
-  @ApiPropertyOptional()
-  maxRedemptions?: number;
-
-  @ApiProperty()
-  timesRedeemed: number;
-
-  @ApiPropertyOptional()
-  expiresAt?: Date;
-
-  @ApiProperty()
-  isActive: boolean;
-}
+// Note: Full coupon DTOs are exported from coupon.dto.ts

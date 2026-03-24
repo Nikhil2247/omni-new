@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UploadedFiles,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { PortfolioService } from '../../../domain/catalog/services/portfolio.service';
@@ -31,6 +32,7 @@ import {
 import { MinioService } from '../../../infrastructure/storage/minio.service';
 import { StoragePathHelper } from '../../../infrastructure/storage/storage-path.helper';
 import { PrismaService } from '../../../core/database/prisma.service';
+import { UsageService } from '../../../domain/subscription/services/usage.service';
 
 @Controller('portfolio')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -42,6 +44,7 @@ export class PortfolioController {
     private readonly minioService: MinioService,
     private readonly storagePathHelper: StoragePathHelper,
     private readonly prisma: PrismaService,
+    private readonly usageService: UsageService,
   ) {}
 
   /**
@@ -197,8 +200,77 @@ export class PortfolioController {
       throw new BadRequestException('No files uploaded');
     }
 
+    // Get portfolio with vendor profile for limit check
+    const portfolio = await this.prisma.portfolio.findUnique({
+      where: { id: portfolioId },
+      include: {
+        vendorProfile: {
+          select: { id: true, slug: true },
+        },
+      },
+    });
+
+    if (!portfolio) {
+      throw new BadRequestException('Portfolio not found');
+    }
+
+    // Check images_per_album limit before uploading
+    try {
+      const limitStatus = await this.usageService.checkFeatureLimit(
+        portfolio.vendorProfileId,
+        'images_per_album',
+      );
+
+      if (!limitStatus.isUnlimited && limitStatus.limit > 0) {
+        // Get current image count for this portfolio
+        const currentCount = await this.prisma.mediaItem.count({
+          where: { portfolioId },
+        });
+
+        const availableSlots = limitStatus.limit - currentCount;
+
+        if (availableSlots <= 0) {
+          throw new ForbiddenException({
+            message: 'Images per album limit reached',
+            error: 'IMAGES_PER_ALBUM_LIMIT_EXCEEDED',
+            details: {
+              portfolioId,
+              currentCount,
+              limit: limitStatus.limit,
+              availableSlots: 0,
+              requestedCount: files.length,
+              planUpgradeRequired: true,
+            },
+            userMessage: `You have reached the maximum of ${limitStatus.limit} images per album on your current plan. Please upgrade your subscription to add more images.`,
+          });
+        }
+
+        if (files.length > availableSlots) {
+          throw new ForbiddenException({
+            message: 'Upload would exceed images per album limit',
+            error: 'IMAGES_PER_ALBUM_LIMIT_WOULD_EXCEED',
+            details: {
+              portfolioId,
+              currentCount,
+              limit: limitStatus.limit,
+              availableSlots,
+              requestedCount: files.length,
+              planUpgradeRequired: availableSlots === 0,
+            },
+            userMessage: `You can only add ${availableSlots} more image${availableSlots === 1 ? '' : 's'} to this album (limit: ${limitStatus.limit}). You're trying to upload ${files.length} files. Please reduce the number of files or upgrade your subscription.`,
+          });
+        }
+      }
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      // Log but continue if usage service fails
+      console.warn(`Failed to check images_per_album limit: ${error.message}`);
+    }
+
     // Get vendor slug for path generation
-    const vendorSlug = await this.getVendorSlugForPortfolio(portfolioId);
+    const vendorSlug = portfolio.vendorProfile?.slug || 'unknown';
 
     const results: Awaited<ReturnType<PortfolioService['addMediaItem']>>[] = [];
     for (const file of files) {

@@ -12,8 +12,22 @@ import {
   SubscriptionEmailService,
   SubscriptionEmailContext,
   PaymentReceiptContext,
+  UsageAlertContext,
 } from '../services/subscription-email.service';
 import { SubscriptionEvents } from './subscription.events';
+
+// Feature display names for email alerts
+const FEATURE_DISPLAY_NAMES: Record<string, string> = {
+  guests_per_event: 'Guests per Event',
+  memory_uploads_per_event: 'Memory Uploads',
+  memory_storage_mb: 'Memory Storage',
+  whatsapp_invites_per_event: 'WhatsApp Invites',
+  portfolios_limit: 'Portfolio Albums',
+  images_per_album: 'Images per Album',
+  services_limit: 'Services',
+  ad_credits_monthly: 'Ad Credits',
+  search_boost: 'Search Boost',
+};
 
 // ============================================================================
 // EVENT PAYLOAD INTERFACES
@@ -761,5 +775,473 @@ export class SubscriptionEmailListener {
         `Failed to send payment receipt email to ${baseContext.userEmail}: ${result.error}`,
       );
     }
+  }
+
+  // ============================================================================
+  // USAGE ALERT EVENTS
+  // ============================================================================
+
+  /**
+   * Handle user-usage.limit-approaching event
+   * Sends email when user reaches 80%+ of a feature limit
+   */
+  @OnEvent('user-usage.limit-approaching')
+  async handleUserUsageLimitApproaching(payload: {
+    userId: string;
+    eventId: string;
+    featureKey: string;
+    currentUsage: number;
+    limit: number;
+    usedPercent: number;
+    remaining: number;
+  }): Promise<void> {
+    this.logger.log(
+      `User usage limit approaching: ${payload.featureKey} at ${payload.usedPercent}% for user ${payload.userId}`,
+    );
+
+    try {
+      const context = await this.buildUserUsageAlertContext(payload);
+      if (!context) {
+        this.logger.warn(`Could not build context for user usage alert`);
+        return;
+      }
+
+      const result =
+        await this.subscriptionEmailService.sendUsageLimitApproachingEmail(context);
+
+      if (result.success) {
+        this.logger.log(`Usage limit approaching email sent to ${context.userEmail}`);
+      } else {
+        this.logger.error(
+          `Failed to send usage limit approaching email: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error handling user usage limit approaching:`, error);
+    }
+  }
+
+  /**
+   * Handle user-usage.limit-reached event
+   * Sends email when user reaches 100% of a feature limit
+   */
+  @OnEvent('user-usage.limit-reached')
+  async handleUserUsageLimitReached(payload: {
+    userId: string;
+    eventId: string;
+    featureKey: string;
+    currentUsage: number;
+    limit: number;
+  }): Promise<void> {
+    this.logger.log(
+      `User usage limit reached: ${payload.featureKey} for user ${payload.userId}`,
+    );
+
+    try {
+      const context = await this.buildUserUsageAlertContext({
+        ...payload,
+        usedPercent: 100,
+        remaining: 0,
+      });
+      if (!context) {
+        this.logger.warn(`Could not build context for user usage alert`);
+        return;
+      }
+
+      const result =
+        await this.subscriptionEmailService.sendUsageLimitReachedEmail(context);
+
+      if (result.success) {
+        this.logger.log(`Usage limit reached email sent to ${context.userEmail}`);
+      } else {
+        this.logger.error(
+          `Failed to send usage limit reached email: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error handling user usage limit reached:`, error);
+    }
+  }
+
+  /**
+   * Handle user-usage.storage-limit-approaching event
+   */
+  @OnEvent('user-usage.storage-limit-approaching')
+  async handleStorageLimitApproaching(payload: {
+    userId: string;
+    eventId: string;
+    currentUsageMB: number;
+    limitMB: number;
+    remainingMB: number;
+    usedPercent: number;
+  }): Promise<void> {
+    this.logger.log(
+      `Storage limit approaching: ${payload.usedPercent}% for user ${payload.userId}`,
+    );
+
+    try {
+      const context = await this.buildStorageAlertContext(payload);
+      if (!context) {
+        this.logger.warn(`Could not build context for storage alert`);
+        return;
+      }
+
+      const result =
+        await this.subscriptionEmailService.sendStorageLimitApproachingEmail(context);
+
+      if (result.success) {
+        this.logger.log(`Storage limit approaching email sent to ${context.userEmail}`);
+      } else {
+        this.logger.error(
+          `Failed to send storage limit approaching email: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error handling storage limit approaching:`, error);
+    }
+  }
+
+  /**
+   * Handle user-usage.storage-limit-reached event
+   */
+  @OnEvent('user-usage.storage-limit-reached')
+  async handleStorageLimitReached(payload: {
+    userId: string;
+    eventId: string;
+    currentUsageMB: number;
+    limitMB: number;
+  }): Promise<void> {
+    this.logger.log(
+      `Storage limit reached for user ${payload.userId}`,
+    );
+
+    try {
+      const context = await this.buildStorageAlertContext({
+        ...payload,
+        remainingMB: 0,
+        usedPercent: 100,
+      });
+      if (!context) {
+        this.logger.warn(`Could not build context for storage alert`);
+        return;
+      }
+
+      const result =
+        await this.subscriptionEmailService.sendStorageLimitReachedEmail(context);
+
+      if (result.success) {
+        this.logger.log(`Storage limit reached email sent to ${context.userEmail}`);
+      } else {
+        this.logger.error(
+          `Failed to send storage limit reached email: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error handling storage limit reached:`, error);
+    }
+  }
+
+  /**
+   * Handle vendor usage.limit-approaching event
+   */
+  @OnEvent('usage.limit-approaching')
+  async handleVendorUsageLimitApproaching(payload: {
+    vendorProfileId: string;
+    featureKey: string;
+    currentUsage: number;
+    limit: number;
+    usedPercent: number;
+    remaining: number;
+  }): Promise<void> {
+    this.logger.log(
+      `Vendor usage limit approaching: ${payload.featureKey} at ${payload.usedPercent}%`,
+    );
+
+    try {
+      const context = await this.buildVendorUsageAlertContext(payload);
+      if (!context) {
+        this.logger.warn(`Could not build context for vendor usage alert`);
+        return;
+      }
+
+      const result =
+        await this.subscriptionEmailService.sendUsageLimitApproachingEmail(context);
+
+      if (result.success) {
+        this.logger.log(`Vendor usage limit approaching email sent to ${context.userEmail}`);
+      } else {
+        this.logger.error(
+          `Failed to send vendor usage limit approaching email: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error handling vendor usage limit approaching:`, error);
+    }
+  }
+
+  /**
+   * Handle vendor usage.limit-reached event
+   */
+  @OnEvent('usage.limit-reached')
+  async handleVendorUsageLimitReached(payload: {
+    vendorProfileId: string;
+    featureKey: string;
+    currentUsage: number;
+    limit: number;
+  }): Promise<void> {
+    this.logger.log(
+      `Vendor usage limit reached: ${payload.featureKey}`,
+    );
+
+    try {
+      const context = await this.buildVendorUsageAlertContext({
+        ...payload,
+        usedPercent: 100,
+        remaining: 0,
+      });
+      if (!context) {
+        this.logger.warn(`Could not build context for vendor usage alert`);
+        return;
+      }
+
+      const result =
+        await this.subscriptionEmailService.sendUsageLimitReachedEmail(context);
+
+      if (result.success) {
+        this.logger.log(`Vendor usage limit reached email sent to ${context.userEmail}`);
+      } else {
+        this.logger.error(
+          `Failed to send vendor usage limit reached email: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error handling vendor usage limit reached:`, error);
+    }
+  }
+
+  /**
+   * Handle subscription.auto-renew-changed event
+   */
+  @OnEvent('subscription.auto-renew-changed')
+  async handleAutoRenewChanged(payload: {
+    subscriptionId: string;
+    userId: string;
+    autoRenewEnabled: boolean;
+    type: 'vendor' | 'user';
+  }): Promise<void> {
+    this.logger.log(
+      `Auto-renew ${payload.autoRenewEnabled ? 'enabled' : 'disabled'} for subscription ${payload.subscriptionId}`,
+    );
+
+    try {
+      let context: SubscriptionEmailContext | null = null;
+
+      if (payload.type === 'vendor') {
+        context = await this.buildSubscriptionContext(payload.subscriptionId);
+      } else {
+        context = await this.buildUserSubscriptionContext(payload.subscriptionId);
+      }
+
+      if (!context) {
+        this.logger.warn(`Could not build context for auto-renew email`);
+        return;
+      }
+
+      const result = await this.subscriptionEmailService.sendAutoRenewStatusEmail({
+        ...context,
+        autoRenewEnabled: payload.autoRenewEnabled,
+      });
+
+      if (result.success) {
+        this.logger.log(`Auto-renew status email sent to ${context.userEmail}`);
+      } else {
+        this.logger.error(
+          `Failed to send auto-renew status email: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error handling auto-renew changed:`, error);
+    }
+  }
+
+  // ============================================================================
+  // USAGE ALERT CONTEXT BUILDERS
+  // ============================================================================
+
+  /**
+   * Build context for user usage alert emails
+   */
+  private async buildUserUsageAlertContext(payload: {
+    userId: string;
+    eventId: string;
+    featureKey: string;
+    currentUsage: number;
+    limit: number;
+    usedPercent: number;
+    remaining: number;
+  }): Promise<UsageAlertContext | null> {
+    // Get user details
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, email: true, firstName: true },
+    });
+
+    if (!user?.email) {
+      return null;
+    }
+
+    // Get event details if provided
+    let eventName: string | undefined;
+    if (payload.eventId) {
+      const event = await this.prisma.event.findUnique({
+        where: { id: payload.eventId },
+        select: { name: true },
+      });
+      eventName = event?.name;
+    }
+
+    // Get user subscription plan name
+    const subscription = await this.prisma.userSubscription.findFirst({
+      where: { userId: payload.userId, status: 'ACTIVE' },
+      include: { plan: { select: { name: true } } },
+    });
+
+    return {
+      userName: user.firstName || user.email.split('@')[0],
+      userEmail: user.email,
+      featureName: FEATURE_DISPLAY_NAMES[payload.featureKey] || payload.featureKey,
+      featureKey: payload.featureKey,
+      currentUsage: payload.currentUsage,
+      limit: payload.limit,
+      usedPercent: payload.usedPercent,
+      remaining: payload.remaining,
+      planName: subscription?.plan?.name,
+      eventName,
+      eventId: payload.eventId,
+    };
+  }
+
+  /**
+   * Build context for storage alert emails
+   */
+  private async buildStorageAlertContext(payload: {
+    userId: string;
+    eventId: string;
+    currentUsageMB: number;
+    limitMB: number;
+    remainingMB: number;
+    usedPercent: number;
+  }): Promise<UsageAlertContext | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, email: true, firstName: true },
+    });
+
+    if (!user?.email) {
+      return null;
+    }
+
+    let eventName: string | undefined;
+    if (payload.eventId) {
+      const event = await this.prisma.event.findUnique({
+        where: { id: payload.eventId },
+        select: { name: true },
+      });
+      eventName = event?.name;
+    }
+
+    const subscription = await this.prisma.userSubscription.findFirst({
+      where: { userId: payload.userId, status: 'ACTIVE' },
+      include: { plan: { select: { name: true } } },
+    });
+
+    return {
+      userName: user.firstName || user.email.split('@')[0],
+      userEmail: user.email,
+      featureName: 'Storage',
+      featureKey: 'memory_storage_mb',
+      currentUsage: Math.round(payload.currentUsageMB * 100) / 100,
+      limit: payload.limitMB,
+      usedPercent: payload.usedPercent,
+      remaining: Math.round(payload.remainingMB * 100) / 100,
+      planName: subscription?.plan?.name,
+      eventName,
+      eventId: payload.eventId,
+      unit: ' MB',
+    };
+  }
+
+  /**
+   * Build context for vendor usage alert emails
+   */
+  private async buildVendorUsageAlertContext(payload: {
+    vendorProfileId: string;
+    featureKey: string;
+    currentUsage: number;
+    limit: number;
+    usedPercent: number;
+    remaining: number;
+  }): Promise<UsageAlertContext | null> {
+    const vendorProfile = await this.prisma.vendorProfile.findUnique({
+      where: { id: payload.vendorProfileId },
+      include: {
+        user: { select: { email: true, firstName: true } },
+      },
+    });
+
+    if (!vendorProfile?.user?.email) {
+      return null;
+    }
+
+    const subscription = await this.prisma.subscription.findFirst({
+      where: { vendorProfileId: payload.vendorProfileId, status: 'ACTIVE' },
+      include: { plan: { select: { name: true } } },
+    });
+
+    return {
+      userName: vendorProfile.user.firstName || vendorProfile.user.email.split('@')[0],
+      userEmail: vendorProfile.user.email,
+      featureName: FEATURE_DISPLAY_NAMES[payload.featureKey] || payload.featureKey,
+      featureKey: payload.featureKey,
+      currentUsage: payload.currentUsage,
+      limit: payload.limit,
+      usedPercent: payload.usedPercent,
+      remaining: payload.remaining,
+      planName: subscription?.plan?.name,
+    };
+  }
+
+  /**
+   * Build email context from user subscription ID
+   */
+  private async buildUserSubscriptionContext(
+    subscriptionId: string,
+  ): Promise<SubscriptionEmailContext | null> {
+    const subscription = await this.prisma.userSubscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        user: true,
+        plan: true,
+        price: true,
+      },
+    });
+
+    if (!subscription?.user?.email) {
+      return null;
+    }
+
+    return {
+      userName: subscription.user.firstName || subscription.user.email.split('@')[0],
+      userEmail: subscription.user.email,
+      planName: subscription.plan?.name || 'Subscription',
+      planDescription: subscription.plan?.description || undefined,
+      amount: subscription.price?.amount
+        ? Number(subscription.price.amount)
+        : undefined,
+      currency: subscription.price?.currency || 'INR',
+      nextBillingDate: subscription.currentPeriodEnd || undefined,
+      currentPeriodEnd: subscription.currentPeriodEnd || undefined,
+      subscriptionId: subscription.id,
+    };
   }
 }

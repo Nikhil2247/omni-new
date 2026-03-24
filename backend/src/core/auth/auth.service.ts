@@ -153,6 +153,19 @@ export class AuthService {
    */
   async register(input: RegisterUserInput): Promise<RegisterResult> {
     await this.enforceMaintenanceAccess();
+
+    // Check if vendor onboarding is enabled when registering as vendor
+    if (input.accountType === 'VENDOR') {
+      const vendorOnboardingFlag = await this.prisma.featureFlag.findUnique({
+        where: { key: 'vendor.onboarding' },
+        select: { enabled: true },
+      });
+
+      if (!vendorOnboardingFlag?.enabled) {
+        throw new ForbiddenException('Vendor registration is currently disabled');
+      }
+    }
+
     const normalizedEmail = input.email.toLowerCase().trim();
 
     // Check if user already exists
@@ -433,6 +446,19 @@ export class AuthService {
     if (!user) {
       const normalizedAccountType =
         accountType === 'VENDOR' ? 'VENDOR' : 'USER';
+
+      // Check if vendor onboarding is enabled when registering as vendor via Google
+      if (normalizedAccountType === 'VENDOR') {
+        const vendorOnboardingFlag = await this.prisma.featureFlag.findUnique({
+          where: { key: 'vendor.onboarding' },
+          select: { enabled: true },
+        });
+
+        if (!vendorOnboardingFlag?.enabled) {
+          throw new ForbiddenException('Vendor registration is currently disabled');
+        }
+      }
+
       const roleName =
         normalizedAccountType === 'VENDOR'
           ? ROLE_NAMES.BUSINESS_ADMIN
