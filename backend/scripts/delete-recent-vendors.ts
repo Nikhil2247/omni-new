@@ -96,13 +96,13 @@ async function deleteOrphanedVendorUsers() {
 
     // Delete vendor reviews (as reviewer)
     try {
-      const reviews = await prisma.vendorReview.deleteMany({ where: { userId: { in: userIds } } });
+      const reviews = await prisma.vendorReview.deleteMany({ where: { reviewerId: { in: userIds } } });
       console.log(`  Deleted ${reviews.count} vendor reviews`);
     } catch (e) { /* table may not exist */ }
 
     // Delete followers
     try {
-      const followers = await prisma.vendorFollower.deleteMany({ where: { userId: { in: userIds } } });
+      const followers = await prisma.vendorFollow.deleteMany({ where: { userId: { in: userIds } } });
       console.log(`  Deleted ${followers.count} vendor followers`);
     } catch (e) { /* table may not exist */ }
 
