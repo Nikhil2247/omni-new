@@ -24,6 +24,9 @@ RUN npx prisma generate
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+# Avoid Node.js heap OOM during TypeScript/Nest compilation in CI build containers.
+ENV NODE_OPTIONS=--max-old-space-size=4096
+
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./package.json
