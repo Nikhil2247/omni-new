@@ -67,6 +67,7 @@ const TIER_FEATURES = {
     color: 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950',
     selectedColor: 'border-blue-500 bg-blue-100 dark:border-blue-400 dark:bg-blue-900',
     iconColor: 'text-blue-500',
+    isPopular: false,
   },
   PREMIUM: {
     name: 'Premium',

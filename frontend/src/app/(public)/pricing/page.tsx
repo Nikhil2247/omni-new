@@ -29,6 +29,7 @@ const TIER_INFO = {
     color: 'bg-blue-50 dark:bg-blue-950',
     borderColor: 'border-blue-200 dark:border-blue-800',
     badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    isPopular: false,
   },
   PREMIUM: {
     name: 'Premium',

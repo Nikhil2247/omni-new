@@ -341,7 +341,7 @@ export default function UnifiedCheckoutPage() {
                     </h3>
                     <ul className="space-y-3">
                       {isEventCreditPurchase ? (
-                        displayFeatures.map((feature, index) => (
+                        (displayFeatures as string[]).map((feature, index) => (
                           <li key={index} className="flex items-start gap-3">
                             <div className={cn(
                               "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
