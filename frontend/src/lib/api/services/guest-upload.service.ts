@@ -23,7 +23,8 @@ export const guestUploadService = {
 
   async getMemoryByCode(eventCode: string): Promise<MemorySettings> {
     const { data } = await apiClient.get(`${PUBLIC_BASE}/${eventCode}`)
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as MemorySettings
   },
 
   async uploadPhoto(
@@ -40,12 +41,14 @@ export const guestUploadService = {
     const { data } = await apiClient.post(`${PUBLIC_BASE}/${eventCode}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as GuestUploadResponse
   },
 
   async getPublicGallery(eventCode: string): Promise<PublicGalleryResponse> {
     const { data } = await apiClient.get(`${PUBLIC_BASE}/${eventCode}/gallery`)
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as PublicGalleryResponse
   },
 
   // ==================== OWNER ENDPOINTS (Auth Required) ====================
@@ -53,36 +56,43 @@ export const guestUploadService = {
   async getUploads(memoryId: string, status?: UploadStatus): Promise<UploadsListResponse> {
     const params = status ? { status } : {}
     const { data } = await apiClient.get(`${USER_BASE}/${memoryId}/uploads`, { params })
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as UploadsListResponse
   },
 
   async getPendingCount(memoryId: string): Promise<PendingCountResponse> {
     const { data } = await apiClient.get(`${USER_BASE}/${memoryId}/uploads/pending-count`)
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as PendingCountResponse
   },
 
   async approveUpload(uploadId: string): Promise<GuestUpload> {
     const { data } = await apiClient.patch(`${USER_BASE}/uploads/${uploadId}/approve`)
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as GuestUpload
   },
 
   async rejectUpload(uploadId: string): Promise<GuestUpload> {
     const { data } = await apiClient.patch(`${USER_BASE}/uploads/${uploadId}/reject`)
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as GuestUpload
   },
 
   async deleteUpload(uploadId: string): Promise<{ success: boolean }> {
     const { data } = await apiClient.delete(`${USER_BASE}/uploads/${uploadId}`)
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as { success: boolean }
   },
 
   async bulkApprove(memoryId: string, input: BulkUploadActionInput): Promise<UploadsListResponse> {
     const { data } = await apiClient.patch(`${USER_BASE}/${memoryId}/uploads/bulk-approve`, input)
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as UploadsListResponse
   },
 
   async bulkReject(memoryId: string, input: BulkUploadActionInput): Promise<UploadsListResponse> {
     const { data } = await apiClient.patch(`${USER_BASE}/${memoryId}/uploads/bulk-reject`, input)
-    return data
+    // Unwrap backend response format: { success: true, data: {...} }
+    return (data?.data || data) as UploadsListResponse
   },
 }

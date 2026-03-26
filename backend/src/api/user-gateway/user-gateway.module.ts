@@ -31,6 +31,7 @@ import { UserSubscriptionController } from './controllers/user-subscription.cont
 import { PaymentController } from './controllers/payment.controller';
 import { InvoiceController } from './controllers/invoice.controller';
 import { EventCreditController } from './controllers/event-credit.controller';
+import { EInviteController } from './controllers/einvite.controller';
 import { CatalogModule } from '../../domain/catalog/catalog.module';
 import { PlanningModule } from '../../domain/planning/planning.module';
 import { LeadsModule } from '../../domain/leads/leads.module';
@@ -80,6 +81,7 @@ import { AuditService } from 'src/core/audit';
     PaymentController,
     InvoiceController,
     EventCreditController,
+    EInviteController,
   ],
   providers: [NotificationService, AuditService],
 })

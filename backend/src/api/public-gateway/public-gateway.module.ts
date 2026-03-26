@@ -28,6 +28,7 @@ import { PublicConsentController } from './controllers/consent.controller';
 import { VendorClaimController } from './controllers/vendor-claim.controller';
 import { AdsController } from './controllers/ads.controller';
 import { FeaturesController } from './controllers/features.controller';
+import { EInvitePublicController } from './controllers/einvite-public.controller';
 import { ChatbotService } from './services/chatbot.service';
 import { GlobalSearchService } from './services/global-search.service';
 import { MediaUrlNormalizerService } from './services/media-url-normalizer.service';
@@ -65,6 +66,7 @@ import { ChatbotPersistenceService } from '../../domain/chatbot/services/chatbot
     VendorClaimController,
     AdsController,
     FeaturesController,
+    EInvitePublicController,
   ],
   providers: [ChatbotService, GlobalSearchService, MediaUrlNormalizerService, ChatbotPersistenceService],
 })

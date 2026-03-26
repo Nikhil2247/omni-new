@@ -185,13 +185,32 @@ export class GuestUploadController {
     const isVideo = file.mimetype.startsWith('video/');
     const mediaType = isVideo ? 'VIDEO' : 'IMAGE';
 
-    // Upload file to MinIO with WebP conversion for images
+    // Generate custom storage path: username/eventname/all-photos
+    const eventUser = (memory.event as any)?.user;
+    const eventName = memory.event?.name || 'unknown-event';
+    const userName = eventUser
+      ? (eventUser.firstName && eventUser.lastName
+          ? `${eventUser.firstName}-${eventUser.lastName}`
+          : eventUser.email?.split('@')[0] || 'unknown-user')
+      : 'unknown-user';
+
+    // Sanitize folder names (remove special characters, spaces -> hyphens)
+    const sanitize = (str: string) =>
+      str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    const sanitizedUserName = sanitize(userName);
+    const sanitizedEventName = sanitize(eventName);
+    const timestamp = Date.now();
+    const customPath = `memories/${sanitizedUserName}/${sanitizedEventName}/all-photos/${timestamp}-${file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+
+    // Upload file to MinIO with WebP conversion for images (max quality)
     const uploaded = isVideo
       ? await this.uploadService.uploadFile(
           file.buffer,
           file.originalname,
           FileCategory.EVENT_GALLERY,
           file.mimetype,
+          { customPath },
         )
       : await this.uploadService.uploadImage(
           file.buffer,
@@ -199,9 +218,10 @@ export class GuestUploadController {
           FileCategory.EVENT_GALLERY,
           file.mimetype,
           {
+            customPath,
             imageProcessing: {
               convertToWebP: true,
-              quality: 80,
+              quality: 100, // Max quality for memory wall photos
               generateThumbnail: true,
               thumbnailWidth: 400,
               thumbnailHeight: 400,

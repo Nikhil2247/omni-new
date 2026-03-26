@@ -30,7 +30,7 @@ import {
 import { useCampaigns, usePauseCampaign, useResumeCampaign, useStopCampaign, useCancelCampaign } from '@/hooks/queries/use-subscription';
 import { CampaignStatus, CampaignType } from '@/lib/api/types/subscription.types';
 import { toast } from 'sonner';
-import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common';
+import { FeatureFlagGate, FeatureDisabledMessage, VendorFeatureGate } from '@/components/common';
 
 const statusColors: Record<CampaignStatus, string> = {
   DRAFT: 'bg-gray-100 text-gray-800',
@@ -95,11 +95,16 @@ export default function CampaignsPage() {
   };
 
   return (
-    <FeatureFlagGate
-      feature="marketing.campaigns"
-      fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing" backText="Back to Marketing" />}
+    <VendorFeatureGate
+      requiredTier="STARTER"
+      upgradeTitle="Unlock Marketing Campaigns"
+      upgradeDescription="Upgrade to Starter or higher to create advertising campaigns, promote your profile, and boost your visibility to event planners."
     >
-      <div className="container py-8">
+      <FeatureFlagGate
+        feature="marketing.campaigns"
+        fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing" backText="Back to Marketing" />}
+      >
+        <div className="container py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold">Campaigns</h1>
@@ -261,7 +266,8 @@ export default function CampaignsPage() {
             )}
           </TabsContent>
         </Tabs>
-      </div>
-    </FeatureFlagGate>
+        </div>
+      </FeatureFlagGate>
+    </VendorFeatureGate>
   );
 }

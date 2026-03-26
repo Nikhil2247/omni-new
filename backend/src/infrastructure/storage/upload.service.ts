@@ -570,8 +570,16 @@ export class UploadService {
           imageOpts.quality,
         );
 
-        const thumbFilename = `thumb-${filename}`;
-        thumbnailPath = this.generatePath(category, thumbFilename);
+        // If custom path is provided, place thumbnail in same folder
+        if (options?.customPath) {
+          const pathParts = filePath.split('/');
+          const fileNamePart = pathParts.pop();
+          const dirPath = pathParts.join('/');
+          thumbnailPath = `${dirPath}/thumb-${fileNamePart}`;
+        } else {
+          const thumbFilename = `thumb-${filename}`;
+          thumbnailPath = this.generatePath(category, thumbFilename);
+        }
 
         await this.minioService.uploadFile(
           thumbnailPath,

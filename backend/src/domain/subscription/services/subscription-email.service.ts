@@ -69,6 +69,20 @@ export interface UsageAlertContext {
   unit?: string; // e.g., "MB", "uploads", "guests"
 }
 
+export interface EventCreditPurchaseContext {
+  userName: string;
+  userEmail: string;
+  tier: 'BASIC' | 'PREMIUM';
+  creditCount: number;
+  bundleType: string;
+  amount: number;
+  currency?: string;
+  paymentId?: string;
+  transactionId?: string;
+  dashboardUrl?: string;
+  pricingUrl?: string;
+}
+
 // ============================================================================
 // SERVICE
 // ============================================================================
@@ -331,6 +345,26 @@ export class SubscriptionEmailService {
       subject,
       html: this.renderAutoRenewStatusTemplate(context),
       text: this.renderAutoRenewStatusTextTemplate(context),
+    });
+  }
+
+  /**
+   * Send event credit purchase confirmation email
+   */
+  async sendEventCreditPurchaseEmail(
+    context: EventCreditPurchaseContext,
+  ): Promise<EmailResult> {
+    this.logger.log(
+      `Sending event credit purchase email to ${context.userEmail}: ${context.creditCount} ${context.tier} credits`,
+    );
+
+    const subject = `Purchase Confirmed: ${context.creditCount} ${context.tier === 'PREMIUM' ? 'Premium' : 'Basic'} Event Credit${context.creditCount > 1 ? 's' : ''}`;
+
+    return this.emailService.send({
+      to: context.userEmail,
+      subject,
+      html: this.renderEventCreditPurchaseTemplate(context),
+      text: this.renderEventCreditPurchaseTextTemplate(context),
     });
   }
 
@@ -1176,6 +1210,117 @@ Support: ${this.supportEmail}
     `;
 
     return this.wrapInLayout(content, `Auto-Renewal ${context.autoRenewEnabled ? 'Enabled' : 'Disabled'}`);
+  }
+
+  // ============================================================================
+  // EVENT CREDIT PURCHASE TEMPLATES
+  // ============================================================================
+
+  private renderEventCreditPurchaseTemplate(context: EventCreditPurchaseContext): string {
+    const dashboardUrl = context.dashboardUrl || `${this.frontendUrl}/dashboard`;
+    const tierLabel = context.tier === 'PREMIUM' ? 'Premium' : 'Basic';
+    const tierColor = context.tier === 'PREMIUM' ? '#8b5cf6' : '#3b82f6';
+
+    const content = `
+    <div class="header" style="background: linear-gradient(135deg, ${tierColor} 0%, ${context.tier === 'PREMIUM' ? '#7c3aed' : '#2563eb'} 100%);">
+      <h1>Event Credits Purchased!</h1>
+    </div>
+    <div class="content">
+      <p>Hi ${context.userName},</p>
+      <p>Thank you for your purchase! Your <strong>${tierLabel}</strong> event credits have been added to your account.</p>
+
+      <div class="success-box">
+        <p>Your credits are ready to use!</p>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <span style="font-size: 48px; font-weight: 700; color: ${tierColor};">${context.creditCount}</span>
+        <p style="color: #6b7280; margin-top: 8px;">${tierLabel} Event Credit${context.creditCount > 1 ? 's' : ''}</p>
+      </div>
+
+      <div class="highlight-box">
+        <p><strong>Purchase Details:</strong></p>
+        <div class="detail-row">
+          <span class="detail-label">Credits</span>
+          <span class="detail-value">${context.creditCount} ${tierLabel} Event Credit${context.creditCount > 1 ? 's' : ''}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Bundle</span>
+          <span class="detail-value">${this.getBundleLabel(context.bundleType)}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Amount Paid</span>
+          <span class="detail-value">${this.formatCurrency(context.amount, context.currency)}</span>
+        </div>
+        ${context.transactionId ? `
+        <div class="detail-row">
+          <span class="detail-label">Transaction ID</span>
+          <span class="detail-value">${context.transactionId}</span>
+        </div>
+        ` : ''}
+      </div>
+
+      <p><strong>What's next?</strong></p>
+      <ul style="color: #374151; line-height: 1.8; padding-left: 20px;">
+        <li>Go to your dashboard to create a new event</li>
+        <li>Select ${tierLabel} tier when creating your event</li>
+        <li>One credit will be used per event created</li>
+        <li>Credits never expire - use them anytime!</li>
+      </ul>
+
+      <p><a href="${dashboardUrl}" class="button">Create Event</a></p>
+
+      <p>Thank you for choosing Omnicassion!</p>
+      <p>Best regards,<br>The Omnicassion Team</p>
+    </div>
+    `;
+
+    return this.wrapInLayout(content, 'Event Credits Purchased');
+  }
+
+  private renderEventCreditPurchaseTextTemplate(context: EventCreditPurchaseContext): string {
+    const tierLabel = context.tier === 'PREMIUM' ? 'Premium' : 'Basic';
+    return `
+Event Credits Purchased!
+
+Hi ${context.userName},
+
+Thank you for your purchase! Your ${tierLabel} event credits have been added to your account.
+
+Purchase Details:
+- Credits: ${context.creditCount} ${tierLabel} Event Credit${context.creditCount > 1 ? 's' : ''}
+- Bundle: ${this.getBundleLabel(context.bundleType)}
+- Amount Paid: ${this.formatCurrency(context.amount, context.currency)}
+${context.transactionId ? `- Transaction ID: ${context.transactionId}` : ''}
+
+What's next?
+1. Go to your dashboard to create a new event
+2. Select ${tierLabel} tier when creating your event
+3. One credit will be used per event created
+4. Credits never expire - use them anytime!
+
+Create Event: ${context.dashboardUrl || `${this.frontendUrl}/dashboard`}
+
+Thank you for choosing Omnicassion!
+
+Best regards,
+The Omnicassion Team
+
+Support: ${this.supportEmail}
+    `.trim();
+  }
+
+  private getBundleLabel(bundleType: string): string {
+    switch (bundleType) {
+      case 'SINGLE':
+        return 'Single Event';
+      case 'FIVE_PACK':
+        return '5-Event Bundle (20% off)';
+      case 'TEN_PACK':
+        return '10-Event Bundle (25% off)';
+      default:
+        return bundleType;
+    }
   }
 
   // ============================================================================

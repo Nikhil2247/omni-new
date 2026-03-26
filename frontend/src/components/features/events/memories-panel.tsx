@@ -528,7 +528,7 @@ function UploadGrid({ memoryId, status }: { memoryId: string; status?: 'all' | '
     )
   }
   
-  if (!uploads || uploads.uploads.length === 0) {
+  if (!uploads?.uploads?.length) {
     return (
       <div className="text-center py-12">
         <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -536,7 +536,7 @@ function UploadGrid({ memoryId, status }: { memoryId: string; status?: 'all' | '
       </div>
     )
   }
-  
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {uploads.uploads.map((upload) => (

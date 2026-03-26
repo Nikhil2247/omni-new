@@ -429,6 +429,50 @@ export class SubscriptionNotificationListener {
   }
 
   // ============================================================================
+  // EVENT CREDITS EVENTS (User event-based pricing)
+  // ============================================================================
+
+  /**
+   * Handle event-credit.purchased event
+   * Creates in-app notification when user purchases event credits
+   */
+  @OnEvent('event-credit.purchased')
+  async handleEventCreditPurchased(payload: {
+    userId: string;
+    tier: 'BASIC' | 'PREMIUM';
+    creditCount: number;
+    bundleType: string;
+    amount: number;
+    currency?: string;
+    transactionId?: string;
+    paymentId?: string;
+  }): Promise<void> {
+    this.logger.log(
+      `Event credits purchased: ${payload.creditCount} ${payload.tier} credits for user ${payload.userId}`,
+    );
+
+    const tierLabel = payload.tier === 'PREMIUM' ? 'Premium' : 'Basic';
+
+    await this.notificationService.createNotification({
+      userId: payload.userId,
+      type: NotificationType.CREDITS_PURCHASED,
+      title: 'Event credits purchased!',
+      message: `You have successfully purchased ${payload.creditCount} ${tierLabel} event credit${payload.creditCount > 1 ? 's' : ''} for ${this.formatCurrency(payload.amount, payload.currency)}.`,
+      data: {
+        tier: payload.tier,
+        creditCount: payload.creditCount,
+        bundleType: payload.bundleType,
+        amount: payload.amount,
+        transactionId: payload.transactionId,
+      },
+      actionUrl: '/dashboard/events/new',
+      priority: 'high',
+    });
+
+    // Email is handled by SubscriptionEmailListener which listens to same event
+  }
+
+  // ============================================================================
   // RENEWAL REMINDER EVENTS (Scheduler-emitted)
   // ============================================================================
 

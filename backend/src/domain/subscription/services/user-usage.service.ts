@@ -45,7 +45,7 @@ export class UserUsageService {
 
   /**
    * Record usage of a feature for an event
-   * Usage is tracked PER EVENT, not per month
+   * Usage is tracked PER EVENT using EventUsageRecord (independent of subscriptions)
    */
   async recordUsage(
     userId: string,
@@ -57,13 +57,6 @@ export class UserUsageService {
       `Recording usage: ${featureKey} for user ${userId} on event ${eventId}`,
     );
 
-    // Get active subscription
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
-    if (!subscription) {
-      throw new ForbiddenException('No active subscription found');
-    }
-
     // Check if usage is allowed before recording
     const canUse = await this.canUseFeature(userId, eventId, featureKey);
     if (!canUse) {
@@ -72,12 +65,19 @@ export class UserUsageService {
       );
     }
 
-    // Record the usage
-    const usage = await this.subscriptionRepository.incrementUsage({
-      subscriptionId: subscription.id,
-      eventId,
-      featureKey,
-      incrementBy: quantity,
+    // Record the usage using EventUsageRecord
+    const usage = await this.prisma.eventUsageRecord.upsert({
+      where: {
+        eventId_featureKey: { eventId, featureKey },
+      },
+      update: {
+        usageCount: { increment: quantity },
+      },
+      create: {
+        eventId,
+        featureKey,
+        usageCount: quantity,
+      },
     });
 
     // Check limits after recording
@@ -92,7 +92,8 @@ export class UserUsageService {
         userId,
         eventId,
         featureKey,
-        subscriptionId: subscription.id,
+        currentUsage: limitStatus.used,
+        limit: limitStatus.limit,
       });
     } else if (
       !limitStatus.isUnlimited &&
@@ -104,6 +105,8 @@ export class UserUsageService {
         featureKey,
         remaining: limitStatus.remaining,
         limit: limitStatus.limit,
+        currentUsage: limitStatus.used,
+        usedPercent: Math.round((limitStatus.used / limitStatus.limit) * 100),
       });
     }
 
@@ -127,6 +130,7 @@ export class UserUsageService {
    * Get current usage status for a feature on an event
    * Returns limit, used, remaining, and isUnlimited
    * Feature limits are based on the EVENT'S TIER, not subscription
+   * Usage is tracked in EventUsageRecord (independent of subscriptions)
    */
   async checkFeatureLimit(
     userId: string,
@@ -150,7 +154,7 @@ export class UserUsageService {
     }
 
     // Get feature limit from the event's tier
-    const tierFeature = await this.eventCreditRepository.getTierFeature(
+    const tierFeature = await this.eventCreditRepository.getFeature(
       event.tier,
       featureKey,
     );
@@ -158,18 +162,14 @@ export class UserUsageService {
     const isUnlimited = tierFeature?.limitType === 'UNLIMITED';
     const limit = isUnlimited ? -1 : (tierFeature?.limitValue ?? 0);
 
-    // Get subscription for usage tracking (still needed for usage records)
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
+    // Get current usage from EventUsageRecord (per-event tracking)
+    const usageRecord = await this.prisma.eventUsageRecord.findUnique({
+      where: {
+        eventId_featureKey: { eventId, featureKey },
+      },
+    });
 
-    // Get current usage for this event (per-event limits)
-    const used = subscription
-      ? await this.subscriptionRepository.getUsageForEvent(
-          subscription.id,
-          eventId,
-          featureKey,
-        )
-      : 0;
+    const used = usageRecord ? Number(usageRecord.usageCount) : 0;
 
     return {
       featureKey,
@@ -203,7 +203,7 @@ export class UserUsageService {
     }
 
     // Get all features for this event's tier
-    const tierFeatures = await this.eventCreditRepository.getTierFeatures(event.tier);
+    const tierFeatures = await this.eventCreditRepository.getFeaturesByTier(event.tier);
 
     // Get usage for each feature on this event
     const features: FeatureLimitStatus[] = [];
@@ -230,19 +230,46 @@ export class UserUsageService {
 
   /**
    * Get usage history for a user, optionally filtered by event
+   * Now retrieves from EventUsageRecord
    */
   async getUsageHistory(userId: string, eventId?: string) {
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
+    // Get user's events
+    const events = await this.prisma.event.findMany({
+      where: {
+        userId,
+        ...(eventId ? { id: eventId } : {}),
+      },
+      select: { id: true, name: true, tier: true },
+    });
 
-    if (!subscription) {
+    if (events.length === 0) {
       return [];
     }
 
-    return this.subscriptionRepository.getUsageHistory(
-      subscription.id,
-      eventId,
-    );
+    const eventIds = events.map((e) => e.id);
+
+    // Get usage records for these events
+    const usageRecords = await this.prisma.eventUsageRecord.findMany({
+      where: {
+        eventId: { in: eventIds },
+      },
+      include: {
+        event: {
+          select: { id: true, name: true, tier: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return usageRecords.map((record) => ({
+      id: record.id,
+      eventId: record.eventId,
+      eventName: record.event.name,
+      eventTier: record.event.tier,
+      featureKey: record.featureKey,
+      usageCount: Number(record.usageCount),
+      updatedAt: record.updatedAt,
+    }));
   }
 
   /**
@@ -258,7 +285,7 @@ export class UserUsageService {
       });
 
       if (event) {
-        const tierFeatures = await this.eventCreditRepository.getTierFeatures(event.tier);
+        const tierFeatures = await this.eventCreditRepository.getFeaturesByTier(event.tier);
         return tierFeatures.map((f) => ({
           featureKey: f.featureKey,
           featureName: f.featureName,
@@ -271,7 +298,7 @@ export class UserUsageService {
     }
 
     // Default to Basic tier features if no event specified
-    const basicFeatures = await this.eventCreditRepository.getTierFeatures(EventTier.BASIC);
+    const basicFeatures = await this.eventCreditRepository.getFeaturesByTier(EventTier.BASIC);
     return basicFeatures.map((f) => ({
       featureKey: f.featureKey,
       featureName: f.featureName,
@@ -369,7 +396,7 @@ export class UserUsageService {
     }
 
     // Get feature from the tier
-    const feature = await this.eventCreditRepository.getTierFeature(tier, featureKey);
+    const feature = await this.eventCreditRepository.getFeature(tier, featureKey);
 
     if (!feature) {
       return false;
@@ -407,6 +434,7 @@ export class UserUsageService {
    * Check storage limit for an event
    * Returns whether adding fileSizeBytes would exceed the limit
    * Storage limits are based on the event's tier
+   * Usage is tracked in EventUsageRecord (independent of subscriptions)
    */
   async checkStorageLimit(
     userId: string,
@@ -440,7 +468,7 @@ export class UserUsageService {
     }
 
     // Get storage limit from event's tier
-    const storageFeature = await this.eventCreditRepository.getTierFeature(
+    const storageFeature = await this.eventCreditRepository.getFeature(
       event.tier,
       'memory_storage_mb',
     );
@@ -448,18 +476,14 @@ export class UserUsageService {
     const isUnlimited = storageFeature?.limitType === 'UNLIMITED';
     const limitMB = isUnlimited ? -1 : (storageFeature?.limitValue ?? 0);
 
-    // Get subscription for usage tracking
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
+    // Get current storage usage from EventUsageRecord
+    const usageRecord = await this.prisma.eventUsageRecord.findUnique({
+      where: {
+        eventId_featureKey: { eventId, featureKey: 'memory_storage_mb' },
+      },
+    });
 
-    // Get current storage usage for this event
-    const currentUsageMB = subscription
-      ? await this.subscriptionRepository.getUsageForEvent(
-          subscription.id,
-          eventId,
-          'memory_storage_mb',
-        )
-      : 0;
+    const currentUsageMB = usageRecord ? Number(usageRecord.usageCount) : 0;
 
     if (isUnlimited) {
       return {
@@ -487,6 +511,7 @@ export class UserUsageService {
 
   /**
    * Record storage usage for an event (in MB)
+   * Uses EventUsageRecord (independent of subscriptions)
    */
   async recordStorageUsage(
     userId: string,
@@ -499,20 +524,19 @@ export class UserUsageService {
       `Recording storage usage: ${fileSizeMB.toFixed(2)}MB for user ${userId} on event ${eventId}`,
     );
 
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
-
-    if (!subscription) {
-      this.logger.warn(`No active subscription for user ${userId} - skipping storage recording`);
-      return;
-    }
-
-    // Record the storage usage (accumulative)
-    await this.subscriptionRepository.incrementUsage({
-      subscriptionId: subscription.id,
-      eventId,
-      featureKey: 'memory_storage_mb',
-      incrementBy: fileSizeMB,
+    // Record the storage usage using EventUsageRecord (accumulative)
+    await this.prisma.eventUsageRecord.upsert({
+      where: {
+        eventId_featureKey: { eventId, featureKey: 'memory_storage_mb' },
+      },
+      update: {
+        usageCount: { increment: fileSizeMB },
+      },
+      create: {
+        eventId,
+        featureKey: 'memory_storage_mb',
+        usageCount: fileSizeMB,
+      },
     });
 
     // Check if approaching limit

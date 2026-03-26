@@ -34,6 +34,7 @@ import { useBudget } from '@/hooks/queries/use-budget'
 import { useGuestlist } from '@/hooks/queries/use-guestlist'
 import { useTimeline } from '@/hooks/queries/use-timeline'
 import { usePlannerInsights } from '@/hooks/queries/use-planner-insights'
+import { useEInviteByEvent } from '@/hooks/queries/use-einvites'
 import { cn } from '@/lib/utils'
 
 // Tool flow order matching the screenshot
@@ -79,10 +80,10 @@ const TOOL_FLOW = [
     id: 'e-invite',
     step: 5,
     title: 'E-Invite',
-    description: 'Send invitations via WhatsApp',
+    description: 'Design & send digital invitations',
     icon: Send,
     color: 'green',
-    segment: 'guestlist',
+    segment: 'einvite',
     badge: 'WhatsApp',
   },
   {
@@ -162,6 +163,7 @@ export default function UserToolsPage() {
   const { data: budgetData } = useBudget(eventId || '')
   const { data: guestlistData } = useGuestlist(eventId || '')
   const { data: timelineData } = useTimeline(eventId || '')
+  const { data: einviteData } = useEInviteByEvent(eventId || '')
   const { data: plannerInsightsData, isLoading: plannerInsightsLoading } = usePlannerInsights(eventId || '')
 
   useEffect(() => {
@@ -210,11 +212,20 @@ export default function UserToolsPage() {
       total: allGuests.length || 1,
       percentage: allGuests.length > 0 ? Math.round((respondedGuests / allGuests.length) * 100) : 0,
     }
-    progress['e-invite'] = progress.guestlist
+
+    // E-invite progress - sent count vs guests with phone
+    const guestsWithPhone = allGuests.filter((g: { phone?: string }) => g.phone).length
+    const sentCount = einviteData?.sentCount || 0
+    progress['e-invite'] = {
+      completed: sentCount,
+      total: guestsWithPhone || 1,
+      percentage: guestsWithPhone > 0 ? Math.round((sentCount / guestsWithPhone) * 100) : (einviteData ? 100 : 0),
+    }
+
     progress.rsvp = progress.guestlist
 
     return progress
-  }, [eventId, timelineData, budgetData, checklistData, guestlistData])
+  }, [eventId, timelineData, budgetData, checklistData, guestlistData, einviteData])
 
   // Check which tools are set up
   const toolSetup = useMemo(() => {
@@ -226,17 +237,19 @@ export default function UserToolsPage() {
     const checklistTasks = checklistData?.tasks?.length || 0
     // Guestlist is a single object with guests
     const guests = guestlistData?.guests?.length || 0
+    // E-invite exists if there's an einvite record
+    const hasEInvite = !!einviteData
 
     return {
       'create-event': !!eventId,
       timeline: timelineItems > 0,
       budget: budgetItems > 0,
       checklist: checklistTasks > 0,
-      'e-invite': guests > 0,
+      'e-invite': hasEInvite,
       guestlist: guests > 0,
       rsvp: guests > 0,
     }
-  }, [eventId, timelineData, budgetData, checklistData, guestlistData])
+  }, [eventId, timelineData, budgetData, checklistData, guestlistData, einviteData])
 
   function getToolHref(tool: (typeof TOOL_FLOW)[0]): string {
     if (tool.id === 'create-event') {

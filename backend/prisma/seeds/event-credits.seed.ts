@@ -5,6 +5,8 @@ import {
   BundleType,
   FeatureLimitType,
 } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
 // ============================================================================
 // EVENT CREDIT PRODUCTS SEED
@@ -103,7 +105,7 @@ const eventTierFeatures: EventTierFeatureDefinition[] = [
     name: 'Guests per Event',
     description: 'Maximum number of guests per event',
     limitType: FeatureLimitType.COUNT,
-    values: { BASIC: 200, PREMIUM: null }, // null = unlimited
+    values: { BASIC: 200, PREMIUM: 500 },
     sortOrder: 1,
   },
   {
@@ -119,7 +121,7 @@ const eventTierFeatures: EventTierFeatureDefinition[] = [
     name: 'Memory Uploads per Event',
     description: 'Number of photos/videos guests can upload per event',
     limitType: FeatureLimitType.COUNT,
-    values: { BASIC: 100, PREMIUM: null }, // null = unlimited
+    values: { BASIC: 100, PREMIUM: 500 },
     sortOrder: 3,
   },
   {
@@ -127,7 +129,7 @@ const eventTierFeatures: EventTierFeatureDefinition[] = [
     name: 'Memory Storage (MB)',
     description: 'Total storage space for event memories',
     limitType: FeatureLimitType.COUNT,
-    values: { BASIC: 1000, PREMIUM: 10000 },
+    values: { BASIC: 1000, PREMIUM: 5000 }, // 1GB Basic, 5GB Premium
     sortOrder: 4,
   },
   {
@@ -153,7 +155,7 @@ const eventTierFeatures: EventTierFeatureDefinition[] = [
     name: 'WhatsApp Invites per Event',
     description: 'Number of WhatsApp invitations per event',
     limitType: FeatureLimitType.COUNT,
-    values: { BASIC: 200, PREMIUM: null }, // null = unlimited
+    values: { BASIC: 200, PREMIUM: 500 },
     sortOrder: 7,
   },
   {
@@ -282,24 +284,24 @@ export async function seedEventCredits(prisma: PrismaClient) {
 // STANDALONE EXECUTION
 // ============================================================================
 
-async function main() {
-  const prisma = new PrismaClient();
-
-  try {
-    await seedEventCredits(prisma);
-  } catch (error) {
-    console.error('Error seeding event credits:', error);
-    throw error;
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
 // Run if executed directly
 if (require.main === module) {
-  main()
+  const connectionString = process.env.DATABASE_URL || process.env.DIRECT_DATABASE_URL
+  const isAccelerate = connectionString?.startsWith('prisma://')
+
+  const prisma = isAccelerate
+    ? new PrismaClient({ log: ['info', 'warn', 'error'] })
+    : new PrismaClient({
+        adapter: new PrismaPg(new Pool({ connectionString })),
+        log: ['info', 'warn', 'error'],
+      })
+
+  seedEventCredits(prisma)
     .catch((e) => {
       console.error(e);
       process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
     });
 }

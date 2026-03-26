@@ -117,6 +117,16 @@ const vendorFeatures: VendorFeatureDefinition[] = [
 // ============================================================================
 // USER SUBSCRIPTION PLANS SEED
 // ============================================================================
+// NOTE: User subscription plans are DEPRECATED.
+// Users now use EVENT-BASED PRICING with event credits.
+// See event-credits.seed.ts for the new pricing model:
+// - Basic Event: ₹499 (single), ₹1,996 (5-pack), ₹3,743 (10-pack)
+// - Premium Event: ₹1,299 (single), ₹5,196 (5-pack), ₹9,743 (10-pack)
+// - 1 free Basic event for new users
+// - Credits never expire
+//
+// These plans are kept for historical data but marked as inactive.
+// ============================================================================
 
 interface UserFeatureDefinition {
   key: string;
@@ -607,85 +617,85 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
   console.log('  Vendor subscription plans created');
 
   // ============================================================================
-  // USER SUBSCRIPTION PLANS
+  // USER SUBSCRIPTION PLANS (DEPRECATED - Now using Event Credits)
   // ============================================================================
-  console.log('  Creating user subscription plans...');
+  console.log('  Creating user subscription plans (DEPRECATED - kept for historical data)...');
 
-  // Upsert FREE user plan
+  // Upsert FREE user plan - DEPRECATED
   const userFreePlan = await prisma.userSubscriptionPlan.upsert({
     where: { slug: 'user-free' },
     update: {
-      name: 'Free',
-      description: 'Basic event planning features to get you started',
+      name: 'Free (Deprecated)',
+      description: 'DEPRECATED: Users now get 1 free Basic event credit instead. See Event Credits.',
       tier: UserPlanTier.FREE,
       displayOrder: 0,
       isPopular: false,
       trialDays: 0,
-      isActive: true,
-      isPublic: true,
+      isActive: false, // DEPRECATED
+      isPublic: false, // Not shown in pricing
     },
     create: {
-      name: 'Free',
+      name: 'Free (Deprecated)',
       slug: 'user-free',
-      description: 'Basic event planning features to get you started',
+      description: 'DEPRECATED: Users now get 1 free Basic event credit instead. See Event Credits.',
       tier: UserPlanTier.FREE,
       displayOrder: 0,
       isPopular: false,
       trialDays: 0,
-      isActive: true,
-      isPublic: true,
+      isActive: false,
+      isPublic: false,
     },
   });
 
-  // Upsert BASIC user plan
+  // Upsert BASIC user plan - DEPRECATED
   const userBasicPlan = await prisma.userSubscriptionPlan.upsert({
     where: { slug: 'user-basic' },
     update: {
-      name: 'Basic',
-      description: 'Enhanced planning tools for your special events',
+      name: 'Basic (Deprecated)',
+      description: 'DEPRECATED: Users now purchase Basic event credits at ₹499/event. See Event Credits.',
       tier: UserPlanTier.BASIC,
       displayOrder: 1,
-      isPopular: true,
+      isPopular: false,
       trialDays: 0,
-      isActive: true,
-      isPublic: true,
+      isActive: false, // DEPRECATED
+      isPublic: false, // Not shown in pricing
     },
     create: {
-      name: 'Basic',
+      name: 'Basic (Deprecated)',
       slug: 'user-basic',
-      description: 'Enhanced planning tools for your special events',
+      description: 'DEPRECATED: Users now purchase Basic event credits at ₹499/event. See Event Credits.',
       tier: UserPlanTier.BASIC,
       displayOrder: 1,
-      isPopular: true,
+      isPopular: false,
       trialDays: 0,
-      isActive: true,
-      isPublic: true,
+      isActive: false,
+      isPublic: false,
     },
   });
 
-  // Upsert PREMIUM user plan
+  // Upsert PREMIUM user plan - DEPRECATED
   const userPremiumPlan = await prisma.userSubscriptionPlan.upsert({
     where: { slug: 'user-premium' },
     update: {
-      name: 'Premium',
-      description: 'All-inclusive planning suite with unlimited features',
+      name: 'Premium (Deprecated)',
+      description: 'DEPRECATED: Users now purchase Premium event credits at ₹1,299/event. See Event Credits.',
       tier: UserPlanTier.PREMIUM,
       displayOrder: 2,
       isPopular: false,
       trialDays: 0,
-      isActive: true,
-      isPublic: true,
+      isActive: false, // DEPRECATED
+      isPublic: false, // Not shown in pricing
     },
     create: {
-      name: 'Premium',
+      name: 'Premium (Deprecated)',
       slug: 'user-premium',
-      description: 'All-inclusive planning suite with unlimited features',
+      description: 'DEPRECATED: Users now purchase Premium event credits at ₹1,299/event. See Event Credits.',
       tier: UserPlanTier.PREMIUM,
       displayOrder: 2,
       isPopular: false,
       trialDays: 0,
-      isActive: true,
-      isPublic: true,
+      isActive: false,
+      isPublic: false,
     },
   });
 
@@ -767,7 +777,7 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
     });
   }
 
-  // Upsert user plan prices
+  // Upsert user plan prices (DEPRECATED - kept for historical data)
   // FREE plan - only monthly at 0
   await prisma.userPlanPrice.upsert({
     where: {
@@ -777,18 +787,18 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
         billingCycle: BillingCycle.MONTHLY,
       },
     },
-    update: { amount: 0, savingsPercent: null, isActive: true },
+    update: { amount: 0, savingsPercent: null, isActive: false },
     create: {
       planId: userFreePlan.id,
       currency: 'INR',
       amount: 0,
       billingCycle: BillingCycle.MONTHLY,
       savingsPercent: null,
-      isActive: true,
+      isActive: false,
     },
   });
 
-  // BASIC plan prices
+  // BASIC plan prices (DEPRECATED)
   await prisma.userPlanPrice.upsert({
     where: {
       planId_currency_billingCycle: {
@@ -797,14 +807,14 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
         billingCycle: BillingCycle.MONTHLY,
       },
     },
-    update: { amount: 299, savingsPercent: null, isActive: true },
+    update: { amount: 299, savingsPercent: null, isActive: false },
     create: {
       planId: userBasicPlan.id,
       currency: 'INR',
       amount: 299,
       billingCycle: BillingCycle.MONTHLY,
       savingsPercent: null,
-      isActive: true,
+      isActive: false,
     },
   });
 
@@ -816,14 +826,14 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
         billingCycle: BillingCycle.QUARTERLY,
       },
     },
-    update: { amount: 749, savingsPercent: 17, isActive: true },
+    update: { amount: 749, savingsPercent: 17, isActive: false },
     create: {
       planId: userBasicPlan.id,
       currency: 'INR',
       amount: 749,
       billingCycle: BillingCycle.QUARTERLY,
       savingsPercent: 17,
-      isActive: true,
+      isActive: false,
     },
   });
 
@@ -835,18 +845,18 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
         billingCycle: BillingCycle.YEARLY,
       },
     },
-    update: { amount: 2399, savingsPercent: 33, isActive: true },
+    update: { amount: 2399, savingsPercent: 33, isActive: false },
     create: {
       planId: userBasicPlan.id,
       currency: 'INR',
       amount: 2399,
       billingCycle: BillingCycle.YEARLY,
       savingsPercent: 33,
-      isActive: true,
+      isActive: false,
     },
   });
 
-  // PREMIUM plan prices
+  // PREMIUM plan prices (DEPRECATED)
   await prisma.userPlanPrice.upsert({
     where: {
       planId_currency_billingCycle: {
@@ -855,14 +865,14 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
         billingCycle: BillingCycle.MONTHLY,
       },
     },
-    update: { amount: 999, savingsPercent: null, isActive: true },
+    update: { amount: 999, savingsPercent: null, isActive: false },
     create: {
       planId: userPremiumPlan.id,
       currency: 'INR',
       amount: 999,
       billingCycle: BillingCycle.MONTHLY,
       savingsPercent: null,
-      isActive: true,
+      isActive: false,
     },
   });
 
@@ -874,14 +884,14 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
         billingCycle: BillingCycle.QUARTERLY,
       },
     },
-    update: { amount: 2499, savingsPercent: 17, isActive: true },
+    update: { amount: 2499, savingsPercent: 17, isActive: false },
     create: {
       planId: userPremiumPlan.id,
       currency: 'INR',
       amount: 2499,
       billingCycle: BillingCycle.QUARTERLY,
       savingsPercent: 17,
-      isActive: true,
+      isActive: false,
     },
   });
 
@@ -893,18 +903,18 @@ export async function seedSubscriptionPlans(prisma: PrismaClient) {
         billingCycle: BillingCycle.YEARLY,
       },
     },
-    update: { amount: 7999, savingsPercent: 33, isActive: true },
+    update: { amount: 7999, savingsPercent: 33, isActive: false },
     create: {
       planId: userPremiumPlan.id,
       currency: 'INR',
       amount: 7999,
       billingCycle: BillingCycle.YEARLY,
       savingsPercent: 33,
-      isActive: true,
+      isActive: false,
     },
   });
 
-  console.log('  User subscription plans created');
+  console.log('  User subscription plans created (DEPRECATED - users now use Event Credits)');
 
   console.log('Subscription plans seeding completed!');
 

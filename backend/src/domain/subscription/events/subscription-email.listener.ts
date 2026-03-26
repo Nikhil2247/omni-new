@@ -13,6 +13,7 @@ import {
   SubscriptionEmailContext,
   PaymentReceiptContext,
   UsageAlertContext,
+  EventCreditPurchaseContext,
 } from '../services/subscription-email.service';
 import { SubscriptionEvents } from './subscription.events';
 
@@ -99,6 +100,17 @@ interface TrialEndingPayload {
 interface SubscriptionExpiredPayload {
   subscriptionId: string;
   vendorProfileId: string;
+}
+
+interface EventCreditPurchasedPayload {
+  userId: string;
+  tier: 'BASIC' | 'PREMIUM';
+  creditCount: number;
+  bundleType: string;
+  amount: number;
+  currency?: string;
+  transactionId?: string;
+  paymentId?: string;
 }
 
 // ============================================================================
@@ -680,6 +692,63 @@ export class SubscriptionEmailListener {
     } catch (error) {
       this.logger.error(
         `Error handling trial ending email for ${payload.subscriptionId}:`,
+        error,
+      );
+    }
+  }
+
+  // ============================================================================
+  // EVENT CREDIT EVENTS
+  // ============================================================================
+
+  /**
+   * Handle event-credit.purchased event
+   * Sends purchase confirmation email when user buys event credits
+   */
+  @OnEvent('event-credit.purchased')
+  async handleEventCreditPurchased(
+    payload: EventCreditPurchasedPayload,
+  ): Promise<void> {
+    this.logger.log(
+      `Event credit purchased: ${payload.creditCount} ${payload.tier} credits for user ${payload.userId}`,
+    );
+
+    try {
+      // Get user details
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: { email: true, firstName: true },
+      });
+
+      if (!user?.email) {
+        this.logger.warn(`Could not find user ${payload.userId} for event credit email`);
+        return;
+      }
+
+      const context: EventCreditPurchaseContext = {
+        userName: user.firstName || user.email.split('@')[0],
+        userEmail: user.email,
+        tier: payload.tier,
+        creditCount: payload.creditCount,
+        bundleType: payload.bundleType,
+        amount: payload.amount,
+        currency: payload.currency || 'INR',
+        transactionId: payload.transactionId,
+      };
+
+      const result =
+        await this.subscriptionEmailService.sendEventCreditPurchaseEmail(context);
+
+      if (result.success) {
+        this.logger.log(`Event credit purchase email sent to ${user.email}`);
+      } else {
+        this.logger.error(
+          `Failed to send event credit purchase email to ${user.email}: ${result.error}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error handling event credit purchased email for user ${payload.userId}:`,
         error,
       );
     }

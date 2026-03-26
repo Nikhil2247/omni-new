@@ -194,7 +194,7 @@ export class EventCreditService {
       type: transactionType,
       tier,
       amount: -1,
-      eventId,
+      event: { connect: { id: eventId } },
       description,
     });
 
@@ -243,7 +243,7 @@ export class EventCreditService {
       type: EventCreditTransactionType.REFUND,
       tier: usageTransaction.tier,
       amount: 1,
-      eventId,
+      event: { connect: { id: eventId } },
       description: `${usageTransaction.tier} event credit refunded`,
     });
 
@@ -304,13 +304,14 @@ export class EventCreditService {
       `Credits purchased: user=${userId}, tier=${product.tier}, count=${product.creditCount}, price=${product.priceInr}`,
     );
 
-    // Emit event
+    // Emit event for email and notification listeners
     this.eventEmitter.emit('event-credit.purchased', {
       userId,
       tier: product.tier,
       creditCount: product.creditCount,
       bundleType: product.bundleType,
-      priceInr: Number(product.priceInr),
+      amount: Number(product.priceInr),
+      currency: 'INR',
       transactionId: transaction.id,
       paymentId,
     });

@@ -193,6 +193,14 @@ export class GuestUploadService {
             name: true,
             date: true,
             userId: true, // Include owner ID for subscription limit checks
+            user: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         },
       },

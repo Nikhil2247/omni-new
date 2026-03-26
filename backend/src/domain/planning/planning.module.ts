@@ -26,6 +26,7 @@ import { VibeQuizService } from './services/vibe-quiz.service';
 import { WeddingIdentityService } from './services/wedding-identity.service';
 import { WhatsAppService } from './services/whatsapp.service';
 import { GuestImportService } from './services/guest-import.service';
+import { EInviteService } from './services/einvite.service';
 
 // Repositories
 import {
@@ -46,6 +47,7 @@ import {
 import { VibeQuizRepository } from './repositories/vibe-quiz.repository';
 import { WeddingIdentityRepository } from './repositories/wedding-identity.repository';
 import { WhatsAppRepository } from './repositories/whatsapp.repository';
+import { EInviteRepository } from './repositories/einvite.repository';
 
 // Event Handlers
 import { EventEventHandler } from './events';
@@ -74,6 +76,7 @@ import { PlanningRemindersTask } from './tasks/planning-reminders.task';
     WeddingIdentityService,
     WhatsAppService,
     GuestImportService,
+    EInviteService,
 
     // Repositories
     EventRepository,
@@ -92,6 +95,7 @@ import { PlanningRemindersTask } from './tasks/planning-reminders.task';
     VibeQuizRepository,
     WeddingIdentityRepository,
     WhatsAppRepository,
+    EInviteRepository,
 
     // Event Handlers
     EventEventHandler,
@@ -117,6 +121,7 @@ import { PlanningRemindersTask } from './tasks/planning-reminders.task';
     WeddingIdentityService,
     WhatsAppService,
     GuestImportService,
+    EInviteService,
   ],
 })
 export class PlanningModule {}

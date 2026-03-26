@@ -385,7 +385,62 @@ async function importDelhiVenues() {
 
     console.log(`Found Venues category: ${venuesCategory.name} (ID: ${venuesCategory.id})\n`)
 
-    // Step 2: Find the PUBLIC vendor plan
+    // Step 2: Find or create State and City for Delhi
+    let delhiState = await prisma.state.findFirst({
+      where: { name: { contains: 'Delhi', mode: 'insensitive' } },
+    })
+
+    if (!delhiState) {
+      // Find India country first
+      let india = await prisma.country.findFirst({
+        where: { name: { contains: 'India', mode: 'insensitive' } },
+      })
+
+      if (!india) {
+        india = await prisma.country.create({
+          data: {
+            name: 'India',
+            code: 'IND',
+            code2: 'IN',
+            dialCode: '+91',
+            currency: 'INR',
+            isActive: true,
+          },
+        })
+        console.log('Created country: India')
+      }
+
+      delhiState = await prisma.state.create({
+        data: {
+          name: 'Delhi',
+          countryId: india.id,
+          isActive: true,
+        },
+      })
+      console.log('Created state: Delhi')
+    }
+
+    let newDelhiCity = await prisma.city.findFirst({
+      where: {
+        name: { contains: 'New Delhi', mode: 'insensitive' },
+        stateId: delhiState.id,
+      },
+    })
+
+    if (!newDelhiCity) {
+      newDelhiCity = await prisma.city.create({
+        data: {
+          name: 'New Delhi',
+          stateId: delhiState.id,
+          isActive: true,
+        },
+      })
+      console.log('Created city: New Delhi')
+    }
+
+    console.log(`Using city: ${newDelhiCity.name} (ID: ${newDelhiCity.id})\n`)
+
+    // Step 3: Find the PUBLIC vendor plan
     const publicPlan = await prisma.subscriptionPlan.findUnique({
       where: { slug: 'vendor-public' },
       include: {
@@ -442,9 +497,7 @@ async function importDelhiVenues() {
           const address = await tx.address.create({
             data: {
               addressLine1: venue.location,
-              city: venue.city,
-              state: 'Delhi',
-              country: 'India',
+              city: { connect: { id: newDelhiCity.id } },
               postalCode: '110000',
             },
           })

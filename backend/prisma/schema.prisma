@@ -1618,8 +1618,10 @@ model Event {
   vendorReviews VendorReview[]
   vendors     EventVendor[]
   eventMemory EventMemory?                              // QR code & guest uploads
+  einvite     EInvite?                                  // E-invitation for this event
   userUsageRecords UserUsageRecord[]
   creditTransactions EventCreditTransaction[]           // Credit usage for this event
+  eventUsageRecords EventUsageRecord[]                  // Feature usage tracking for this event
 
   // Primary indexes
   @@index([userId])
@@ -1756,6 +1758,7 @@ model Guest {
 
   guestlist        Guestlist         @relation(fields: [guestlistId], references: [id])
   whatsappMessages WhatsAppMessage[]
+  einvitesSent     EInviteSent[]                         // E-invites sent to this guest
 
   @@map("guests")
   @@schema("planning")
@@ -1882,6 +1885,132 @@ model EventMemory {
   uploads       GuestUpload[]
 
   @@map("event_memories")
+  @@schema("planning")
+}
+
+// ============================================================================
+// E-INVITE SYSTEM
+// ============================================================================
+
+/// EInviteTemplate - Pre-made invitation templates
+model EInviteTemplate {
+  id              String              @id @default(uuid()) @db.Uuid
+  name            String                                        // "Elegant Wedding", "Modern Birthday"
+  category        EInviteCategory                               // WEDDING, BIRTHDAY, etc.
+  thumbnailUrl    String?             @map("thumbnail_url")     // Preview image
+  canvasJson      Json                @map("canvas_json")       // Fabric.js canvas JSON
+  defaultColors   Json?               @map("default_colors")    // { primary: "#xxx", secondary: "#xxx" }
+  isActive        Boolean             @default(true) @map("is_active")
+  isPremium       Boolean             @default(false) @map("is_premium")
+  sortOrder       Int                 @default(0) @map("sort_order")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  einvites        EInvite[]
+
+  @@map("einvite_templates")
+  @@schema("planning")
+}
+
+/// EInvite - User's customized invitation for an event
+model EInvite {
+  id              String              @id @default(uuid()) @db.Uuid
+  eventId         String              @unique @map("event_id") @db.Uuid
+  templateId      String?             @map("template_id") @db.Uuid
+
+  // Customization
+  title           String?                                       // Custom title override
+  canvasJson      Json                @map("canvas_json")       // Customized Fabric.js canvas
+  previewUrl      String?             @map("preview_url")       // Generated preview image URL
+
+  // Event Details (embedded in invite)
+  eventName       String?             @map("event_name")
+  eventDate       DateTime?           @map("event_date")
+  eventTime       String?             @map("event_time")        // "6:00 PM"
+  eventVenue      String?             @map("event_venue")
+  eventAddress    String?             @map("event_address")
+  hostNames       String?             @map("host_names")        // "John & Jane"
+  customMessage   String?             @map("custom_message")
+
+  // Share Settings
+  shareCode       String              @unique @map("share_code") // Unique code for public view
+  isPublished     Boolean             @default(false) @map("is_published")
+
+  // Timestamps
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  event           Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  template        EInviteTemplate?    @relation(fields: [templateId], references: [id])
+  sentInvites     EInviteSent[]
+
+  @@index([shareCode])
+  @@map("einvites")
+  @@schema("planning")
+}
+
+/// EInviteSent - Track invitations sent to guests
+model EInviteSent {
+  id              String              @id @default(uuid()) @db.Uuid
+  einviteId       String              @map("einvite_id") @db.Uuid
+  guestId         String              @map("guest_id") @db.Uuid
+
+  // Delivery Status
+  channel         EInviteChannel      @default(WHATSAPP)        // WHATSAPP, EMAIL, SMS
+  status          EInviteSentStatus   @default(PENDING)
+  sentAt          DateTime?           @map("sent_at")
+  deliveredAt     DateTime?           @map("delivered_at")
+  viewedAt        DateTime?           @map("viewed_at")
+  errorMessage    String?             @map("error_message")
+
+  // Tracking
+  messageId       String?             @map("message_id")        // WhatsApp/Email message ID
+
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  einvite         EInvite             @relation(fields: [einviteId], references: [id], onDelete: Cascade)
+  guest           Guest               @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@unique([einviteId, guestId, channel])
+  @@index([guestId])
+  @@map("einvites_sent")
+  @@schema("planning")
+}
+
+/// EInviteCategory - Types of invitation templates
+enum EInviteCategory {
+  WEDDING
+  ENGAGEMENT
+  BIRTHDAY
+  BABY_SHOWER
+  ANNIVERSARY
+  CORPORATE
+  HOUSEWARMING
+  GRADUATION
+  OTHER
+
+  @@schema("planning")
+}
+
+/// EInviteChannel - Delivery channels
+enum EInviteChannel {
+  WHATSAPP
+  EMAIL
+  SMS
+  LINK
+
+  @@schema("planning")
+}
+
+/// EInviteSentStatus - Delivery status
+enum EInviteSentStatus {
+  PENDING
+  SENT
+  DELIVERED
+  VIEWED
+  FAILED
+
   @@schema("planning")
 }
 
@@ -3790,6 +3919,26 @@ model EventTierFeature {
   @@index([tier])
   @@index([sortOrder])
   @@map("event_tier_features")
+  @@schema("subscription")
+}
+
+/// EventUsageRecord - Usage tracking per event (independent of subscriptions)
+/// Tracks feature usage like memory uploads, storage, etc. for event-based pricing
+model EventUsageRecord {
+  id              String    @id @default(uuid()) @db.Uuid
+  eventId         String    @map("event_id") @db.Uuid
+  featureKey      String    @map("feature_key")       // e.g., "memory_uploads_per_event", "memory_storage_mb"
+  usageCount      Decimal   @default(0) @map("usage_count") @db.Decimal(15, 2)  // Decimal for storage MB
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  event           Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, featureKey])
+  @@index([eventId])
+  @@index([featureKey])
+  @@map("event_usage_records")
   @@schema("subscription")
 }
 

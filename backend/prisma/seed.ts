@@ -51,6 +51,7 @@ import * as bcrypt from 'bcryptjs'
 import { seedSubscriptionPlans } from './seeds/subscription-plans.seed'
 import { seedFeatureFlags } from './seeds/feature-flags.seed'
 import { seedEventCredits } from './seeds/event-credits.seed'
+import { seedEInviteTemplates } from './seeds/einvite-templates.seed'
 import { randomUUID } from 'crypto'
 
 // Initialize Prisma with adapter
@@ -2260,6 +2261,13 @@ async function main() {
   console.log('🚩 Creating feature flags...')
   await seedFeatureFlags(prisma)
   console.log('✅ Feature flags created')
+
+  // ============================================================================
+  // STEP 22.6: E-INVITE TEMPLATES
+  // ============================================================================
+  console.log('💌 Creating e-invite templates...')
+  await seedEInviteTemplates(prisma)
+  console.log('✅ E-invite templates created')
 
   // ============================================================================
   // STEP 23: NOTIFICATIONS
