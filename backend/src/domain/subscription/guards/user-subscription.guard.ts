@@ -61,7 +61,7 @@ export class UserSubscriptionGuard implements CanActivate {
 
     // Get request and extract user ID
     const request = context.switchToHttp().getRequest();
-    const userId = request.user?.sub;
+    const userId = request.user?.id || request.user?.sub;
 
     if (!userId) {
       throw new ForbiddenException('Authentication required');

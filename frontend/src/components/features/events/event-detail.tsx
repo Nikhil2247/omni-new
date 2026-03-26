@@ -112,7 +112,7 @@ const PLANNING_TOOLS = [
     description: 'Send invitations via WhatsApp',
     icon: Send,
     color: 'green',
-    href: 'guestlist',
+    href: 'einvite',
     badge: 'WhatsApp',
   },
   {

@@ -26,7 +26,6 @@ import { RolesGuard } from '../../../core/auth/guards/roles.guard';
 import { UserAccess } from '../../../core/auth/decorators/roles.decorator';
 import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
 import { UserSubscriptionGuard } from '../../../domain/subscription/guards/user-subscription.guard';
-import { CheckGuestsLimit } from '../../../domain/subscription/decorators/user-subscription.decorators';
 import { UserUsageService } from '../../../domain/subscription/services/user-usage.service';
 
 @Controller('guestlist')
@@ -105,7 +104,7 @@ export class GuestlistController {
   }
 
   @Post(':id/guests')
-  @CheckGuestsLimit()
+  // Note: Limit checking is done manually below since we need to lookup eventId from guestlist
   async addGuest(
     @Param('id') id: string,
     @Body() dto: CreateGuestDto,
@@ -146,7 +145,7 @@ export class GuestlistController {
    * Import guests from CSV content
    */
   @Post(':id/import')
-  @CheckGuestsLimit()
+  // Note: Limit checking is done manually below since we need to lookup eventId from guestlist
   async importGuests(
     @Param('id') guestlistId: string,
     @Body('csvContent') csvContent: string,

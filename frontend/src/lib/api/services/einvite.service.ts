@@ -135,7 +135,7 @@ export const einviteService = {
 
   getShareUrl(shareCode: string): string {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    return `${baseUrl}/invite/${shareCode}`;
+    return `${baseUrl}/einvite/${shareCode}`;
   },
 
   getWhatsAppShareUrl(shareCode: string, eventName?: string): string {

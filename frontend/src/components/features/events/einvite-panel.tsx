@@ -46,12 +46,14 @@ export function EInvitePanel({ eventId }: EInvitePanelProps) {
   // Handle save (create or update)
   const handleSave = async (canvasJson: Record<string, any>, previewUrl?: string) => {
     try {
-      if (einvite) {
+      if (einvite?.id) {
+        // Update existing einvite
         await updateEInvite.mutateAsync({
           canvasJson,
           previewUrl,
         })
       } else {
+        // Create new einvite
         const eventDate = event?.eventDate || event?.date
         const address = event?.address as { addressLine1?: string; addressLine2?: string } | undefined
         await createEInvite.mutateAsync({
@@ -71,7 +73,10 @@ export function EInvitePanel({ eventId }: EInvitePanelProps) {
 
   // Handle publish/unpublish
   const handlePublish = async () => {
-    if (!einvite) return
+    if (!einvite?.id) {
+      toast.error('Please save the invitation first')
+      return
+    }
 
     try {
       if (einvite.isPublished) {

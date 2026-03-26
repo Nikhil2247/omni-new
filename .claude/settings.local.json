@@ -40,7 +40,8 @@
       "Bash(del \"D:\\\\omnicassion\\\\omni-new\\\\backend\\\\check-db.js\")",
       "Bash(move \"D:\\\\omnicassion\\\\omni-new\\\\backend\\\\src\\\\api\\\\public-gateway\\\\controllers\\\\event-credit-products.controller.ts\" \"D:\\\\omnicassion\\\\omni-new\\\\backend\\\\src\\\\api\\\\plans-api\\\\controllers\"\")",
       "WebFetch(domain:docs.google.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx:*)"
     ]
   }
 }

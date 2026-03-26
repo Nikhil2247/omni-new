@@ -93,6 +93,7 @@ function TierOption({ tier, isSelected, onSelect, credits, hasFreeEvent, disable
   const info = TIER_FEATURES[tier]
   const canUse = credits > 0 || (tier === 'BASIC' && hasFreeEvent)
   const isDisabled = disabled || !canUse
+  const isFreeBasic = tier === 'BASIC' && hasFreeEvent
 
   return (
     <button
@@ -101,49 +102,70 @@ function TierOption({ tier, isSelected, onSelect, credits, hasFreeEvent, disable
       disabled={isDisabled}
       className={cn(
         'relative w-full p-4 rounded-lg border-2 text-left transition-all',
-        isSelected ? info.selectedColor : info.color,
-        isSelected && 'ring-2 ring-offset-2 ring-offset-background',
-        isSelected && tier === 'BASIC' && 'ring-blue-500',
-        isSelected && tier === 'PREMIUM' && 'ring-purple-500',
+        // Special styling for free tier
+        isFreeBasic && isSelected && 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500 ring-offset-2 ring-offset-background dark:bg-emerald-950 dark:border-emerald-400',
+        isFreeBasic && !isSelected && 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/30 dark:border-emerald-700',
+        // Regular styling for non-free tiers
+        !isFreeBasic && isSelected && info.selectedColor,
+        !isFreeBasic && !isSelected && info.color,
+        !isFreeBasic && isSelected && 'ring-2 ring-offset-2 ring-offset-background',
+        !isFreeBasic && isSelected && tier === 'BASIC' && 'ring-blue-500',
+        !isFreeBasic && isSelected && tier === 'PREMIUM' && 'ring-purple-500',
         isDisabled && 'opacity-50 cursor-not-allowed',
         !isDisabled && 'hover:border-muted-foreground/50 cursor-pointer',
       )}
     >
+      {/* Free Plan Badge - More Prominent */}
+      {isFreeBasic && (
+        <Badge className="absolute -top-2.5 left-3 bg-emerald-500 text-white px-2.5 py-0.5">
+          <Gift className="h-3 w-3 mr-1" />
+          Free Plan
+        </Badge>
+      )}
+
       {/* Popular Badge */}
-      {info.isPopular && (
+      {info.isPopular && !isFreeBasic && (
         <Badge className="absolute -top-2 right-3 bg-purple-500 text-white">
           <Crown className="h-3 w-3 mr-1" />
           Popular
         </Badge>
       )}
 
-      <div className="flex items-start justify-between mb-2">
+      <div className={cn('flex items-start justify-between mb-2', isFreeBasic && 'mt-1')}>
         <div className="flex items-center gap-2">
           <span className="font-semibold text-lg">{info.name}</span>
-          {isSelected && <Check className={cn('h-5 w-5', info.iconColor)} />}
+          {isSelected && <Check className={cn('h-5 w-5', isFreeBasic ? 'text-emerald-500' : info.iconColor)} />}
         </div>
         <div className="text-right">
-          {tier === 'BASIC' && hasFreeEvent ? (
-            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-              <Gift className="h-3 w-3 mr-1" />
-              Free
-            </Badge>
-          ) : (
+          {isFreeBasic ? (
+            <div className="text-right">
+              <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">1 Free Event</span>
+            </div>
+          ) : credits > 0 ? (
             <div className="flex items-center gap-1 text-sm">
               <Coins className="h-4 w-4" />
               <span className="font-medium">{credits}</span>
               <span className="text-muted-foreground">credit{credits !== 1 ? 's' : ''}</span>
             </div>
+          ) : (
+            <span className="text-sm text-muted-foreground">0 credits</span>
           )}
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground mb-3">{info.description}</p>
+      {/* Free event callout */}
+      {isFreeBasic && (
+        <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3 font-medium">
+          Create your first event for free!
+        </p>
+      )}
+
+      {!isFreeBasic && <p className="text-sm text-muted-foreground mb-3">{info.description}</p>}
 
       <ul className="space-y-1">
         {info.features.map((feature) => (
           <li key={feature} className="flex items-center gap-2 text-sm">
-            <Check className={cn('h-3 w-3', info.iconColor)} />
+            <Check className={cn('h-3 w-3', isFreeBasic ? 'text-emerald-500' : info.iconColor)} />
             <span>{feature}</span>
           </li>
         ))}
@@ -246,6 +268,27 @@ export function CreateEventForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Welcome Banner for Free Plan Users */}
+        {!isCreditsLoading && hasFreeEvent && (
+          <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 dark:border-emerald-800 dark:from-emerald-950/40 dark:to-green-950/30">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+                  <Gift className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+                    Welcome! You have 1 free event
+                  </p>
+                  <p className="text-sm text-emerald-700/80 dark:text-emerald-300/80">
+                    Start planning your first celebration at no cost with all Basic features included.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tier Selection */}
         <FormField
           control={form.control}
@@ -257,7 +300,9 @@ export function CreateEventForm() {
                 {isCreditsLoading && <Skeleton className="h-4 w-20" />}
               </FormLabel>
               <FormDescription>
-                Choose the feature tier for your event. This determines your limits and features.
+                {hasFreeEvent
+                  ? 'Your free event uses Basic tier. Upgrade to Premium for unlimited features.'
+                  : 'Choose the feature tier for your event. This determines your limits and features.'}
               </FormDescription>
               <FormControl>
                 {isCreditsLoading ? (

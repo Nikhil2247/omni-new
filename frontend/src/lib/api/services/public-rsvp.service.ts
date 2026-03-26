@@ -51,7 +51,7 @@ export const publicRsvpService = {
    * Get RSVP details by token (public endpoint)
    */
   async getDetails(token: string): Promise<RsvpDetailsResponse> {
-    const response = await apiClient.get<any>(`/rsvp/${token}`)
+    const response = await apiClient.get<any>(`/public/rsvp/${token}`)
     return response.data?.data || response.data
   },
 
@@ -59,7 +59,7 @@ export const publicRsvpService = {
    * Submit RSVP response (public endpoint)
    */
   async submit(token: string, data: RsvpSubmitInput): Promise<RsvpSubmitResponse> {
-    const response = await apiClient.post<any>(`/rsvp/${token}`, data)
+    const response = await apiClient.post<any>(`/public/rsvp/${token}`, data)
     return response.data?.data || response.data
   },
 }
