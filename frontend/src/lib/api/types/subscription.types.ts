@@ -358,3 +358,84 @@ export interface UserSubscriptionStatusResponse {
   tier: 'FREE'
   message?: string
 }
+
+// ============================================
+// Event Credits (Event-Based Pricing)
+// ============================================
+
+export type EventTier = 'BASIC' | 'PREMIUM'
+export type BundleType = 'SINGLE' | 'FIVE_PACK' | 'TEN_PACK'
+export type EventCreditTransactionType = 'PURCHASE' | 'USAGE' | 'REFUND' | 'FREE_GRANT'
+
+export interface EventCreditProduct {
+  id: string
+  tier: EventTier
+  bundleType: BundleType
+  creditCount: number
+  priceInr: number
+  discountPercent?: number
+  isActive: boolean
+  razorpayProductId?: string
+}
+
+export interface EventCreditBalance {
+  id: string
+  userId: string
+  basicCredits: number
+  premiumCredits: number
+  freeEventUsed: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EventCreditTransaction {
+  id: string
+  creditBalanceId: string
+  type: EventCreditTransactionType
+  tier: EventTier
+  amount: number
+  bundleType?: BundleType
+  priceInr?: number
+  eventId?: string
+  paymentId?: string
+  createdAt: string
+}
+
+export interface EventTierFeature {
+  id: string
+  tier: EventTier
+  featureKey: string
+  featureName: string
+  description?: string
+  limitType: FeatureLimitType
+  limitValue?: number
+  isHighlighted: boolean
+  sortOrder: number
+}
+
+export interface CanCreateEventResponse {
+  canCreate: boolean
+  message: string
+  tier?: EventTier
+  source?: 'free_event' | 'credit'
+}
+
+export interface EventCreditPricingSummary {
+  tiers: {
+    tier: EventTier
+    name: string
+    description: string
+    features: EventTierFeature[]
+    products: EventCreditProduct[]
+  }[]
+  freeTier: {
+    events: number
+    tier: EventTier
+    description: string
+  }
+}
+
+export interface PurchaseEventCreditsRequest {
+  productId: string
+  paymentId?: string
+}

@@ -22,6 +22,7 @@ import {
   SubscriptionEmailService,
   CouponService,
   PaymentRetryService,
+  EventCreditService,
 } from './services';
 import { CampaignDisplayService } from './services/campaign-display.service';
 
@@ -35,6 +36,7 @@ import {
   PaymentMethodRepository,
   CampaignRepository,
   AdCreditRepository,
+  EventCreditRepository,
 } from './repositories';
 import { UserSubscriptionRepository } from './repositories/user-subscription.repository';
 import { UserPlanRepository } from './repositories/user-plan.repository';
@@ -82,6 +84,7 @@ import {
     CampaignDisplayService,
     CouponService,
     PaymentRetryService,
+    EventCreditService,
 
     // Repositories
     SubscriptionPlanRepository,
@@ -92,6 +95,7 @@ import {
     PaymentMethodRepository,
     CampaignRepository,
     AdCreditRepository,
+    EventCreditRepository,
     UserSubscriptionRepository,
     UserPlanRepository,
 
@@ -131,11 +135,13 @@ import {
     CampaignDisplayService,
     CouponService,
     PaymentRetryService,
+    EventCreditService,
 
     // Repositories (for use in other modules)
     SubscriptionRepository,
     CampaignRepository,
     AdCreditRepository,
+    EventCreditRepository,
 
     // Guards (for use in other modules)
     SubscriptionGuard,

@@ -14,12 +14,15 @@ import {
   Shield,
   Sparkles,
   Zap,
+  Coins,
+  Gift,
 } from 'lucide-react';
-import { useVendorPlans, useUserPlans } from '@/hooks/queries/use-subscription';
+import { useVendorPlans, useUserPlans, useEventCreditProducts } from '@/hooks/queries/use-subscription';
 import { useRazorpay } from '@/hooks/use-razorpay';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import type { EventCreditProduct } from '@/lib/api/types/subscription.types';
 
 function formatCurrency(amount: number, currency: string = 'INR'): string {
   return new Intl.NumberFormat('en-IN', {
@@ -56,29 +59,75 @@ function getSavingsText(cycle: string): string | null {
   }
 }
 
+function getBundleLabel(bundleType: string): string {
+  switch (bundleType) {
+    case 'SINGLE': return '1 Event';
+    case 'FIVE_PACK': return '5 Events';
+    case 'TEN_PACK': return '10 Events';
+    default: return bundleType;
+  }
+}
+
+function getTierLabel(tier: string): string {
+  return tier === 'BASIC' ? 'Basic' : 'Premium';
+}
+
+function getProductDescription(product: EventCreditProduct): string {
+  const tierLabel = getTierLabel(product.tier);
+  const bundleLabel = getBundleLabel(product.bundleType);
+  return `${product.creditCount} ${tierLabel} Event Credit${product.creditCount > 1 ? 's' : ''}`;
+}
+
+function getProductFeatures(tier: string): string[] {
+  if (tier === 'BASIC') {
+    return [
+      'Up to 200 guests per event',
+      '100 memory uploads',
+      '1 GB storage',
+      '200 WhatsApp invites',
+      'RSVP tracking',
+    ];
+  }
+  return [
+    'Unlimited guests',
+    'Unlimited memory uploads',
+    '10 GB storage',
+    'Unlimited WhatsApp invites',
+    'Custom invite templates',
+    'Priority support',
+  ];
+}
+
 export default function UnifiedCheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planId = searchParams.get('plan');
+  const productId = searchParams.get('product'); // Event credit product ID
   const billingCycle = searchParams.get('billing') || 'MONTHLY';
   const type = searchParams.get('type');
 
   const { user, isAuthenticated } = useAuth();
   const isVendor = user?.role === 'BUSINESS_ADMIN' || type === 'vendor';
+  const isEventCreditPurchase = !!productId;
 
   const { data: vendorPlans, isLoading: vendorLoading } = useVendorPlans();
   const { data: userPlans, isLoading: userLoading } = useUserPlans();
+  const { data: eventCreditProducts, isLoading: productsLoading } = useEventCreditProducts();
 
   const plans = isVendor ? vendorPlans : userPlans;
-  const isLoading = isVendor ? vendorLoading : userLoading;
+  const isLoading = isVendor ? vendorLoading : (isEventCreditPurchase ? productsLoading : userLoading);
 
-  const { isProcessing, payForSubscription, isScriptLoaded, scriptError } = useRazorpay({
+  const { isProcessing, payForSubscription, payForEventCredits, isScriptLoaded, scriptError } = useRazorpay({
     isBusinessPayment: isVendor,
-    onSuccess: (paymentId, subscriptionId) => {
-      const successPath = isVendor
-        ? `/business/payment/success?paymentId=${paymentId}&subscriptionId=${subscriptionId}`
-        : `/payment/success?paymentId=${paymentId}&subscriptionId=${subscriptionId}`;
-      router.push(successPath);
+    onSuccess: (paymentId, subscriptionId, creditsGranted) => {
+      if (isEventCreditPurchase) {
+        router.push(`/payment/success?paymentId=${paymentId}&credits=${creditsGranted || ''}`);
+      } else {
+        const successPath = isVendor
+          ? `/business/payment/success?paymentId=${paymentId}&subscriptionId=${subscriptionId}`
+          : `/payment/success?paymentId=${paymentId}&subscriptionId=${subscriptionId}`;
+        router.push(successPath);
+      }
     },
   });
 
@@ -86,18 +135,33 @@ export default function UnifiedCheckoutPage() {
   const selectedPrice = selectedPlan?.allPrices?.find(p => p.billingCycle === billingCycle);
   const savingsText = getSavingsText(billingCycle);
 
+  // Find selected event credit product
+  const selectedProduct = eventCreditProducts?.find(p => p.id === productId);
+
   const handleCheckout = async () => {
-    if (!selectedPlan || !selectedPrice) return;
-    await payForSubscription(selectedPlan.id, selectedPrice.amount, {
-      name: user?.name,
-      email: user?.email,
-      contact: undefined,
-    });
+    if (isEventCreditPurchase) {
+      if (!selectedProduct) return;
+      const description = getProductDescription(selectedProduct);
+      await payForEventCredits(selectedProduct.id, selectedProduct.priceInr, description, {
+        name: user?.name,
+        email: user?.email,
+        contact: undefined,
+      });
+    } else {
+      if (!selectedPlan || !selectedPrice) return;
+      await payForSubscription(selectedPlan.id, selectedPrice.amount, {
+        name: user?.name,
+        email: user?.email,
+        contact: undefined,
+      });
+    }
   };
 
   // Redirect to login if not authenticated
   if (!isAuthenticated && !isLoading) {
-    const returnUrl = `/checkout?plan=${planId}&billing=${billingCycle}${type ? `&type=${type}` : ''}`;
+    const returnUrl = isEventCreditPurchase
+      ? `/checkout?product=${productId}`
+      : `/checkout?plan=${planId}&billing=${billingCycle}${type ? `&type=${type}` : ''}`;
     router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
     return null;
   }
@@ -115,17 +179,28 @@ export default function UnifiedCheckoutPage() {
     );
   }
 
-  if (!selectedPlan) {
+  // Check if we have a valid item to purchase
+  const hasValidItem = isEventCreditPurchase ? !!selectedProduct : !!selectedPlan;
+
+  if (!hasValidItem) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
         <Card className="max-w-md mx-4 border-0 shadow-xl">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              <CreditCard className="h-8 w-8 text-muted-foreground" />
+              {isEventCreditPurchase ? (
+                <Coins className="h-8 w-8 text-muted-foreground" />
+              ) : (
+                <CreditCard className="h-8 w-8 text-muted-foreground" />
+              )}
             </div>
-            <h2 className="text-xl font-semibold mb-2">Plan not found</h2>
+            <h2 className="text-xl font-semibold mb-2">
+              {isEventCreditPurchase ? 'Product not found' : 'Plan not found'}
+            </h2>
             <p className="text-muted-foreground mb-6">
-              The subscription plan you're looking for doesn't exist or is no longer available.
+              {isEventCreditPurchase
+                ? 'The event credit package you\'re looking for doesn\'t exist or is no longer available.'
+                : 'The subscription plan you\'re looking for doesn\'t exist or is no longer available.'}
             </p>
             <Link href="/pricing">
               <Button className="w-full">View Available Plans</Button>
@@ -136,7 +211,19 @@ export default function UnifiedCheckoutPage() {
     );
   }
 
-  const planFeatures = selectedPlan.features?.slice(0, 6) || [];
+  // Get display values based on purchase type
+  const displayName = isEventCreditPurchase
+    ? getProductDescription(selectedProduct!)
+    : selectedPlan!.name;
+  const displayAmount = isEventCreditPurchase
+    ? selectedProduct!.priceInr
+    : (selectedPrice?.amount || 0);
+  const displayFeatures = isEventCreditPurchase
+    ? getProductFeatures(selectedProduct!.tier)
+    : (selectedPlan!.features?.slice(0, 6) || []);
+  const productSavingsText = isEventCreditPurchase && selectedProduct!.discountPercent
+    ? `Save ${selectedProduct!.discountPercent}%`
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
@@ -165,24 +252,45 @@ export default function UnifiedCheckoutPage() {
           {/* Left Column - Plan Details */}
           <div className="order-2 lg:order-1">
             <div className="sticky top-24">
-              {/* Plan Card */}
+              {/* Plan/Product Card */}
               <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
                 <CardContent className="p-8 relative">
-                  {/* Plan Badge */}
+                  {/* Badge */}
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="h-6 w-6 text-primary" />
+                    <div className={cn(
+                      "w-12 h-12 rounded-xl flex items-center justify-center",
+                      isEventCreditPurchase
+                        ? selectedProduct!.tier === 'BASIC'
+                          ? 'bg-blue-100 dark:bg-blue-900'
+                          : 'bg-purple-100 dark:bg-purple-900'
+                        : 'bg-primary/10'
+                    )}>
+                      {isEventCreditPurchase ? (
+                        <Coins className={cn(
+                          "h-6 w-6",
+                          selectedProduct!.tier === 'BASIC'
+                            ? 'text-blue-600 dark:text-blue-400'
+                            : 'text-purple-600 dark:text-purple-400'
+                        )} />
+                      ) : (
+                        <Sparkles className="h-6 w-6 text-primary" />
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold">{selectedPlan.name}</h1>
-                        {selectedPlan.isPopular && (
+                        <h1 className="text-2xl font-bold">{displayName}</h1>
+                        {!isEventCreditPurchase && selectedPlan?.isPopular && (
                           <Badge variant="default" className="bg-primary">Popular</Badge>
+                        )}
+                        {isEventCreditPurchase && selectedProduct!.tier === 'PREMIUM' && (
+                          <Badge variant="default" className="bg-purple-500">Premium</Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {isVendor ? 'Business' : 'Personal'} Subscription
+                        {isEventCreditPurchase
+                          ? `${getTierLabel(selectedProduct!.tier)} Tier - ${getBundleLabel(selectedProduct!.bundleType)}`
+                          : (isVendor ? 'Business' : 'Personal') + ' Subscription'}
                       </p>
                     </div>
                   </div>
@@ -191,20 +299,37 @@ export default function UnifiedCheckoutPage() {
                   <div className="bg-muted/50 rounded-2xl p-6 mb-6">
                     <div className="flex items-baseline gap-2 mb-2">
                       <span className="text-4xl lg:text-5xl font-bold tracking-tight">
-                        {formatCurrency(selectedPrice?.amount || 0, selectedPrice?.currency || 'INR')}
+                        {formatCurrency(displayAmount)}
                       </span>
-                      <span className="text-lg text-muted-foreground">
-                        /{getBillingLabel(billingCycle)}
-                      </span>
+                      {!isEventCreditPurchase && (
+                        <span className="text-lg text-muted-foreground">
+                          /{getBillingLabel(billingCycle)}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="font-medium">
-                        {getBillingPeriodLabel(billingCycle)}
-                      </Badge>
-                      {savingsText && (
-                        <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
-                          {savingsText}
-                        </Badge>
+                      {isEventCreditPurchase ? (
+                        <>
+                          <Badge variant="outline" className="font-medium">
+                            One-time purchase
+                          </Badge>
+                          {productSavingsText && (
+                            <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+                              {productSavingsText}
+                            </Badge>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <Badge variant="outline" className="font-medium">
+                            {getBillingPeriodLabel(billingCycle)}
+                          </Badge>
+                          {savingsText && (
+                            <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
+                              {savingsText}
+                            </Badge>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -212,31 +337,57 @@ export default function UnifiedCheckoutPage() {
                   {/* Features List */}
                   <div className="space-y-3">
                     <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-                      What's included
+                      {isEventCreditPurchase ? 'Features per event' : "What's included"}
                     </h3>
                     <ul className="space-y-3">
-                      {planFeatures.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Check className="h-3 w-3 text-primary" />
-                          </div>
-                          <span className="text-sm">
-                            {feature.name}
-                            {feature.displayValue && feature.displayValue !== 'Yes' && feature.displayValue !== '-' && (
-                              <span className="text-muted-foreground ml-1">({feature.displayValue})</span>
-                            )}
-                          </span>
-                        </li>
-                      ))}
+                      {isEventCreditPurchase ? (
+                        displayFeatures.map((feature, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <div className={cn(
+                              "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                              selectedProduct!.tier === 'BASIC' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-purple-100 dark:bg-purple-900'
+                            )}>
+                              <Check className={cn(
+                                "h-3 w-3",
+                                selectedProduct!.tier === 'BASIC' ? 'text-blue-600' : 'text-purple-600'
+                              )} />
+                            </div>
+                            <span className="text-sm">{feature}</span>
+                          </li>
+                        ))
+                      ) : (
+                        (displayFeatures as any[]).map((feature, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Check className="h-3 w-3 text-primary" />
+                            </div>
+                            <span className="text-sm">
+                              {feature.name}
+                              {feature.displayValue && feature.displayValue !== 'Yes' && feature.displayValue !== '-' && (
+                                <span className="text-muted-foreground ml-1">({feature.displayValue})</span>
+                              )}
+                            </span>
+                          </li>
+                        ))
+                      )}
                     </ul>
                   </div>
 
-                  {/* Description */}
-                  {selectedPlan.description && (
+                  {/* Description / Credits Info */}
+                  {isEventCreditPurchase ? (
+                    <div className="mt-6 pt-6 border-t">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Gift className="h-4 w-4 text-emerald-600" />
+                        <span className="text-muted-foreground">
+                          Credits never expire - use them whenever you're ready!
+                        </span>
+                      </div>
+                    </div>
+                  ) : selectedPlan?.description ? (
                     <p className="text-sm text-muted-foreground mt-6 pt-6 border-t">
                       {selectedPlan.description}
                     </p>
-                  )}
+                  ) : null}
                 </CardContent>
               </Card>
 
@@ -251,8 +402,14 @@ export default function UnifiedCheckoutPage() {
                   <span className="text-xs font-medium">Instant Access</span>
                 </div>
                 <div className="flex flex-col items-center text-center p-4 rounded-xl bg-card border">
-                  <CreditCard className="h-6 w-6 text-primary mb-2" />
-                  <span className="text-xs font-medium">Cancel Anytime</span>
+                  {isEventCreditPurchase ? (
+                    <Gift className="h-6 w-6 text-primary mb-2" />
+                  ) : (
+                    <CreditCard className="h-6 w-6 text-primary mb-2" />
+                  )}
+                  <span className="text-xs font-medium">
+                    {isEventCreditPurchase ? 'Never Expires' : 'Cancel Anytime'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -280,22 +437,28 @@ export default function UnifiedCheckoutPage() {
                   <h3 className="font-medium">Order Summary</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{selectedPlan.name} ({getBillingPeriodLabel(billingCycle)})</span>
-                      <span className="font-medium">{formatCurrency(selectedPrice?.amount || 0)}</span>
+                      <span className="text-muted-foreground">
+                        {isEventCreditPurchase
+                          ? `${displayName} (${getBundleLabel(selectedProduct!.bundleType)})`
+                          : `${selectedPlan!.name} (${getBillingPeriodLabel(billingCycle)})`}
+                      </span>
+                      <span className="font-medium">{formatCurrency(displayAmount)}</span>
                     </div>
-                    {savingsText && (
+                    {(isEventCreditPurchase ? productSavingsText : savingsText) && (
                       <div className="flex justify-between text-green-600">
                         <span>Discount</span>
-                        <span>{savingsText}</span>
+                        <span>{isEventCreditPurchase ? productSavingsText : savingsText}</span>
                       </div>
                     )}
                     <div className="border-t pt-3 mt-3">
                       <div className="flex justify-between text-base font-semibold">
                         <span>Total</span>
-                        <span>{formatCurrency(selectedPrice?.amount || 0)}</span>
+                        <span>{formatCurrency(displayAmount)}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Billed {getBillingPeriodLabel(billingCycle).toLowerCase()}
+                        {isEventCreditPurchase
+                          ? 'One-time payment'
+                          : `Billed ${getBillingPeriodLabel(billingCycle).toLowerCase()}`}
                       </p>
                     </div>
                   </div>
@@ -348,7 +511,7 @@ export default function UnifiedCheckoutPage() {
                   ) : (
                     <>
                       <Lock className="mr-2 h-5 w-5" />
-                      Pay {formatCurrency(selectedPrice?.amount || 0)}
+                      Pay {formatCurrency(displayAmount)}
                     </>
                   )}
                 </Button>
@@ -374,7 +537,10 @@ export default function UnifiedCheckoutPage() {
                   <Link href="/privacy" className="underline hover:text-foreground">
                     Privacy Policy
                   </Link>
-                  . You can cancel your subscription at any time from your account settings.
+                  .{' '}
+                  {isEventCreditPurchase
+                    ? 'Event credits never expire and can be used anytime.'
+                    : 'You can cancel your subscription at any time from your account settings.'}
                 </p>
               </CardContent>
             </Card>

@@ -2,6 +2,7 @@ export enum PaymentPurpose {
   SUBSCRIPTION = 'SUBSCRIPTION',
   SUBSCRIPTION_UPGRADE = 'SUBSCRIPTION_UPGRADE',
   AD_CREDITS = 'AD_CREDITS',
+  EVENT_CREDITS = 'EVENT_CREDITS',
 }
 
 export interface CreateOrderRequest {
@@ -10,6 +11,7 @@ export interface CreateOrderRequest {
   purpose: PaymentPurpose;
   planId?: string;
   credits?: number;
+  productId?: string;
   metadata?: Record<string, any>;
 }
 
@@ -20,6 +22,7 @@ export interface CreateOrderResponse {
   keyId: string;
   planId?: string;
   credits?: number;
+  productId?: string;
 }
 
 export interface VerifyPaymentRequest {
@@ -28,6 +31,7 @@ export interface VerifyPaymentRequest {
   razorpay_signature: string;
   planId?: string;
   credits?: number;
+  productId?: string;
 }
 
 export interface VerifyPaymentResponse {

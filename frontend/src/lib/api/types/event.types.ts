@@ -5,6 +5,8 @@ export type EventStatus =
   | 'COMPLETED'
   | 'CANCELLED'
 
+export type EventTier = 'BASIC' | 'PREMIUM'
+
 export interface EventSummary {
   id: string
   userId: string
@@ -21,6 +23,7 @@ export interface EventSummary {
   totalBudget?: number
   totalSpent?: number
   status: EventStatus
+  tier?: EventTier
   createdAt: string
   updatedAt: string
 }
@@ -43,6 +46,7 @@ export interface CreateEventInput {
   venue?: string
   expectedGuests?: number
   addressId?: string
+  tier?: EventTier
 }
 
 export interface UpdateEventInput {

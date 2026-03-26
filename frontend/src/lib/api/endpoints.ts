@@ -79,6 +79,10 @@ export const API_ENDPOINTS = {
       USER: '/plans/user',
       USER_BY_ID: (planId: string) => `/plans/user/${planId}`,
       USER_COMPARE: '/plans/user/compare',
+      // Event Credit Products (public)
+      EVENT_CREDITS: '/plans/event-credits/products',
+      EVENT_CREDITS_COMPARE: '/plans/event-credits/compare',
+      EVENT_CREDITS_PRICING: '/plans/event-credits/pricing-summary',
     },
     VENDOR_CLAIM: {
       INITIATE: '/public/vendors/claim/initiate',
@@ -462,6 +466,13 @@ export const API_ENDPOINTS = {
       RESUME: '/user/subscription/resume',
       USAGE: '/user/subscription/usage',
       EVENT_USAGE: (eventId: string) => `/user/subscription/events/${eventId}/usage`,
+    },
+    EVENT_CREDITS: {
+      BALANCE: '/user/event-credits/balance',
+      CAN_CREATE: '/user/event-credits/can-create',
+      PURCHASE: '/user/event-credits/purchase',
+      TRANSACTIONS: '/user/event-credits/transactions',
+      TIER_FEATURES: (tier: string) => `/user/event-credits/tier-features/${tier}`,
     },
     EXPORT: {
       CHECKLIST_PDF: (id: string) => `/user/export/checklist/${id}/pdf`,

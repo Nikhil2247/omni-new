@@ -16,3 +16,6 @@ export * from './ad-credit.repository';
 // User subscription repositories
 export * from './user-plan.repository';
 export * from './user-subscription.repository';
+
+// Event credit repositories
+export * from './event-credit.repository';

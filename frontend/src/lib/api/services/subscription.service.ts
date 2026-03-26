@@ -26,6 +26,14 @@ import type {
   CancelSubscriptionRequest,
   PurchaseCreditsRequest,
   UserSubscriptionStatusResponse,
+  EventCreditProduct,
+  EventCreditBalance,
+  EventCreditTransaction,
+  EventTierFeature,
+  CanCreateEventResponse,
+  EventCreditPricingSummary,
+  PurchaseEventCreditsRequest,
+  EventTier,
 } from '../types/subscription.types'
 
 // ============================================================================
@@ -387,5 +395,79 @@ export const adCreditsService = {
   purchaseCredits: async (payload: PurchaseCreditsRequest): Promise<AdCreditTransaction> => {
     const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.AD_CREDITS.PURCHASE, payload)
     return data?.data || data
+  },
+}
+
+// ============================================================================
+// Event Credits Service (for users - event-based pricing)
+// ============================================================================
+
+export const eventCreditsService = {
+  /**
+   * Get event credit products (public)
+   */
+  getProducts: async (): Promise<EventCreditProduct[]> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.PLANS.EVENT_CREDITS)
+    return data?.data || data || []
+  },
+
+  /**
+   * Get event credit pricing summary with tier comparison (public)
+   */
+  getPricingSummary: async (): Promise<EventCreditPricingSummary> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.PLANS.EVENT_CREDITS_PRICING)
+    return data?.data || data
+  },
+
+  /**
+   * Get tier comparison (public)
+   */
+  compareTiers: async (): Promise<{ tiers: EventTierFeature[][] }> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.PLANS.EVENT_CREDITS_COMPARE)
+    return data?.data || data
+  },
+
+  /**
+   * Get current user's event credit balance
+   */
+  getBalance: async (): Promise<EventCreditBalance> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.USER.EVENT_CREDITS.BALANCE)
+    return data?.data || data
+  },
+
+  /**
+   * Check if user can create an event with specified tier
+   */
+  canCreateEvent: async (tier: EventTier): Promise<CanCreateEventResponse> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.USER.EVENT_CREDITS.CAN_CREATE, {
+      params: { tier },
+    })
+    return data?.data || data
+  },
+
+  /**
+   * Purchase event credits
+   */
+  purchase: async (payload: PurchaseEventCreditsRequest): Promise<EventCreditTransaction> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.USER.EVENT_CREDITS.PURCHASE, payload)
+    return data?.data || data
+  },
+
+  /**
+   * Get event credit transaction history
+   */
+  getTransactions: async (limit?: number): Promise<EventCreditTransaction[]> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.USER.EVENT_CREDITS.TRANSACTIONS, {
+      params: limit ? { limit } : undefined,
+    })
+    return data?.data || data || []
+  },
+
+  /**
+   * Get features for a specific tier
+   */
+  getTierFeatures: async (tier: EventTier): Promise<EventTierFeature[]> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.USER.EVENT_CREDITS.TIER_FEATURES(tier))
+    return data?.data || data || []
   },
 }

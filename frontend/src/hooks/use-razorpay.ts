@@ -75,7 +75,7 @@ export function useRazorpay(options: UseRazorpayOptions = {}) {
 
   // Verify payment mutation
   const verifyPaymentMutation = useMutation({
-    mutationFn: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; planId?: string; credits?: number }) =>
+    mutationFn: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; planId?: string; credits?: number; productId?: string }) =>
       service.verifyPayment(data),
   });
 
@@ -127,6 +127,7 @@ export function useRazorpay(options: UseRazorpayOptions = {}) {
                 razorpay_signature: response.razorpay_signature,
                 planId: order.planId,
                 credits: order.credits,
+                productId: order.productId,
               });
 
               if (result.success) {
@@ -216,6 +217,25 @@ export function useRazorpay(options: UseRazorpayOptions = {}) {
     [openCheckout]
   );
 
+  const payForEventCredits = useCallback(
+    (productId: string, amount: number, description: string, userDetails?: { name?: string; email?: string; contact?: string }) => {
+      return openCheckout(
+        {
+          amount: Math.round(amount * 100), // Convert rupees to paise
+          currency: 'INR',
+          purpose: PaymentPurpose.EVENT_CREDITS,
+          productId,
+        },
+        {
+          name: 'Omnicassion',
+          description,
+          prefill: userDetails,
+        }
+      );
+    },
+    [openCheckout]
+  );
+
   return {
     isScriptLoaded,
     scriptError,
@@ -225,5 +245,6 @@ export function useRazorpay(options: UseRazorpayOptions = {}) {
     openCheckout,
     payForSubscription,
     payForCredits,
+    payForEventCredits,
   };
 }

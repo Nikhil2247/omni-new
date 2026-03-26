@@ -102,9 +102,15 @@ function getRequiredTierForFeature(featureKey: string): PlanTier {
     'album_watermark': 'PROFESSIONAL',
 
     // Lead features
+    'leads_page': 'STARTER',
     'max_leads': 'FREE',
     'lead_export': 'STARTER',
     'lead_crm_integration': 'PROFESSIONAL',
+
+    // Task features
+    'tasks_page': 'STARTER',
+    'assigned_tasks': 'STARTER',
+    'task_proof_upload': 'STARTER',
 
     // Marketing features
     'campaigns': 'STARTER',

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventService } from '@/lib/api/services/event.service'
+import { subscriptionKeys } from './use-subscription'
 import type {
   CreateEventInput,
   SearchEventParams,
@@ -42,6 +43,9 @@ export function useCreateEvent() {
     mutationFn: (input: CreateEventInput) => eventService.createEvent(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: eventKeys.all })
+      // Invalidate event credit balance since a credit was used
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.eventCreditBalance() })
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.eventCreditTransactions() })
     },
   })
 }

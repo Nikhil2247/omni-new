@@ -18,6 +18,7 @@ export enum PaymentPurpose {
   SUBSCRIPTION = 'SUBSCRIPTION',
   SUBSCRIPTION_UPGRADE = 'SUBSCRIPTION_UPGRADE',
   AD_CREDITS = 'AD_CREDITS',
+  EVENT_CREDITS = 'EVENT_CREDITS',
 }
 
 // ============================================================================
@@ -53,6 +54,13 @@ export class CreateOrderDto {
   credits?: number;
 
   @ApiPropertyOptional({
+    description: 'Event credit product ID for event credit purchase',
+  })
+  @IsOptional()
+  @IsString()
+  productId?: string;
+
+  @ApiPropertyOptional({
     description: 'Idempotency key to prevent duplicate order creation',
   })
   @IsOptional()
@@ -83,6 +91,9 @@ export class CreateOrderResponseDto {
 
   @ApiPropertyOptional()
   credits?: number;
+
+  @ApiPropertyOptional()
+  productId?: string;
 
   @ApiPropertyOptional({
     description: 'True if this order was already created (idempotent response)',
@@ -116,6 +127,11 @@ export class VerifyPaymentDto {
   @IsOptional()
   @IsNumber()
   credits?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  productId?: string;
 }
 
 export class PaymentVerificationResponseDto {

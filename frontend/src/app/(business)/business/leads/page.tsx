@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessLeads, useAcceptLead, useUpdateLeadStatus } from '@/hooks/queries/use-business'
+import { VendorFeatureGate } from '@/components/common/vendor-feature-gate'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -109,7 +110,7 @@ const getTimeAgo = (dateString: string) => {
   return formatDate(dateString)
 }
 
-export default function BusinessLeadsPage() {
+function LeadsPageContent() {
   const router = useRouter()
   const { data: leads = [], isLoading, error, refetch } = useBusinessLeads({ page: 1, limit: 100 })
 
@@ -507,5 +508,17 @@ export default function BusinessLeadsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function BusinessLeadsPage() {
+  return (
+    <VendorFeatureGate
+      requiredTier="STARTER"
+      upgradeTitle="Unlock Lead Management"
+      upgradeDescription="Upgrade to Starter or higher to access your leads, track inquiries from event planners, and convert them into events. Manage your sales pipeline efficiently."
+    >
+      <LeadsPageContent />
+    </VendorFeatureGate>
   )
 }

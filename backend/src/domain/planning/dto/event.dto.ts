@@ -13,6 +13,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { EventTier } from '@prisma/client';
 
 export enum EventStatus {
   PLANNING = 'PLANNING',
@@ -55,6 +56,15 @@ export class CreateEventDto {
   @IsOptional()
   @IsUUID()
   addressId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Event tier (BASIC or PREMIUM). Determines feature limits.',
+    enum: ['BASIC', 'PREMIUM'],
+    default: 'BASIC',
+  })
+  @IsOptional()
+  @IsEnum(EventTier)
+  tier?: EventTier;
 }
 
 export class UpdateEventDto extends PartialType(CreateEventDto) {

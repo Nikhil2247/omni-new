@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessTasks, useUpdateTaskStatus, useSubmitTaskProof } from '@/hooks/queries/use-business'
+import { VendorFeatureGate } from '@/components/common/vendor-feature-gate'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -58,7 +59,7 @@ const priorityConfig: Record<string, { label: string; color: string }> = {
   LOW: { label: 'Low', color: 'bg-gray-100 text-gray-700' },
 }
 
-export default function BusinessTasksPage() {
+function TasksPageContent() {
   useEffect(() => {
     trackDashboard.sectionView('tasks', 'vendor')
   }, [])
@@ -514,5 +515,17 @@ export default function BusinessTasksPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+export default function BusinessTasksPage() {
+  return (
+    <VendorFeatureGate
+      requiredTier="STARTER"
+      upgradeTitle="Unlock Task Management"
+      upgradeDescription="Upgrade to Starter or higher to view and manage tasks assigned to you by event organizers. Track progress, submit proofs, and collaborate efficiently."
+    >
+      <TasksPageContent />
+    </VendorFeatureGate>
   )
 }

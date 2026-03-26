@@ -96,6 +96,7 @@ model User {
   payments        Payment[]
   campaignsApproved Campaign[] @relation("CampaignApprovedBy")
   campaignsRejected Campaign[] @relation("CampaignRejectedBy")
+  eventCreditBalance EventCreditBalance?
 
   @@index([email])
   @@index([status])
@@ -1598,6 +1599,9 @@ model Event {
   // Status
   status      EventStatus @default(PLANNING)
 
+  // Event Tier (for feature limits)
+  tier        EventTier   @default(BASIC)
+
   // Timestamps
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -1615,6 +1619,7 @@ model Event {
   vendors     EventVendor[]
   eventMemory EventMemory?                              // QR code & guest uploads
   userUsageRecords UserUsageRecord[]
+  creditTransactions EventCreditTransaction[]           // Credit usage for this event
 
   // Primary indexes
   @@index([userId])
@@ -1622,6 +1627,7 @@ model Event {
   @@index([addressId])
   @@index([date])
   @@index([status])
+  @@index([tier])
 
   // Performance indexes for event planning
   @@index([userId, status])                    // User's events by status
@@ -3381,6 +3387,7 @@ model Payment {
   subscription       Subscription?  @relation(fields: [subscriptionId], references: [id])
   user               User?          @relation(fields: [userId], references: [id])
   vendorProfile      VendorProfile? @relation(fields: [vendorProfileId], references: [id])
+  creditTransactions EventCreditTransaction[]
 
   @@index([invoiceId])
   @@index([paymentMethodId])
@@ -3664,6 +3671,125 @@ model UserUsageRecord {
   @@index([featureKey])
   @@index([eventId])
   @@map("user_usage_records")
+  @@schema("subscription")
+}
+
+// ============================================================================
+// EVENT CREDIT SYSTEM - Per-Event Pricing
+// ============================================================================
+
+/// EventTier - Event feature tier levels
+enum EventTier {
+  BASIC
+  PREMIUM
+
+  @@schema("subscription")
+}
+
+/// BundleType - Event credit bundle types
+enum BundleType {
+  SINGLE      // 1 event
+  FIVE_PACK   // 5 events (20% off)
+  TEN_PACK    // 10 events (25% off)
+
+  @@schema("subscription")
+}
+
+/// EventCreditTransactionType - Types of credit transactions
+enum EventCreditTransactionType {
+  PURCHASE    // Credits purchased
+  USAGE       // Credit used for event creation
+  REFUND      // Credit refunded (event deleted)
+  FREE_GRANT  // Free event granted (registration bonus)
+
+  @@schema("subscription")
+}
+
+/// EventCreditBalance - User's event credit balance
+model EventCreditBalance {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @unique @map("user_id") @db.Uuid
+  basicCredits    Int       @default(0) @map("basic_credits")
+  premiumCredits  Int       @default(0) @map("premium_credits")
+  freeEventUsed   Boolean   @default(false) @map("free_event_used")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions    EventCreditTransaction[]
+
+  @@index([userId])
+  @@map("event_credit_balances")
+  @@schema("subscription")
+}
+
+/// EventCreditTransaction - Credit transaction history
+model EventCreditTransaction {
+  id                String                      @id @default(uuid()) @db.Uuid
+  creditBalanceId   String                      @map("credit_balance_id") @db.Uuid
+  type              EventCreditTransactionType
+  tier              EventTier
+  amount            Int                         // positive for purchase/refund, negative for usage
+  bundleType        BundleType?                 @map("bundle_type")
+  priceInr          Decimal?                    @map("price_inr") @db.Decimal(10, 2)
+  eventId           String?                     @map("event_id") @db.Uuid
+  paymentId         String?                     @map("payment_id") @db.Uuid
+  razorpayPaymentId String?                     @map("razorpay_payment_id")
+  description       String?
+  createdAt         DateTime                    @default(now()) @map("created_at")
+
+  creditBalance     EventCreditBalance          @relation(fields: [creditBalanceId], references: [id], onDelete: Cascade)
+  event             Event?                      @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  payment           Payment?                    @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([creditBalanceId])
+  @@index([type])
+  @@index([tier])
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("event_credit_transactions")
+  @@schema("subscription")
+}
+
+/// EventCreditProduct - Available event credit products for purchase
+model EventCreditProduct {
+  id                String      @id @default(uuid()) @db.Uuid
+  tier              EventTier
+  bundleType        BundleType  @map("bundle_type")
+  creditCount       Int         @map("credit_count")
+  priceInr          Decimal     @map("price_inr") @db.Decimal(10, 2)
+  discountPercent   Int?        @map("discount_percent")
+  razorpayProductId String?     @map("razorpay_product_id")
+  isActive          Boolean     @default(true) @map("is_active")
+  displayOrder      Int         @default(0) @map("display_order")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@unique([tier, bundleType])
+  @@index([tier])
+  @@index([isActive])
+  @@map("event_credit_products")
+  @@schema("subscription")
+}
+
+/// EventTierFeature - Feature limits per event tier
+model EventTierFeature {
+  id              String            @id @default(uuid()) @db.Uuid
+  tier            EventTier
+  featureKey      String            @map("feature_key")
+  featureName     String            @map("feature_name")
+  description     String?
+  limitValue      Int?              @map("limit_value")  // null or -1 for unlimited
+  limitType       FeatureLimitType? @map("limit_type")
+  isEnabled       Boolean           @default(true) @map("is_enabled")
+  isHighlighted   Boolean           @default(false) @map("is_highlighted")
+  sortOrder       Int               @default(0) @map("sort_order")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  @@unique([tier, featureKey])
+  @@index([tier])
+  @@index([sortOrder])
+  @@map("event_tier_features")
   @@schema("subscription")
 }
 

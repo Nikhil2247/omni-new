@@ -41,6 +41,38 @@ const FEATURE_DESCRIPTIONS: Record<string, { name: string; description: string }
     description: 'Add your own branding to events',
   },
 
+  // Vendor Lead features
+  leads_page: {
+    name: 'Lead Management',
+    description: 'Access and manage inquiries from event planners',
+  },
+  max_leads: {
+    name: 'Leads',
+    description: 'Receive inquiries from event planners',
+  },
+  lead_export: {
+    name: 'Lead Export',
+    description: 'Export your leads to CSV or other formats',
+  },
+  lead_crm_integration: {
+    name: 'CRM Integration',
+    description: 'Connect leads to your CRM system',
+  },
+
+  // Vendor Task features
+  tasks_page: {
+    name: 'Task Management',
+    description: 'View and manage tasks assigned by event organizers',
+  },
+  assigned_tasks: {
+    name: 'Assigned Tasks',
+    description: 'Receive and track tasks from event planners',
+  },
+  task_proof_upload: {
+    name: 'Task Proof Upload',
+    description: 'Submit proof of completed work',
+  },
+
   // Premium features
   priority_support: {
     name: 'Priority Support',

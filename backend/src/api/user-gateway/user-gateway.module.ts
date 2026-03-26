@@ -30,6 +30,7 @@ import { PlannerInsightsController } from './controllers/planner-insights.contro
 import { UserSubscriptionController } from './controllers/user-subscription.controller';
 import { PaymentController } from './controllers/payment.controller';
 import { InvoiceController } from './controllers/invoice.controller';
+import { EventCreditController } from './controllers/event-credit.controller';
 import { CatalogModule } from '../../domain/catalog/catalog.module';
 import { PlanningModule } from '../../domain/planning/planning.module';
 import { LeadsModule } from '../../domain/leads/leads.module';
@@ -78,6 +79,7 @@ import { AuditService } from 'src/core/audit';
     UserSubscriptionController,
     PaymentController,
     InvoiceController,
+    EventCreditController,
   ],
   providers: [NotificationService, AuditService],
 })

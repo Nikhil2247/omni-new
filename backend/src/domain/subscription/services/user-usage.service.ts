@@ -12,6 +12,10 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UserSubscriptionRepository } from '../repositories/user-subscription.repository';
 import { UserSubscriptionService } from './user-subscription.service';
+import { EventCreditRepository } from '../repositories/event-credit.repository';
+import { PrismaService } from '../../../core/database/prisma.service';
+import { EventTier } from '@prisma/client';
+import { EventTierFeature } from '@prisma/client';
 
 export interface FeatureLimitStatus {
   featureKey: string;
@@ -35,6 +39,8 @@ export class UserUsageService {
     private readonly subscriptionRepository: UserSubscriptionRepository,
     private readonly subscriptionService: UserSubscriptionService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly eventCreditRepository: EventCreditRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -120,16 +126,20 @@ export class UserUsageService {
   /**
    * Get current usage status for a feature on an event
    * Returns limit, used, remaining, and isUnlimited
+   * Feature limits are based on the EVENT'S TIER, not subscription
    */
   async checkFeatureLimit(
     userId: string,
     eventId: string,
     featureKey: string,
   ): Promise<FeatureLimitStatus> {
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
+    // Get the event to determine its tier
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { tier: true },
+    });
 
-    if (!subscription) {
+    if (!event) {
       return {
         featureKey,
         limit: 0,
@@ -139,21 +149,27 @@ export class UserUsageService {
       };
     }
 
-    // Get feature limit from plan
-    const subscriptionWithPlan = subscription as any;
-    const featureLimit = subscriptionWithPlan.plan?.features?.find(
-      (f: any) => f.featureKey === featureKey,
-    );
-
-    const isUnlimited = featureLimit?.limitType === 'UNLIMITED';
-    const limit = isUnlimited ? -1 : (featureLimit?.limitValue ?? 0);
-
-    // Get current usage for this event (per-event limits)
-    const used = await this.subscriptionRepository.getUsageForEvent(
-      subscription.id,
-      eventId,
+    // Get feature limit from the event's tier
+    const tierFeature = await this.eventCreditRepository.getTierFeature(
+      event.tier,
       featureKey,
     );
+
+    const isUnlimited = tierFeature?.limitType === 'UNLIMITED';
+    const limit = isUnlimited ? -1 : (tierFeature?.limitValue ?? 0);
+
+    // Get subscription for usage tracking (still needed for usage records)
+    const subscription =
+      await this.subscriptionService.findActiveByUserId(userId);
+
+    // Get current usage for this event (per-event limits)
+    const used = subscription
+      ? await this.subscriptionRepository.getUsageForEvent(
+          subscription.id,
+          eventId,
+          featureKey,
+        )
+      : 0;
 
     return {
       featureKey,
@@ -166,15 +182,19 @@ export class UserUsageService {
 
   /**
    * Get all feature usage for an event
+   * Features are based on the event's tier
    */
   async getEventUsage(
     userId: string,
     eventId: string,
   ): Promise<EventUsageSummary> {
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
+    // Get the event to determine its tier
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { tier: true },
+    });
 
-    if (!subscription) {
+    if (!event) {
       return {
         eventId,
         features: [],
@@ -182,15 +202,14 @@ export class UserUsageService {
       };
     }
 
-    // Get all features from plan
-    const subscriptionWithPlan = subscription as any;
-    const planFeatures = subscriptionWithPlan.plan?.features || [];
+    // Get all features for this event's tier
+    const tierFeatures = await this.eventCreditRepository.getTierFeatures(event.tier);
 
     // Get usage for each feature on this event
     const features: FeatureLimitStatus[] = [];
     let totalFeaturesUsed = 0;
 
-    for (const feature of planFeatures) {
+    for (const feature of tierFeatures) {
       const status = await this.checkFeatureLimit(
         userId,
         eventId,
@@ -227,21 +246,33 @@ export class UserUsageService {
   }
 
   /**
-   * Get all feature limits for a user (without event context)
-   * Useful for displaying plan limits
+   * Get all feature limits for an event based on its tier
+   * Useful for displaying event limits
    */
-  async getAllFeatureLimits(userId: string) {
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
+  async getAllFeatureLimits(userId: string, eventId?: string) {
+    // If eventId is provided, get features based on that event's tier
+    if (eventId) {
+      const event = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        select: { tier: true },
+      });
 
-    if (!subscription) {
-      return [];
+      if (event) {
+        const tierFeatures = await this.eventCreditRepository.getTierFeatures(event.tier);
+        return tierFeatures.map((f) => ({
+          featureKey: f.featureKey,
+          featureName: f.featureName,
+          description: f.description,
+          limitType: f.limitType,
+          limitValue: f.limitValue,
+          isUnlimited: f.limitType === 'UNLIMITED',
+        }));
+      }
     }
 
-    const subscriptionWithPlan = subscription as any;
-    const features = subscriptionWithPlan.plan?.features || [];
-
-    return features.map((f: any) => ({
+    // Default to Basic tier features if no event specified
+    const basicFeatures = await this.eventCreditRepository.getTierFeatures(EventTier.BASIC);
+    return basicFeatures.map((f) => ({
       featureKey: f.featureKey,
       featureName: f.featureName,
       description: f.description,
@@ -320,20 +351,25 @@ export class UserUsageService {
   }
 
   /**
-   * Check if user has access to a boolean feature
+   * Check if user has access to a boolean feature for an event
+   * Access is based on the event's tier
    */
-  async hasFeatureAccess(userId: string, featureKey: string): Promise<boolean> {
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
+  async hasFeatureAccess(userId: string, featureKey: string, eventId?: string): Promise<boolean> {
+    // Determine which tier to check
+    let tier: EventTier = EventTier.BASIC;
 
-    if (!subscription) {
-      return false;
+    if (eventId) {
+      const event = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        select: { tier: true },
+      });
+      if (event) {
+        tier = event.tier;
+      }
     }
 
-    const subscriptionWithPlan = subscription as any;
-    const feature = subscriptionWithPlan.plan?.features?.find(
-      (f: any) => f.featureKey === featureKey,
-    );
+    // Get feature from the tier
+    const feature = await this.eventCreditRepository.getTierFeature(tier, featureKey);
 
     if (!feature) {
       return false;
@@ -370,6 +406,7 @@ export class UserUsageService {
   /**
    * Check storage limit for an event
    * Returns whether adding fileSizeBytes would exceed the limit
+   * Storage limits are based on the event's tier
    */
   async checkStorageLimit(
     userId: string,
@@ -383,12 +420,15 @@ export class UserUsageService {
     isUnlimited: boolean;
     fileSizeMB: number;
   }> {
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
-
     const fileSizeMB = fileSizeBytes / (1024 * 1024);
 
-    if (!subscription) {
+    // Get the event to determine its tier
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { tier: true },
+    });
+
+    if (!event) {
       return {
         allowed: false,
         currentUsageMB: 0,
@@ -399,21 +439,27 @@ export class UserUsageService {
       };
     }
 
-    // Get storage limit from plan
-    const subscriptionWithPlan = subscription as any;
-    const storageFeature = subscriptionWithPlan.plan?.features?.find(
-      (f: any) => f.featureKey === 'memory_storage_mb',
+    // Get storage limit from event's tier
+    const storageFeature = await this.eventCreditRepository.getTierFeature(
+      event.tier,
+      'memory_storage_mb',
     );
 
     const isUnlimited = storageFeature?.limitType === 'UNLIMITED';
     const limitMB = isUnlimited ? -1 : (storageFeature?.limitValue ?? 0);
 
+    // Get subscription for usage tracking
+    const subscription =
+      await this.subscriptionService.findActiveByUserId(userId);
+
     // Get current storage usage for this event
-    const currentUsageMB = await this.subscriptionRepository.getUsageForEvent(
-      subscription.id,
-      eventId,
-      'memory_storage_mb',
-    );
+    const currentUsageMB = subscription
+      ? await this.subscriptionRepository.getUsageForEvent(
+          subscription.id,
+          eventId,
+          'memory_storage_mb',
+        )
+      : 0;
 
     if (isUnlimited) {
       return {

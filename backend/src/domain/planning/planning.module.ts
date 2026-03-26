@@ -2,8 +2,9 @@
 // PLANNING MODULE - Event Planning Domain
 // ============================================================================
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DatabaseModule } from '../../core/database/database.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 
 // Services
 import {
@@ -53,7 +54,7 @@ import { EventEventHandler } from './events';
 import { PlanningRemindersTask } from './tasks/planning-reminders.task';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, forwardRef(() => SubscriptionModule)],
   providers: [
     // Services
     EventService,

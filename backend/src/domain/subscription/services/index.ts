@@ -31,3 +31,6 @@ export * from './coupon.service';
 
 // Payment retry & dunning services
 export * from './payment-retry.service';
+
+// Event credit services
+export * from './event-credit.service';

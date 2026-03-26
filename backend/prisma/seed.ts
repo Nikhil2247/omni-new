@@ -50,6 +50,7 @@ import { Pool } from 'pg'
 import * as bcrypt from 'bcryptjs'
 import { seedSubscriptionPlans } from './seeds/subscription-plans.seed'
 import { seedFeatureFlags } from './seeds/feature-flags.seed'
+import { seedEventCredits } from './seeds/event-credits.seed'
 import { randomUUID } from 'crypto'
 
 // Initialize Prisma with adapter
@@ -87,6 +88,12 @@ async function cleanupDatabase() {
   await prisma.userPlanPrice.deleteMany()
   await prisma.userPlanFeature.deleteMany()
   await prisma.userSubscriptionPlan.deleteMany()
+
+  // Subscription schema - Event credits
+  await prisma.eventCreditTransaction.deleteMany()
+  await prisma.eventCreditBalance.deleteMany()
+  await prisma.eventCreditProduct.deleteMany()
+  await prisma.eventTierFeature.deleteMany()
 
   // Content schema
   await prisma.blogPostTag.deleteMany()
@@ -2233,6 +2240,9 @@ async function main() {
 
   // Seed both vendor and user subscription plans using the dedicated seed function
   await seedSubscriptionPlans(prisma)
+
+  // Seed event credit products and tier features
+  await seedEventCredits(prisma)
 
   // Coupons for vendor plans
   await prisma.coupon.createMany({

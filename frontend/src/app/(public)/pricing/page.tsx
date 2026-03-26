@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useVendorPlans, useUserPlans } from '@/hooks/queries/use-subscription'
+import { useVendorPlans, useEventCreditProducts } from '@/hooks/queries/use-subscription'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,19 +14,345 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Switch } from '@/components/ui/switch'
-import { Check, X, Loader2, Sparkles, Users, Building2 } from 'lucide-react'
+import { Check, X, Loader2, Sparkles, Users, Building2, Gift, Percent } from 'lucide-react'
 import Link from 'next/link'
-import type { PlanDisplay, FeatureDisplay, BillingCycle } from '@/lib/api/types/subscription.types'
+import type { PlanDisplay, FeatureDisplay, BillingCycle, EventCreditProduct, EventTier, BundleType } from '@/lib/api/types/subscription.types'
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const TIER_INFO = {
+  BASIC: {
+    name: 'Basic',
+    description: 'Perfect for intimate celebrations and smaller events',
+    color: 'bg-blue-50 dark:bg-blue-950',
+    borderColor: 'border-blue-200 dark:border-blue-800',
+    badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  },
+  PREMIUM: {
+    name: 'Premium',
+    description: 'Full-featured for grand celebrations and large events',
+    color: 'bg-purple-50 dark:bg-purple-950',
+    borderColor: 'border-purple-200 dark:border-purple-800',
+    badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+    isPopular: true,
+  },
+}
+
+const BUNDLE_INFO: Record<BundleType, { label: string; shortLabel: string }> = {
+  SINGLE: { label: '1 Event', shortLabel: '1' },
+  FIVE_PACK: { label: '5 Events', shortLabel: '5' },
+  TEN_PACK: { label: '10 Events', shortLabel: '10' },
+}
+
+const BASIC_FEATURES = [
+  { key: 'guests', name: 'Up to 200 guests', included: true },
+  { key: 'memory_uploads', name: '100 memory uploads', included: true },
+  { key: 'storage', name: '1 GB storage', included: true },
+  { key: 'einvite', name: 'E-invite creation', included: true },
+  { key: 'whatsapp', name: '200 WhatsApp invites', included: true },
+  { key: 'rsvp', name: 'RSVP tracking', included: true },
+  { key: 'export', name: 'Data export', included: true },
+  { key: 'custom_templates', name: 'Custom invite templates', included: false },
+  { key: 'priority_support', name: 'Priority support', included: false },
+]
+
+const PREMIUM_FEATURES = [
+  { key: 'guests', name: 'Unlimited guests', included: true },
+  { key: 'memory_uploads', name: 'Unlimited memory uploads', included: true },
+  { key: 'storage', name: '10 GB storage', included: true },
+  { key: 'einvite', name: 'E-invite creation', included: true },
+  { key: 'whatsapp', name: 'Unlimited WhatsApp invites', included: true },
+  { key: 'rsvp', name: 'RSVP tracking', included: true },
+  { key: 'export', name: 'Data export', included: true },
+  { key: 'custom_templates', name: 'Custom invite templates', included: true },
+  { key: 'priority_support', name: 'Priority support', included: true },
+]
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
-/**
- * Format currency for display
- */
-function formatPrice(amount: number, currency: string = 'INR'): string {
+function formatPrice(amount: number): string {
+  return `₹${amount.toLocaleString('en-IN')}`
+}
+
+function groupProductsByTier(products: EventCreditProduct[]): Record<EventTier, EventCreditProduct[]> {
+  return products.reduce((acc, product) => {
+    if (!acc[product.tier]) {
+      acc[product.tier] = []
+    }
+    acc[product.tier].push(product)
+    return acc
+  }, {} as Record<EventTier, EventCreditProduct[]>)
+}
+
+function sortProductsByBundle(products: EventCreditProduct[]): EventCreditProduct[] {
+  const order: BundleType[] = ['SINGLE', 'FIVE_PACK', 'TEN_PACK']
+  return [...products].sort((a, b) => order.indexOf(a.bundleType) - order.indexOf(b.bundleType))
+}
+
+// ============================================================================
+// Loading Skeleton
+// ============================================================================
+
+function EventPricingCardSkeleton() {
+  return (
+    <Card className="relative flex flex-col animate-pulse">
+      <CardHeader className="text-center pb-4">
+        <div className="h-6 bg-muted rounded w-24 mx-auto mb-2" />
+        <div className="h-4 bg-muted rounded w-48 mx-auto" />
+      </CardHeader>
+      <CardContent className="flex-1 space-y-4">
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="p-4 border rounded-lg">
+              <div className="h-6 bg-muted rounded w-20 mb-2" />
+              <div className="h-8 bg-muted rounded w-28" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="h-4 w-4 bg-muted rounded" />
+              <div className="h-4 bg-muted rounded flex-1" />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============================================================================
+// Bundle Option Component
+// ============================================================================
+
+interface BundleOptionProps {
+  product: EventCreditProduct
+  isSelected: boolean
+  onSelect: () => void
+}
+
+function BundleOption({ product, isSelected, onSelect }: BundleOptionProps) {
+  const bundleInfo = BUNDLE_INFO[product.bundleType]
+
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full p-4 border rounded-lg text-left transition-all ${
+        isSelected
+          ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+          : 'border-border hover:border-muted-foreground/30'
+      }`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-medium">{bundleInfo.label}</span>
+        {product.discountPercent && product.discountPercent > 0 && (
+          <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+            <Percent className="h-3 w-3 mr-1" />
+            {product.discountPercent}% off
+          </Badge>
+        )}
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className="text-2xl font-bold">{formatPrice(product.priceInr)}</span>
+        {product.bundleType !== 'SINGLE' && (
+          <span className="text-sm text-muted-foreground">
+            ({formatPrice(Math.round(product.priceInr / product.creditCount))}/event)
+          </span>
+        )}
+      </div>
+    </button>
+  )
+}
+
+// ============================================================================
+// Event Pricing Card Component
+// ============================================================================
+
+interface EventPricingCardProps {
+  tier: EventTier
+  products: EventCreditProduct[]
+  features: { key: string; name: string; included: boolean }[]
+  isAuthenticated: boolean
+}
+
+function EventPricingCard({ tier, products, features, isAuthenticated }: EventPricingCardProps) {
+  const [selectedBundle, setSelectedBundle] = useState<BundleType>('SINGLE')
+  const tierInfo = TIER_INFO[tier]
+  const sortedProducts = sortProductsByBundle(products)
+  const selectedProduct = sortedProducts.find(p => p.bundleType === selectedBundle)
+
+  const ctaLink = useMemo(() => {
+    if (!selectedProduct) return '/register'
+    if (!isAuthenticated) {
+      return `/register?product=${selectedProduct.id}`
+    }
+    return `/checkout?product=${selectedProduct.id}`
+  }, [selectedProduct, isAuthenticated])
+
+  return (
+    <Card
+      className={`relative flex flex-col transition-all duration-300 hover:shadow-lg ${
+        tierInfo.isPopular
+          ? 'border-primary shadow-md ring-2 ring-primary/20 scale-[1.02]'
+          : 'hover:border-muted-foreground/30'
+      }`}
+    >
+      {/* Popular Badge */}
+      {tierInfo.isPopular && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-lg">
+            <Sparkles className="h-3 w-3 mr-1" />
+            Most Popular
+          </Badge>
+        </div>
+      )}
+
+      <CardHeader className={`text-center pb-4 rounded-t-lg ${tierInfo.color}`}>
+        <CardTitle className="text-xl">{tierInfo.name}</CardTitle>
+        <CardDescription className="mt-1.5">{tierInfo.description}</CardDescription>
+      </CardHeader>
+
+      <CardContent className="flex-1 space-y-6 pt-6">
+        {/* Bundle Options */}
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-muted-foreground">Select package:</p>
+          {sortedProducts.map((product) => (
+            <BundleOption
+              key={product.id}
+              product={product}
+              isSelected={selectedBundle === product.bundleType}
+              onSelect={() => setSelectedBundle(product.bundleType)}
+            />
+          ))}
+        </div>
+
+        {/* Features List */}
+        <div className="pt-4 border-t">
+          <p className="text-sm font-medium text-muted-foreground mb-3">Features per event:</p>
+          <ul className="space-y-2">
+            {features.map((feature) => (
+              <li key={feature.key} className="flex items-center gap-2 text-sm">
+                {feature.included ? (
+                  <Check className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                ) : (
+                  <X className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+                )}
+                <span className={feature.included ? '' : 'text-muted-foreground/70'}>
+                  {feature.name}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardContent>
+
+      <CardFooter className="pt-4">
+        <Button
+          asChild
+          className="w-full"
+          variant={tierInfo.isPopular ? 'default' : 'outline'}
+          size="lg"
+        >
+          <Link href={ctaLink}>
+            {isAuthenticated ? 'Buy Credits' : 'Get Started'}
+          </Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
+
+// ============================================================================
+// Free Tier Banner
+// ============================================================================
+
+function FreeTierBanner({ isAuthenticated }: { isAuthenticated: boolean }) {
+  return (
+    <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800 mb-8">
+      <CardContent className="flex flex-col md:flex-row items-center justify-between gap-4 py-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900">
+            <Gift className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg">Start Free</h3>
+            <p className="text-muted-foreground">
+              Every new user gets <span className="font-semibold text-emerald-600">1 free Basic event</span> to try all features!
+            </p>
+          </div>
+        </div>
+        <Button asChild variant="outline" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950">
+          <Link href={isAuthenticated ? '/dashboard' : '/register'}>
+            {isAuthenticated ? 'Go to Dashboard' : 'Claim Free Event'}
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============================================================================
+// Event Credits Section
+// ============================================================================
+
+interface EventCreditsSectionProps {
+  products: EventCreditProduct[] | undefined
+  isLoading: boolean
+  isAuthenticated: boolean
+}
+
+function EventCreditsSection({ products, isLoading, isAuthenticated }: EventCreditsSectionProps) {
+  if (isLoading) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
+        <EventPricingCardSkeleton />
+        <EventPricingCardSkeleton />
+      </div>
+    )
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">No pricing options available at the moment.</p>
+      </div>
+    )
+  }
+
+  const productsByTier = groupProductsByTier(products)
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
+      {productsByTier.BASIC && (
+        <EventPricingCard
+          tier="BASIC"
+          products={productsByTier.BASIC}
+          features={BASIC_FEATURES}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
+      {productsByTier.PREMIUM && (
+        <EventPricingCard
+          tier="PREMIUM"
+          products={productsByTier.PREMIUM}
+          features={PREMIUM_FEATURES}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// Vendor Plans Section (Legacy monthly plans)
+// ============================================================================
+
+function formatVendorPrice(amount: number, currency: string = 'INR'): string {
   if (currency === 'INR') {
     return `₹${amount.toLocaleString('en-IN')}`
   }
@@ -37,32 +363,10 @@ function formatPrice(amount: number, currency: string = 'INR'): string {
   }).format(amount)
 }
 
-/**
- * Get the price for the selected billing cycle
- */
 function getPriceForCycle(plan: PlanDisplay, cycle: BillingCycle) {
   return plan.allPrices.find((p) => p.billingCycle === cycle)
 }
 
-/**
- * Calculate yearly savings percentage
- */
-function calculateYearlySavings(plan: PlanDisplay): number | null {
-  const monthlyPrice = getPriceForCycle(plan, 'MONTHLY')
-  const yearlyPrice = getPriceForCycle(plan, 'YEARLY')
-
-  if (!monthlyPrice || !yearlyPrice || monthlyPrice.amount === 0) {
-    return yearlyPrice?.savingsPercent || null
-  }
-
-  const yearlyEquivalent = monthlyPrice.amount * 12
-  const savings = ((yearlyEquivalent - yearlyPrice.amount) / yearlyEquivalent) * 100
-  return Math.round(savings)
-}
-
-/**
- * Render feature value based on limit type
- */
 function renderFeatureValue(feature: FeatureDisplay): React.ReactNode {
   switch (feature.limitType) {
     case 'BOOLEAN':
@@ -86,94 +390,21 @@ function renderFeatureValue(feature: FeatureDisplay): React.ReactNode {
   }
 }
 
-// ============================================================================
-// Loading Skeleton Component
-// ============================================================================
-
-function PricingCardSkeleton() {
-  return (
-    <Card className="relative flex flex-col animate-pulse">
-      <CardHeader className="text-center pb-4">
-        <div className="h-6 bg-muted rounded w-24 mx-auto mb-2" />
-        <div className="h-4 bg-muted rounded w-32 mx-auto" />
-      </CardHeader>
-      <CardContent className="flex-1 space-y-4">
-        <div className="text-center py-4">
-          <div className="h-10 bg-muted rounded w-28 mx-auto mb-2" />
-          <div className="h-4 bg-muted rounded w-20 mx-auto" />
-        </div>
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="h-5 w-5 bg-muted rounded" />
-              <div className="h-4 bg-muted rounded flex-1" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-      <CardFooter>
-        <div className="h-10 bg-muted rounded w-full" />
-      </CardFooter>
-    </Card>
-  )
-}
-
-// ============================================================================
-// Pricing Card Component
-// ============================================================================
-
-interface PricingCardProps {
-  plan: PlanDisplay
-  billingCycle: BillingCycle
-  isVendorPlan?: boolean
-  isAuthenticated?: boolean
-  userRole?: string
-}
-
-function PricingCard({ plan, billingCycle, isVendorPlan = false, isAuthenticated = false, userRole }: PricingCardProps) {
+function VendorPricingCard({ plan, billingCycle, isAuthenticated, userRole }: { plan: PlanDisplay; billingCycle: BillingCycle; isAuthenticated: boolean; userRole?: string }) {
   const price = getPriceForCycle(plan, billingCycle)
-  const yearlySavings = calculateYearlySavings(plan)
   const isFree = plan.tier === 'FREE' || (price?.amount ?? 0) === 0
 
-  // Determine CTA link based on auth status, plan type and tier
   const ctaLink = useMemo(() => {
-    // Not logged in - go to registration
     if (!isAuthenticated) {
-      if (isFree) {
-        return isVendorPlan ? '/register/vendor' : '/register'
-      }
-      return isVendorPlan ? `/register/vendor?plan=${plan.slug}` : `/register?plan=${plan.slug}`
-    }
-
-    // Logged in - check user type and plan type
-    const isVendorUser = userRole === 'BUSINESS_ADMIN'
-
-    // Free plan - go to dashboard
-    if (isFree) {
-      return isVendorPlan ? '/business/dashboard' : '/dashboard'
-    }
-
-    // Paid plan - go to appropriate checkout
-    if (isVendorPlan) {
-      // Vendor plan - requires vendor account
-      if (isVendorUser) {
-        return `/business/checkout?plan=${plan.id}&billing=${billingCycle}`
-      }
-      // Regular user trying to get vendor plan - redirect to vendor registration
+      if (isFree) return '/register/vendor'
       return `/register/vendor?plan=${plan.slug}`
     }
+    const isVendorUser = userRole === 'BUSINESS_ADMIN'
+    if (isFree) return '/business/dashboard'
+    if (isVendorUser) return `/business/checkout?plan=${plan.id}&billing=${billingCycle}`
+    return `/register/vendor?plan=${plan.slug}`
+  }, [isAuthenticated, isFree, plan, billingCycle, userRole])
 
-    // User plan - go to user checkout
-    return `/checkout?plan=${plan.id}&billing=${billingCycle}`
-  }, [isAuthenticated, isFree, isVendorPlan, plan, billingCycle, userRole])
-
-  const ctaText = useMemo(() => {
-    if (isFree) return 'Get Started Free'
-    if (isAuthenticated) return 'Subscribe Now'
-    return 'Subscribe Now'
-  }, [isFree, isAuthenticated])
-
-  // Sort features by highlighted first, then by sort order
   const sortedFeatures = [...plan.features].sort((a, b) => {
     if (a.isHighlighted && !b.isHighlighted) return -1
     if (!a.isHighlighted && b.isHighlighted) return 1
@@ -188,7 +419,6 @@ function PricingCard({ plan, billingCycle, isVendorPlan = false, isAuthenticated
           : 'hover:border-muted-foreground/30'
       }`}
     >
-      {/* Popular Badge */}
       {plan.isPopular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-lg">
@@ -200,13 +430,10 @@ function PricingCard({ plan, billingCycle, isVendorPlan = false, isAuthenticated
 
       <CardHeader className="text-center pb-4">
         <CardTitle className="text-xl">{plan.name}</CardTitle>
-        {plan.description && (
-          <CardDescription className="mt-1.5">{plan.description}</CardDescription>
-        )}
+        {plan.description && <CardDescription className="mt-1.5">{plan.description}</CardDescription>}
       </CardHeader>
 
       <CardContent className="flex-1 space-y-6">
-        {/* Pricing */}
         <div className="text-center py-2">
           {isFree ? (
             <>
@@ -214,92 +441,52 @@ function PricingCard({ plan, billingCycle, isVendorPlan = false, isAuthenticated
               <p className="text-sm text-muted-foreground mt-1">Forever</p>
             </>
           ) : (
-            <>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-bold">
-                  {formatPrice(price?.amount ?? 0, price?.currency)}
-                </span>
-                <span className="text-muted-foreground">
-                  /{billingCycle === 'MONTHLY' ? 'mo' : 'yr'}
-                </span>
-              </div>
-              {billingCycle === 'YEARLY' && yearlySavings && yearlySavings > 0 && (
-                <Badge variant="secondary" className="mt-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                  Save {yearlySavings}%
-                </Badge>
-              )}
-              {billingCycle === 'MONTHLY' && yearlySavings && yearlySavings > 0 && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Save {yearlySavings}% with annual billing
-                </p>
-              )}
-            </>
+            <div className="flex items-baseline justify-center gap-1">
+              <span className="text-4xl font-bold">
+                {formatVendorPrice(price?.amount ?? 0, price?.currency)}
+              </span>
+              <span className="text-muted-foreground">
+                /{billingCycle === 'MONTHLY' ? 'mo' : 'yr'}
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Trial Days */}
-        {plan.trialDays > 0 && !isFree && (
-          <p className="text-center text-sm text-muted-foreground border-y py-3 -mx-6 px-6 bg-muted/30">
-            {plan.trialDays}-day free trial included
-          </p>
-        )}
-
-        {/* Features List */}
         <ul className="space-y-3">
           {sortedFeatures.map((feature) => (
-            <li
-              key={feature.key}
-              className={`flex items-start gap-3 text-sm ${
-                feature.isHighlighted ? 'font-medium' : ''
-              }`}
-            >
+            <li key={feature.key} className={`flex items-start gap-3 text-sm ${feature.isHighlighted ? 'font-medium' : ''}`}>
               <div className="flex-shrink-0 mt-0.5">{renderFeatureValue(feature)}</div>
-              <div className="flex-1">
-                <span className={feature.isHighlighted ? 'text-foreground' : 'text-muted-foreground'}>
-                  {feature.name}
-                </span>
-                {feature.description && (
-                  <p className="text-xs text-muted-foreground/70 mt-0.5">{feature.description}</p>
-                )}
-              </div>
+              <span className={feature.isHighlighted ? 'text-foreground' : 'text-muted-foreground'}>
+                {feature.name}
+              </span>
             </li>
           ))}
         </ul>
       </CardContent>
 
       <CardFooter className="pt-4">
-        <Button
-          asChild
-          className="w-full"
-          variant={plan.isPopular ? 'default' : 'outline'}
-          size="lg"
-        >
-          <Link href={ctaLink}>{ctaText}</Link>
+        <Button asChild className="w-full" variant={plan.isPopular ? 'default' : 'outline'} size="lg">
+          <Link href={ctaLink}>{isFree ? 'Get Started Free' : 'Subscribe Now'}</Link>
         </Button>
       </CardFooter>
     </Card>
   )
 }
 
-// ============================================================================
-// Plans Section Component
-// ============================================================================
-
-interface PlansSectionProps {
+interface VendorPlansSectionProps {
   plans: PlanDisplay[] | undefined
   isLoading: boolean
   billingCycle: BillingCycle
-  isVendorPlan?: boolean
-  isAuthenticated?: boolean
+  isAuthenticated: boolean
   userRole?: string
 }
 
-function PlansSection({ plans, isLoading, billingCycle, isVendorPlan = false, isAuthenticated = false, userRole }: PlansSectionProps) {
+function VendorPlansSection({ plans, isLoading, billingCycle, isAuthenticated, userRole }: VendorPlansSectionProps) {
   if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
         {Array.from({ length: 3 }).map((_, i) => (
-          <PricingCardSkeleton key={i} />
+          <EventPricingCardSkeleton key={i} />
         ))}
       </div>
     )
@@ -313,67 +500,19 @@ function PlansSection({ plans, isLoading, billingCycle, isVendorPlan = false, is
     )
   }
 
-  // Sort plans by display order
   const sortedPlans = [...plans].sort((a, b) => a.displayOrder - b.displayOrder)
 
   return (
-    <div
-      className={`grid gap-6 ${
-        sortedPlans.length === 2
-          ? 'md:grid-cols-2 max-w-3xl mx-auto'
-          : sortedPlans.length === 3
-            ? 'md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto'
-            : 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-      }`}
-    >
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
       {sortedPlans.map((plan) => (
-        <PricingCard
+        <VendorPricingCard
           key={plan.id}
           plan={plan}
           billingCycle={billingCycle}
-          isVendorPlan={isVendorPlan}
           isAuthenticated={isAuthenticated}
           userRole={userRole}
         />
       ))}
-    </div>
-  )
-}
-
-// ============================================================================
-// Billing Toggle Component
-// ============================================================================
-
-interface BillingToggleProps {
-  billingCycle: BillingCycle
-  onChange: (cycle: BillingCycle) => void
-}
-
-function BillingToggle({ billingCycle, onChange }: BillingToggleProps) {
-  return (
-    <div className="flex items-center justify-center gap-4">
-      <span
-        className={`text-sm font-medium transition-colors ${
-          billingCycle === 'MONTHLY' ? 'text-foreground' : 'text-muted-foreground'
-        }`}
-      >
-        Monthly
-      </span>
-      <Switch
-        checked={billingCycle === 'YEARLY'}
-        onCheckedChange={(checked) => onChange(checked ? 'YEARLY' : 'MONTHLY')}
-        aria-label="Toggle yearly billing"
-      />
-      <span
-        className={`text-sm font-medium transition-colors ${
-          billingCycle === 'YEARLY' ? 'text-foreground' : 'text-muted-foreground'
-        }`}
-      >
-        Yearly
-      </span>
-      <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-        Save up to 33%
-      </Badge>
     </div>
   )
 }
@@ -384,29 +523,34 @@ function BillingToggle({ billingCycle, onChange }: BillingToggleProps) {
 
 const faqs = [
   {
-    question: 'Can I change my plan later?',
+    question: 'How does event-based pricing work?',
     answer:
-      'Yes, you can upgrade or downgrade your plan at any time. When upgrading, you will be charged the prorated difference. When downgrading, the change will take effect at the end of your current billing period.',
+      'Instead of monthly subscriptions, you purchase credits for each event you want to plan. You can buy single event credits or bundles (5 or 10 events) at discounted rates. Credits never expire!',
+  },
+  {
+    question: 'What is the difference between Basic and Premium events?',
+    answer:
+      'Basic events support up to 200 guests with 100 memory uploads and 1GB storage. Premium events have unlimited guests and memory uploads, 10GB storage, custom invite templates, and priority support.',
+  },
+  {
+    question: 'Do event credits expire?',
+    answer:
+      'No! Your event credits never expire. Use them whenever you are ready to plan your next celebration.',
+  },
+  {
+    question: 'Can I upgrade from Basic to Premium for an event?',
+    answer:
+      'Currently, you need to select the tier when creating an event. We recommend choosing Premium for larger celebrations where you need unlimited features.',
   },
   {
     question: 'What payment methods do you accept?',
     answer:
-      'We accept all major credit cards, debit cards, UPI, and net banking. For enterprise plans, we also support bank transfers and invoicing.',
-  },
-  {
-    question: 'Is there a free trial?',
-    answer:
-      'Yes, all paid plans come with a free trial period. You can explore all features before your card is charged.',
-  },
-  {
-    question: 'Can I cancel anytime?',
-    answer:
-      'Absolutely! You can cancel your subscription at any time. Your access will continue until the end of your current billing period.',
+      'We accept all major credit cards, debit cards, UPI, and net banking through our secure payment partner Razorpay.',
   },
   {
     question: 'Do you offer refunds?',
     answer:
-      'We offer a 7-day money-back guarantee for all new subscriptions. If you are not satisfied, contact our support team within 7 days of your purchase.',
+      'Unused event credits can be refunded within 7 days of purchase. Once an event is created using a credit, that credit is non-refundable.',
   },
 ]
 
@@ -436,28 +580,23 @@ export default function PricingPage() {
 
   const { isAuthenticated, user } = useAuth()
   const { data: vendorPlans, isLoading: vendorLoading } = useVendorPlans()
-  const { data: userPlans, isLoading: userLoading } = useUserPlans()
+  const { data: eventProducts, isLoading: productsLoading } = useEventCreditProducts()
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16">
       {/* Header */}
       <section className="text-center space-y-4 max-w-3xl mx-auto">
         <Badge variant="secondary" className="mb-2">
-          Simple, Transparent Pricing
+          Simple, Event-Based Pricing
         </Badge>
         <h1 className="text-4xl font-semibold sm:text-5xl">
-          Choose the perfect plan for your needs
+          Pay only for what you need
         </h1>
         <p className="text-lg text-muted-foreground">
-          Whether you are planning your dream event or growing your vendor business, we have a plan
-          that fits. Start free, upgrade when you are ready.
+          No monthly subscriptions for users. Buy event credits and use them whenever you are ready.
+          Credits never expire!
         </p>
       </section>
-
-      {/* Billing Toggle */}
-      <div className="mt-8">
-        <BillingToggle billingCycle={billingCycle} onChange={setBillingCycle} />
-      </div>
 
       {/* Tabs for User vs Vendor Plans */}
       <Tabs
@@ -478,19 +617,26 @@ export default function PricingPage() {
 
         <TabsContent value="users" className="mt-10">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold">Plans for Users</h2>
+            <h2 className="text-2xl font-semibold">Event Pricing for Users</h2>
             <p className="text-muted-foreground mt-2">
-              Plan your wedding, party, or any event with powerful tools and vendor discovery
+              Plan your wedding, party, or any celebration with powerful tools
             </p>
           </div>
-          <PlansSection
-            plans={userPlans}
-            isLoading={userLoading}
-            billingCycle={billingCycle}
-            isVendorPlan={false}
+
+          {/* Free Tier Banner */}
+          <FreeTierBanner isAuthenticated={isAuthenticated} />
+
+          {/* Event Credits Pricing */}
+          <EventCreditsSection
+            products={eventProducts}
+            isLoading={productsLoading}
             isAuthenticated={isAuthenticated}
-            userRole={user?.role}
           />
+
+          {/* Credits Info */}
+          <div className="mt-12 text-center text-sm text-muted-foreground">
+            <p>All prices are in Indian Rupees (INR). Bundle discounts are applied at checkout.</p>
+          </div>
         </TabsContent>
 
         <TabsContent value="vendors" className="mt-10">
@@ -500,11 +646,38 @@ export default function PricingPage() {
               Grow your event business with leads, bookings, and powerful management tools
             </p>
           </div>
-          <PlansSection
+
+          {/* Billing Toggle for Vendor Plans */}
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <button
+              onClick={() => setBillingCycle('MONTHLY')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                billingCycle === 'MONTHLY'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted hover:bg-muted/80'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('YEARLY')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                billingCycle === 'YEARLY'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted hover:bg-muted/80'
+              }`}
+            >
+              Yearly
+              <Badge variant="secondary" className="ml-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                Save 33%
+              </Badge>
+            </button>
+          </div>
+
+          <VendorPlansSection
             plans={vendorPlans}
             isLoading={vendorLoading}
             billingCycle={billingCycle}
-            isVendorPlan={true}
             isAuthenticated={isAuthenticated}
             userRole={user?.role}
           />
@@ -533,15 +706,15 @@ export default function PricingPage() {
 
       {/* Final CTA */}
       <section className="mt-12 text-center py-12 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
-        <h2 className="text-2xl font-semibold">Ready to get started?</h2>
+        <h2 className="text-2xl font-semibold">Ready to plan your event?</h2>
         <p className="text-muted-foreground mt-2">
           {isAuthenticated
-            ? 'Upgrade your plan to unlock more features'
-            : 'Join thousands of happy users and vendors on Omnicassion'}
+            ? 'Purchase event credits to start planning your celebration'
+            : 'Join thousands of happy users planning their dream events'}
         </p>
         <Button asChild size="lg" className="mt-6">
-          <Link href={isAuthenticated ? (user?.role === 'BUSINESS_ADMIN' ? '/business/dashboard' : '/dashboard') : '/register'}>
-            {isAuthenticated ? 'Go to Dashboard' : 'Create Your Free Account'}
+          <Link href={isAuthenticated ? '/dashboard' : '/register'}>
+            {isAuthenticated ? 'Go to Dashboard' : 'Start Free'}
           </Link>
         </Button>
       </section>

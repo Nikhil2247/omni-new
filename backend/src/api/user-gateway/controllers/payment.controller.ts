@@ -34,6 +34,7 @@ import {
 import { RazorpayService } from '../../../domain/subscription/services/razorpay.service';
 import { BillingService } from '../../../domain/subscription/services/billing.service';
 import { UserSubscriptionService } from '../../../domain/subscription/services/user-subscription.service';
+import { EventCreditService } from '../../../domain/subscription/services/event-credit.service';
 import {
   CreateOrderDto,
   VerifyPaymentDto,
@@ -58,6 +59,7 @@ export class PaymentController {
     private readonly razorpayService: RazorpayService,
     private readonly billingService: BillingService,
     private readonly userSubscriptionService: UserSubscriptionService,
+    private readonly eventCreditService: EventCreditService,
   ) {}
 
   /**
@@ -249,6 +251,44 @@ export class PaymentController {
           dto.razorpay_payment_id,
           error.message,
         );
+      }
+    }
+
+    // Handle event credit purchase
+    if (
+      dto.productId &&
+      orderDetails.notes?.purpose === PaymentPurpose.EVENT_CREDITS
+    ) {
+      try {
+        const transaction = await this.eventCreditService.purchaseCredits(
+          user.id,
+          dto.productId,
+          payment.id,
+          dto.razorpay_payment_id,
+        );
+
+        this.logger.log(
+          `Event credits purchased for user ${user.id}: ${transaction.amount} credits`,
+        );
+
+        return {
+          success: true,
+          paymentId: dto.razorpay_payment_id,
+          creditsGranted: transaction.amount,
+          message: `${transaction.amount} event credits added to your account`,
+        };
+      } catch (error) {
+        this.logger.error(
+          `Failed to add event credits for user ${user.id}: ${error.message}`,
+          error.stack,
+        );
+        // Don't throw here - payment was successful, just log the error
+        // Credits can be manually added later
+        return {
+          success: true,
+          paymentId: dto.razorpay_payment_id,
+          message: 'Payment successful. Credits will be added shortly.',
+        };
       }
     }
 

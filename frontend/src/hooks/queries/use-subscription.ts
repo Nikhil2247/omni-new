@@ -11,6 +11,7 @@ import {
   vendorSubscriptionService,
   campaignService,
   adCreditsService,
+  eventCreditsService,
 } from '@/lib/api/services/subscription.service'
 import type {
   PlanDisplay,
@@ -32,6 +33,14 @@ import type {
   CancelSubscriptionRequest,
   PurchaseCreditsRequest,
   UserSubscriptionStatusResponse,
+  EventCreditProduct,
+  EventCreditBalance,
+  EventCreditTransaction,
+  EventTierFeature,
+  CanCreateEventResponse,
+  EventCreditPricingSummary,
+  PurchaseEventCreditsRequest,
+  EventTier,
 } from '@/lib/api/types/subscription.types'
 
 // ============================================================================
@@ -56,6 +65,13 @@ export const subscriptionKeys = {
   adCreditHistory: (limit?: number) => [...subscriptionKeys.all, 'ad-credit-history', limit] as const,
   spendingSummary: (startDate: string, endDate: string) =>
     [...subscriptionKeys.all, 'spending-summary', startDate, endDate] as const,
+  // Event Credits
+  eventCreditProducts: () => [...subscriptionKeys.all, 'event-credit-products'] as const,
+  eventCreditPricing: () => [...subscriptionKeys.all, 'event-credit-pricing'] as const,
+  eventCreditBalance: () => [...subscriptionKeys.all, 'event-credit-balance'] as const,
+  eventCreditTransactions: (limit?: number) => [...subscriptionKeys.all, 'event-credit-transactions', limit] as const,
+  eventCreditCanCreate: (tier: EventTier) => [...subscriptionKeys.all, 'event-credit-can-create', tier] as const,
+  eventTierFeatures: (tier: EventTier) => [...subscriptionKeys.all, 'event-tier-features', tier] as const,
 }
 
 // ============================================================================
@@ -591,6 +607,96 @@ export function usePurchaseCredits() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: subscriptionKeys.adCreditBalance() })
       queryClient.invalidateQueries({ queryKey: subscriptionKeys.adCreditHistory() })
+    },
+  })
+}
+
+// ============================================================================
+// Event Credits Queries & Mutations (Event-Based Pricing)
+// ============================================================================
+
+/**
+ * Get event credit products (public - for pricing page)
+ */
+export function useEventCreditProducts(options?: { enabled?: boolean }) {
+  return useQuery<EventCreditProduct[]>({
+    queryKey: subscriptionKeys.eventCreditProducts(),
+    queryFn: () => eventCreditsService.getProducts(),
+    staleTime: 5 * 60 * 1000, // Products don't change often
+    enabled: options?.enabled ?? true,
+  })
+}
+
+/**
+ * Get event credit pricing summary (public - for pricing page)
+ */
+export function useEventCreditPricing(options?: { enabled?: boolean }) {
+  return useQuery<EventCreditPricingSummary>({
+    queryKey: subscriptionKeys.eventCreditPricing(),
+    queryFn: () => eventCreditsService.getPricingSummary(),
+    staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
+  })
+}
+
+/**
+ * Get current user's event credit balance
+ */
+export function useEventCreditBalance(options?: { enabled?: boolean }) {
+  return useQuery<EventCreditBalance>({
+    queryKey: subscriptionKeys.eventCreditBalance(),
+    queryFn: () => eventCreditsService.getBalance(),
+    staleTime: 30_000,
+    enabled: options?.enabled ?? true,
+  })
+}
+
+/**
+ * Check if user can create event with specified tier
+ */
+export function useCanCreateEvent(tier: EventTier, options?: { enabled?: boolean }) {
+  return useQuery<CanCreateEventResponse>({
+    queryKey: subscriptionKeys.eventCreditCanCreate(tier),
+    queryFn: () => eventCreditsService.canCreateEvent(tier),
+    staleTime: 30_000,
+    enabled: (options?.enabled ?? true) && !!tier,
+  })
+}
+
+/**
+ * Get event credit transaction history
+ */
+export function useEventCreditTransactions(limit?: number, options?: { enabled?: boolean }) {
+  return useQuery<EventCreditTransaction[]>({
+    queryKey: subscriptionKeys.eventCreditTransactions(limit),
+    queryFn: () => eventCreditsService.getTransactions(limit),
+    staleTime: 30_000,
+    enabled: options?.enabled ?? true,
+  })
+}
+
+/**
+ * Get features for a specific tier
+ */
+export function useEventTierFeatures(tier: EventTier, options?: { enabled?: boolean }) {
+  return useQuery<EventTierFeature[]>({
+    queryKey: subscriptionKeys.eventTierFeatures(tier),
+    queryFn: () => eventCreditsService.getTierFeatures(tier),
+    staleTime: 5 * 60 * 1000,
+    enabled: (options?.enabled ?? true) && !!tier,
+  })
+}
+
+/**
+ * Purchase event credits
+ */
+export function usePurchaseEventCredits() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: PurchaseEventCreditsRequest) => eventCreditsService.purchase(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.eventCreditBalance() })
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.eventCreditTransactions() })
     },
   })
 }
