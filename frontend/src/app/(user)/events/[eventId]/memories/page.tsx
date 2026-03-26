@@ -30,7 +30,7 @@ export default function MemoriesPage() {
 
   const isActive = memories?.isActive ?? false
   const hasQrCode = !!memories?.qrCode
-  const pendingApprovals = pendingCount?.count || 0
+  const pendingApprovals = pendingCount?.pendingCount || 0
 
   return (
     <div className="space-y-6 pb-4">
