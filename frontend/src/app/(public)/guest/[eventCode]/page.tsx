@@ -68,16 +68,6 @@ export default function GuestUploadPage() {
     }
   }, [])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic'],
-      'video/*': ['.mp4', '.webm', '.mov'],
-    },
-    maxSize: 20 * 1024 * 1024,
-    multiple: false,
-  })
-
   const handleUpload = async () => {
     if (!selectedFile) return
 
@@ -140,8 +130,20 @@ export default function GuestUploadPage() {
   }
 
   // Upload Form Component (reusable for modal and inline)
-  const UploadForm = ({ isModal = false }: { isModal?: boolean }) => (
-    <div className={cn("space-y-4", isModal ? "p-5" : "p-4")}>
+  const UploadForm = ({ isModal = false }: { isModal?: boolean }) => {
+    const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+      onDrop,
+      accept: {
+        'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic'],
+        'video/*': ['.mp4', '.webm', '.mov'],
+      },
+      maxSize: 20 * 1024 * 1024,
+      multiple: false,
+      noClick: true,
+    })
+
+    return (
+      <div className={cn("space-y-4", isModal ? "p-5" : "p-4")}>
       {uploadSuccess ? (
         <div className="text-center py-6">
           <div className="relative inline-block">
@@ -177,6 +179,7 @@ export default function GuestUploadPage() {
           {!selectedFile ? (
             <div
               {...getRootProps()}
+              onClick={open}
               className={cn(
                 "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all",
                 isDragActive
@@ -262,8 +265,9 @@ export default function GuestUploadPage() {
           )}
         </>
       )}
-    </div>
-  )
+      </div>
+    )
+  }
 
   // Loading State
   if (isLoading) {
