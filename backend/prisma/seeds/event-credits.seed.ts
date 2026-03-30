@@ -9,15 +9,17 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
 // ============================================================================
-// EVENT CREDIT PRODUCTS SEED
+// EVENT TIER SYSTEM SEED
 // ============================================================================
-// Pricing:
-// - Basic Single: ₹499
-// - Basic 5-Pack: ₹1,996 (20% off)
-// - Basic 10-Pack: ₹3,743 (25% off)
-// - Premium Single: ₹1,299
-// - Premium 5-Pack: ₹5,196 (20% off)
-// - Premium 10-Pack: ₹9,743 (25% off)
+// UNLIMITED EVENT CREATION MODEL:
+// - Users can create UNLIMITED events
+// - Event TIER (BASIC/PREMIUM) determines feature limits WITHIN each event
+// - No credits required for event creation
+// - Credit products are kept for future monetization options (e.g., tier upgrades)
+//
+// Feature Limits by Tier:
+// - BASIC: 200 guests, 100 uploads, 1GB storage, 200 WhatsApp invites
+// - PREMIUM: 500 guests, 500 uploads, 5GB storage, 500 WhatsApp invites
 // ============================================================================
 
 interface EventCreditProductDefinition {

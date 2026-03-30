@@ -61,6 +61,8 @@ import {
   Play,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Grid3X3,
   CalendarDays,
   Camera,
@@ -73,6 +75,7 @@ import {
   Briefcase,
   FileText,
   Images,
+  UtensilsCrossed,
   // Badge icons
   Users,
   Heart,
@@ -194,6 +197,66 @@ const formatEventVendorStatus = (status?: string) => {
     default:
       return 'In Progress'
   }
+}
+
+function hasVendorMessagingEntitlement(vendor: unknown): boolean {
+  if (!vendor || typeof vendor !== 'object') return false
+
+  const candidate = vendor as Record<string, any>
+
+  // Check planTier directly on vendor profile (most reliable)
+  // VendorProfile.planTier is denormalized from subscription
+  const planTier = String(candidate.planTier ?? '').toUpperCase()
+  if (planTier === 'PROFESSIONAL' || planTier === 'ENTERPRISE') {
+    return true
+  }
+
+  // Check subscription tier if available
+  const subscriptionTier = String(
+    candidate.subscription?.plan?.tier ??
+    candidate.activeSubscription?.plan?.tier ??
+    candidate.subscription?.tier ??
+    ''
+  ).toUpperCase()
+  if (subscriptionTier === 'PROFESSIONAL' || subscriptionTier === 'ENTERPRISE') {
+    return true
+  }
+
+  // Check feature arrays for explicit messaging feature
+  const featureContainers = [
+    candidate.features,
+    candidate.planFeatures,
+    candidate.subscriptionFeatures,
+    candidate.subscription?.features,
+    candidate.subscription?.plan?.features,
+    candidate.activeSubscription?.features,
+    candidate.activeSubscription?.plan?.features,
+    candidate.plan?.features,
+  ]
+
+  const normalizedFeatureKeys = featureContainers
+    .flatMap((container) => (Array.isArray(container) ? container : []))
+    .map((feature: any) => {
+      if (typeof feature === 'string') return feature.toLowerCase()
+      if (feature && typeof feature === 'object') {
+        // Check if messaging feature is enabled (limitValue > 0)
+        const key = String(feature.key ?? feature.featureKey ?? feature.code ?? feature.name ?? '').toLowerCase()
+        if (['messaging', 'messages', 'direct_message'].includes(key)) {
+          // If limitValue exists, check if it's > 0
+          if (feature.limitValue !== undefined) {
+            return feature.limitValue > 0 ? key : ''
+          }
+          return key
+        }
+        return key
+      }
+      return ''
+    })
+    .filter(Boolean)
+
+  return normalizedFeatureKeys.some((key) =>
+    ['messaging', 'messages', 'direct_message', 'direct_messages', 'chat', 'inbox'].includes(key),
+  )
 }
 
 // Badge icon mapping
@@ -325,6 +388,7 @@ export default function VendorPageClient({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [activeTab, setActiveTab] = useState<'portfolio' | 'events' | 'services' | 'badges'>('portfolio')
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null)
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', body: '' })
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
   const [hoveredRating, setHoveredRating] = useState(0)
@@ -395,6 +459,10 @@ export default function VendorPageClient({
 
   const handleMessageVendor = async () => {
     if (!vendor?.id) return
+    if (!vendorHasMessaging) {
+      toast.info('Messaging is not available for this vendor plan.')
+      return
+    }
     if (!isAuthenticated) {
       router.push('/login')
       return
@@ -490,9 +558,8 @@ export default function VendorPageClient({
   const address = (vendor as any).address as any
   const category = (vendor as VendorProfileType).category
 
-  // Check if vendor has messaging access based on their subscription plan
-  // Only PROFESSIONAL and ENTERPRISE plans include messaging
-  const vendorHasMessaging = vendor?.planTier === 'PROFESSIONAL' || vendor?.planTier === 'ENTERPRISE'
+  // Messaging is available only when the vendor has the feature in their active plan.
+  const vendorHasMessaging = hasVendorMessagingEntitlement(vendor)
 
   const featuredPortfolios = portfolios.filter((portfolio) => portfolio.isFeatured)
   const nonFeaturedPortfolios = portfolios.filter((portfolio) => !portfolio.isFeatured)
@@ -541,7 +608,7 @@ export default function VendorPageClient({
   return (
     <main className="min-h-screen bg-background">
       {/* Banner + Avatar Header — LinkedIn-style */}
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto lg:max-w-5xl">
         {/* Banner */}
         <div className="relative h-40 w-full overflow-hidden rounded-b-lg bg-muted md:h-60">
           {vendor.bannerImageUrl ? (
@@ -771,7 +838,7 @@ export default function VendorPageClient({
       </div>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-5xl px-4 md:px-6">
+      <div className="mx-auto lg:max-w-5xl px-2">
 
         {/* Claim Status Banner - show if user has a claim on this vendor */}
         {isAuthenticated && canShowClaimUI && (
@@ -818,11 +885,18 @@ export default function VendorPageClient({
                     {/* Featured Albums - Carousel */}
                     {featuredPortfolios.length > 0 && (
                       <div>
-                        <h3 className="mb-4 text-sm font-medium text-muted-foreground uppercase tracking-wider">Featured Albums</h3>
+                        <div className="mb-4 flex items-center justify-between">
+                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Featured Albums</h3>
+                          {featuredPortfolios.length > 1 && (
+                            <span className="text-xs text-muted-foreground sm:hidden">
+                              Swipe to see more
+                            </span>
+                          )}
+                        </div>
                         <Carousel
                           opts={{
                             align: 'start',
-                            loop: featuredPortfolios.length > 3,
+                            loop: featuredPortfolios.length > 2,
                           }}
                           className="w-full"
                         >
@@ -833,13 +907,13 @@ export default function VendorPageClient({
                               const coverImage = albumMedia[0]
 
                               return (
-                                <CarouselItem key={portfolio.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+                                <CarouselItem key={portfolio.id} className="pl-2 md:pl-4 basis-[65%] sm:basis-1/2 lg:basis-1/3">
                                   <motion.button
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
                                     onClick={() => setSelectedAlbum(portfolio)}
-                                    className="group relative w-full overflow-hidden rounded-xl border bg-card text-left transition-all hover:border-primary/50 hover:shadow-lg"
+                                    className="group relative w-full overflow-hidden rounded-lg sm:rounded-xl border bg-card text-left transition-all hover:border-primary/50 hover:shadow-lg"
                                   >
                                     {/* Album Cover Image */}
                                     <div className="relative aspect-[4/3] overflow-hidden bg-muted">
@@ -852,26 +926,26 @@ export default function VendorPageClient({
                                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                                       />
                                       {/* Photo count overlay */}
-                                      <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                                        <Images className="h-3.5 w-3.5" />
+                                      <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-medium text-white backdrop-blur-sm">
+                                        <Images className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                         {albumMedia.length}
                                       </div>
                                       {/* Hover overlay */}
                                       <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/30">
                                         <div className="opacity-0 transition-opacity group-hover:opacity-100">
-                                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
-                                            <Eye className="h-5 w-5 text-foreground" />
+                                          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                                            <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
                                           </div>
                                         </div>
                                       </div>
                                     </div>
                                     {/* Album Info */}
-                                    <div className="p-4">
-                                      <h3 className="font-semibold text-foreground line-clamp-1">
+                                    <div className="p-2.5 sm:p-4">
+                                      <h3 className="font-semibold text-foreground line-clamp-1 text-xs sm:text-base">
                                         {portfolio.title || 'Portfolio'}
                                       </h3>
                                       {portfolio.description && (
-                                        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                                        <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-sm text-muted-foreground line-clamp-1 sm:line-clamp-2">
                                           {portfolio.description}
                                         </p>
                                       )}
@@ -881,11 +955,11 @@ export default function VendorPageClient({
                               )
                             })}
                           </CarouselContent>
-                          {featuredPortfolios.length > 3 && (
-                            <>
+                          {featuredPortfolios.length > 1 && (
+                            <div className="hidden sm:block">
                               <CarouselPrevious className="left-0 -translate-x-1/2 bg-background/80 backdrop-blur-sm hover:bg-background" />
                               <CarouselNext className="right-0 translate-x-1/2 bg-background/80 backdrop-blur-sm hover:bg-background" />
-                            </>
+                            </div>
                           )}
                         </Carousel>
                       </div>
@@ -903,8 +977,8 @@ export default function VendorPageClient({
                             </Button>
                           )}
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {allMedia.slice(0, 15).map((media, idx) => {
+                        <div className="grid grid-cols-4 gap-2">
+                          {allMedia.slice(0, 16).map((media, idx) => {
                             return (
                               <motion.button
                                 key={media.id}
@@ -1058,7 +1132,15 @@ export default function VendorPageClient({
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-foreground">{service.name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">{service.name}</h3>
+                              {service.hasItems && service.items?.length > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  <UtensilsCrossed className="mr-1 h-3 w-3" />
+                                  {service.items.length} items
+                                </Badge>
+                              )}
+                            </div>
                             {service.description && (
                               <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">
                                 {service.description}
@@ -1066,7 +1148,14 @@ export default function VendorPageClient({
                             )}
                           </div>
                           <div className="shrink-0 text-right">
-                            {service.startingPrice !== null && service.startingPrice !== undefined ? (
+                            {service.hasItems && service.items?.length > 0 ? (
+                              <>
+                                <p className="text-lg font-bold text-foreground">
+                                  {formatPrice(Math.min(...service.items.map((i: any) => i.price)), service.currency)} - {formatPrice(Math.max(...service.items.map((i: any) => i.price)), service.currency)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">menu range</p>
+                              </>
+                            ) : service.startingPrice !== null && service.startingPrice !== undefined ? (
                               <>
                                 <p className="text-lg font-bold text-foreground">
                                   {formatPrice(service.startingPrice, service.currency)}
@@ -1107,10 +1196,91 @@ export default function VendorPageClient({
                           )}
                         </div>
 
-                        {service.maxPrice !== null && service.maxPrice !== undefined && service.maxPrice !== service.startingPrice && (
+                        {service.maxPrice !== null && service.maxPrice !== undefined && service.maxPrice !== service.startingPrice && !service.hasItems && (
                           <p className="mt-2 text-xs text-muted-foreground">
                             Up to {formatPrice(service.maxPrice, service.currency)}
                           </p>
+                        )}
+
+                        {/* Service Items / Menu Section */}
+                        {service.hasItems && service.items?.length > 0 && (
+                          <div className="mt-4 border-t pt-4">
+                            <button
+                              type="button"
+                              className="flex w-full items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors"
+                              onClick={() => setExpandedServiceId(
+                                expandedServiceId === service.id ? null : service.id
+                              )}
+                            >
+                              <span className="flex items-center gap-2">
+                                <UtensilsCrossed className="h-4 w-4" />
+                                View Menu ({service.items.length} items)
+                              </span>
+                              {expandedServiceId === service.id ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </button>
+
+                            <AnimatePresence>
+                              {expandedServiceId === service.id && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="mt-3 space-y-2">
+                                    {service.items
+                                      .filter((item: any) => item.isActive)
+                                      .map((item: any) => (
+                                        <div
+                                          key={item.id}
+                                          className="flex items-center gap-3 rounded-lg bg-muted/50 p-3"
+                                        >
+                                          {item.imageUrl ? (
+                                            <img
+                                              src={item.imageUrl}
+                                              alt={item.name}
+                                              className="h-12 w-12 rounded-md object-cover"
+                                            />
+                                          ) : (
+                                            <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center">
+                                              <UtensilsCrossed className="h-5 w-5 text-muted-foreground" />
+                                            </div>
+                                          )}
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                              <p className="font-medium text-sm truncate">{item.name}</p>
+                                              {item.isRequired && (
+                                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Required</Badge>
+                                              )}
+                                            </div>
+                                            {item.description && (
+                                              <p className="text-xs text-muted-foreground truncate">
+                                                {item.description}
+                                              </p>
+                                            )}
+                                          </div>
+                                          <div className="text-right shrink-0">
+                                            <p className="font-semibold text-sm">
+                                              {formatPrice(item.price, item.currency || service.currency)}
+                                            </p>
+                                            {item.unit && (
+                                              <p className="text-[10px] text-muted-foreground">
+                                                {item.unit}
+                                              </p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         )}
                       </motion.div>
                     ))}
@@ -1379,7 +1549,7 @@ export default function VendorPageClient({
               <p className="text-muted-foreground">No reviews yet. Be the first to review!</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-x-4 space-y-4  grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {vendorReviews.map((review, idx) => {
                 const reviewerName = [review.reviewer?.firstName, review.reviewer?.lastName]
                   .filter(Boolean)
@@ -1733,7 +1903,7 @@ function VendorDetailSkeleton() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-4 md:px-6">
+      <div className="mx-auto max-w-5xl px-4">
         {/* Tabs Skeleton */}
         <div className="border-t py-3">
           <div className="flex justify-center gap-8">

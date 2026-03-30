@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { budgetService } from '@/lib/api/services/budget.service'
+import type { Budget } from '@/lib/api/types/budget.types'
 import type { CreateBudgetInput, CreateBudgetItemInput, UpdateBudgetInput, UpdateBudgetItemInput } from '@/lib/api/types/budget.types'
 
 export const budgetKeys = {
@@ -19,7 +20,10 @@ export function useCreateBudget() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateBudgetInput) => budgetService.createBudget(input),
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      // Immediately set the cache with the new budget data
+      queryClient.setQueryData(budgetKeys.byEvent(variables.eventId), data)
+      // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: budgetKeys.byEvent(variables.eventId) })
     },
   })
@@ -39,13 +43,15 @@ export function useUpdateBudget(eventId: string) {
 export function useAddBudgetItem(eventId: string, budgetId?: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: CreateBudgetItemInput) => {
-      if (!budgetId) {
+    mutationFn: ({ budgetId: overrideBudgetId, ...input }: CreateBudgetItemInput & { budgetId?: string }) => {
+      const targetBudgetId = overrideBudgetId || budgetId
+      if (!targetBudgetId) {
         return Promise.reject(new Error('Budget ID missing'))
       }
-      return budgetService.addItem(budgetId, input)
+      return budgetService.addItem(targetBudgetId, input)
     },
     onSuccess: () => {
+      // Invalidate to refetch the full budget with all items
       queryClient.invalidateQueries({ queryKey: budgetKeys.byEvent(eventId) })
     },
   })
@@ -56,7 +62,28 @@ export function useUpdateBudgetItem(eventId: string) {
   return useMutation({
     mutationFn: ({ itemId, input }: { itemId: string; input: UpdateBudgetItemInput }) =>
       budgetService.updateItem(itemId, input),
-    onSuccess: () => {
+    onMutate: async ({ itemId, input }) => {
+      await queryClient.cancelQueries({ queryKey: budgetKeys.byEvent(eventId) })
+      const previousBudget = queryClient.getQueryData<Budget | null>(budgetKeys.byEvent(eventId))
+
+      if (previousBudget?.items?.length) {
+        const updatedItems = previousBudget.items.map((item) =>
+          item.id === itemId ? { ...item, ...input } : item,
+        )
+        queryClient.setQueryData<Budget | null>(budgetKeys.byEvent(eventId), {
+          ...previousBudget,
+          items: updatedItems,
+        })
+      }
+
+      return { previousBudget }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousBudget) {
+        queryClient.setQueryData(budgetKeys.byEvent(eventId), context.previousBudget)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: budgetKeys.byEvent(eventId) })
     },
   })

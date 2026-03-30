@@ -8,6 +8,7 @@ import {
   useCreateService,
   useUpdateService,
   useDeleteService,
+  useSyncServiceItems,
 } from "@/hooks/queries/use-business";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,12 +44,18 @@ import {
   XCircle,
   Loader2,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  UtensilsCrossed,
 } from "lucide-react";
 import type {
   VendorService,
+  ServiceItem,
   CreateServiceRequest,
   UpdateServiceRequest,
+  CreateServiceItemRequest,
 } from "@/lib/api/types/business.types";
+import { ServiceItemsForm } from "@/components/features/services/service-items-form";
 
 const PRICE_UNITS = [
   { value: "per_hour", label: "Per Hour" },
@@ -123,7 +130,11 @@ export default function BusinessServicesPage() {
     durationUnit: "hours" as (typeof DURATION_UNITS)[number]["value"],
     isActive: true,
     features: "",
+    hasItems: false,
+    items: [] as (ServiceItem | CreateServiceItemRequest & { id?: string })[],
   });
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
+  const syncServiceItems = useSyncServiceItems();
 
   const resetForm = () => {
     setFormData({
@@ -135,6 +146,8 @@ export default function BusinessServicesPage() {
       durationUnit: "hours",
       isActive: true,
       features: "",
+      hasItems: false,
+      items: [],
     });
   };
 
@@ -162,6 +175,8 @@ export default function BusinessServicesPage() {
       durationUnit,
       isActive: service.isActive,
       features: service.features?.join("\n") || "",
+      hasItems: service.hasItems || false,
+      items: service.items || [],
     });
     setShowEditDialog(true);
   };
@@ -173,18 +188,37 @@ export default function BusinessServicesPage() {
       ? toMinutes(formData.duration, formData.durationUnit)
       : undefined;
 
+    // Prepare items for creation
+    const itemsPayload = formData.hasItems && formData.items.length > 0
+      ? formData.items.map((item, index) => ({
+          name: item.name,
+          description: item.description || undefined,
+          imageUrl: item.imageUrl || undefined,
+          price: item.price,
+          currency: item.currency || "INR",
+          unit: item.unit || undefined,
+          minQuantity: item.minQuantity || 1,
+          maxQuantity: item.maxQuantity || undefined,
+          isRequired: item.isRequired || false,
+          sortOrder: item.sortOrder ?? index,
+        }))
+      : undefined;
+
     createService.mutate(
       {
         vendorProfileId: profile.id,
         name: formData.name,
         description: formData.description || undefined,
-        basePrice: parseFloat(formData.basePrice),
+        basePrice: formData.hasItems ? undefined : parseFloat(formData.basePrice),
+        pricingType: formData.hasItems ? "ITEM_BASED" : undefined,
         priceUnit: formData.priceUnit,
         duration: normalizedDuration,
         isActive: formData.isActive,
+        hasItems: formData.hasItems,
         features: formData.features
           ? formData.features.split("\n").filter((f) => f.trim())
           : undefined,
+        items: itemsPayload,
       },
       {
         onSuccess: () => {
@@ -202,16 +236,35 @@ export default function BusinessServicesPage() {
       ? toMinutes(formData.duration, formData.durationUnit)
       : undefined;
 
+    // Prepare items for sync
+    const itemsToSync = formData.hasItems
+      ? formData.items.map((item, index) => ({
+          id: 'id' in item ? item.id : undefined,
+          name: item.name,
+          description: item.description || undefined,
+          imageUrl: item.imageUrl || undefined,
+          price: item.price,
+          currency: item.currency || "INR",
+          unit: item.unit || undefined,
+          minQuantity: item.minQuantity || 1,
+          maxQuantity: item.maxQuantity || undefined,
+          isRequired: item.isRequired || false,
+          sortOrder: item.sortOrder ?? index,
+        }))
+      : [];
+
     updateService.mutate(
       {
         id: selectedService.id,
         payload: {
           name: formData.name,
           description: formData.description || undefined,
-          basePrice: parseFloat(formData.basePrice),
+          basePrice: formData.hasItems ? undefined : parseFloat(formData.basePrice),
+          pricingType: formData.hasItems ? "ITEM_BASED" : undefined,
           priceUnit: formData.priceUnit,
           duration: normalizedDuration,
           isActive: formData.isActive,
+          hasItems: formData.hasItems,
           features: formData.features
             ? formData.features.split("\n").filter((f) => f.trim())
             : undefined,
@@ -219,6 +272,13 @@ export default function BusinessServicesPage() {
       },
       {
         onSuccess: () => {
+          // If service has items, sync them
+          if (formData.hasItems && itemsToSync.length > 0) {
+            syncServiceItems.mutate({
+              serviceId: selectedService.id,
+              items: itemsToSync,
+            });
+          }
           setShowEditDialog(false);
           setSelectedService(null);
           resetForm();
@@ -351,6 +411,12 @@ export default function BusinessServicesPage() {
                           </>
                         )}
                       </Badge>
+                      {service.hasItems && service.items && service.items.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          <UtensilsCrossed className="mr-1 h-3 w-3" />
+                          {service.items.length} items
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <DropdownMenu>
@@ -399,9 +465,21 @@ export default function BusinessServicesPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="font-semibold">
-                        {formatPrice(getServiceBasePrice(service), getServicePriceUnit(service))}
-                      </span>
+                      {service.hasItems && service.items && service.items.length > 0 ? (
+                        <span className="font-semibold">
+                          {formatPrice(
+                            Math.min(...service.items.map(i => i.price)),
+                            null
+                          )} - {formatPrice(
+                            Math.max(...service.items.map(i => i.price)),
+                            null
+                          )}
+                        </span>
+                      ) : (
+                        <span className="font-semibold">
+                          {formatPrice(getServiceBasePrice(service), getServicePriceUnit(service))}
+                        </span>
+                      )}
                     </div>
                     {service.duration && (
                       <div className="text-muted-foreground flex items-center gap-1 text-sm">
@@ -410,6 +488,43 @@ export default function BusinessServicesPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Show items preview */}
+                  {service.hasItems && service.items && service.items.length > 0 && (
+                    <div className="mt-3 border-t pt-3">
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground w-full"
+                        onClick={() => setExpandedServiceId(
+                          expandedServiceId === service.id ? null : service.id
+                        )}
+                      >
+                        {expandedServiceId === service.id ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                        View Menu ({service.items.length} items)
+                      </button>
+                      {expandedServiceId === service.id && (
+                        <div className="mt-2 space-y-1">
+                          {service.items.slice(0, 5).map((item) => (
+                            <div key={item.id} className="flex items-center justify-between text-sm py-1">
+                              <span className="truncate">{item.name}</span>
+                              <span className="font-medium ml-2">
+                                {formatPrice(item.price, null)}
+                              </span>
+                            </div>
+                          ))}
+                          {service.items.length > 5 && (
+                            <p className="text-xs text-muted-foreground">
+                              +{service.items.length - 5} more items
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {service.features && service.features.length > 0 && (
                     <div className="mt-3 border-t pt-3">
@@ -437,7 +552,7 @@ export default function BusinessServicesPage() {
 
       {/* Create Service Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className={formData.hasItems ? "max-w-2xl max-h-[90vh] overflow-y-auto" : "max-w-lg"}>
           <DialogHeader>
             <DialogTitle>Add New Service</DialogTitle>
             <DialogDescription>Create a new service offering for your customers.</DialogDescription>
@@ -464,40 +579,70 @@ export default function BusinessServicesPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="basePrice">Base Price *</Label>
-                <div className="relative">
-                  <Input
-                    id="basePrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="pl-2"
-                    value={formData.basePrice}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, basePrice: e.target.value }))
-                    }
-                  />
+            {/* Has Items Toggle */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label htmlFor="hasItems" className="font-medium">Add Menu/Items</Label>
+                <p className="text-xs text-muted-foreground">
+                  Enable to add individual items with prices (e.g., food menu, product list)
+                </p>
+              </div>
+              <Switch
+                id="hasItems"
+                checked={formData.hasItems}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, hasItems: checked }))
+                }
+              />
+            </div>
+
+            {/* Show items form if hasItems is enabled */}
+            {formData.hasItems && (
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <ServiceItemsForm
+                  items={formData.items}
+                  onChange={(items) => setFormData((prev) => ({ ...prev, items }))}
+                />
+              </div>
+            )}
+
+            {/* Only show base price if no items */}
+            {!formData.hasItems && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="basePrice">Base Price *</Label>
+                  <div className="relative">
+                    <Input
+                      id="basePrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pl-2"
+                      value={formData.basePrice}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, basePrice: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="priceUnit">Price Unit</Label>
+                  <select
+                    id="priceUnit"
+                    className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
+                    value={formData.priceUnit}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, priceUnit: e.target.value }))}
+                  >
+                    {PRICE_UNITS.map((unit) => (
+                      <option key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="priceUnit">Price Unit</Label>
-                <select
-                  id="priceUnit"
-                  className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
-                  value={formData.priceUnit}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, priceUnit: e.target.value }))}
-                >
-                  {PRICE_UNITS.map((unit) => (
-                    <option key={unit.value} value={unit.value}>
-                      {unit.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="duration">Duration</Label>
@@ -559,7 +704,7 @@ export default function BusinessServicesPage() {
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={createService.isPending || !formData.name || !formData.basePrice}
+              disabled={createService.isPending || !formData.name || (!formData.hasItems && !formData.basePrice)}
             >
               {createService.isPending ? (
                 <>
@@ -576,7 +721,7 @@ export default function BusinessServicesPage() {
 
       {/* Edit Service Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className={formData.hasItems ? "max-w-2xl max-h-[90vh] overflow-y-auto" : "max-w-lg"}>
           <DialogHeader>
             <DialogTitle>Edit Service</DialogTitle>
             <DialogDescription>Update your service details.</DialogDescription>
@@ -601,39 +746,69 @@ export default function BusinessServicesPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-basePrice">Base Price *</Label>
-                <div className="relative">
-                  <Input
-                    id="edit-basePrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="pl-2"
-                    value={formData.basePrice}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, basePrice: e.target.value }))
-                    }
-                  />
+            {/* Has Items Toggle */}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label htmlFor="edit-hasItems" className="font-medium">Add Menu/Items</Label>
+                <p className="text-xs text-muted-foreground">
+                  Enable to add individual items with prices (e.g., food menu, product list)
+                </p>
+              </div>
+              <Switch
+                id="edit-hasItems"
+                checked={formData.hasItems}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, hasItems: checked }))
+                }
+              />
+            </div>
+
+            {/* Show items form if hasItems is enabled */}
+            {formData.hasItems && (
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <ServiceItemsForm
+                  items={formData.items}
+                  onChange={(items) => setFormData((prev) => ({ ...prev, items }))}
+                />
+              </div>
+            )}
+
+            {/* Only show base price if no items */}
+            {!formData.hasItems && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-basePrice">Base Price *</Label>
+                  <div className="relative">
+                    <Input
+                      id="edit-basePrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      className="pl-2"
+                      value={formData.basePrice}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, basePrice: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-priceUnit">Price Unit</Label>
+                  <select
+                    id="edit-priceUnit"
+                    className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
+                    value={formData.priceUnit}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, priceUnit: e.target.value }))}
+                  >
+                    {PRICE_UNITS.map((unit) => (
+                      <option key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-priceUnit">Price Unit</Label>
-                <select
-                  id="edit-priceUnit"
-                  className="border-input bg-background flex h-10 w-full rounded-md border px-3 py-2 text-sm"
-                  value={formData.priceUnit}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, priceUnit: e.target.value }))}
-                >
-                  {PRICE_UNITS.map((unit) => (
-                    <option key={unit.value} value={unit.value}>
-                      {unit.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="edit-duration">Duration</Label>
@@ -693,7 +868,7 @@ export default function BusinessServicesPage() {
             </Button>
             <Button
               onClick={handleUpdate}
-              disabled={updateService.isPending || !formData.name || !formData.basePrice}
+              disabled={updateService.isPending || syncServiceItems.isPending || !formData.name || (!formData.hasItems && !formData.basePrice)}
             >
               {updateService.isPending ? (
                 <>

@@ -111,11 +111,29 @@ export class UserSubscriptionGuard implements CanActivate {
 
     // Check per-event feature limit
     if (checkEventFeature) {
-      const eventId = request.params?.eventId;
+      // Try to get eventId from multiple sources:
+      // 1. Route params (e.g., /events/:eventId/...)
+      // 2. Request body (e.g., { eventId: '...' })
+      // 3. Query params (e.g., ?eventId=...)
+      let eventId =
+        request.params?.eventId ||
+        request.body?.eventId ||
+        request.query?.eventId;
+
+      // If no eventId but we have guestlistId, skip the guard check here
+      // The controller will handle the validation after fetching the guestlist
+      if (!eventId && (request.body?.guestlistId || request.params?.guestlistId)) {
+        this.logger.debug(
+          `Event ID not found but guestlistId present - deferring check to controller`,
+        );
+        // Allow the request to proceed - the controller will handle the eventId lookup
+        // and usage tracking after fetching the guestlist
+        return true;
+      }
 
       if (!eventId) {
         this.logger.warn(
-          `Event ID required for feature check but not found in params`,
+          `Event ID required for feature check but not found in params, body, or query`,
         );
         throw new ForbiddenException('Event ID is required for this operation');
       }

@@ -14,7 +14,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationService } from '../../../infrastructure/notifications/notification.service';
 import { PrismaService } from '../../../core/database/prisma.service';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, PlanTier } from '@prisma/client';
+import { AdCreditService } from '../services/ad-credit.service';
 import {
   SubscriptionEvents,
   SubscriptionCreatedPayload,
@@ -60,6 +61,7 @@ export class SubscriptionNotificationListener {
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly adCreditService: AdCreditService,
   ) {}
 
   // ============================================================================
@@ -174,9 +176,10 @@ export class SubscriptionNotificationListener {
 
     const plan = await this.prisma.subscriptionPlan.findUnique({
       where: { id: payload.planId },
-      select: { name: true },
+      select: { name: true, tier: true },
     });
     const planName = plan?.name ?? 'Subscription';
+    const planTier = plan?.tier;
 
     if (userId) {
       await this.notificationService.createNotification({
@@ -197,6 +200,24 @@ export class SubscriptionNotificationListener {
         actionUrl: payload.vendorProfileId ? '/business/profile' : '/account/subscription',
         priority: 'high',
       });
+    }
+
+    // Grant initial monthly ad credits for vendor subscriptions
+    if (payload.vendorProfileId && planTier) {
+      try {
+        this.logger.log(
+          `Granting initial ad credits for vendor ${payload.vendorProfileId} (plan: ${planTier})`,
+        );
+        await this.adCreditService.grantMonthlyCredits(
+          payload.vendorProfileId,
+          planTier as PlanTier,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to grant initial ad credits for vendor ${payload.vendorProfileId}`,
+          error,
+        );
+      }
     }
 
     // Email is handled by SubscriptionEmailListener
@@ -292,21 +313,54 @@ export class SubscriptionNotificationListener {
   async handleSubscriptionRenewed(payload: SubscriptionRenewedPayload): Promise<void> {
     this.logger.log(`Subscription renewed: ${payload.subscriptionId}`);
 
-    const { userId, planName } = await this.getVendorUserIdBySubscription(
-      payload.subscriptionId,
-    );
+    // Get subscription details including plan tier and vendor profile
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: payload.subscriptionId },
+      select: {
+        vendorProfileId: true,
+        plan: { select: { name: true, tier: true } },
+        vendorProfile: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+
+    const userId = subscription?.vendorProfile?.userId ?? null;
+    const planName = subscription?.plan?.name ?? 'subscription';
+    const planTier = subscription?.plan?.tier;
+    const vendorProfileId = subscription?.vendorProfileId;
 
     if (userId) {
       await this.notificationService.createNotification({
         userId,
         type: NotificationType.SUBSCRIPTION_RENEWED,
         title: 'Subscription renewed',
-        message: `Your ${planName ?? 'subscription'} has been renewed successfully. Thank you for your continued support!`,
+        message: `Your ${planName} has been renewed successfully. Thank you for your continued support!`,
         data: {
           subscriptionId: payload.subscriptionId,
         },
         actionUrl: '/business/billing',
       });
+    }
+
+    // Grant monthly ad credits on renewal
+    if (vendorProfileId && planTier) {
+      try {
+        this.logger.log(
+          `Granting monthly ad credits on renewal for vendor ${vendorProfileId} (plan: ${planTier})`,
+        );
+        await this.adCreditService.grantMonthlyCredits(
+          vendorProfileId,
+          planTier as PlanTier,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to grant monthly ad credits on renewal for vendor ${vendorProfileId}`,
+          error,
+        );
+      }
     }
 
     // Email is handled by SubscriptionEmailListener

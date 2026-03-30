@@ -12,7 +12,7 @@ import {
   IsInt,
   Min,
 } from 'class-validator';
-import { RequirementStatus } from './requirement-sheet.dto';
+import { RequirementStatus } from './requirement.enums';
 
 export class CreateRequirementItemDto {
   @ApiProperty({ description: 'Category', example: 'Photography' })

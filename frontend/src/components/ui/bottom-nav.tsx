@@ -12,6 +12,9 @@ import {
   Users,
   Newspaper,
   Heart,
+  Wrench,
+  Store,
+  CreditCard,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -21,43 +24,68 @@ interface NavItem {
   outlinedIcon: LucideIcon
   filledIcon: LucideIcon
   requiresAuth?: boolean
+  roles?: Role[] // Only show for these roles (if specified)
+  excludeRoles?: Role[] // Hide from these roles
   dynamicHref?: (role?: Role) => string
 }
 
 const getWishlistPath = (_role?: Role) => '/wishlists'
 
-// Public page navigation items
+// Navigation items - some are role-specific
 const baseNavItems: NavItem[] = [
+  // Tools - only for USER role
   {
     href: '/tools',
     label: 'Tools',
-    outlinedIcon: Calendar,
-    filledIcon: Calendar,
+    outlinedIcon: Wrench,
+    filledIcon: Wrench,
+    roles: [ROLES.USER],
   },
+  // Business Dashboard - only for BUSINESS_ADMIN
+  {
+    href: '/business/dashboard',
+    label: 'Dashboard',
+    outlinedIcon: Store,
+    filledIcon: Store,
+    roles: [ROLES.BUSINESS_ADMIN],
+  },
+  // Pricing - for BUSINESS_ADMIN
+  {
+    href: '/pricing',
+    label: 'Pricing',
+    outlinedIcon: CreditCard,
+    filledIcon: CreditCard,
+    roles: [ROLES.BUSINESS_ADMIN],
+  },
+  // Vendors - for everyone
   {
     href: '/vendors',
     label: 'Vendors',
     outlinedIcon: Users,
     filledIcon: Users,
   },
+  // Discover - for everyone
   {
     href: '/discover',
     label: 'Discover',
     outlinedIcon: Compass,
     filledIcon: Compass,
   },
+  // Blog - for everyone
   {
     href: '/blog',
     label: 'Blog',
     outlinedIcon: Newspaper,
     filledIcon: Newspaper,
   },
+  // Wishlist - for authenticated users only
   {
     href: null,
     label: 'Wishlist',
     outlinedIcon: Heart,
     filledIcon: Heart,
     requiresAuth: true,
+    excludeRoles: [ROLES.BUSINESS_ADMIN],
     dynamicHref: getWishlistPath,
   },
 ]
@@ -65,12 +93,30 @@ const baseNavItems: NavItem[] = [
 export function BottomNav() {
   const pathname = usePathname()
   const { isAuthenticated, hasHydrated, user } = useAuthStore()
+  const userRole = user?.role as Role | undefined
 
-  // Filter items based on auth status
+  // Filter items based on auth status and role
   const navItems = baseNavItems.filter(item => {
-    if (item.requiresAuth) {
-      return hasHydrated && isAuthenticated
+    // Check auth requirement
+    if (item.requiresAuth && !(hasHydrated && isAuthenticated)) {
+      return false
     }
+
+    // Check role restrictions
+    if (item.roles && item.roles.length > 0) {
+      // If roles specified, user must have one of them
+      if (!userRole || !item.roles.includes(userRole)) {
+        return false
+      }
+    }
+
+    // Check excluded roles
+    if (item.excludeRoles && item.excludeRoles.length > 0) {
+      if (userRole && item.excludeRoles.includes(userRole)) {
+        return false
+      }
+    }
+
     return true
   })
 

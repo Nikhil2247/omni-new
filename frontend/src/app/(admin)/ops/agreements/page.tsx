@@ -172,11 +172,11 @@ export default function OpsAgreementsPage() {
   }
 
   const formatCurrency = (amount: number | string | null | undefined) => {
-    if (!amount) return '$0'
+    if (!amount) return '₹0'
     const num = typeof amount === 'string' ? parseFloat(amount) : amount
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 0,
     }).format(num)
   }

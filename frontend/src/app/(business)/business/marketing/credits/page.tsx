@@ -22,7 +22,8 @@ import {
   ShoppingCart,
   Receipt,
 } from 'lucide-react';
-import { useAdCreditBalance, useAdCreditHistory, useSpendingSummary, useVendorSubscription } from '@/hooks/queries/use-subscription';
+import { useAdCreditBalance, useAdCreditHistory, useSpendingSummary, useVendorSubscription, useClaimMonthlyCredits } from '@/hooks/queries/use-subscription';
+import { toast } from 'sonner';
 import { format, subDays } from 'date-fns';
 import { PurchaseCreditsModal } from '@/components/credits/purchase-credits-modal';
 import type { CreditTransactionType } from '@/lib/api/types/subscription.types';
@@ -67,10 +68,31 @@ export default function AdCreditsPage() {
     new Date().toISOString()
   );
   const { data: subscription } = useVendorSubscription();
+  const claimMonthlyCredits = useClaimMonthlyCredits();
 
   // Get plan info from subscription
   const hasActiveSubscription = subscription?.status === 'ACTIVE' || subscription?.status === 'TRIALING';
   const planName = subscription?.plan?.name || 'Free';
+
+  // Check if monthly credits can be claimed (from balance response)
+  const canClaimMonthlyCredits = balance?.canClaimMonthly ?? false;
+  const nextClaimDate = balance?.nextClaimDate ? new Date(balance.nextClaimDate) : null;
+
+  const handleClaimMonthlyCredits = async () => {
+    try {
+      const result = await claimMonthlyCredits.mutateAsync();
+      if (result.success) {
+        toast.success(result.message, {
+          description: result.creditsGranted ? `+${result.creditsGranted} credits added to your balance` : undefined,
+        });
+      } else {
+        toast.info(result.message);
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to claim monthly credits';
+      toast.error(errorMessage);
+    }
+  };
 
   // Get monthly credits from plan features (if available)
   const monthlyCredits = subscription?.plan?.features?.find(
@@ -129,6 +151,22 @@ export default function AdCreditsPage() {
                 <p className="text-xs text-muted-foreground">
                   {hasActiveSubscription ? `${planName} plan` : 'Upgrade to get monthly credits'}
                 </p>
+                {canClaimMonthlyCredits ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 w-full"
+                    onClick={handleClaimMonthlyCredits}
+                    disabled={claimMonthlyCredits.isPending}
+                  >
+                    <Gift className="mr-2 h-3 w-3" />
+                    {claimMonthlyCredits.isPending ? 'Claiming...' : 'Claim Monthly Credits'}
+                  </Button>
+                ) : nextClaimDate && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Next claim: {format(nextClaimDate, 'MMM d, yyyy')}
+                  </p>
+                )}
               </div>
             </div>
           </div>

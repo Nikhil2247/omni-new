@@ -32,17 +32,9 @@ export class EventService {
     this.logger.log(`Creating event for user: ${userId}`);
 
     // Determine requested tier (default to BASIC)
-    const requestedTier = dto.tier || EventTier.BASIC;
-
-    // Check if user can create an event with this tier
-    const canCreate = await this.eventCreditService.canCreateEvent(userId, requestedTier);
-
-    if (!canCreate.canCreate) {
-      throw new ForbiddenException(canCreate.message);
-    }
-
-    // Use the tier determined by the credit check (may be different if using free event)
-    const eventTier = canCreate.tier || EventTier.BASIC;
+    // UNLIMITED EVENT CREATION: Users can create unlimited events
+    // The tier determines feature limits within the event
+    const eventTier = dto.tier || EventTier.BASIC;
 
     // Create the event with tier
     const event = await this.eventRepository.create(
@@ -64,16 +56,7 @@ export class EventService {
       },
     );
 
-    // Deduct credit after successful event creation
-    try {
-      await this.eventCreditService.useCredit(userId, event.id, eventTier);
-      this.logger.log(`Credit used for event ${event.id} (tier: ${eventTier})`);
-    } catch (error) {
-      // If credit deduction fails, delete the event and rethrow
-      this.logger.error(`Failed to use credit for event ${event.id}: ${error.message}`);
-      await this.eventRepository.delete(event.id);
-      throw error;
-    }
+    this.logger.log(`Event ${event.id} created with tier: ${eventTier}`);
 
     this.eventEmitter.emit('event.created', {
       eventId: event.id,
@@ -162,16 +145,9 @@ export class EventService {
   async delete(id: string): Promise<void> {
     const existing = await this.findById(id);
 
-    // Refund credit if applicable (paid credits are refundable, free events are not)
-    try {
-      await this.eventCreditService.refundCredit(existing.userId, id);
-      this.logger.log(`Credit refunded for deleted event ${id}`);
-    } catch (error) {
-      // Log but don't fail the deletion if refund fails
-      this.logger.warn(`Failed to refund credit for event ${id}: ${error.message}`);
-    }
-
     await this.eventRepository.delete(id);
+    this.logger.log(`Event ${id} deleted`);
+
     this.eventEmitter.emit('event.deleted', {
       eventId: id,
       userId: existing.userId,

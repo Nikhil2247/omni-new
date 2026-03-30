@@ -115,6 +115,14 @@ export class ServiceService {
       );
     }
 
+    // Determine if this is an item-based service
+    const hasItems = dto.hasItems || (dto.items && dto.items.length > 0);
+    const finalPricingType = hasItems
+      ? PrismaPricingType.ITEM_BASED
+      : hasPricingTiers
+        ? PrismaPricingType.TIERED
+        : (resolvedPricingType as any);
+
     const service = await this.serviceRepository.create(
       {
         vendorProfile: { connect: { id: dto.vendorProfileId } },
@@ -123,16 +131,15 @@ export class ServiceService {
           : undefined,
         name: dto.name,
         description: dto.description,
-        pricingType: hasPricingTiers
-          ? PrismaPricingType.TIERED
-          : (resolvedPricingType as any),
-        currency: dto.currency ?? 'USD',
+        pricingType: finalPricingType,
+        currency: dto.currency ?? 'INR',
         startingPrice:
           resolvedStartingPrice !== undefined
             ? new Decimal(resolvedStartingPrice)
             : undefined,
         maxPrice:
           dto.maxPrice !== undefined ? new Decimal(dto.maxPrice) : undefined,
+        hasItems: hasItems ?? false,
         isActive: dto.isActive ?? true,
         sortOrder: dto.sortOrder ?? 0,
         pricingTiers: dto.pricingTiers
@@ -148,10 +155,28 @@ export class ServiceService {
               })),
             }
           : undefined,
+        items: dto.items
+          ? {
+              create: dto.items.map((item, index) => ({
+                name: item.name,
+                description: item.description,
+                imageUrl: item.imageUrl,
+                price: new Decimal(item.price),
+                currency: item.currency ?? 'INR',
+                unit: item.unit,
+                minQuantity: item.minQuantity ?? 1,
+                maxQuantity: item.maxQuantity,
+                isActive: item.isActive ?? true,
+                isRequired: item.isRequired ?? false,
+                sortOrder: item.sortOrder ?? index,
+              })),
+            }
+          : undefined,
       },
       {
         pricingTiers: true,
         serviceType: true,
+        items: true,
       },
     );
 
@@ -166,6 +191,9 @@ export class ServiceService {
     const service = await this.serviceRepository.findById(id, {
       pricingTiers: true,
       serviceType: true,
+      items: {
+        orderBy: { sortOrder: 'asc' },
+      },
     });
     if (!service) {
       throw new NotFoundException('Service not found');
@@ -209,10 +237,11 @@ export class ServiceService {
             : undefined,
         maxPrice:
           dto.maxPrice !== undefined ? new Decimal(dto.maxPrice) : undefined,
+        hasItems: dto.hasItems,
         isActive: dto.isActive,
         sortOrder: dto.sortOrder,
       },
-      { pricingTiers: true, serviceType: true },
+      { pricingTiers: true, serviceType: true, items: { orderBy: { sortOrder: 'asc' } } },
     );
   }
 

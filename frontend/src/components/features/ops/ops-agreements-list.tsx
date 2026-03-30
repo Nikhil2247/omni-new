@@ -485,7 +485,7 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
                   id="agreedAmount"
                   type="number"
                   min="0"
-                  placeholder="$0"
+                  placeholder="₹0"
                   value={agreementForm.agreedAmount}
                   onChange={(e) => setAgreementForm({ ...agreementForm, agreedAmount: e.target.value })}
                 />
@@ -496,7 +496,7 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
                   id="advancePaid"
                   type="number"
                   min="0"
-                  placeholder="$0"
+                  placeholder="₹0"
                   value={agreementForm.advancePaid}
                   onChange={(e) => setAgreementForm({ ...agreementForm, advancePaid: e.target.value })}
                 />
@@ -551,7 +551,7 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
                   id="edit-agreedAmount"
                   type="number"
                   min="0"
-                  placeholder="$0"
+                  placeholder="₹0"
                   value={agreementForm.agreedAmount}
                   onChange={(e) => setAgreementForm({ ...agreementForm, agreedAmount: e.target.value })}
                 />
@@ -562,7 +562,7 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
                   id="edit-advancePaid"
                   type="number"
                   min="0"
-                  placeholder="$0"
+                  placeholder="₹0"
                   value={agreementForm.advancePaid}
                   onChange={(e) => setAgreementForm({ ...agreementForm, advancePaid: e.target.value })}
                 />

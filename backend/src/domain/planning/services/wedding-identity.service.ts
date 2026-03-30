@@ -18,7 +18,7 @@ import {
   UpdateWeddingIdentityDto,
   InvitePartnerDto,
 } from '../dto/onboarding.dto';
-import { EmailService } from 'src/infrastructure';
+import { EmailService } from '../../../infrastructure/notifications/email.service';
 
 @Injectable()
 export class WeddingIdentityService {

@@ -30,7 +30,7 @@ import {
   RejectCampaignDto,
   AdminCampaignListResponseDto,
   AdminCampaignResponseDto,
-  CampaignStatusCountsDto,
+  AdminCampaignStatusCountsDto,
   CampaignApprovalResultDto,
 } from '../dto/admin-campaign.dto';
 
@@ -99,7 +99,7 @@ export class AdminCampaignController {
   @ApiResponse({
     status: 200,
     description: 'Returns count of campaigns by status',
-    type: CampaignStatusCountsDto,
+    type: AdminCampaignStatusCountsDto,
   })
   async getCampaignCounts(): Promise<Record<string, number>> {
     return this.campaignService.getCampaignCountsByStatus();

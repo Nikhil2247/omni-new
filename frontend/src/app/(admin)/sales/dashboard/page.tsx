@@ -42,7 +42,7 @@ export default function SalesDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Monthly Revenue"
-          value="$128,450"
+          value="₹128,450"
           icon={DollarSign}
           trend="+23%"
           trendUp={true}
@@ -88,37 +88,37 @@ export default function SalesDashboardPage() {
             <PipelineStage
               name="New Leads"
               count={45}
-              value="$125,000"
+              value="₹125,000"
               color="blue"
             />
             <PipelineStage
               name="Contacted"
               count={32}
-              value="$98,000"
+              value="₹98,000"
               color="purple"
             />
             <PipelineStage
               name="Qualified"
               count={24}
-              value="$156,000"
+              value="₹156,000"
               color="yellow"
             />
             <PipelineStage
               name="Proposal Sent"
               count={18}
-              value="$210,000"
+              value="₹210,000"
               color="orange"
             />
             <PipelineStage
               name="Negotiation"
               count={12}
-              value="$180,000"
+              value="₹180,000"
               color="pink"
             />
             <PipelineStage
               name="Closed Won"
               count={8}
-              value="$128,450"
+              value="₹128,450"
               color="green"
             />
           </div>
@@ -160,7 +160,7 @@ export default function SalesDashboardPage() {
               <div>
                 <div className="mb-2 flex justify-between text-sm">
                   <span>Revenue</span>
-                  <span>$128,450 / $150,000</span>
+                  <span>₹128,450 / ₹150,000</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
                   <div className="h-full w-[85%] rounded-full bg-primary" />
@@ -197,21 +197,21 @@ export default function SalesDashboardPage() {
               name="Sarah Johnson"
               email="sarah@example.com"
               source="Website"
-              value="$5,000"
+              value="₹5,000"
               status="new"
             />
             <LeadItem
               name="Michael Chen"
               email="michael@company.com"
               source="Referral"
-              value="$12,000"
+              value="₹12,000"
               status="contacted"
             />
             <LeadItem
               name="Emily Davis"
               email="emily@business.org"
               source="Campaign"
-              value="$8,500"
+              value="₹8,500"
               status="qualified"
             />
           </div>
@@ -229,21 +229,21 @@ export default function SalesDashboardPage() {
             <DealItem
               name="Corporate Event Package"
               company="Tech Corp"
-              value="$25,000"
+              value="₹25,000"
               stage="Negotiation"
               probability={80}
             />
             <DealItem
               name="Wedding Premium Bundle"
               company="Johnson Family"
-              value="$18,000"
+              value="₹18,000"
               stage="Proposal"
               probability={60}
             />
             <DealItem
               name="Annual Partnership"
               company="Events Plus"
-              value="$45,000"
+              value="₹45,000"
               stage="Qualified"
               probability={40}
             />
@@ -259,7 +259,7 @@ export default function SalesDashboardPage() {
             type="deal_won"
             title="Deal Closed"
             description="Wedding Package with Smith Family"
-            value="$15,000"
+            value="₹15,000"
             time="1 hour ago"
           />
           <ActivityCard
@@ -273,14 +273,14 @@ export default function SalesDashboardPage() {
             type="lead"
             title="New Lead"
             description="From Spring Campaign"
-            value="$8,000 potential"
+            value="₹8,000 potential"
             time="3 hours ago"
           />
           <ActivityCard
             type="proposal"
             title="Proposal Sent"
             description="Corporate Event Package"
-            value="$25,000"
+            value="₹25,000"
             time="5 hours ago"
           />
         </div>

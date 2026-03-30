@@ -12,9 +12,12 @@ export * from './convert-lead-by-vendor.dto';
 // Event Notes DTOs
 export * from './event-note.dto';
 
+// Requirement Enums
+export * from './requirement.enums';
+
 // Requirement Sheet DTOs
 export * from './requirement-sheet.dto';
-// requirement-item.dto exports are included in requirement-sheet.dto
+export * from './requirement-item.dto';
 
 // Vendor Agreement DTOs
 export * from './vendor-agreement.dto';

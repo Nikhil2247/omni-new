@@ -40,6 +40,12 @@ $ npm run start
 # watch mode
 $ npm run start:dev
 
+# watch mode (lower CPU usage; native file events)
+$ npm run start:dev:fast
+
+# watch mode (Windows/Docker fallback when changes are not detected)
+$ npm run start:dev:poll
+
 # production mode
 $ npm run start:prod
 ```

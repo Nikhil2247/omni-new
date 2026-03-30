@@ -11,8 +11,8 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
-import * as compression from 'compression';
-import * as cookieParser from 'cookie-parser';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
 // csurf removed — JWT Bearer-token API does not require CSRF protection
 import { AppModule } from './app.module';
 import { createRedisIoAdapter } from './infrastructure/websockets/redis-io.adapter';
@@ -246,7 +246,7 @@ async function bootstrap() {
   // SWAGGER/OPENAPI DOCUMENTATION
   // ===========================================================================
 
-  if (configService.get('NODE_ENV') !== 'production') {
+  if (configService.get('NODE_ENV') !== 'production' && configService.get('DISABLE_SWAGGER') !== 'true') {
     // Main API Documentation
     const mainConfig = new DocumentBuilder()
       .setTitle('Omnicassion API')
@@ -302,8 +302,14 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
+  const runtimeEnv = configService.get<string>('NODE_ENV', 'development');
+  const enableCustomShutdownHandlers = parseBoolean(
+    configService.get<string | boolean>('ENABLE_CUSTOM_SHUTDOWN_HANDLERS'),
+    runtimeEnv === 'production',
+  );
+
   let isShuttingDown = false;
-  const shutdown = async (signal: 'SIGTERM' | 'SIGINT') => {
+  const shutdown = async (signal: 'SIGTERM' | 'SIGINT' | 'SIGBREAK') => {
     if (isShuttingDown) {
       logger.warn(`Received ${signal} during ongoing shutdown, ignoring`);
       return;
@@ -334,13 +340,23 @@ async function bootstrap() {
     }
   };
 
-  process.on('SIGTERM', () => {
-    void shutdown('SIGTERM');
-  });
+  if (enableCustomShutdownHandlers) {
+    process.on('SIGTERM', () => {
+      void shutdown('SIGTERM');
+    });
 
-  process.on('SIGINT', () => {
-    void shutdown('SIGINT');
-  });
+    process.on('SIGINT', () => {
+      void shutdown('SIGINT');
+    });
+
+    process.on('SIGBREAK', () => {
+      void shutdown('SIGBREAK');
+    });
+  } else {
+    logger.log(
+      'Custom shutdown handlers disabled (development watch mode compatibility)',
+    );
+  }
 
   // ===========================================================================
   // START SERVER
@@ -359,10 +375,9 @@ async function bootstrap() {
   const smtpPortRaw = configService.get<string | number>('SMTP_PORT', 587);
   const smtpPort =
     typeof smtpPortRaw === 'number' ? smtpPortRaw : Number(smtpPortRaw) || 587;
-  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   const shouldVerifyEmailOnStartup = parseBoolean(
     configService.get<string | boolean>('EMAIL_VERIFY_ON_STARTUP'),
-    nodeEnv === 'production',
+    runtimeEnv === 'production',
   );
 
   if (!shouldVerifyEmailOnStartup) {

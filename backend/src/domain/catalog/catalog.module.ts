@@ -14,6 +14,7 @@ import {
   VendorProfileService,
   PortfolioService,
   ServiceService,
+  ServiceItemService,
   VendorReviewService,
   VendorFollowService,
   VendorBadgeService,
@@ -26,6 +27,7 @@ import {
   VendorProfileRepository,
   PortfolioRepository,
   ServiceRepository,
+  ServiceItemRepository,
   VendorClaimRepository,
 } from './repositories';
 
@@ -42,12 +44,14 @@ import { ClaimScheduler } from './schedulers';
     VendorProfileRepository,
     PortfolioRepository,
     ServiceRepository,
+    ServiceItemRepository,
     VendorClaimRepository,
 
     // Services
     VendorProfileService,
     PortfolioService,
     ServiceService,
+    ServiceItemService,
     VendorReviewService,
     VendorFollowService,
     VendorBadgeService,
@@ -65,6 +69,7 @@ import { ClaimScheduler } from './schedulers';
     VendorProfileService,
     PortfolioService,
     ServiceService,
+    ServiceItemService,
     VendorReviewService,
     VendorFollowService,
     VendorBadgeService,
@@ -74,6 +79,7 @@ import { ClaimScheduler } from './schedulers';
     VendorProfileRepository,
     PortfolioRepository,
     ServiceRepository,
+    ServiceItemRepository,
     VendorClaimRepository,
   ],
 })

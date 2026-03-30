@@ -284,28 +284,28 @@ export function OpsManagerDashboard() {
             <AgreementItem
               vendor="Elegant Photography"
               event="Beach Wedding - Martinez"
-              amount="$3,500"
+              amount="₹3,500"
               status="pending"
               sentAt="2 hours ago"
             />
             <AgreementItem
               vendor="Floral Dreams"
               event="Beach Wedding - Martinez"
-              amount="$2,800"
+              amount="₹2,800"
               status="accepted"
               sentAt="1 day ago"
             />
             <AgreementItem
               vendor="DJ Beats"
               event="Corporate Gala"
-              amount="$1,500"
+              amount="₹1,500"
               status="pending"
               sentAt="3 hours ago"
             />
             <AgreementItem
               vendor="Delicious Catering"
               event="Anniversary Celebration"
-              amount="$4,200"
+              amount="₹4,200"
               status="declined"
               sentAt="2 days ago"
             />

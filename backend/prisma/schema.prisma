@@ -1185,9 +1185,12 @@ model Service {
 
   // Pricing
   pricingType     PricingType @map("pricing_type")
-  currency        String      @default("USD") @db.VarChar(3)
+  currency        String      @default("INR") @db.VarChar(3)
   startingPrice   Decimal?    @map("starting_price") @db.Decimal(10, 2)
   maxPrice        Decimal?    @map("max_price") @db.Decimal(10, 2)
+
+  // Item-based pricing flag
+  hasItems        Boolean   @default(false) @map("has_items")
 
   // Availability
   isActive        Boolean   @default(true) @map("is_active")
@@ -1201,6 +1204,7 @@ model Service {
   vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
   serviceType     ServiceType?  @relation(fields: [serviceTypeId], references: [id])
   pricingTiers    PricingTier[]
+  items           ServiceItem[]
 
   @@index([vendorProfileId])
   @@index([serviceTypeId])
@@ -1240,8 +1244,47 @@ enum PricingType {
   RANGE              // Price range (min-max)
   STARTING_AT        // Starting price (minimum)
   TIERED             // Multiple pricing tiers
+  ITEM_BASED         // Price calculated from menu items
   CONTACT_FOR_QUOTE  // No price shown, contact required
 
+  @@schema("catalog")
+}
+
+/// ServiceItem - Individual items/menu entries within a service
+/// Examples: Menu dishes for caterers, decoration elements, makeup looks
+model ServiceItem {
+  id              String    @id @default(uuid()) @db.Uuid
+  serviceId       String    @map("service_id") @db.Uuid
+
+  // Item Details
+  name            String
+  description     String?
+  imageUrl        String?   @map("image_url")
+
+  // Pricing
+  price           Decimal   @db.Decimal(10, 2)
+  currency        String    @default("INR") @db.VarChar(3)
+  unit            String?   // "per piece", "per plate", "per kg", etc.
+
+  // Quantity constraints
+  minQuantity     Int       @default(1) @map("min_quantity")
+  maxQuantity     Int?      @map("max_quantity")
+
+  // Status & Ordering
+  isActive        Boolean   @default(true) @map("is_active")
+  isRequired      Boolean   @default(false) @map("is_required") // Must be included
+  sortOrder       Int       @default(0) @map("sort_order")
+
+  // Timestamps
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  service         Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([serviceId, isActive])
+  @@map("service_items")
   @@schema("catalog")
 }
 

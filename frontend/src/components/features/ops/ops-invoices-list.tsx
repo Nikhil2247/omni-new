@@ -327,7 +327,7 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
                   <SelectContent>
                     {agreements.map((agreement) => (
                       <SelectItem key={agreement.id} value={agreement.id}>
-                        {agreement.vendorName} - ${Number(agreement.agreedAmount).toLocaleString()}
+                        {agreement.vendorName} - ₹{Number(agreement.agreedAmount).toLocaleString()}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -349,7 +349,7 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
                 id="amount"
                 type="number"
                 min="0"
-                placeholder="$0"
+                placeholder="₹0"
                 value={invoiceForm.amount}
                 onChange={(e) => setInvoiceForm({ ...invoiceForm, amount: e.target.value })}
               />

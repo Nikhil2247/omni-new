@@ -382,12 +382,24 @@ export class VendorProfileService {
     this.logger.debug(`Finding vendor profile by slug: ${slug}`);
 
     const vendorProfile = await this.cacheAside.get(
-      `vendor:slug:v4:${slug}`,
+      `vendor:slug:v6:${slug}`,
       () =>
         this.vendorProfileRepository.findBySlug(slug, {
           category: true,
           address: true,
-          services: true,
+          services: {
+            where: { isActive: true },
+            orderBy: { sortOrder: 'asc' },
+            include: {
+              items: {
+                where: { isActive: true },
+                orderBy: { sortOrder: 'asc' },
+              },
+              pricingTiers: {
+                orderBy: { sortOrder: 'asc' },
+              },
+            },
+          },
           badges: {
             include: {
               definition: true,
@@ -412,6 +424,16 @@ export class VendorProfileService {
             },
           },
           serviceAreas: true,
+          // Include subscription with plan and features for entitlement checks
+          subscription: {
+            include: {
+              plan: {
+                include: {
+                  features: true,
+                },
+              },
+            },
+          },
         }),
       { ttl: 900 },
     );

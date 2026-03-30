@@ -1,7 +1,13 @@
 // ============================================================================
 // EVENT CREDIT CONTROLLER - User API Gateway
 // ============================================================================
-// Authenticated endpoints for managing event credits
+// Authenticated endpoints for event tier features and credits
+//
+// UNLIMITED EVENT CREATION:
+// - Users can create unlimited events
+// - Event TIER (BASIC/PREMIUM) determines feature limits within each event
+// - No credits required for event creation
+// - Credit system kept for future monetization options
 // ============================================================================
 
 import {
@@ -115,10 +121,12 @@ export class EventCreditController {
   }
 
   /**
-   * Check if user can create an event with specified tier
+   * Check event creation eligibility and get tier info
+   * Note: Users can create UNLIMITED events. This endpoint returns
+   * the tier that will be used and its feature limits.
    */
   @Get('can-create')
-  @ApiOperation({ summary: 'Check if user can create an event' })
+  @ApiOperation({ summary: 'Get event creation info (unlimited events allowed)' })
   @ApiQuery({
     name: 'tier',
     required: false,

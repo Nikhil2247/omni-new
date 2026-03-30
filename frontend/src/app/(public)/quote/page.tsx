@@ -214,7 +214,7 @@ export default function QuotePage() {
                   name="budget"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Budget (USD)</FormLabel>
+                      <FormLabel>Budget (INR)</FormLabel>
                       <FormControl>
                         <Input type="number" min={0} step="0.01" placeholder="10000" {...field} />
                       </FormControl>

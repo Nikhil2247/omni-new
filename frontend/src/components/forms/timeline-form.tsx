@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { CalendarIcon, Loader2 } from "lucide-react"
 import { format } from "date-fns"
@@ -65,11 +65,23 @@ export function TimelineForm({
     },
   })
 
+  useEffect(() => {
+    form.reset({
+      name: timeline?.name || "",
+      eventDate: timeline?.date || "",
+    })
+  }, [timeline?.id, timeline?.name, timeline?.date, open, form])
+
   const handleSubmit = async (data: TimelineFormData) => {
     setIsSubmitting(true)
     try {
+      const normalizedEventDate = data.eventDate
+        ? new Date(data.eventDate).toISOString()
+        : data.eventDate
+
       await onSubmit({
         ...data,
+        eventDate: normalizedEventDate,
         ...(timeline?.id && { id: timeline.id }),
       })
       form.reset()
@@ -83,7 +95,7 @@ export function TimelineForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Create Timeline" : "Edit Timeline"}

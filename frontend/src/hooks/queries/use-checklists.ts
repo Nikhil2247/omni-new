@@ -25,14 +25,16 @@ export function useCreateChecklist() {
   })
 }
 
-export function useAddChecklistItem(eventId: string, checklistId?: string) {
+export function useAddChecklistItem(eventId: string, defaultChecklistId?: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: CreateChecklistItemInput) => {
-      if (!checklistId) {
+    mutationFn: (input: CreateChecklistItemInput & { checklistId?: string }) => {
+      const targetChecklistId = input.checklistId || defaultChecklistId
+      if (!targetChecklistId) {
         return Promise.reject(new Error('Checklist ID missing'))
       }
-      return checklistService.addItem(checklistId, input)
+      const { checklistId: _, ...itemInput } = input
+      return checklistService.addItem(targetChecklistId, itemInput)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: checklistKeys.byEvent(eventId) })

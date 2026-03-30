@@ -19,7 +19,7 @@ import {
   PlatformOverview,
   GrowthMetrics,
 } from './platform-metrics.service';
-import { DragonflyService } from 'src/infrastructure';
+import { DragonflyService } from '../../../infrastructure/cache/dragonfly.service';
 
 export interface AdminDashboard {
   overview: PlatformOverview;

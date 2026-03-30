@@ -41,6 +41,11 @@ export class CustomValidationPipe implements PipeTransform<any> {
   async transform(value: any, metadata: ArgumentMetadata) {
     const { metatype } = metadata;
 
+    // Skip validation for undefined/null values (optional parameters)
+    if (value === undefined || value === null) {
+      return value;
+    }
+
     // Skip validation for primitive types
     if (!metatype || !this.toValidate(metatype)) {
       return value;
@@ -50,6 +55,11 @@ export class CustomValidationPipe implements PipeTransform<any> {
     const object = plainToInstance(metatype, value, {
       enableImplicitConversion: true,
     });
+
+    // Skip validation if plainToInstance returned undefined/null
+    if (object === undefined || object === null) {
+      return value;
+    }
 
     // Validate the object
     const errors = await validate(object, {

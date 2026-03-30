@@ -18,9 +18,6 @@ import {
 import { Type, Transform } from 'class-transformer';
 import { CampaignStatus, CampaignType } from '@prisma/client';
 
-// Re-export enums for convenience
-export { CampaignStatus, CampaignType };
-
 // ============================================================================
 // Filter DTOs
 // ============================================================================
@@ -248,36 +245,36 @@ export class AdminCampaignListResponseDto {
   };
 }
 
-export class CampaignStatusCountsDto {
+export class AdminCampaignStatusCountsDto {
   @ApiProperty({ description: 'Count of DRAFT campaigns' })
-  DRAFT: number;
+  draft: number;
 
   @ApiProperty({ description: 'Count of PENDING_APPROVAL campaigns' })
-  PENDING_APPROVAL: number;
+  pendingApproval: number;
 
   @ApiProperty({ description: 'Count of APPROVED campaigns' })
-  APPROVED: number;
+  approved: number;
 
   @ApiProperty({ description: 'Count of REJECTED campaigns' })
-  REJECTED: number;
+  rejected: number;
 
   @ApiProperty({ description: 'Count of SCHEDULED campaigns' })
-  SCHEDULED: number;
+  scheduled: number;
 
   @ApiProperty({ description: 'Count of ACTIVE campaigns' })
-  ACTIVE: number;
+  active: number;
 
   @ApiProperty({ description: 'Count of PAUSED campaigns' })
-  PAUSED: number;
+  paused: number;
 
   @ApiProperty({ description: 'Count of COMPLETED campaigns' })
-  COMPLETED: number;
+  completed: number;
 
   @ApiProperty({ description: 'Count of CANCELLED campaigns' })
-  CANCELLED: number;
+  cancelled: number;
 
   @ApiProperty({ description: 'Total count of all campaigns' })
-  TOTAL: number;
+  total: number;
 }
 
 export class CampaignApprovalResultDto {

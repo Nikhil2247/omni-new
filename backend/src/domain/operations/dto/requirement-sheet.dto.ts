@@ -7,29 +7,10 @@ import {
   IsString,
   IsUUID,
   IsOptional,
-  IsEnum,
-  IsNumber,
-  IsInt,
-  Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export enum RequirementStatus {
-  PENDING = 'PENDING',
-  SOURCING = 'SOURCING',
-  VENDOR_SELECTED = 'VENDOR_SELECTED',
-  CONTRACTED = 'CONTRACTED',
-  FULFILLED = 'FULFILLED',
-}
-
-export enum ClientApprovalStatus {
-  DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
-
+import { RequirementStatus, ClientApprovalStatus } from './requirement.enums';
 import { CreateRequirementItemDto } from './requirement-item.dto';
 
 // ============================================================================
@@ -59,40 +40,6 @@ export class CreateRequirementSheetDto {
 // ============================================================================
 // UPDATE DTOs
 // ============================================================================
-
-export class UpdateRequirementItemDto {
-  @ApiPropertyOptional({ description: 'Category' })
-  @IsOptional()
-  @IsString()
-  category?: string;
-
-  @ApiPropertyOptional({ description: 'Description' })
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @ApiPropertyOptional({ description: 'Quantity' })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  quantity?: number;
-
-  @ApiPropertyOptional({ description: 'Estimated budget', nullable: true })
-  @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  estimatedBudget?: number;
-
-  @ApiPropertyOptional({ description: 'Status', enum: RequirementStatus })
-  @IsOptional()
-  @IsEnum(RequirementStatus)
-  status?: RequirementStatus;
-
-  @ApiPropertyOptional({ description: 'Notes', nullable: true })
-  @IsOptional()
-  @IsString()
-  notes?: string;
-}
 
 export class UpdateRequirementSheetDto {
   @ApiPropertyOptional({ description: 'Notes', nullable: true })

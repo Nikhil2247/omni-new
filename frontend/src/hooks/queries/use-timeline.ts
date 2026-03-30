@@ -19,7 +19,10 @@ export function useCreateTimeline() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: CreateTimelineInput) => timelineService.createTimeline(input),
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      // Immediately set the cache with the new timeline data
+      queryClient.setQueryData(timelineKeys.byEvent(variables.eventId), data)
+      // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: timelineKeys.byEvent(variables.eventId) })
     },
   })
@@ -49,9 +52,10 @@ export function useUpdateTimeline(eventId: string) {
 export function useAddTimelineItem(eventId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ timelineId, item }: { timelineId: string; item: { title: string; description?: string; scheduledTime: string; duration?: number } }) => 
+    mutationFn: ({ timelineId, item }: { timelineId: string; item: { title: string; description?: string; scheduledTime: string; duration?: number } }) =>
       timelineService.addItem(timelineId, item),
     onSuccess: () => {
+      // Invalidate to refetch the full timeline with all items
       queryClient.invalidateQueries({ queryKey: timelineKeys.byEvent(eventId) })
     },
   })

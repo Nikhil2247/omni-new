@@ -211,7 +211,7 @@ export interface VendorService {
   serviceTypeId?: string | null
   name: string
   description?: string | null
-  pricingType?: 'FIXED' | 'RANGE' | 'STARTING_AT' | 'TIERED' | 'CONTACT_FOR_QUOTE'
+  pricingType?: 'FIXED' | 'RANGE' | 'STARTING_AT' | 'TIERED' | 'CONTACT_FOR_QUOTE' | 'ITEM_BASED'
   currency?: string
   startingPrice?: number | null
   maxPrice?: number | null
@@ -219,17 +219,76 @@ export interface VendorService {
   priceUnit?: string
   duration?: number | null
   isActive: boolean
+  hasItems?: boolean
   features?: string[]
   sortOrder?: number
   createdAt: string
   updatedAt: string
+  items?: ServiceItem[]
+  serviceType?: {
+    id: string
+    name: string
+  } | null
+}
+
+// Service Item - Individual menu item within a service
+export interface ServiceItem {
+  id: string
+  serviceId: string
+  name: string
+  description?: string | null
+  imageUrl?: string | null
+  price: number
+  currency: string
+  unit?: string | null
+  minQuantity: number
+  maxQuantity?: number | null
+  isActive: boolean
+  isRequired: boolean
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+// Create Service Item Request
+export interface CreateServiceItemRequest {
+  name: string
+  description?: string
+  imageUrl?: string
+  price: number
+  currency?: string
+  unit?: string
+  minQuantity?: number
+  maxQuantity?: number
+  isActive?: boolean
+  isRequired?: boolean
+  sortOrder?: number
+}
+
+// Update Service Item Request
+export interface UpdateServiceItemRequest extends Partial<CreateServiceItemRequest> {}
+
+// Reorder Service Items Request
+export interface ReorderServiceItemsRequest {
+  itemIds: string[]
+}
+
+// Service Item Price Stats
+export interface ServiceItemPriceStats {
+  totalItems: number
+  activeItems: number
+  requiredItems: number
+  minPrice: number | null
+  maxPrice: number | null
+  avgPrice: number | null
+  requiredTotal: number
 }
 
 export interface CreateServiceRequest {
   vendorProfileId: string
   name: string
   description?: string
-  pricingType?: 'FIXED' | 'RANGE' | 'STARTING_AT' | 'TIERED' | 'CONTACT_FOR_QUOTE'
+  pricingType?: 'FIXED' | 'RANGE' | 'STARTING_AT' | 'TIERED' | 'CONTACT_FOR_QUOTE' | 'ITEM_BASED'
   currency?: string
   startingPrice?: number
   maxPrice?: number
@@ -239,7 +298,9 @@ export interface CreateServiceRequest {
   durationValue?: number
   durationUnit?: 'minutes' | 'hours' | 'day' | 'month'
   isActive?: boolean
+  hasItems?: boolean
   features?: string[]
+  items?: CreateServiceItemRequest[]
 }
 
 export interface UpdateServiceRequest extends Partial<Omit<CreateServiceRequest, 'vendorProfileId'>> {}
@@ -311,6 +372,8 @@ export interface BusinessReview {
   reviewedAt?: string | null
   createdAt: string
   updatedAt: string
+  response?: string | null
+  respondedAt?: string | null
   reviewer?: {
     id?: string
     firstName?: string | null
@@ -328,6 +391,8 @@ export interface BusinessAnalyticsSummary {
   averageRating: number
   reviewCount: number
   leadConversionRate: number
+  responseRate?: number
+  avgResponseTime?: string
   periodComparison?: {
     leadsChange: number
     viewsChange: number

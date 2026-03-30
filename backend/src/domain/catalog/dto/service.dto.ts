@@ -16,12 +16,14 @@ import {
   IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { CreateServiceItemDto, ServiceItemResponseDto } from './service-item.dto';
 
 export enum PricingType {
   FIXED = 'FIXED',
   RANGE = 'RANGE',
   STARTING_AT = 'STARTING_AT',
   TIERED = 'TIERED',
+  ITEM_BASED = 'ITEM_BASED',
   CONTACT_FOR_QUOTE = 'CONTACT_FOR_QUOTE',
 }
 
@@ -179,6 +181,23 @@ export class CreateServiceDto {
   @ValidateNested({ each: true })
   @Type(() => CreatePricingTierDto)
   pricingTiers?: CreatePricingTierDto[];
+
+  @ApiPropertyOptional({
+    description: 'Whether this service has menu items',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  hasItems?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Menu items for this service',
+    type: [CreateServiceItemDto],
+  })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateServiceItemDto)
+  items?: CreateServiceItemDto[];
 }
 
 export class UpdateServiceDto {
@@ -272,6 +291,22 @@ export class UpdateServiceDto {
   @IsOptional()
   @IsInt()
   sortOrder?: number;
+
+  @ApiPropertyOptional({
+    description: 'Whether this service has menu items',
+  })
+  @IsOptional()
+  @IsBoolean()
+  hasItems?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Menu items for this service (for sync: create/update/delete)',
+    type: [CreateServiceItemDto],
+  })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateServiceItemDto)
+  items?: CreateServiceItemDto[];
 }
 
 export class ServiceResponseDto {
@@ -305,6 +340,9 @@ export class ServiceResponseDto {
   @ApiProperty({ description: 'Active' })
   isActive: boolean;
 
+  @ApiProperty({ description: 'Whether this service has menu items' })
+  hasItems: boolean;
+
   @ApiProperty({ description: 'Sort order' })
   sortOrder: number;
 
@@ -313,4 +351,10 @@ export class ServiceResponseDto {
 
   @ApiProperty({ description: 'Updated at' })
   updatedAt: Date;
+
+  @ApiPropertyOptional({
+    description: 'Menu items for this service',
+    type: [ServiceItemResponseDto],
+  })
+  items?: ServiceItemResponseDto[];
 }

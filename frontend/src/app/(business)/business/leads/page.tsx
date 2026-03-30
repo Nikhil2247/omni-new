@@ -89,9 +89,9 @@ const formatDate = (dateString?: string | null) => {
 
 const formatCurrency = (amount?: number | null) => {
   if (!amount) return null
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)

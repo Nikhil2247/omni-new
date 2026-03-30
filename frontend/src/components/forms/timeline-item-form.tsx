@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { Clock, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,12 +23,43 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface TimelineItemFormData {
   title: string
   description?: string
   scheduledTime: string
   duration?: number
+}
+
+function normalizeScheduledTime(value: string): string {
+  const raw = value.trim()
+  if (!raw) return raw
+
+  // Already in 24h HH:mm format
+  if (/^([01]?\d|2[0-3]):([0-5]\d)$/.test(raw)) {
+    return raw
+  }
+
+  // Convert h:mm AM/PM to HH:mm
+  const amPmMatch = raw.match(/^(\d{1,2}):(\d{2})\s*([aApP][mM])$/)
+  if (amPmMatch) {
+    let hours = Number(amPmMatch[1])
+    const minutes = amPmMatch[2]
+    const period = amPmMatch[3].toLowerCase()
+
+    if (period === 'pm' && hours < 12) hours += 12
+    if (period === 'am' && hours === 12) hours = 0
+
+    return `${String(hours).padStart(2, '0')}:${minutes}`
+  }
+
+  return raw
+}
+
+function toTimeInputValue(value?: string): string {
+  if (!value) return ""
+  return normalizeScheduledTime(value)
 }
 
 interface TimelineItemFormProps {
@@ -58,16 +89,26 @@ export function TimelineItemForm({
     defaultValues: {
       title: item?.title || "",
       description: item?.description || "",
-      scheduledTime: item?.scheduledTime || "",
+      scheduledTime: toTimeInputValue(item?.scheduledTime),
       duration: item?.duration || undefined,
     },
   })
+
+  useEffect(() => {
+    form.reset({
+      title: item?.title || "",
+      description: item?.description || "",
+      scheduledTime: toTimeInputValue(item?.scheduledTime),
+      duration: item?.duration || undefined,
+    })
+  }, [item?.id, item?.title, item?.description, item?.scheduledTime, item?.duration, open, form])
 
   const handleSubmit = async (data: TimelineItemFormData) => {
     setIsSubmitting(true)
     try {
       await onSubmit({
         ...data,
+        scheduledTime: normalizeScheduledTime(data.scheduledTime),
         ...(item?.id && { id: item.id }),
       })
       form.reset()
@@ -81,7 +122,7 @@ export function TimelineItemForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-137.5">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Add Schedule Item" : "Edit Schedule Item"}
@@ -145,13 +186,13 @@ export function TimelineItemForm({
                         <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                         <Input
                           type="time"
-                          className="pl-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                          className="pl-10"
                           {...field}
                         />
                       </div>
                     </FormControl>
                     <FormDescription className="text-xs">
-                      Select the time for this activity
+                      Pick a time from the selector
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -165,15 +206,27 @@ export function TimelineItemForm({
                   <FormItem>
                     <FormLabel>Duration (minutes)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="60"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                      />
+                      <Select
+                        value={field.value ? String(field.value) : "none"}
+                        onValueChange={(value) => field.onChange(value === "none" ? undefined : Number(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No duration</SelectItem>
+                          <SelectItem value="15">15 min</SelectItem>
+                          <SelectItem value="30">30 min</SelectItem>
+                          <SelectItem value="45">45 min</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                          <SelectItem value="90">1 hour 30 min</SelectItem>
+                          <SelectItem value="120">2 hours</SelectItem>
+                          <SelectItem value="180">3 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormDescription className="text-xs">
-                      Optional
+                      Optional preset duration
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

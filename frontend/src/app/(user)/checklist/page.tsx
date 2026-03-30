@@ -74,7 +74,7 @@ export default function ChecklistPage() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 shadow-lg"
+              className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg"
             >
               <CheckSquare className="h-10 w-10 text-white" />
             </motion.div>
@@ -119,7 +119,7 @@ export default function ChecklistPage() {
       {/* Hero Section with Gradient */}
       <motion.div 
         variants={itemVariants}
-        className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30"
+        className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30"
       >
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
@@ -130,12 +130,12 @@ export default function ChecklistPage() {
               <motion.div 
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.5 }}
-                className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 shadow-lg"
+                className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg"
               >
                 <CheckSquare className="h-8 w-8 text-white" />
               </motion.div>
               <div>
-                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
                   Wedding Checklists
                 </h1>
                 <p className="mt-1 text-muted-foreground">
@@ -279,8 +279,8 @@ export default function ChecklistPage() {
                       <div
                         className={`h-full transition-all ${
                           isComplete 
-                            ? 'bg-linear-to-r from-green-500 to-emerald-600' 
-                            : 'bg-linear-to-r from-blue-500 to-indigo-600'
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                            : 'bg-gradient-to-r from-blue-500 to-indigo-600'
                         }`}
                         style={{ width: `${progress}%` }}
                       />

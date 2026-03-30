@@ -229,7 +229,9 @@ export interface CampaignStats {
 export interface AdCreditBalance {
   vendorProfileId: string
   balance: number
-  lastUpdated: string
+  lastUpdated?: string
+  canClaimMonthly?: boolean
+  nextClaimDate?: string
 }
 
 export interface AdCreditTransaction {
@@ -420,19 +422,40 @@ export interface CanCreateEventResponse {
   source?: 'free_event' | 'credit'
 }
 
+export interface EventTierFeatureDisplay {
+  key: string
+  name: string
+  description?: string
+  limitType: FeatureLimitType
+  limitValue?: number
+  displayValue: string
+  included: boolean
+  isHighlighted: boolean
+}
+
 export interface EventCreditPricingSummary {
+  // Unlimited events model
+  unlimitedEvents: boolean
+  unlimitedEventsMessage: string
+
   tiers: {
     tier: EventTier
     name: string
     description: string
-    features: EventTierFeature[]
-    products: EventCreditProduct[]
+    price: string
+    priceSubtext: string
+    features: EventTierFeatureDisplay[]
+    isPopular: boolean
   }[]
-  freeTier: {
-    events: number
-    tier: EventTier
-    description: string
-  }
+
+  featureComparison: {
+    featureKey: string
+    featureName: string
+    description?: string
+    basicValue: string
+    premiumValue: string
+    isHighlighted: boolean
+  }[]
 }
 
 export interface PurchaseEventCreditsRequest {

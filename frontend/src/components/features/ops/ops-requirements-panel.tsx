@@ -397,7 +397,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                   id="estimatedBudget"
                   type="number"
                   min="0"
-                  placeholder="$0"
+                  placeholder="₹0"
                   value={itemForm.estimatedBudget}
                   onChange={(e) => setItemForm({ ...itemForm, estimatedBudget: e.target.value })}
                 />
@@ -489,7 +489,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                   id="edit-estimatedBudget"
                   type="number"
                   min="0"
-                  placeholder="$0"
+                  placeholder="₹0"
                   value={itemForm.estimatedBudget}
                   onChange={(e) => setItemForm({ ...itemForm, estimatedBudget: e.target.value })}
                 />

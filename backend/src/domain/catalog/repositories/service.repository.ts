@@ -42,6 +42,10 @@ export class ServiceRepository extends BaseRepository<
             name: true,
           },
         },
+        items: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' },
+        },
       },
       orderBy: { sortOrder: 'asc' },
     });

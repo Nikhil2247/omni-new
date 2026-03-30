@@ -51,7 +51,7 @@ export default function EventsPage() {
   return (
     <div className="space-y-8 pb-4">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-purple-200/60 bg-linear-to-br from-purple-50 via-pink-50 to-orange-50 p-6 shadow-sm dark:border-purple-900/40 dark:from-purple-950/30 dark:via-pink-950/20 dark:to-orange-950/20 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-purple-200/60 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-6 shadow-sm dark:border-purple-900/40 dark:from-purple-950/30 dark:via-pink-950/20 dark:to-orange-950/20 sm:p-8">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-pink-300/30 blur-3xl dark:bg-pink-500/20" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-orange-300/30 blur-3xl dark:bg-orange-500/20" />
 
@@ -107,67 +107,67 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {/* Credit Balance Cards */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="rounded-2xl border-purple-200/70 bg-linear-to-br from-purple-50 to-white dark:border-purple-900/60 dark:from-purple-950/25 dark:to-transparent">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/30">
-                <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+      {/* Stats Cards */}
+      <div className="grid gap-2 grid-cols-2 xl:grid-cols-4">
+        <Card className="rounded-xl border-purple-200/70 bg-gradient-to-br from-purple-50 to-white dark:border-purple-900/60 dark:from-purple-950/25 dark:to-transparent">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                <Calendar className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   Total Events
                 </p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-lg font-bold">{stats.total}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-pink-200/70 bg-linear-to-br from-pink-50 to-white dark:border-pink-900/60 dark:from-pink-950/25 dark:to-transparent">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-100 dark:bg-pink-900/30">
-                <Sparkles className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+        <Card className="rounded-xl border-pink-200/70 bg-gradient-to-br from-pink-50 to-white dark:border-pink-900/60 dark:from-pink-950/25 dark:to-transparent">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-100 dark:bg-pink-900/30">
+                <Sparkles className="h-4 w-4 text-pink-600 dark:text-pink-400" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   Upcoming
                 </p>
-                <p className="text-2xl font-bold">{stats.upcoming}</p>
+                <p className="text-lg font-bold">{stats.upcoming}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-emerald-200/70 bg-linear-to-br from-emerald-50 to-white dark:border-emerald-900/60 dark:from-emerald-950/25 dark:to-transparent">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        <Card className="rounded-xl border-emerald-200/70 bg-gradient-to-br from-emerald-50 to-white dark:border-emerald-900/60 dark:from-emerald-950/25 dark:to-transparent">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   Completed
                 </p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
+                <p className="text-lg font-bold">{stats.completed}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-blue-200/70 bg-linear-to-br from-blue-50 to-white dark:border-blue-900/60 dark:from-blue-950/25 dark:to-transparent">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30">
-                <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+        <Card className="rounded-xl border-blue-200/70 bg-gradient-to-br from-blue-50 to-white dark:border-blue-900/60 dark:from-blue-950/25 dark:to-transparent">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   Planning
                 </p>
-                <p className="text-2xl font-bold">{stats.planning}</p>
+                <p className="text-lg font-bold">{stats.planning}</p>
               </div>
             </div>
           </CardContent>
@@ -176,7 +176,7 @@ export default function EventsPage() {
 
       {/* Free Event Banner for New Users */}
       {hasFreeEvent && stats.total === 0 && (
-        <Card className="rounded-2xl border-emerald-200 bg-linear-to-br from-emerald-50 to-green-50 shadow-sm dark:border-emerald-900/50 dark:from-emerald-950/30 dark:to-green-950/20">
+        <Card className="rounded-2xl border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 shadow-sm dark:border-emerald-900/50 dark:from-emerald-950/30 dark:to-green-950/20">
           <CardContent className="flex items-start gap-4 p-5">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
               <Gift className="h-6 w-6 text-emerald-600" />
@@ -205,7 +205,7 @@ export default function EventsPage() {
 
       {/* Credit Balance Section */}
       {!hasFreeEvent && (
-        <Card className="rounded-2xl border-amber-200/70 bg-linear-to-br from-amber-50 to-orange-50 dark:border-amber-900/50 dark:from-amber-950/30 dark:to-orange-950/20">
+        <Card className="rounded-2xl border-amber-200/70 bg-gradient-to-br from-amber-50 to-orange-50 dark:border-amber-900/50 dark:from-amber-950/30 dark:to-orange-950/20">
           <CardContent className="p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
@@ -245,12 +245,7 @@ export default function EventsPage() {
       )}
 
       {/* Events List */}
-      <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">All Events</h2>
-        </div>
-        <EventsList />
-      </div>
+      <EventsList />
     </div>
   )
 }

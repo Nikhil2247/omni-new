@@ -611,6 +611,20 @@ export function usePurchaseCredits() {
   })
 }
 
+/**
+ * Claim monthly subscription credits
+ */
+export function useClaimMonthlyCredits() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => adCreditsService.claimMonthlyCredits(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.adCreditBalance() })
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.adCreditHistory() })
+    },
+  })
+}
+
 // ============================================================================
 // Event Credits Queries & Mutations (Event-Based Pricing)
 // ============================================================================

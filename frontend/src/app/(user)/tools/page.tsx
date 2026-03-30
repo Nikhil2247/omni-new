@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { trackDashboard } from '@/lib/analytics/umami'
@@ -16,6 +16,9 @@ import {
   CheckCircle2,
   CheckSquare,
   Clock,
+  Image,
+  LayoutGrid,
+  List,
   Mail,
   PlusCircle,
   Send,
@@ -35,6 +38,7 @@ import { useGuestlist } from '@/hooks/queries/use-guestlist'
 import { useTimeline } from '@/hooks/queries/use-timeline'
 import { usePlannerInsights } from '@/hooks/queries/use-planner-insights'
 import { useEInviteByEvent } from '@/hooks/queries/use-einvites'
+import { useMemories } from '@/hooks/queries/use-memories'
 import { cn } from '@/lib/utils'
 
 // Tool flow order matching the screenshot
@@ -79,8 +83,8 @@ const TOOL_FLOW = [
   {
     id: 'e-invite',
     step: 5,
-    title: 'E-Invite',
-    description: 'Design & send digital invitations',
+    title: 'E-Invite Create',
+    description: 'Design & generate digital invitations',
     icon: Send,
     color: 'green',
     segment: 'einvite',
@@ -104,6 +108,15 @@ const TOOL_FLOW = [
     color: 'pink',
     segment: 'guestlist',
     badge: 'In Guestlist',
+  },
+  {
+    id: 'memories',
+    step: 8,
+    title: 'Memories',
+    description: 'Photos & videos from guests',
+    icon: Image,
+    color: 'rose',
+    segment: 'memories',
   },
 ]
 
@@ -150,6 +163,12 @@ const COLOR_STYLES: Record<string, { bg: string; text: string; border: string; l
     border: 'border-pink-200 dark:border-pink-800',
     light: 'bg-pink-50 dark:bg-pink-950/20',
   },
+  rose: {
+    bg: 'bg-rose-100 dark:bg-rose-900/30',
+    text: 'text-rose-600 dark:text-rose-400',
+    border: 'border-rose-200 dark:border-rose-800',
+    light: 'bg-rose-50 dark:bg-rose-950/20',
+  },
 }
 
 export default function UserToolsPage() {
@@ -164,7 +183,12 @@ export default function UserToolsPage() {
   const { data: guestlistData } = useGuestlist(eventId || '')
   const { data: timelineData } = useTimeline(eventId || '')
   const { data: einviteData } = useEInviteByEvent(eventId || '')
+  const { data: memoriesData } = useMemories(eventId || '')
   const { data: plannerInsightsData, isLoading: plannerInsightsLoading } = usePlannerInsights(eventId || '')
+
+  // Display mode: 'tiles' for quick access grid, 'stepper' for sequential flow
+  // Default to tiles when user has an event, stepper when creating
+  const [displayMode, setDisplayMode] = useState<'tiles' | 'stepper'>('tiles')
 
   useEffect(() => {
     trackDashboard.sectionView('tools', 'user')
@@ -248,8 +272,9 @@ export default function UserToolsPage() {
       'e-invite': hasEInvite,
       guestlist: guests > 0,
       rsvp: guests > 0,
+      memories: !!memoriesData,
     }
-  }, [eventId, timelineData, budgetData, checklistData, guestlistData, einviteData])
+  }, [eventId, timelineData, budgetData, checklistData, guestlistData, einviteData, memoriesData])
 
   function getToolHref(tool: (typeof TOOL_FLOW)[0]): string {
     if (tool.id === 'create-event') {
@@ -692,133 +717,219 @@ export default function UserToolsPage() {
         </div>
       )}
 
-      {/* Tool Flow - Sequential Steps */}
-      <div className="relative">
-        {/* Flow connector line */}
-        <div className="absolute bottom-0 left-6 top-0 hidden w-0.5 bg-linear-to-b from-violet-300 via-cyan-300 to-rose-300 dark:from-violet-700 dark:via-cyan-700 dark:to-rose-700 sm:block" />
+      {/* Planning Tools Section Header with View Toggle */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Planning Tools</h2>
+        {eventId && (
+          <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
+            <Button
+              variant={displayMode === 'tiles' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-8 px-3"
+              onClick={() => setDisplayMode('tiles')}
+            >
+              <LayoutGrid className="mr-1.5 h-4 w-4" />
+              Tiles
+            </Button>
+            <Button
+              variant={displayMode === 'stepper' ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-8 px-3"
+              onClick={() => setDisplayMode('stepper')}
+            >
+              <List className="mr-1.5 h-4 w-4" />
+              Steps
+            </Button>
+          </div>
+        )}
+      </div>
 
-        <div className="space-y-4">
-          {TOOL_FLOW.map((tool, index) => {
+      {/* Quick Tiles View - Grid Layout */}
+      {displayMode === 'tiles' && eventId && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {TOOL_FLOW.filter(tool => tool.id !== 'create-event').map((tool) => {
             const Icon = tool.icon
             const colors = COLOR_STYLES[tool.color]
             const href = getToolHref(tool)
             const isSetUp = toolSetup[tool.id as keyof typeof toolSetup]
-            const progress = toolProgress[tool.id]
-            const isLocked = !eventId && tool.id !== 'create-event'
 
             return (
-              <div key={tool.id} className="relative">
-                {/* Step connector */}
-                <div className="absolute left-6 -translate-x-1/2 hidden sm:flex flex-col items-center">
-                  <div
-                    className={cn(
-                      'z-10 flex h-12 w-12 items-center justify-center rounded-full border-4 bg-background shadow-sm ring-4 ring-background/80',
-                      isSetUp ? 'border-green-500' : colors.border
-                    )}
-                  >
-                    {isSetUp ? (
-                      <CheckCircle2 className="h-6 w-6 text-green-500" />
-                    ) : (
-                      <span className={cn('text-lg font-bold', colors.text)}>{tool.step}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tool Card */}
-                <Link
-                  href={isLocked ? '#' : href}
-                  onClick={(e) => {
-                    if (isLocked) {
-                      e.preventDefault()
-                      router.push('/events/new')
-                    }
-                  }}
+              <Link key={tool.id} href={href} className="group block">
+                <Card
                   className={cn(
-                    'group block sm:ml-16',
-                    isLocked && 'cursor-not-allowed opacity-60'
+                    'h-full rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg',
+                    isSetUp && 'border-green-200 dark:border-green-800',
+                    !isSetUp && colors.light
                   )}
                 >
-                  <Card
-                    className={cn(
-                      'rounded-2xl border transition-all duration-200',
-                      !isLocked && 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg',
-                      isSetUp && 'border-green-200 dark:border-green-800',
-                      !isSetUp && colors.light,
-                    )}
-                  >
-                    <CardContent className="flex items-center gap-4 p-4">
-                      <div className={cn('h-14 w-1 rounded-full hidden sm:block', colors.bg)} />
-
-                      {/* Mobile step indicator */}
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
                       <div
                         className={cn(
-                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border sm:hidden',
-                          isSetUp ? 'bg-green-100 dark:bg-green-900/30' : colors.bg
+                          'flex h-12 w-12 items-center justify-center rounded-xl border shadow-sm',
+                          colors.bg,
+                          colors.border
                         )}
                       >
-                        {isSetUp ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <span className={cn('font-bold', colors.text)}>{tool.step}</span>
-                        )}
-                      </div>
-
-                      {/* Icon */}
-                      <div className={cn('hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-sm sm:flex', colors.bg, colors.border)}>
                         <Icon className={cn('h-6 w-6', colors.text)} />
                       </div>
-
-                      {/* Content */}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold leading-tight transition-colors group-hover:text-primary">
-                            {tool.title}
-                          </p>
-                          {tool.badge && (
-                            <Badge variant="secondary" className="text-xs">
-                              {tool.badge}
-                            </Badge>
-                          )}
-                          {isSetUp && (
-                            <Badge variant="outline" className="border-green-200 bg-green-50 text-xs text-green-700">
-                              Set up
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-sm text-muted-foreground">{tool.description}</p>
-
-                        {/* Progress bar for set up tools */}
-                        {isSetUp && progress && progress.total > 0 && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <Progress value={progress.percentage} className="h-1.5 w-24" />
-                            <span className="text-xs text-muted-foreground">
-                              {progress.completed}/{progress.total}
-                            </span>
-                          </div>
+                      {isSetUp && (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold transition-colors group-hover:text-primary">
+                          {tool.title}
+                        </p>
+                        {tool.badge && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            {tool.badge}
+                          </Badge>
                         )}
                       </div>
-
-                      {/* Arrow */}
-                      {isLocked ? (
-                        <AlertCircle className="h-5 w-5 shrink-0 text-muted-foreground/40" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                      )}
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                {/* Arrow connector between steps */}
-                {index < TOOL_FLOW.length - 1 && (
-                  <div className="flex justify-center py-1 sm:hidden">
-                    <ArrowDown className="h-4 w-4 text-muted-foreground/30" />
-                  </div>
-                )}
-              </div>
+                      <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                        {tool.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             )
           })}
         </div>
-      </div>
+      )}
+
+      {/* Stepper View - Sequential Steps (shown when no event or stepper mode selected) */}
+      {(displayMode === 'stepper' || !eventId) && (
+        <div className="relative">
+          {/* Flow connector line */}
+          <div className="absolute bottom-0 left-6 top-0 hidden w-0.5 bg-linear-to-b from-violet-300 via-cyan-300 to-rose-300 dark:from-violet-700 dark:via-cyan-700 dark:to-rose-700 sm:block" />
+
+          <div className="space-y-4">
+            {TOOL_FLOW.map((tool, index) => {
+              const Icon = tool.icon
+              const colors = COLOR_STYLES[tool.color]
+              const href = getToolHref(tool)
+              const isSetUp = toolSetup[tool.id as keyof typeof toolSetup]
+              const progress = toolProgress[tool.id]
+              const isLocked = !eventId && tool.id !== 'create-event'
+
+              return (
+                <div key={tool.id} className="relative">
+                  {/* Step connector */}
+                  <div className="absolute left-6 -translate-x-1/2 hidden sm:flex flex-col items-center">
+                    <div
+                      className={cn(
+                        'z-10 flex h-12 w-12 items-center justify-center rounded-full border-4 bg-background shadow-sm ring-4 ring-background/80',
+                        isSetUp ? 'border-green-500' : colors.border
+                      )}
+                    >
+                      {isSetUp ? (
+                        <CheckCircle2 className="h-6 w-6 text-green-500" />
+                      ) : (
+                        <span className={cn('text-lg font-bold', colors.text)}>{tool.step}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tool Card */}
+                  <Link
+                    href={isLocked ? '#' : href}
+                    onClick={(e) => {
+                      if (isLocked) {
+                        e.preventDefault()
+                        router.push('/events/new')
+                      }
+                    }}
+                    className={cn(
+                      'group block sm:ml-16',
+                      isLocked && 'cursor-not-allowed opacity-60'
+                    )}
+                  >
+                    <Card
+                      className={cn(
+                        'rounded-2xl border transition-all duration-200',
+                        !isLocked && 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg',
+                        isSetUp && 'border-green-200 dark:border-green-800',
+                        !isSetUp && colors.light,
+                      )}
+                    >
+                      <CardContent className="flex items-center gap-4 p-4">
+                        <div className={cn('h-14 w-1 rounded-full hidden sm:block', colors.bg)} />
+
+                        {/* Mobile step indicator */}
+                        <div
+                          className={cn(
+                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border sm:hidden',
+                            isSetUp ? 'bg-green-100 dark:bg-green-900/30' : colors.bg
+                          )}
+                        >
+                          {isSetUp ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <span className={cn('font-bold', colors.text)}>{tool.step}</span>
+                          )}
+                        </div>
+
+                        {/* Icon */}
+                        <div className={cn('hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-sm sm:flex', colors.bg, colors.border)}>
+                          <Icon className={cn('h-6 w-6', colors.text)} />
+                        </div>
+
+                        {/* Content */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold leading-tight transition-colors group-hover:text-primary">
+                              {tool.title}
+                            </p>
+                            {tool.badge && (
+                              <Badge variant="secondary" className="text-xs">
+                                {tool.badge}
+                              </Badge>
+                            )}
+                            {isSetUp && (
+                              <Badge variant="outline" className="border-green-200 bg-green-50 text-xs text-green-700">
+                                Set up
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-sm text-muted-foreground">{tool.description}</p>
+
+                          {/* Progress bar for set up tools - exclude e-invite, guestlist, rsvp, memories */}
+                          {isSetUp && progress && progress.total > 0 &&
+                           !['e-invite', 'guestlist', 'rsvp', 'memories'].includes(tool.id) && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <Progress value={progress.percentage} className="h-1.5 w-24" />
+                              <span className="text-xs text-muted-foreground">
+                                {progress.completed}/{progress.total}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Arrow */}
+                        {isLocked ? (
+                          <AlertCircle className="h-5 w-5 shrink-0 text-muted-foreground/40" />
+                        ) : (
+                          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Link>
+
+                  {/* Arrow connector between steps */}
+                  {index < TOOL_FLOW.length - 1 && (
+                    <div className="flex justify-center py-1 sm:hidden">
+                      <ArrowDown className="h-4 w-4 text-muted-foreground/30" />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Completion celebration */}
       {overallProgress === 100 && eventId && (

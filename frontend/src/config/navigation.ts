@@ -846,6 +846,12 @@ export const businessNav: NavGroup[] = [
     title: 'Account',
     items: [
       {
+        title: 'Pricing Plans',
+        href: '/pricing',
+        icon: DollarSign,
+        roles: [ROLES.BUSINESS_ADMIN],
+      },
+      {
         title: 'Subscription',
         href: '/business/settings/subscription',
         icon: CreditCard,

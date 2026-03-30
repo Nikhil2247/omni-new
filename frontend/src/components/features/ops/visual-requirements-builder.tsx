@@ -396,7 +396,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                 <Input
                   type="number"
                   min="0"
-                  placeholder="$0"
+                  placeholder="₹0"
                   value={newItem.estimatedBudget}
                   onChange={(e) => setNewItem({ ...newItem, estimatedBudget: e.target.value })}
                 />

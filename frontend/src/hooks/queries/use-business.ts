@@ -11,8 +11,12 @@ import type {
   UpdatePortfolioRequest,
   CreateMediaItemRequest,
   VendorService,
+  ServiceItem,
   CreateServiceRequest,
   UpdateServiceRequest,
+  CreateServiceItemRequest,
+  UpdateServiceItemRequest,
+  ServiceItemPriceStats,
   BusinessLead,
   BusinessReview,
   BusinessAnalyticsSummary,
@@ -49,6 +53,9 @@ export const businessKeys = {
   portfolioItem: (id: string) => [...businessKeys.all, 'portfolio-item', id] as const,
   services: (vendorProfileId: string) => [...businessKeys.all, 'services', vendorProfileId] as const,
   service: (id: string) => [...businessKeys.all, 'service', id] as const,
+  serviceItems: (serviceId: string) => [...businessKeys.all, 'service-items', serviceId] as const,
+  serviceItem: (serviceId: string, itemId: string) => [...businessKeys.all, 'service-item', serviceId, itemId] as const,
+  serviceItemStats: (serviceId: string) => [...businessKeys.all, 'service-item-stats', serviceId] as const,
   leads: (params?: { status?: string; page?: number; limit?: number }) => [...businessKeys.all, 'leads', params || {}] as const,
   lead: (id: string) => [...businessKeys.all, 'lead', id] as const,
   reviews: () => [...businessKeys.all, 'reviews'] as const,
@@ -295,6 +302,116 @@ export function useDeleteService() {
     mutationFn: (id: string) => businessService.deleteService(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: businessKeys.all })
+    },
+  })
+}
+
+// ==================== Service Items Hooks ====================
+export function useServiceItems(serviceId: string, options?: { includeInactive?: boolean; enabled?: boolean }) {
+  return useQuery<ServiceItem[]>({
+    queryKey: businessKeys.serviceItems(serviceId),
+    queryFn: async () => {
+      const response = await businessService.getServiceItems(serviceId, options?.includeInactive)
+      return response.data || response as unknown as ServiceItem[]
+    },
+    enabled: !!serviceId && (options?.enabled ?? true),
+  })
+}
+
+export function useServiceItem(serviceId: string, itemId: string) {
+  return useQuery<ServiceItem>({
+    queryKey: businessKeys.serviceItem(serviceId, itemId),
+    queryFn: async () => {
+      const response = await businessService.getServiceItem(serviceId, itemId)
+      return response.data
+    },
+    enabled: !!serviceId && !!itemId,
+  })
+}
+
+export function useServiceItemStats(serviceId: string, options?: { enabled?: boolean }) {
+  return useQuery<ServiceItemPriceStats>({
+    queryKey: businessKeys.serviceItemStats(serviceId),
+    queryFn: async () => {
+      const response = await businessService.getServiceItemStats(serviceId)
+      return response.data
+    },
+    enabled: !!serviceId && (options?.enabled ?? true),
+  })
+}
+
+export function useCreateServiceItem() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ serviceId, payload }: { serviceId: string; payload: CreateServiceItemRequest }) =>
+      businessService.createServiceItem(serviceId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItems(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItemStats(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.service(variables.serviceId) })
+    },
+  })
+}
+
+export function useCreateServiceItemsBulk() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ serviceId, items }: { serviceId: string; items: CreateServiceItemRequest[] }) =>
+      businessService.createServiceItemsBulk(serviceId, items),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItems(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItemStats(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.service(variables.serviceId) })
+    },
+  })
+}
+
+export function useUpdateServiceItem() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ serviceId, itemId, payload }: { serviceId: string; itemId: string; payload: UpdateServiceItemRequest }) =>
+      businessService.updateServiceItem(serviceId, itemId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItems(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItem(variables.serviceId, variables.itemId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItemStats(variables.serviceId) })
+    },
+  })
+}
+
+export function useDeleteServiceItem() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ serviceId, itemId }: { serviceId: string; itemId: string }) =>
+      businessService.deleteServiceItem(serviceId, itemId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItems(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItemStats(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.service(variables.serviceId) })
+    },
+  })
+}
+
+export function useSyncServiceItems() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ serviceId, items }: { serviceId: string; items: (CreateServiceItemRequest & { id?: string })[] }) =>
+      businessService.syncServiceItems(serviceId, items),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItems(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItemStats(variables.serviceId) })
+      queryClient.invalidateQueries({ queryKey: businessKeys.service(variables.serviceId) })
+    },
+  })
+}
+
+export function useReorderServiceItems() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ serviceId, itemIds }: { serviceId: string; itemIds: string[] }) =>
+      businessService.reorderServiceItems(serviceId, itemIds),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.serviceItems(variables.serviceId) })
     },
   })
 }

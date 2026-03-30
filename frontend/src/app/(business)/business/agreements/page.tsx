@@ -98,11 +98,11 @@ export default function BusinessAgreementsPage() {
   }) || []
 
   const formatCurrency = (amount: number | string | undefined | null) => {
-    if (amount === undefined || amount === null) return '$0'
+    if (amount === undefined || amount === null) return '₹0'
     const num = typeof amount === 'string' ? parseFloat(amount) : amount
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 0,
     }).format(num)
   }

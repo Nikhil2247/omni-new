@@ -88,64 +88,27 @@ export class EventCreditService {
 
   /**
    * Check if user can create an event with specified tier
+   *
+   * UNLIMITED EVENT CREATION: Users can create unlimited events.
+   * The tier (BASIC/PREMIUM) determines feature limits within the event.
+   * Credits are no longer required for event creation.
    */
   async canCreateEvent(
     userId: string,
     requestedTier?: EventTier,
   ): Promise<CanCreateEventResponse> {
-    const balance = await this.creditRepository.getOrCreateBalance(userId);
+    // Ensure user has a balance record (for tracking purposes)
+    await this.creditRepository.getOrCreateBalance(userId);
 
-    // Check free event first (only for BASIC tier)
-    if (!balance.freeEventUsed && (!requestedTier || requestedTier === EventTier.BASIC)) {
-      return {
-        canCreate: true,
-        tier: EventTier.BASIC,
-        source: 'free_event',
-        message: 'You can create your first event for free!',
-      };
-    }
+    // Determine the tier - default to BASIC if not specified
+    const tier = requestedTier || EventTier.BASIC;
 
-    // Check premium credits if requested or has premium credits
-    if (requestedTier === EventTier.PREMIUM ||
-        (!requestedTier && balance.premiumCredits > 0)) {
-      if (balance.premiumCredits > 0) {
-        return {
-          canCreate: true,
-          tier: EventTier.PREMIUM,
-          source: 'premium_credit',
-          message: `You have ${balance.premiumCredits} Premium credit${balance.premiumCredits > 1 ? 's' : ''} available`,
-        };
-      }
-    }
-
-    // Check basic credits
-    if (!requestedTier || requestedTier === EventTier.BASIC) {
-      if (balance.basicCredits > 0) {
-        return {
-          canCreate: true,
-          tier: EventTier.BASIC,
-          source: 'basic_credit',
-          message: `You have ${balance.basicCredits} Basic credit${balance.basicCredits > 1 ? 's' : ''} available`,
-        };
-      }
-    }
-
-    // If specific tier requested but no credits
-    if (requestedTier === EventTier.PREMIUM && balance.premiumCredits === 0) {
-      return {
-        canCreate: false,
-        tier: null,
-        source: null,
-        message: 'You need Premium credits to create a Premium event. Purchase credits to continue.',
-      };
-    }
-
-    // No credits available
+    // UNLIMITED EVENT CREATION - always allow
     return {
-      canCreate: false,
-      tier: null,
-      source: null,
-      message: 'You need event credits to create an event. Purchase credits to continue.',
+      canCreate: true,
+      tier,
+      source: tier === EventTier.PREMIUM ? 'premium_credit' : 'basic_credit',
+      message: `You can create unlimited ${tier} events. Feature limits apply based on event tier.`,
     };
   }
 

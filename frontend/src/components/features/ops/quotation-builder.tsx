@@ -54,7 +54,7 @@ import {
 
 const CURRENCIES = [
   { value: 'INR', label: '₹ INR', symbol: '₹' },
-  { value: 'USD', label: '$ USD', symbol: '$' },
+  { value: 'USD', label: '₹ USD', symbol: '₹' },
   { value: 'EUR', label: '€ EUR', symbol: '€' },
   { value: 'GBP', label: '£ GBP', symbol: '£' },
 ]

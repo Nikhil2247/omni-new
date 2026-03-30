@@ -1,12 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 import { fabric } from 'fabric'
 import { usePublicEInvite, useTrackEInviteView } from '@/hooks/queries/use-einvites'
+import { useRsvpDetails, useSubmitRsvp } from '@/hooks/queries/use-public-rsvp'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 import {
   Calendar,
   Clock,
@@ -16,18 +22,57 @@ import {
   Heart,
   Sparkles,
   MessageCircle,
+  CheckCircle2,
+  Users,
+  Utensils,
+  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
+// Wrapper component for Suspense boundary
 export default function PublicEInvitePage() {
+  return (
+    <Suspense fallback={<EInviteLoadingState />}>
+      <EInviteContent />
+    </Suspense>
+  )
+}
+
+function EInviteLoadingState() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-purple-50 dark:from-pink-950/20 dark:via-background dark:to-purple-950/20">
+      <div className="container max-w-3xl mx-auto py-8 px-4">
+        <Skeleton className="h-8 w-64 mx-auto mb-8" />
+        <Skeleton className="aspect-[3/4] max-w-lg mx-auto rounded-2xl" />
+      </div>
+    </div>
+  )
+}
+
+function EInviteContent() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const shareCode = params.shareCode as string
+  const rsvpToken = searchParams.get('rsvp')
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fabricRef = useRef<fabric.Canvas | null>(null)
   const [canvasReady, setCanvasReady] = useState(false)
 
+  // RSVP form state
+  const [rsvpStatus, setRsvpStatus] = useState<string>('')
+  const [plusOne, setPlusOne] = useState<number>(0)
+  const [dietaryReq, setDietaryReq] = useState<string>('')
+  const [message, setMessage] = useState<string>('')
+  const [rsvpSubmitted, setRsvpSubmitted] = useState(false)
+
   // Fetch public invite data
   const { data: invite, isLoading, error } = usePublicEInvite(shareCode)
+
+  // Fetch RSVP details if token is present
+  const { data: rsvpData, isLoading: rsvpLoading } = useRsvpDetails(rsvpToken || '')
+  const submitRsvp = useSubmitRsvp(rsvpToken || '')
 
   // Track view
   const trackView = useTrackEInviteView()
@@ -35,9 +80,20 @@ export default function PublicEInvitePage() {
   // Track view on mount
   useEffect(() => {
     if (shareCode) {
-      trackView.mutate({ shareCode })
+      trackView.mutate({ shareCode, guestId: rsvpData?.guest?.id })
     }
-  }, [shareCode])
+  }, [shareCode, rsvpData?.guest?.id])
+
+  // Pre-fill RSVP form with existing data
+  useEffect(() => {
+    if (rsvpData?.guest) {
+      if (rsvpData.guest.rsvpStatus !== 'PENDING') {
+        setRsvpStatus(rsvpData.guest.rsvpStatus)
+      }
+      setPlusOne(rsvpData.guest.plusOne || 0)
+      setDietaryReq(rsvpData.guest.dietaryReq || '')
+    }
+  }, [rsvpData])
 
   // Initialize canvas
   useEffect(() => {
@@ -123,6 +179,25 @@ export default function PublicEInvitePage() {
     window.open(whatsappUrl, '_blank')
   }
 
+  // Handle RSVP submission
+  const handleRsvpSubmit = async () => {
+    if (!rsvpStatus || !rsvpToken) return
+
+    try {
+      await submitRsvp.mutateAsync({
+        rsvpStatus: rsvpStatus as 'ATTENDING' | 'NOT_ATTENDING' | 'MAYBE',
+        plusOne: rsvpStatus === 'ATTENDING' ? plusOne : 0,
+        dietaryReq: rsvpStatus === 'ATTENDING' ? dietaryReq : undefined,
+        message: message || undefined,
+      })
+      setRsvpSubmitted(true)
+      toast.success('Your RSVP has been submitted!')
+    } catch (err) {
+      console.error('Failed to submit RSVP:', err)
+      toast.error('Failed to submit RSVP. Please try again.')
+    }
+  }
+
   // Format date
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return null
@@ -138,6 +213,9 @@ export default function PublicEInvitePage() {
       return dateStr
     }
   }
+
+  const hasRsvpToken = Boolean(rsvpToken)
+  const hasResponded = rsvpData?.guest?.rsvpAt !== null && rsvpData?.guest?.rsvpAt !== undefined
 
   // Loading state
   if (isLoading) {
@@ -279,6 +357,216 @@ export default function PublicEInvitePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* RSVP Section - Only show if rsvp token is present */}
+        {hasRsvpToken && rsvpData && (
+          <Card className="mt-6 overflow-hidden shadow-xl border-0 bg-white/80 backdrop-blur">
+            <div className="h-2 bg-gradient-to-r from-rose-400 via-pink-400 to-purple-400" />
+
+            {/* RSVP Success State */}
+            {rsvpSubmitted ? (
+              <CardContent className="pt-8 pb-8 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                  <CheckCircle2 className="h-8 w-8 text-green-600" />
+                </div>
+                <h2 className="text-2xl font-bold">Thank You!</h2>
+                <p className="mt-2 text-muted-foreground">
+                  {rsvpStatus === 'ATTENDING'
+                    ? `We can't wait to see you, ${rsvpData.guest.firstName}!`
+                    : rsvpStatus === 'NOT_ATTENDING'
+                      ? "We'll miss you! Thank you for letting us know."
+                      : "We'll keep you updated!"}
+                </p>
+                {rsvpStatus === 'ATTENDING' && (
+                  <Badge variant="secondary" className="mt-4">
+                    <Users className="mr-1 h-3 w-3" />
+                    {plusOne > 0 ? `You + ${plusOne} guest${plusOne > 1 ? 's' : ''}` : 'Just you'}
+                  </Badge>
+                )}
+              </CardContent>
+            ) : (
+              <>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Heart className="h-5 w-5 text-rose-500" />
+                    RSVP - {rsvpData.guest.firstName}
+                  </CardTitle>
+                  <CardDescription>Please let us know if you can join us</CardDescription>
+                </CardHeader>
+
+                {/* Already responded banner */}
+                {hasResponded && (
+                  <div className="mx-6 mb-4 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 p-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
+                      <p className="text-sm text-amber-800 dark:text-amber-300">
+                        You've already responded. Feel free to update your response below.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <CardContent className="space-y-5">
+                  {/* RSVP Status */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Will you be attending?</Label>
+                    <RadioGroup
+                      value={rsvpStatus}
+                      onValueChange={setRsvpStatus}
+                      className="grid gap-3"
+                    >
+                      <Label
+                        htmlFor="attending"
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg border-2 p-4 cursor-pointer transition-all',
+                          rsvpStatus === 'ATTENDING'
+                            ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+                            : 'border-muted hover:border-green-300'
+                        )}
+                      >
+                        <RadioGroupItem value="ATTENDING" id="attending" />
+                        <CheckCircle2 className={cn(
+                          'h-5 w-5',
+                          rsvpStatus === 'ATTENDING' ? 'text-green-600' : 'text-muted-foreground'
+                        )} />
+                        <span className="font-medium">Yes, I'll be there!</span>
+                      </Label>
+                      <Label
+                        htmlFor="not-attending"
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg border-2 p-4 cursor-pointer transition-all',
+                          rsvpStatus === 'NOT_ATTENDING'
+                            ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/20'
+                            : 'border-muted hover:border-rose-300'
+                        )}
+                      >
+                        <RadioGroupItem value="NOT_ATTENDING" id="not-attending" />
+                        <Heart className={cn(
+                          'h-5 w-5',
+                          rsvpStatus === 'NOT_ATTENDING' ? 'text-rose-600' : 'text-muted-foreground'
+                        )} />
+                        <span className="font-medium">Sorry, I can't make it</span>
+                      </Label>
+                      <Label
+                        htmlFor="maybe"
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg border-2 p-4 cursor-pointer transition-all',
+                          rsvpStatus === 'MAYBE'
+                            ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20'
+                            : 'border-muted hover:border-amber-300'
+                        )}
+                      >
+                        <RadioGroupItem value="MAYBE" id="maybe" />
+                        <Sparkles className={cn(
+                          'h-5 w-5',
+                          rsvpStatus === 'MAYBE' ? 'text-amber-600' : 'text-muted-foreground'
+                        )} />
+                        <span className="font-medium">Not sure yet</span>
+                      </Label>
+                    </RadioGroup>
+                  </div>
+
+                  {/* Attending-specific options */}
+                  {rsvpStatus === 'ATTENDING' && (
+                    <>
+                      {/* Plus Ones */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-purple-500" />
+                          Additional Guests
+                        </Label>
+                        <Select
+                          value={plusOne.toString()}
+                          onValueChange={(v) => setPlusOne(parseInt(v))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[0, 1, 2, 3, 4, 5].map((n) => (
+                              <SelectItem key={n} value={n.toString()}>
+                                {n === 0 ? 'Just me' : `+${n} guest${n > 1 ? 's' : ''}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Dietary Requirements */}
+                      {rsvpData.dietaryOptions && rsvpData.dietaryOptions.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2">
+                            <Utensils className="h-4 w-4 text-green-500" />
+                            Dietary Requirements
+                          </Label>
+                          <Select value={dietaryReq} onValueChange={setDietaryReq}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select dietary preference" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {rsvpData.dietaryOptions.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Optional Message */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4 text-blue-500" />
+                      Message for the hosts (optional)
+                    </Label>
+                    <Textarea
+                      placeholder="Send your wishes or let us know anything special..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
+                    className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600"
+                    size="lg"
+                    disabled={!rsvpStatus || submitRsvp.isPending}
+                    onClick={handleRsvpSubmit}
+                  >
+                    {submitRsvp.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Heart className="mr-2 h-4 w-4" />
+                        {hasResponded ? 'Update Response' : 'Submit RSVP'}
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </>
+            )}
+          </Card>
+        )}
+
+        {/* Loading RSVP */}
+        {hasRsvpToken && rsvpLoading && (
+          <Card className="mt-6 overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="text-muted-foreground">Loading RSVP details...</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Footer */}
         <div className="text-center mt-8">

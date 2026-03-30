@@ -131,46 +131,87 @@ export class EventCreditProductsController {
   /**
    * Get pricing summary for display
    * Combines products and features in a format suitable for the pricing page
+   *
+   * UNLIMITED EVENTS MODEL:
+   * - Users can create unlimited events for free
+   * - Tier (BASIC/PREMIUM) determines feature limits per event
    */
   @Get('pricing-summary')
-  @ApiOperation({ summary: 'Get complete pricing summary for pricing page' })
+  @ApiOperation({ summary: 'Get complete pricing summary for pricing page (Unlimited Events Model)' })
   @ApiResponse({
     status: 200,
-    description: 'Complete pricing summary including products and features',
+    description: 'Complete pricing summary including tier features for unlimited events',
   })
   async getPricingSummary() {
-    const [products, comparison] = await Promise.all([
-      this.eventCreditService.getAllProducts(),
+    // UNLIMITED EVENTS MODEL - v2
+    console.log('[PricingSummary] Fetching tier features for unlimited events model');
+    const [basicFeatures, premiumFeatures, comparison] = await Promise.all([
+      this.eventCreditService.getTierFeatures(EventTier.BASIC),
+      this.eventCreditService.getTierFeatures(EventTier.PREMIUM),
       this.eventCreditService.getTierComparison(),
     ]);
 
-    // Group products by tier
-    const basicProducts = products.filter(p => p.tier === EventTier.BASIC);
-    const premiumProducts = products.filter(p => p.tier === EventTier.PREMIUM);
+    // Format features for display
+    const formatFeatures = (features: EventTierFeature[]) => {
+      return features
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(f => ({
+          key: f.featureKey,
+          name: f.featureName,
+          description: f.description,
+          limitType: f.limitType,
+          limitValue: f.limitValue,
+          displayValue: this.formatFeatureDisplay(f),
+          included: f.limitType === 'BOOLEAN' ? f.limitValue === 1 : (f.limitValue ?? 0) > 0,
+          isHighlighted: f.isHighlighted,
+        }));
+    };
 
     return {
+      // Unlimited events model info
+      unlimitedEvents: true,
+      unlimitedEventsMessage: 'Create unlimited events for free. Choose a tier based on the features you need per event.',
+
       tiers: [
         {
           tier: EventTier.BASIC,
           name: 'Basic',
-          description: 'Perfect for small to medium events',
-          products: basicProducts,
-          singleEventPrice: basicProducts.find(p => p.bundleType === BundleType.SINGLE)?.priceInr || 499,
+          description: 'Perfect for intimate celebrations and smaller events',
+          price: 'Free',
+          priceSubtext: 'Unlimited events',
+          features: formatFeatures(basicFeatures),
+          isPopular: false,
         },
         {
           tier: EventTier.PREMIUM,
           name: 'Premium',
-          description: 'Unlimited features for grand celebrations',
-          products: premiumProducts,
-          singleEventPrice: premiumProducts.find(p => p.bundleType === BundleType.SINGLE)?.priceInr || 1299,
+          description: 'Full-featured for grand celebrations and large events',
+          price: 'Free',
+          priceSubtext: 'Unlimited events',
+          features: formatFeatures(premiumFeatures),
+          isPopular: true,
         },
       ],
       featureComparison: comparison.features,
-      bundles: [
-        { type: BundleType.SINGLE, label: '1 Event', discount: null },
-        { type: BundleType.FIVE_PACK, label: '5 Events', discount: 20 },
-        { type: BundleType.TEN_PACK, label: '10 Events', discount: 25 },
-      ],
     };
+  }
+
+  /**
+   * Format feature value for display
+   */
+  private formatFeatureDisplay(feature: EventTierFeature): string {
+    if (feature.limitType === 'BOOLEAN') {
+      return feature.limitValue === 1 ? 'Yes' : 'No';
+    }
+    if (feature.limitType === 'UNLIMITED' || feature.limitValue === null || feature.limitValue === -1) {
+      return 'Unlimited';
+    }
+    // Format number with appropriate suffix
+    if (feature.featureKey.includes('storage')) {
+      return feature.limitValue >= 1000
+        ? `${(feature.limitValue / 1000).toFixed(0)} GB`
+        : `${feature.limitValue} MB`;
+    }
+    return feature.limitValue.toLocaleString('en-IN');
   }
 }

@@ -94,7 +94,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   INR: '₹',
-  USD: '$',
+  USD: '₹',
   EUR: '€',
   GBP: '£',
 }

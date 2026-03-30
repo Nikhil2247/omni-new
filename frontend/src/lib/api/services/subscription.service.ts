@@ -396,6 +396,19 @@ export const adCreditsService = {
     const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.AD_CREDITS.PURCHASE, payload)
     return data?.data || data
   },
+
+  /**
+   * Claim monthly subscription credits
+   */
+  claimMonthlyCredits: async (): Promise<{
+    success: boolean
+    message: string
+    creditsGranted?: number
+    newBalance?: number
+  }> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.BUSINESS.AD_CREDITS.CLAIM_MONTHLY)
+    return data?.data || data
+  },
 }
 
 // ============================================================================

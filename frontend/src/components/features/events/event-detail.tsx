@@ -34,6 +34,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import type { EventStatus } from '@/lib/api/types/event.types'
+import type { BudgetItem } from '@/lib/api/types/budget.types'
 import { useMemo } from 'react'
 
 const formatCurrency = (amount: number) =>
@@ -108,8 +109,8 @@ const PLANNING_TOOLS = [
   {
     id: 'e-invite',
     step: 4,
-    title: 'E-Invite',
-    description: 'Send invitations via WhatsApp',
+    title: 'E-Invite Create',
+    description: 'Design & generate invitations',
     icon: Send,
     color: 'green',
     href: 'einvite',
@@ -309,15 +310,20 @@ export function EventDetail({ eventId }: { eventId: string }) {
 
   const checklists = Array.isArray((data as any).checklists) ? (data as any).checklists : []
   const vendors = Array.isArray((data as any).vendors) ? (data as any).vendors : []
-  const budgetTotal = Number((data as any).budget?.totalBudget ?? (data as any).totalBudget ?? 0)
-  const budgetSpent = Number((data as any).totalSpent ?? 0)
+  const budgetItems: BudgetItem[] = budgetData?.items ?? []
+  const budgetTotal = Number(
+    budgetData?.totalBudget ?? (data as any).budget?.totalBudget ?? (data as any).totalBudget ?? 0,
+  )
+  const budgetSpent = budgetItems
+    .filter((item) => item.isPaid)
+    .reduce((sum, item) => sum + Number(item.actualCost ?? item.estimatedCost ?? 0), 0)
   const checklistProgress = data.checklistProgress ?? 0
   const eventTypeName = (data as any).eventType?.name
 
   return (
     <div className="space-y-6 pb-4">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-violet-200/60 bg-gradient-to-br from-violet-50 via-fuchsia-50 to-rose-50 p-6 shadow-sm dark:border-violet-900/40 dark:from-violet-950/30 dark:via-fuchsia-950/20 dark:to-rose-950/20 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-violet-200/60 bg-linear-to-br from-violet-50 via-fuchsia-50 to-rose-50 p-6 shadow-sm dark:border-violet-900/40 dark:from-violet-950/30 dark:via-fuchsia-950/20 dark:to-rose-950/20 sm:p-8">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-fuchsia-300/30 blur-3xl dark:bg-fuchsia-500/20" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-rose-300/30 blur-3xl dark:bg-rose-500/20" />
 
@@ -396,7 +402,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
 
       {/* Quick Stats */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="rounded-2xl border-violet-200/70 bg-gradient-to-br from-violet-50 to-white dark:border-violet-900/60 dark:from-violet-950/25 dark:to-transparent">
+        <Card className="rounded-2xl border-violet-200/70 bg-linear-to-br from-violet-50 to-white dark:border-violet-900/60 dark:from-violet-950/25 dark:to-transparent">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Progress</p>
             <div className="mt-2 flex items-end gap-2">
@@ -407,7 +413,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-emerald-200/70 bg-gradient-to-br from-emerald-50 to-white dark:border-emerald-900/60 dark:from-emerald-950/25 dark:to-transparent">
+        <Card className="rounded-2xl border-emerald-200/70 bg-linear-to-br from-emerald-50 to-white dark:border-emerald-900/60 dark:from-emerald-950/25 dark:to-transparent">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Checklist</p>
             <p className="mt-2 text-2xl font-bold">{checklistProgress}%</p>
@@ -415,7 +421,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-amber-200/70 bg-gradient-to-br from-amber-50 to-white dark:border-amber-900/60 dark:from-amber-950/25 dark:to-transparent">
+        <Card className="rounded-2xl border-amber-200/70 bg-linear-to-br from-amber-50 to-white dark:border-amber-900/60 dark:from-amber-950/25 dark:to-transparent">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Budget Spent</p>
             <p className="mt-2 text-2xl font-bold">{formatCurrency(budgetSpent)}</p>
@@ -423,7 +429,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-purple-200/70 bg-gradient-to-br from-purple-50 to-white dark:border-purple-900/60 dark:from-purple-950/25 dark:to-transparent">
+        <Card className="rounded-2xl border-purple-200/70 bg-linear-to-br from-purple-50 to-white dark:border-purple-900/60 dark:from-purple-950/25 dark:to-transparent">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Vendors</p>
             <p className="mt-2 text-2xl font-bold">{vendors.length}</p>
@@ -437,7 +443,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
         <h2 className="mb-4 text-lg font-semibold">Planning Tools</h2>
         <div className="relative">
           {/* Flow connector line */}
-          <div className="absolute bottom-0 left-6 top-0 hidden w-0.5 bg-gradient-to-b from-violet-300 via-cyan-300 to-rose-300 dark:from-violet-700 dark:via-cyan-700 dark:to-rose-700 sm:block" />
+          <div className="absolute bottom-0 left-6 top-0 hidden w-0.5 bg-linear-to-b from-violet-300 via-cyan-300 to-rose-300 dark:from-violet-700 dark:via-cyan-700 dark:to-rose-700 sm:block" />
 
           <div className="space-y-3">
             {PLANNING_TOOLS.map((tool, index) => {
@@ -520,8 +526,9 @@ export function EventDetail({ eventId }: { eventId: string }) {
                           </div>
                           <p className="mt-0.5 text-sm text-muted-foreground">{tool.description}</p>
 
-                          {/* Progress bar for set up tools */}
-                          {isSetUp && progress && progress.total > 0 && (
+                          {/* Progress bar for set up tools - exclude e-invite, guestlist, rsvp, memories */}
+                          {isSetUp && progress && progress.total > 0 &&
+                           !['e-invite', 'guestlist', 'rsvp', 'memories'].includes(tool.id) && (
                             <div className="mt-2 flex items-center gap-2">
                               <Progress value={progress.percentage} className="h-1.5 w-24" />
                               <span className="text-xs text-muted-foreground">
@@ -545,7 +552,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
 
       {/* Completion celebration */}
       {overallProgress === 100 && (
-        <Card className="rounded-2xl border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 shadow-sm dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20">
+        <Card className="rounded-2xl border-green-200 bg-linear-to-r from-green-50 to-emerald-50 shadow-sm dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20">
           <CardContent className="flex items-center gap-4 p-6">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
               <PartyPopper className="h-7 w-7 text-green-600" />

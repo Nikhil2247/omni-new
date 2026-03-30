@@ -12,8 +12,13 @@ import type {
   MediaItem,
   CreateMediaItemRequest,
   VendorService,
+  ServiceItem,
   CreateServiceRequest,
   UpdateServiceRequest,
+  CreateServiceItemRequest,
+  UpdateServiceItemRequest,
+  ReorderServiceItemsRequest,
+  ServiceItemPriceStats,
   BusinessLead,
   AcceptLeadResponse,
   BusinessReview,
@@ -288,6 +293,102 @@ export const businessService = {
 
   deleteService: async (id: string): Promise<{ success: boolean }> => {
     const { data } = await apiClient.delete(API_ENDPOINTS.BUSINESS.SERVICE_BY_ID(id))
+    return data
+  },
+
+  // ==================== Service Items ====================
+  getServiceItems: async (
+    serviceId: string,
+    includeInactive?: boolean
+  ): Promise<ApiResponse<ServiceItem[]>> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.BUSINESS.SERVICE_ITEMS(serviceId), {
+      params: { includeInactive },
+    })
+    return data
+  },
+
+  getServiceItem: async (
+    serviceId: string,
+    itemId: string
+  ): Promise<ApiResponse<ServiceItem>> => {
+    const { data } = await apiClient.get(
+      API_ENDPOINTS.BUSINESS.SERVICE_ITEM_BY_ID(serviceId, itemId)
+    )
+    return data
+  },
+
+  createServiceItem: async (
+    serviceId: string,
+    payload: CreateServiceItemRequest
+  ): Promise<ApiResponse<ServiceItem>> => {
+    const { data } = await apiClient.post(
+      API_ENDPOINTS.BUSINESS.SERVICE_ITEMS(serviceId),
+      payload
+    )
+    return data
+  },
+
+  createServiceItemsBulk: async (
+    serviceId: string,
+    items: CreateServiceItemRequest[]
+  ): Promise<ApiResponse<ServiceItem[]>> => {
+    const { data } = await apiClient.post(
+      API_ENDPOINTS.BUSINESS.SERVICE_ITEMS_BULK(serviceId),
+      items
+    )
+    return data
+  },
+
+  updateServiceItem: async (
+    serviceId: string,
+    itemId: string,
+    payload: UpdateServiceItemRequest
+  ): Promise<ApiResponse<ServiceItem>> => {
+    const { data } = await apiClient.put(
+      API_ENDPOINTS.BUSINESS.SERVICE_ITEM_BY_ID(serviceId, itemId),
+      payload
+    )
+    return data
+  },
+
+  deleteServiceItem: async (
+    serviceId: string,
+    itemId: string
+  ): Promise<{ success: boolean }> => {
+    const { data } = await apiClient.delete(
+      API_ENDPOINTS.BUSINESS.SERVICE_ITEM_BY_ID(serviceId, itemId)
+    )
+    return data
+  },
+
+  syncServiceItems: async (
+    serviceId: string,
+    items: (CreateServiceItemRequest & { id?: string })[]
+  ): Promise<ApiResponse<ServiceItem[]>> => {
+    const { data } = await apiClient.put(
+      API_ENDPOINTS.BUSINESS.SERVICE_ITEMS_SYNC(serviceId),
+      items
+    )
+    return data
+  },
+
+  reorderServiceItems: async (
+    serviceId: string,
+    itemIds: string[]
+  ): Promise<ApiResponse<ServiceItem[]>> => {
+    const { data } = await apiClient.patch(
+      API_ENDPOINTS.BUSINESS.SERVICE_ITEMS_REORDER(serviceId),
+      { itemIds }
+    )
+    return data
+  },
+
+  getServiceItemStats: async (
+    serviceId: string
+  ): Promise<ApiResponse<ServiceItemPriceStats>> => {
+    const { data } = await apiClient.get(
+      API_ENDPOINTS.BUSINESS.SERVICE_ITEMS_STATS(serviceId)
+    )
     return data
   },
 

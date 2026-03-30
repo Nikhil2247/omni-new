@@ -20,6 +20,12 @@ npx prisma db push
 # 3. Start development server
 npm run start:dev
 
+# For lower CPU usage (native watch events, may fail on some Windows/Docker setups):
+npm run start:dev:fast
+
+# If auto-reload does not detect file changes on Windows/Docker mounts:
+npm run start:dev:poll
+
 # 4. Access Swagger docs
 # http://localhost:3000/api/docs
 ```

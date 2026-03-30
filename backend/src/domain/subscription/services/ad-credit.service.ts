@@ -288,6 +288,14 @@ export class AdCreditService {
   }
 
   /**
+   * Check if vendor has already claimed monthly credits this month
+   */
+  async hasClaimedThisMonth(vendorProfileId: string): Promise<boolean> {
+    const lastGrant = await this.adCreditRepository.getLastMonthlyGrant(vendorProfileId);
+    return lastGrant !== null;
+  }
+
+  /**
    * Get transaction history
    */
   async getHistory(

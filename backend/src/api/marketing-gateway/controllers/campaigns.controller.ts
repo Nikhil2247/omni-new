@@ -38,7 +38,7 @@ import {
   BulkRejectCampaignsDto,
   MarketingCampaignListResponseDto,
   MarketingCampaignResponseDto,
-  CampaignStatusCountsDto,
+  MarketingCampaignStatusCountsDto,
   CampaignApprovalResultDto,
   BulkOperationResultDto,
   CampaignPerformanceDto,
@@ -125,7 +125,7 @@ export class CampaignsController {
   @ApiResponse({
     status: 200,
     description: 'Returns count of campaigns by status',
-    type: CampaignStatusCountsDto,
+    type: MarketingCampaignStatusCountsDto,
   })
   async getCampaignCounts(): Promise<Record<string, number>> {
     this.logger.log('Marketing team fetching campaign status counts');

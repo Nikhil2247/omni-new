@@ -19,6 +19,14 @@ function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
+function getSpentAmount(items: Array<{ isPaid?: boolean; actualCost?: number | null; estimatedCost?: number | null }> = []): number {
+  return items.reduce((sum, item) => {
+    if (!item?.isPaid) return sum
+    const paidAmount = Number(item.actualCost ?? item.estimatedCost ?? 0)
+    return sum + (Number.isFinite(paidAmount) ? paidAmount : 0)
+  }, 0)
+}
+
 export default function BudgetPage() {
   const params = useParams()
   const eventId = params.eventId as string
@@ -35,7 +43,7 @@ export default function BudgetPage() {
   }
 
   const totalBudget = Number(budget?.totalBudget || 0)
-  const totalSpent = budget?.items?.reduce((sum: number, item: any) => sum + Number(item.actualCost || 0), 0) || 0
+  const totalSpent = getSpentAmount((budget?.items as Array<{ isPaid?: boolean; actualCost?: number | null; estimatedCost?: number | null }>) || [])
   const remaining = totalBudget - totalSpent
   const itemCount = budget?.items?.length || 0
 

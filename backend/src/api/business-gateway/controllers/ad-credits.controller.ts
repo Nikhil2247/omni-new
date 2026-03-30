@@ -30,12 +30,14 @@ import {
 } from '../../../core/auth/decorators/current-user.decorator';
 import { AdCreditService } from '../../../domain/subscription/services/ad-credit.service';
 import { VendorProfileService } from '../../../domain/catalog/services/vendor-profile.service';
+import { SubscriptionService } from '../../../domain/subscription/services/subscription.service';
 import {
   AdCreditBalanceDto,
   AdCreditTransactionDto,
   PurchaseCreditsDto,
   CreditSpendingSummaryDto,
 } from '../../../domain/subscription/dto/campaign.dto';
+import { PlanTier } from '@prisma/client';
 
 @ApiTags('Ad Credits')
 @ApiBearerAuth()
@@ -46,6 +48,7 @@ export class AdCreditsController {
   constructor(
     private readonly adCreditService: AdCreditService,
     private readonly vendorProfileService: VendorProfileService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   /**
@@ -69,13 +72,35 @@ export class AdCreditsController {
     description: 'Balance retrieved successfully',
     type: AdCreditBalanceDto,
   })
-  async getBalance(@CurrentUser() user: CurrentUserData): Promise<AdCreditBalanceDto> {
+  async getBalance(@CurrentUser() user: CurrentUserData): Promise<AdCreditBalanceDto & { canClaimMonthly: boolean; nextClaimDate?: string }> {
     const vendorProfileId = await this.getVendorProfileId(user.id);
     const balance = await this.adCreditService.getBalance(vendorProfileId);
+
+    // Check if monthly credits can be claimed
+    const subscription = await this.subscriptionService.findActiveByVendorProfile(vendorProfileId);
+    let canClaimMonthly = false;
+    let nextClaimDate: string | undefined;
+
+    if (subscription) {
+      const planTier = subscription.plan?.tier as PlanTier;
+      if (planTier === 'PROFESSIONAL' || planTier === 'ENTERPRISE') {
+        const hasClaimedThisMonth = await this.adCreditService.hasClaimedThisMonth(vendorProfileId);
+        canClaimMonthly = !hasClaimedThisMonth;
+
+        if (hasClaimedThisMonth) {
+          // Calculate next month's first day
+          const now = new Date();
+          const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          nextClaimDate = nextMonth.toISOString();
+        }
+      }
+    }
 
     return {
       balance,
       vendorProfileId,
+      canClaimMonthly,
+      nextClaimDate,
     };
   }
 
@@ -238,5 +263,76 @@ export class AdCreditsController {
       currency: 'INR',
       message: 'Use the payment endpoint to complete purchase',
     };
+  }
+
+  /**
+   * Claim monthly subscription credits
+   * Allows vendors to manually trigger their monthly credit grant if not already received
+   */
+  @Post('claim-monthly')
+  @ApiOperation({ summary: 'Claim monthly subscription credits' })
+  @ApiResponse({
+    status: 200,
+    description: 'Monthly credits claimed successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Credits already claimed or no active subscription',
+  })
+  async claimMonthlyCredits(
+    @CurrentUser() user: CurrentUserData,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    creditsGranted?: number;
+    newBalance?: number;
+  }> {
+    const vendorProfileId = await this.getVendorProfileId(user.id);
+
+    // Get active subscription for vendor
+    const subscription = await this.subscriptionService.findActiveByVendorProfile(
+      vendorProfileId,
+    );
+
+    if (!subscription) {
+      throw new BadRequestException(
+        'No active subscription found. Subscribe to a paid plan to get monthly credits.',
+      );
+    }
+
+    const planTier = subscription.plan?.tier as PlanTier;
+
+    // Check if plan tier qualifies for monthly credits
+    if (planTier !== 'PROFESSIONAL' && planTier !== 'ENTERPRISE') {
+      throw new BadRequestException(
+        `Your ${subscription.plan?.name || 'current'} plan does not include monthly ad credits. Upgrade to Professional or Enterprise.`,
+      );
+    }
+
+    try {
+      // Attempt to grant monthly credits (will check if already granted this month)
+      await this.adCreditService.grantMonthlyCredits(vendorProfileId, planTier);
+
+      // Get updated balance
+      const newBalance = await this.adCreditService.getBalance(vendorProfileId);
+
+      const creditAmount = planTier === 'PROFESSIONAL' ? 2000 : 5000;
+
+      return {
+        success: true,
+        message: `Monthly ${planTier.toLowerCase()} plan credits claimed successfully!`,
+        creditsGranted: creditAmount,
+        newBalance,
+      };
+    } catch (error) {
+      // If credits were already granted this month, this will fail silently in the service
+      const newBalance = await this.adCreditService.getBalance(vendorProfileId);
+
+      return {
+        success: false,
+        message: 'Monthly credits already claimed for this period.',
+        newBalance,
+      };
+    }
   }
 }
