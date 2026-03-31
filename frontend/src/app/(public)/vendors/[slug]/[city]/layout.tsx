@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { JsonLd } from '@/components/common/JsonLd'
 import type { JsonLdSchema } from '@/lib/seo/types'
-import { categoryKeywords, indianCities, type IndianCity } from '@/lib/seo/keywords'
+import { categoryKeywords, indianCities } from '@/lib/seo/keywords'
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com'
 
@@ -188,9 +188,9 @@ function buildCitySchema(
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ category: string; city: string }>
+  params: Promise<{ slug: string; city: string }>
 }): Promise<Metadata> {
-  const { category, city } = await params
+  const { slug: category, city } = await params
 
   // Validate city
   if (!validCities.has(city.toLowerCase())) {
@@ -216,9 +216,9 @@ export default async function VendorCityCategoryLayout({
   params,
 }: {
   children: React.ReactNode
-  params: Promise<{ category: string; city: string }>
+  params: Promise<{ slug: string; city: string }>
 }) {
-  const { category, city } = await params
+  const { slug: category, city } = await params
 
   // Validate city
   if (!validCities.has(city.toLowerCase())) {

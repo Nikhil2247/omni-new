@@ -80,9 +80,9 @@ const otherCities = indianCities.slice(0, 12)
 export default async function VendorCityCategoryPage({
   params,
 }: {
-  params: Promise<{ category: string; city: string }>
+  params: Promise<{ slug: string; city: string }>
 }) {
-  const { category, city } = await params
+  const { slug: category, city } = await params
 
   // Validate city
   if (!validCities.has(city.toLowerCase())) {
@@ -238,11 +238,11 @@ export async function generateStaticParams() {
   const categories = Object.keys(categoryDisplayConfig)
   const cities = indianCities.slice(0, 10).map(c => c.toLowerCase().replace(/\s+/g, '-'))
 
-  const params: Array<{ category: string; city: string }> = []
+  const params: Array<{ slug: string; city: string }> = []
 
   for (const category of categories) {
     for (const city of cities) {
-      params.push({ category, city })
+      params.push({ slug: category, city })
     }
   }
 
