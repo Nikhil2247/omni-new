@@ -41,6 +41,7 @@ export function useVendorFollowStatus(vendorProfileId: string, enabled = true) {
     queryKey: followKeys.status(vendorProfileId),
     queryFn: () => vendorFollowService.status(vendorProfileId),
     enabled: enabled && !!vendorProfileId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   })
 }
 

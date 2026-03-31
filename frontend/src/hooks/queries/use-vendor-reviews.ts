@@ -13,6 +13,7 @@ export function useVendorReviews(vendorProfileId: string) {
     queryKey: reviewKeys.vendor(vendorProfileId),
     queryFn: () => vendorReviewService.listForVendor(vendorProfileId),
     enabled: !!vendorProfileId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }
 

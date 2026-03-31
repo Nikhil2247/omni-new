@@ -922,7 +922,8 @@ export default function VendorPageClient({
                                         alt={coverImage.altText || portfolio.title || 'Album'}
                                         fill
                                         unoptimized={true}
-                                        priority={idx < 3}
+                                        loading={idx < 2 ? 'eager' : 'lazy'}
+                                        sizes="(max-width: 640px) 65vw, (max-width: 1024px) 50vw, 33vw"
                                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                                       />
                                       {/* Photo count overlay */}
@@ -996,7 +997,8 @@ export default function VendorPageClient({
                                   alt={media.altText || 'Photo'}
                                   fill
                                   unoptimized={true}
-                                  priority={idx < 6}
+                                  loading={idx < 4 ? 'eager' : 'lazy'}
+                                  sizes="(max-width: 640px) 25vw, 20vw"
                                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                                 {media.type === 'VIDEO' && (
