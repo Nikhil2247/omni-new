@@ -22,6 +22,9 @@ Project-specific skills for backend/frontend contract verification, security har
 - `flow-optimizer`  
   Optimize end-to-end business/user flows for speed and completion reliability.
 
+- `seo-expert`  
+  Improve technical SEO, on-page relevance, schema, and ranking competitiveness.
+
 ## Suggested Usage
 
 Use one skill at a time for focused work, or start with the master gate:
@@ -35,6 +38,7 @@ Or run manually in this order:
 3. `reliability-robustness-engineer`
 4. `performance-optimizer`
 5. `flow-optimizer`
+6. `seo-expert`
 
 This order minimizes regressions by fixing API correctness and safety first, then tuning resilience and performance.
 

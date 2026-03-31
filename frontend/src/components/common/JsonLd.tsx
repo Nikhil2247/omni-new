@@ -6,12 +6,15 @@
 import { generateJsonLd } from '@/lib/seo/metadata';
 import type { JsonLdSchema } from '@/lib/seo/types';
 
+// Extended type to allow custom schema objects beyond the strict types
+type ExtendedJsonLdSchema = JsonLdSchema | Record<string, unknown>;
+
 interface JsonLdProps {
-  data: JsonLdSchema | JsonLdSchema[];
+  data: ExtendedJsonLdSchema | ExtendedJsonLdSchema[];
 }
 
 export function JsonLd({ data }: JsonLdProps) {
-  const jsonLdString = generateJsonLd(data);
+  const jsonLdString = generateJsonLd(data as JsonLdSchema | JsonLdSchema[]);
 
   return (
     <script

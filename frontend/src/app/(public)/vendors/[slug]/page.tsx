@@ -5,6 +5,7 @@ import { pageMetadata, generateJsonLd } from '@/lib/seo/metadata'
 import { publicService } from '@/lib/api/services/public.service'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
 import type { JsonLdSchema } from '@/lib/seo/types'
+import { getVendorKeywords, categoryKeywords } from '@/lib/seo/keywords'
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com'
 
@@ -54,42 +55,87 @@ const getVendorBySlug = cache(async (slug: string | undefined): Promise<VendorPr
 })
 
 function buildDescription(vendor: VendorProfile) {
+  const extendedVendor = vendor as VendorWithSeoFields
+  const city = extendedVendor.address?.city
+  const categoryName = vendor.category?.name
+
+  // Build rating text with review count for social proof
   const ratingText =
     typeof vendor.averageRating === 'number' && (vendor.reviewsCount || 0) > 0
-      ? ` Rated ${vendor.averageRating.toFixed(1)}/5 from ${vendor.reviewsCount} reviews.`
+      ? ` Rated ${vendor.averageRating.toFixed(1)}/5 from ${vendor.reviewsCount} verified reviews.`
       : ''
 
-  if (vendor.tagline) return vendor.tagline
+  // Build location text
+  const locationText = city ? ` in ${city}` : ''
+
+  // If vendor has tagline, use it with enhancements
+  if (vendor.tagline) {
+    const base = vendor.tagline.length > 100 ? vendor.tagline.slice(0, 97) + '...' : vendor.tagline
+    return `${base}${ratingText} Book on Omnicassion.`
+  }
+
+  // If vendor has description, create optimized summary
   if (vendor.description) {
-    const summary = vendor.description.length > 145
-      ? vendor.description.slice(0, 142) + '...'
+    const maxLen = 110 - ratingText.length
+    const summary = vendor.description.length > maxLen
+      ? vendor.description.slice(0, maxLen - 3) + '...'
       : vendor.description
     return `${summary}${ratingText}`
   }
-  const categoryName = vendor.category?.name ? ` for ${vendor.category.name}` : ''
-  return `Discover ${vendor.businessName}${categoryName} on Omnicassion. View services, portfolios, and contact details.${ratingText}`
+
+  // Default SEO-optimized description
+  const serviceType = categoryName || 'event services'
+  return `Book ${vendor.businessName} for ${serviceType}${locationText}. View portfolio, pricing, and reviews.${ratingText} Request a quote on Omnicassion.`
 }
 
 function buildKeywords(vendor: VendorProfile) {
   const extendedVendor = vendor as VendorWithSeoFields
-  const city = extendedVendor.address?.city
-  const state = extendedVendor.address?.state
+  const city = extendedVendor.address?.city || undefined
+  const state = extendedVendor.address?.state || undefined
   const categoryName = vendor.category?.name
+  const categorySlug = vendor.category?.slug
 
+  // Use centralized keyword generator for comprehensive coverage
+  if (categorySlug) {
+    return getVendorKeywords(
+      vendor.businessName,
+      categorySlug,
+      city,
+      state
+    )
+  }
+
+  // Fallback for vendors without category
   const keywords = [
+    // Brand keywords
     vendor.businessName,
-    categoryName ? `${categoryName} vendor` : null,
-    categoryName ? `${categoryName} services` : null,
-    categoryName ? `best ${categoryName} near me` : null,
-    city && categoryName ? `${categoryName} in ${city}` : null,
-    city && state && categoryName ? `${categoryName} ${city} ${state}` : null,
-    'event vendors',
-    'wedding vendors',
-    'vendor booking India',
-    'Omnicassion',
+    `${vendor.businessName} reviews`,
+    `${vendor.businessName} portfolio`,
+    `${vendor.businessName} prices`,
+    `${vendor.businessName} contact`,
+
+    // Category keywords
+    categoryName ? `${categoryName}` : null,
+    categoryName ? `best ${categoryName}` : null,
+    categoryName ? `${categoryName} near me` : null,
+    categoryName ? `top ${categoryName} India` : null,
+    categoryName ? `hire ${categoryName}` : null,
+    categoryName ? `book ${categoryName}` : null,
+
+    // Location-based keywords (critical for local SEO)
+    city ? `${categoryName || 'vendor'} in ${city}` : null,
+    city ? `best ${categoryName || 'vendors'} ${city}` : null,
+    city && state ? `${categoryName || 'vendor'} ${city} ${state}` : null,
+    city ? `wedding services ${city}` : null,
+
+    // Generic high-intent keywords
+    'wedding vendors India',
+    'event services booking',
+    'verified vendors Omnicassion',
+    'book vendor online',
   ].filter(Boolean) as string[]
 
-  return Array.from(new Set(keywords))
+  return Array.from(new Set(keywords)).slice(0, 20)
 }
 
 function toAbsoluteHttpUrl(value?: string | null): string | null {
@@ -152,16 +198,34 @@ function computePriceRange(vendor: VendorWithSeoFields): string | undefined {
   return `${currency} ${Math.round(min)}-${Math.round(max)}`
 }
 
+// Map category slugs to more specific schema types for richer results
+function getSchemaType(categorySlug?: string): string {
+  const schemaMap: Record<string, string> = {
+    'photography': 'Photographer',
+    'videography': 'ProfessionalService',
+    'catering': 'FoodService',
+    'venues': 'EventVenue',
+    'entertainment': 'EntertainmentBusiness',
+    'florist': 'Florist',
+    'makeup-hair': 'BeautySalon',
+    'wedding-planning': 'ProfessionalService',
+  }
+  return schemaMap[categorySlug?.toLowerCase() || ''] || 'LocalBusiness'
+}
+
 function buildJsonLd(vendor: VendorProfile, slug: string): JsonLdSchema[] {
   const extendedVendor = vendor as VendorWithSeoFields
   const canonicalUrl = `${SITE_URL}/vendors/${slug}`
   const images = collectVendorImages(extendedVendor)
   const address = extendedVendor.address
   const services = (extendedVendor.services || []).filter((service) => service?.isActive !== false)
+  const categorySlug = vendor.category?.slug
+  const schemaType = getSchemaType(categorySlug)
 
+  // Main LocalBusiness schema with specific type
   const localBusinessSchema = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
+    '@type': schemaType,
     '@id': `${canonicalUrl}#business`,
     name: vendor.businessName,
     description: vendor.description || vendor.tagline || '',
@@ -170,8 +234,15 @@ function buildJsonLd(vendor: VendorProfile, slug: string): JsonLdSchema[] {
     ...(vendor.contactPhone && { telephone: vendor.contactPhone }),
     ...(vendor.contactEmail && { email: vendor.contactEmail }),
     ...(vendor.website && { sameAs: [vendor.website] }),
-    ...(vendor.verifiedAt && { hasCredential: 'Verified Vendor on Omnicassion' }),
+    ...(vendor.verifiedAt && {
+      hasCredential: {
+        '@type': 'EducationalOccupationalCredential',
+        credentialCategory: 'Verification',
+        name: 'Verified Vendor on Omnicassion',
+      }
+    }),
     ...(computePriceRange(extendedVendor) && { priceRange: computePriceRange(extendedVendor) }),
+    // Add aggregate rating
     ...(typeof vendor.averageRating === 'number' && (vendor.reviewsCount || 0) > 0 && {
       aggregateRating: {
         '@type': 'AggregateRating',
@@ -181,6 +252,7 @@ function buildJsonLd(vendor: VendorProfile, slug: string): JsonLdSchema[] {
         worstRating: 1,
       },
     }),
+    // Add address with geo coordinates if available
     ...(address && (address.street || address.addressLine1 || address.city) && {
       address: {
         '@type': 'PostalAddress',
@@ -190,9 +262,14 @@ function buildJsonLd(vendor: VendorProfile, slug: string): JsonLdSchema[] {
         ...(address.city && { addressLocality: address.city }),
         ...(address.state && { addressRegion: address.state }),
         ...(address.postalCode && { postalCode: address.postalCode }),
-        ...(address.country && { addressCountry: address.country }),
+        addressCountry: address.country || 'IN',
+      },
+      areaServed: {
+        '@type': 'City',
+        name: address.city || 'India',
       },
     }),
+    // Add services as offers
     ...(services.length > 0 && {
       makesOffer: services.slice(0, 6).map((service) => ({
         '@type': 'Offer',
@@ -203,10 +280,18 @@ function buildJsonLd(vendor: VendorProfile, slug: string): JsonLdSchema[] {
         ...(service.currency ? { priceCurrency: service.currency.toUpperCase() } : { priceCurrency: 'INR' }),
         availability: 'https://schema.org/InStock',
         url: canonicalUrl,
+        seller: {
+          '@type': 'Organization',
+          name: vendor.businessName,
+        },
       })),
     }),
+    // Additional properties for better ranking
+    knowsAbout: vendor.category?.name ? [vendor.category.name, 'Wedding Services', 'Event Planning'] : ['Event Services'],
+    slogan: vendor.tagline || undefined,
   }
 
+  // Breadcrumb schema with category
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -223,16 +308,65 @@ function buildJsonLd(vendor: VendorProfile, slug: string): JsonLdSchema[] {
         name: 'Vendors',
         item: `${SITE_URL}/vendors`,
       },
-      {
+      ...(vendor.category?.slug ? [{
         '@type': 'ListItem',
         position: 3,
+        name: vendor.category.name,
+        item: `${SITE_URL}/vendors/category/${vendor.category.slug}`,
+      }] : []),
+      {
+        '@type': 'ListItem',
+        position: vendor.category?.slug ? 4 : 3,
         name: vendor.businessName,
         item: canonicalUrl,
       },
     ],
   }
 
-  return [localBusinessSchema, breadcrumbSchema] as JsonLdSchema[]
+  // Service schema for individual services
+  const serviceSchemas = services.slice(0, 3).map((service) => ({
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: service.name,
+    provider: {
+      '@type': schemaType,
+      name: vendor.businessName,
+      url: canonicalUrl,
+    },
+    areaServed: {
+      '@type': 'Country',
+      name: 'India',
+    },
+    ...(typeof service.startingPrice === 'number' && service.startingPrice > 0 && {
+      offers: {
+        '@type': 'Offer',
+        price: service.startingPrice,
+        priceCurrency: service.currency?.toUpperCase() || 'INR',
+        availability: 'https://schema.org/InStock',
+      },
+    }),
+    serviceType: vendor.category?.name || 'Event Services',
+  }))
+
+  // WebPage schema for additional context
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    name: `${vendor.businessName} - ${vendor.category?.name || 'Event Vendor'}`,
+    description: vendor.description || vendor.tagline || `${vendor.businessName} on Omnicassion`,
+    url: canonicalUrl,
+    mainEntity: {
+      '@id': `${canonicalUrl}#business`,
+    },
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'Omnicassion',
+      url: SITE_URL,
+    },
+    ...(images.length > 0 && { primaryImageOfPage: images[0] }),
+  }
+
+  return [localBusinessSchema, breadcrumbSchema, webPageSchema, ...serviceSchemas] as JsonLdSchema[]
 }
 
 export async function generateMetadata(

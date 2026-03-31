@@ -20,31 +20,84 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = generateMetadata({
-  title: "Omnicassion - India's Premier All-in-One Planning and Social Platform",
+  title: "Omnicassion - India's #1 Wedding & Event Planning Platform | Book Verified Vendors",
   description:
-    "Omnicassion is India's premier all-in-one planning and social platform for weddings, celebrations, and events. Discover verified professionals, compare services, manage planning, and connect socially in one unified experience.",
+    "Plan your dream Indian wedding with Omnicassion. Book verified photographers, venues, caterers, decorators & makeup artists. Free planning tools, budget calculator, guest list manager. Trusted by 50,000+ couples. Compare prices & read reviews.",
   keywords: [
-    "all-in-one planning and social platform India",
-    "India event and social planning platform",
-    "event planning India",
-    "wedding planning",
-    "vendor booking",
-    "event management platform",
-    "social planning platform",
+    // Primary Brand Keywords
+    "omnicassion",
+    "omnicassion India",
+    "omnicassion wedding platform",
+
+    // High Intent Wedding Keywords
+    "wedding planning India",
     "wedding vendors India",
-    "party planning services",
-    "corporate event management",
-    "event marketplace",
-    "wedding services",
-    "venue booking India",
-    "catering services",
-    "wedding photographers",
-    "event decorators",
+    "book wedding vendors",
+    "wedding vendors near me",
+    "best wedding vendors",
+    "verified wedding vendors",
+    "wedding vendor marketplace",
+
+    // Category Keywords
+    "wedding photographers India",
+    "wedding venues near me",
+    "wedding caterers India",
+    "wedding decorators",
+    "bridal makeup artists India",
+    "mehndi artists near me",
     "wedding planners India",
-    "event organizers",
-    "budget planning",
-    "guest list management",
-    "event timeline",
+    "wedding DJs India",
+    "wedding videographers",
+    "wedding florists",
+
+    // Location Keywords
+    "wedding vendors Mumbai",
+    "wedding vendors Delhi",
+    "wedding vendors Bangalore",
+    "wedding photographers Mumbai",
+    "wedding venues Delhi",
+    "wedding planners Bangalore",
+    "destination wedding India",
+    "destination wedding Goa",
+    "destination wedding Udaipur",
+
+    // Event Types
+    "Indian wedding planning",
+    "Hindu wedding vendors",
+    "Muslim wedding vendors",
+    "Christian wedding India",
+    "Sikh wedding planners",
+    "South Indian wedding",
+    "North Indian wedding",
+    "engagement party vendors",
+    "sangeet event planners",
+    "mehndi ceremony vendors",
+    "reception planning",
+
+    // Tools & Features
+    "wedding budget calculator",
+    "wedding checklist India",
+    "wedding guest list manager",
+    "wedding timeline planner",
+    "RSVP manager online",
+    "digital wedding invitations",
+    "e-invite maker free",
+
+    // Long-tail & Questions
+    "how to plan Indian wedding",
+    "wedding planning checklist India",
+    "average wedding cost India",
+    "best wedding vendors with reviews",
+    "compare wedding vendor prices",
+    "affordable wedding vendors",
+
+    // Event Planning
+    "event planning India",
+    "event management platform",
+    "corporate event vendors",
+    "birthday party planners",
+    "anniversary celebration vendors",
+    "party planning services India",
   ],
   canonical: process.env.NEXT_PUBLIC_APP_URL || "https://omnicassion.com",
 });

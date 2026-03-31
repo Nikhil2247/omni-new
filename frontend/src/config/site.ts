@@ -30,7 +30,7 @@ export const siteConfig = {
   },
   contact: {
     email: "hello@omnicassion.com",
-    phone: "+91-XXX-XXXXXXX",
+    supportEmail: "support@omnicassion.com",
     address: {
       city: "Mumbai",
       state: "Maharashtra",

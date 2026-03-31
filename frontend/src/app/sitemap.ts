@@ -172,6 +172,76 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.8,
     },
+    // For Vendors - High value conversion page
+    {
+      url: `${SITE_URL}/for-vendors`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    // Legal & Trust pages
+    {
+      url: `${SITE_URL}/privacy`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${SITE_URL}/terms`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${SITE_URL}/support`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    // Tool pages - High SEO value for long-tail keywords
+    {
+      url: `${SITE_URL}/event-budget-calculator`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/event-checklist-tool`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/event-timeline-generator`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/wedding-guest-list`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/rsvp-manager`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${SITE_URL}/digital-invite-generator`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    // Quote page
+    {
+      url: `${SITE_URL}/quote`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
   ];
 
   // Auth pages
@@ -190,8 +260,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Vendor category pages (example categories)
-  const categoryRoutes: MetadataRoute.Sitemap = [
+  // Vendor category pages - Comprehensive list for all service types
+  const vendorCategories = [
     'photography',
     'videography',
     'catering',
@@ -202,12 +272,45 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     'makeup-hair',
     'mehndi-artists',
     'wedding-planning',
-  ].map((category) => ({
+    'invitation',
+    'jewellery',
+    'bridal-wear',
+    'groom-wear',
+    'pandits',
+    'choreographers',
+    'travel-honeymoon',
+    'wedding-cakes',
+    'bar-services',
+    'transportation',
+  ]
+
+  const categoryRoutes: MetadataRoute.Sitemap = vendorCategories.map((category) => ({
     url: `${SITE_URL}/vendors/category/${category}`,
     lastModified: currentDate,
     changeFrequency: 'daily' as const,
     priority: 0.9,
   }));
+
+  // City-specific category pages - Critical for local SEO rankings
+  const topCities = [
+    'mumbai', 'delhi', 'bangalore', 'hyderabad', 'chennai',
+    'kolkata', 'pune', 'ahmedabad', 'jaipur', 'lucknow',
+    'chandigarh', 'goa', 'udaipur', 'kochi', 'gurgaon',
+  ]
+
+  const citySpecificRoutes: MetadataRoute.Sitemap = []
+  // Only create city pages for main categories to avoid sitemap bloat
+  const mainCategories = vendorCategories.slice(0, 12)
+  for (const category of mainCategories) {
+    for (const city of topCities) {
+      citySpecificRoutes.push({
+        url: `${SITE_URL}/vendors/${category}/${city}`,
+        lastModified: currentDate,
+        changeFrequency: 'weekly' as const,
+        priority: 0.85,
+      })
+    }
+  }
 
   // Onboarding pages
   const onboardingRoutes: MetadataRoute.Sitemap = [
@@ -237,6 +340,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...staticRoutes,
     ...authRoutes,
     ...categoryRoutes,
+    ...citySpecificRoutes,
     ...onboardingRoutes,
     ...dynamicVendorRoutes,
     ...dynamicBlogRoutes,

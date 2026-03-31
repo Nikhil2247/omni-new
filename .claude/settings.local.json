@@ -42,7 +42,13 @@
       "WebFetch(domain:docs.google.com)",
       "WebSearch",
       "Bash(npx:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Skill(seo-expert)",
+      "Bash(find \"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\src\\\\app\\\\\\(public\\)\" -name \"layout.tsx\")",
+      "Bash(dir /b \"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\src\\\\app\\\\\\(public\\)\")",
+      "Bash(npm run lint)",
+      "Bash(del /f \"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\.next\\\\lock\")",
+      "Bash(cmd /c \"del /f \"\"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\.next\\\\lock\"\" 2>nul\")"
     ]
   }
 }
