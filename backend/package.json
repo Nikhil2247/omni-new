@@ -32,7 +32,9 @@
     "migrate:full": "npm run migrate:extract && npm run migrate:mongodb",
     "notifications:clear": "ts-node scripts/clear-all-notifications.ts",
     "blogs:vendor:audit": "ts-node scripts/normalize-vendor-blogs.ts",
-    "blogs:vendor:normalize": "ts-node scripts/normalize-vendor-blogs.ts apply"
+    "blogs:vendor:normalize": "ts-node scripts/normalize-vendor-blogs.ts apply",
+    "blogs:events:preview": "ts-node scripts/generate-event-category-blogs.ts preview",
+    "blogs:events:generate": "ts-node scripts/generate-event-category-blogs.ts generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
