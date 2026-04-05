@@ -69,9 +69,10 @@ export default function MarketingCampaignsPage() {
   useEffect(() => {
     track('marketing:campaigns:page_view', {
       totalCampaigns: data?.meta?.total || data?.data?.length || 0,
-      filters: { status, type },
+      filterStatus: status,
+      filterType: type,
     })
-  }, [data, track])
+  }, [data, status, type, track])
 
   const handleOpenEdit = (campaign: MarketingCampaign) => {
     setEditingCampaign(campaign)
