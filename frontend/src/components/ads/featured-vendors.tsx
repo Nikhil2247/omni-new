@@ -22,8 +22,6 @@ function FeaturedVendorCard({ listing }: { listing: FeaturedListing }) {
   const recordClick = useRecordBoostClick()
   const impressionRecorded = useRef(false)
 
-  const vendor = listing.vendor
-
   useEffect(() => {
     if (!impressionRecorded.current && listing.campaignId) {
       recordImpression.mutate(listing.campaignId)
@@ -38,13 +36,12 @@ function FeaturedVendorCard({ listing }: { listing: FeaturedListing }) {
   }
 
   const averageRating =
-    typeof vendor.averageRating === 'number' ? vendor.averageRating.toFixed(1) : null
-  const reviewCount = vendor.reviewsCount ?? 0
-  const isVerified = !!vendor.verifiedAt
+    typeof listing.averageRating === 'number' ? listing.averageRating.toFixed(1) : null
+  const reviewCount = listing.totalReviews ?? 0
 
   return (
     <Link
-      href={`/vendors/${vendor.slug}`}
+      href={`/vendors/${listing.slug}`}
       onClick={handleClick}
       className="group relative bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/20"
     >
@@ -58,11 +55,11 @@ function FeaturedVendorCard({ listing }: { listing: FeaturedListing }) {
 
       {/* Image Section */}
       <div className="relative overflow-hidden">
-        {vendor.profilePhotoUrl ? (
+        {listing.profilePhotoUrl ? (
           <div className="w-full aspect-3/2 relative">
             <Image
-              src={vendor.profilePhotoUrl}
-              alt={vendor.businessName || 'Vendor'}
+              src={listing.profilePhotoUrl}
+              alt={listing.businessName || 'Vendor'}
               fill
               unoptimized
               className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -72,7 +69,7 @@ function FeaturedVendorCard({ listing }: { listing: FeaturedListing }) {
         ) : (
           <div className="w-full aspect-3/2 bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 text-3xl font-bold text-primary-foreground shadow-lg">
-              {vendor.businessName?.charAt(0) || 'V'}
+              {listing.businessName?.charAt(0) || 'V'}
             </div>
           </div>
         )}
@@ -85,7 +82,7 @@ function FeaturedVendorCard({ listing }: { listing: FeaturedListing }) {
       <div className="p-4">
         <div className="flex items-start justify-between mb-1 gap-3">
           <h3 className="text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-300 flex-1 min-w-0 line-clamp-1">
-            {vendor.businessName || 'Unnamed Vendor'}
+            {listing.businessName || 'Unnamed Vendor'}
           </h3>
 
           <div className="flex items-center gap-1 shrink-0">
@@ -98,23 +95,21 @@ function FeaturedVendorCard({ listing }: { listing: FeaturedListing }) {
         </div>
 
         <p className="text-muted-foreground text-xs mb-2 line-clamp-2 leading-relaxed">
-          {vendor.tagline || vendor.description || 'Professional service provider'}
+          {listing.tagline || 'Professional service provider'}
         </p>
 
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center text-muted-foreground text-xs min-w-0 flex-1">
             <MapPin className="w-3 h-3 mr-1 text-muted-foreground/60 shrink-0" />
             <span className="truncate">
-              {vendor.address?.city?.name || 'Contact for location'}
+              Contact for location
             </span>
           </div>
 
-          {isVerified && (
-            <div className="flex items-center text-green-600 text-xs shrink-0">
-              <CheckCircle2 className="w-3 h-3 mr-0.5" />
-              <span className="font-medium">Verified</span>
-            </div>
-          )}
+          <div className="flex items-center text-green-600 text-xs shrink-0">
+            <CheckCircle2 className="w-3 h-3 mr-0.5" />
+            <span className="font-medium">Promoted</span>
+          </div>
         </div>
       </div>
     </Link>

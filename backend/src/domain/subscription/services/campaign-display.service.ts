@@ -966,12 +966,11 @@ export class CampaignDisplayService {
         type: CampaignType.ALBUM_PROMOTION,
         startDate: { lte: now },
         OR: [{ endDate: { equals: null } }, { endDate: { gte: now } }],
-        targetEntityId: { not: null }, // Must have a portfolio ID
-        targetEntityType: 'PORTFOLIO',
       },
       include: {
         vendorProfile: {
           select: {
+            id: true,
             businessName: true,
             slug: true,
           },
@@ -981,25 +980,61 @@ export class CampaignDisplayService {
       take: limit,
     });
 
-    // Get portfolio details
-    const portfolioIds = campaigns
-      .map((c) => c.targetEntityId)
-      .filter(Boolean) as string[];
+    const campaignTargetPortfolioIds = campaigns
+      .filter(
+        (c) =>
+          !!c.targetEntityId &&
+          (!c.targetEntityType || c.targetEntityType.toUpperCase() === 'PORTFOLIO'),
+      )
+      .map((c) => c.targetEntityId as string);
 
-    const portfolios = await this.prisma.portfolio.findMany({
-      where: { id: { in: portfolioIds } },
-      select: {
-        id: true,
-        title: true,
-        mediaItems: {
-          select: { url: true, thumbnailUrl: true },
-          take: 1,
-          orderBy: { sortOrder: 'asc' },
+    const vendorIds = Array.from(new Set(campaigns.map((c) => c.vendorProfileId)));
+
+    const [targetedPortfolios, fallbackPortfolios] = await Promise.all([
+      this.prisma.portfolio.findMany({
+        where: { id: { in: campaignTargetPortfolioIds } },
+        select: {
+          id: true,
+          vendorProfileId: true,
+          title: true,
+          mediaItems: {
+            select: { url: true, thumbnailUrl: true },
+            take: 1,
+            orderBy: { sortOrder: 'asc' },
+          },
         },
-      },
-    });
+      }),
+      this.prisma.portfolio.findMany({
+        where: { vendorProfileId: { in: vendorIds } },
+        select: {
+          id: true,
+          vendorProfileId: true,
+          title: true,
+          isFeatured: true,
+          sortOrder: true,
+          createdAt: true,
+          mediaItems: {
+            select: { url: true, thumbnailUrl: true },
+            take: 1,
+            orderBy: { sortOrder: 'asc' },
+          },
+        },
+        orderBy: [
+          { isFeatured: 'desc' },
+          { sortOrder: 'asc' },
+          { createdAt: 'desc' },
+        ],
+      }),
+    ]);
 
-    const portfolioMap = new Map(portfolios.map((p) => [p.id, p]));
+    const targetedPortfolioMap = new Map(targetedPortfolios.map((p) => [p.id, p]));
+
+    const fallbackPortfolioByVendor = new Map<string, (typeof fallbackPortfolios)[number]>();
+    for (const portfolio of fallbackPortfolios) {
+      if (!fallbackPortfolioByVendor.has(portfolio.vendorProfileId)) {
+        fallbackPortfolioByVendor.set(portfolio.vendorProfileId, portfolio);
+      }
+    }
 
     // Record impressions
     await Promise.all(
@@ -1013,7 +1048,12 @@ export class CampaignDisplayService {
 
     return campaigns
       .map((c) => {
-        const portfolio = portfolioMap.get(c.targetEntityId!);
+        const targetedPortfolio =
+          c.targetEntityId && (!c.targetEntityType || c.targetEntityType.toUpperCase() === 'PORTFOLIO')
+            ? targetedPortfolioMap.get(c.targetEntityId)
+            : null;
+
+        const portfolio = targetedPortfolio || fallbackPortfolioByVendor.get(c.vendorProfileId);
         if (!portfolio) return null;
 
         // Use the first media item's thumbnail or url as cover image

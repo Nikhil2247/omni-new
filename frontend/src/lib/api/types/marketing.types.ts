@@ -1,11 +1,89 @@
 export type BlogStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+export type MarketingCampaignStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'SCHEDULED'
+  | 'ACTIVE'
+  | 'PAUSED'
+  | 'COMPLETED'
+  | 'CANCELLED'
+
+export type MarketingCampaignType =
+  | 'PROFILE_BOOST'
+  | 'ALBUM_PROMOTION'
+  | 'BANNER_AD'
+  | 'FEATURED_LISTING'
 
 export interface MarketingCampaign {
   id: string
+  vendorProfileId?: string
+  type: MarketingCampaignType
   name: string
-  status?: string
-  startsAt?: string | null
-  endsAt?: string | null
+  description?: string | null
+  targetEntityId?: string | null
+  targetEntityType?: string | null
+  dailyBudget: number
+  totalBudget: number
+  creditsSpent: number
+  impressions: number
+  clicks: number
+  conversions: number
+  status: MarketingCampaignStatus
+  startDate: string
+  endDate?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MarketingCampaignSearchParams {
+  status?: MarketingCampaignStatus
+  type?: MarketingCampaignType
+  search?: string
+  page?: number
+  limit?: number
+}
+
+export interface MarketingCampaignUpdatePayload {
+  name?: string
+  description?: string
+  targetEntityId?: string
+  targetEntityType?: string
+  dailyBudget?: number
+  totalBudget?: number
+  startDate?: string
+  endDate?: string
+}
+
+export interface MarketingCampaignDailyStat {
+  date: string
+  impressions: number
+  clicks: number
+  conversions: number
+  creditsSpent: number
+}
+
+export interface MarketingCampaignStats {
+  campaignId: string
+  name: string
+  type: MarketingCampaignType
+  status: MarketingCampaignStatus
+  impressions: number
+  clicks: number
+  conversions: number
+  creditsSpent: number
+  totalBudget: number
+  dailyBudget: number
+  remainingBudget: number
+  ctr: number
+  conversionRate: number
+  costPerClick: number
+  costPerConversion: number
+  budgetUtilization: number
+  startDate: string
+  endDate?: string | null
+  dailyStats: MarketingCampaignDailyStat[]
 }
 
 export interface MarketingCategory {

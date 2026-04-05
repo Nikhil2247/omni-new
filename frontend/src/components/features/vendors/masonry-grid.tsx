@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 interface MasonryGridProps {
   items: PortfolioMediaItem[]
   isLoading?: boolean
+  boostedVendorIds?: Set<string>
 }
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -69,6 +70,7 @@ function LoadingSkeleton() {
 export function MasonryGrid({
   items,
   isLoading = false,
+  boostedVendorIds,
 }: MasonryGridProps) {
   if (isLoading) {
     return <LoadingSkeleton />
@@ -86,7 +88,11 @@ export function MasonryGrid({
     <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-1.5 sm:gap-2">
       {items.map((item, index) => (
         <AnimatedMasonryItem key={item.id} index={index}>
-          <PortfolioMediaCard item={item} priority={index < 4} />
+          <PortfolioMediaCard
+            item={item}
+            priority={index < 4}
+            isBoosted={boostedVendorIds?.has(item.vendor.id) === true}
+          />
         </AnimatedMasonryItem>
       ))}
     </div>

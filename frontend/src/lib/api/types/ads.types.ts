@@ -1,13 +1,16 @@
-import type { VendorProfile } from './vendor.types'
-
 export type BannerPlacement = 'homepage' | 'category' | 'search' | 'profile'
 export type ConversionType = 'LEAD' | 'BOOKING' | 'INQUIRY'
 
 export interface FeaturedListing {
   vendorProfileId: string
   campaignId: string
-  boostLevel: number
-  vendor: VendorProfile
+  businessName: string
+  slug: string
+  categoryId: string
+  profilePhotoUrl?: string
+  tagline?: string
+  averageRating?: number
+  totalReviews: number
 }
 
 export interface BannerAd {
@@ -39,20 +42,11 @@ export interface BannerAd {
 export interface PromotedAlbum {
   campaignId: string
   vendorProfileId: string
-  albumId: string
-  album: {
-    id: string
-    name: string
-    description?: string
-    coverImageUrl?: string
-    mediaCount: number
-    vendor: {
-      id: string
-      businessName: string
-      slug: string
-      profilePhotoUrl?: string
-    }
-  }
+  portfolioId: string
+  title: string
+  coverImageUrl?: string
+  businessName: string
+  vendorSlug: string
 }
 
 export interface BoostedVendor {

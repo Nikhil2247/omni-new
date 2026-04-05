@@ -1,10 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { marketingService } from '@/lib/api/services/marketing.service'
-import type { BlogPostCreatePayload, BlogPostSearchParams, BlogPostUpdatePayload } from '@/lib/api/types/marketing.types'
+import type {
+  BlogPostCreatePayload,
+  BlogPostSearchParams,
+  BlogPostUpdatePayload,
+  MarketingCampaignSearchParams,
+  MarketingCampaignStats,
+  MarketingCampaignUpdatePayload,
+} from '@/lib/api/types/marketing.types'
 
 const marketingKeys = {
   campaigns: () => ['marketing-campaigns'] as const,
+  campaignList: (params: MarketingCampaignSearchParams) => ['marketing-campaigns', 'list', params] as const,
+  campaign: (id: string) => ['marketing-campaigns', 'detail', id] as const,
+  campaignStats: (id: string) => ['marketing-campaigns', 'stats', id] as const,
   categories: () => ['marketing-categories'] as const,
   media: () => ['marketing-media'] as const,
   promotions: () => ['marketing-promotions'] as const,
@@ -35,6 +45,29 @@ export function useMarketingCampaigns() {
   return useQuery({
     queryKey: marketingKeys.campaigns(),
     queryFn: () => marketingService.listCampaigns(),
+  })
+}
+
+export function useMarketingCampaignList(params: MarketingCampaignSearchParams) {
+  return useQuery({
+    queryKey: marketingKeys.campaignList(params),
+    queryFn: () => marketingService.searchCampaigns(params),
+  })
+}
+
+export function useMarketingCampaign(id: string) {
+  return useQuery({
+    queryKey: marketingKeys.campaign(id),
+    queryFn: () => marketingService.getCampaign(id),
+    enabled: Boolean(id),
+  })
+}
+
+export function useMarketingCampaignStats(id: string) {
+  return useQuery<MarketingCampaignStats>({
+    queryKey: marketingKeys.campaignStats(id),
+    queryFn: () => marketingService.getCampaignStats(id),
+    enabled: Boolean(id),
   })
 }
 
@@ -121,5 +154,60 @@ export function usePublishBlogPost() {
       toast.success('Blog post published successfully')
     },
     onError: (error) => toast.error(getErrorMessage(error, 'Failed to publish blog post')),
+  })
+}
+
+export function useUpdateMarketingCampaign(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: MarketingCampaignUpdatePayload) => marketingService.updateCampaign(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: marketingKeys.campaigns() })
+      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns', 'list'] })
+      queryClient.invalidateQueries({ queryKey: marketingKeys.campaign(id) })
+      toast.success('Campaign updated successfully')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, 'Failed to update campaign')),
+  })
+}
+
+export function usePauseMarketingCampaign() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => marketingService.pauseCampaign(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: marketingKeys.campaigns() })
+      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns', 'list'] })
+      queryClient.invalidateQueries({ queryKey: marketingKeys.campaign(id) })
+      toast.success('Campaign paused successfully')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, 'Failed to pause campaign')),
+  })
+}
+
+export function useResumeMarketingCampaign() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => marketingService.resumeCampaign(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: marketingKeys.campaigns() })
+      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns', 'list'] })
+      queryClient.invalidateQueries({ queryKey: marketingKeys.campaign(id) })
+      toast.success('Campaign resumed successfully')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, 'Failed to resume campaign')),
+  })
+}
+
+export function useCancelMarketingCampaign() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => marketingService.cancelCampaign(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: marketingKeys.campaigns() })
+      queryClient.invalidateQueries({ queryKey: ['marketing-campaigns', 'list'] })
+      toast.success('Campaign deleted successfully')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, 'Failed to delete campaign')),
   })
 }

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Heart, X, ExternalLink } from 'lucide-react'
+import { Heart, X, ExternalLink, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import type { PortfolioMediaItem } from '@/lib/api/types/portfolio-media.types'
@@ -13,15 +13,17 @@ import { WishlistPickerDialog } from '@/components/common/wishlist-picker-dialog
 import { useAddWishlistItem, useCreateWishlist, useWishlistMine, wishlistKeys } from '@/hooks/queries/use-wishlists'
 import { useMediaItemTags } from '@/hooks/queries/use-media-tags'
 import { getMinioViewUrl } from '@/lib/utils/minio'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 
 interface PortfolioMediaCardProps {
   item: PortfolioMediaItem
   priority?: boolean
+  isBoosted?: boolean
 }
 
-export function PortfolioMediaCard({ item, priority = false }: PortfolioMediaCardProps) {
+export function PortfolioMediaCard({ item, priority = false, isBoosted = false }: PortfolioMediaCardProps) {
   const router = useRouter()
   const { user, hasHydrated } = useAuthStore()
   const userId = user?.id
@@ -91,8 +93,20 @@ export function PortfolioMediaCard({ item, priority = false }: PortfolioMediaCar
 
   return (
     <div
-      className="group relative overflow-hidden rounded-xl sm:rounded-2xl border bg-card shadow-sm transition-all duration-300 hover:shadow-lg"
+      className={cn(
+        'group relative overflow-hidden rounded-xl sm:rounded-2xl border bg-card shadow-sm transition-all duration-300 hover:shadow-lg',
+        isBoosted && 'border-amber-300/60 ring-1 ring-amber-200/70 hover:border-amber-400/70',
+      )}
     >
+      {isBoosted && (
+        <div className="absolute left-2 top-2 z-10 sm:left-3 sm:top-3">
+          <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-md sm:text-[10px]">
+            <Sparkles className="h-2.5 w-2.5" />
+            Promoted
+          </span>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={() => setPreviewOpen(true)}
@@ -184,7 +198,7 @@ export function PortfolioMediaCard({ item, priority = false }: PortfolioMediaCar
             />
 
             {/* Info overlay at bottom */}
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-6">
+            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/50 to-transparent p-6">
               <div className="flex items-end justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs uppercase tracking-wider text-white/70 mb-1">

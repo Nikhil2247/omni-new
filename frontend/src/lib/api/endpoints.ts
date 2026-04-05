@@ -177,7 +177,13 @@ export const API_ENDPOINTS = {
     },
   },
   MARKETING: {
-    CAMPAIGNS: '/marketing/campaigns',
+    CAMPAIGNS: {
+      LIST: '/marketing/campaigns',
+      BY_ID: (id: string) => `/marketing/campaigns/${id}`,
+      PAUSE: (id: string) => `/marketing/campaigns/${id}/pause`,
+      RESUME: (id: string) => `/marketing/campaigns/${id}/resume`,
+      STATS: (id: string) => `/marketing/campaigns/${id}/stats`,
+    },
     CATEGORIES: '/marketing/categories',
     MEDIA: '/marketing/media',
     PROMOTIONS: '/marketing/promotions',

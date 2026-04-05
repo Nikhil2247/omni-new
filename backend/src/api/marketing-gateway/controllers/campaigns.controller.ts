@@ -7,9 +7,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -31,6 +33,9 @@ import {
   CurrentUserData,
 } from '../../../core/auth/decorators/current-user.decorator';
 import { CampaignService } from '../../../domain/subscription/services/campaign.service';
+import {
+  UpdateCampaignDto,
+} from '../../../domain/subscription/dto/campaign.dto';
 import {
   MarketingCampaignFilterDto,
   RejectCampaignDto,
@@ -148,6 +153,75 @@ export class CampaignsController {
     if (!campaign) {
       throw new NotFoundException('Campaign not found');
     }
+    return campaign as MarketingCampaignResponseDto;
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update campaign details' })
+  @ApiResponse({
+    status: 200,
+    description: 'Campaign updated successfully',
+    type: MarketingCampaignResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Campaign cannot be updated in current status' })
+  @ApiResponse({ status: 404, description: 'Campaign not found' })
+  async updateCampaign(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: UpdateCampaignDto,
+  ): Promise<MarketingCampaignResponseDto> {
+    this.logger.log(`Marketing team updating campaign: ${id}`);
+    const campaign = await this.campaignService.update(id, dto);
+    return campaign as MarketingCampaignResponseDto;
+  }
+
+  @Post(':id/pause')
+  @ApiOperation({ summary: 'Pause campaign' })
+  @ApiResponse({
+    status: 200,
+    description: 'Campaign paused successfully',
+    type: MarketingCampaignResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Campaign cannot be paused' })
+  @ApiResponse({ status: 404, description: 'Campaign not found' })
+  async pauseCampaign(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<MarketingCampaignResponseDto> {
+    this.logger.log(`Marketing team pausing campaign: ${id}`);
+    const campaign = await this.campaignService.pause(id);
+    return campaign as MarketingCampaignResponseDto;
+  }
+
+  @Post(':id/resume')
+  @ApiOperation({ summary: 'Resume paused campaign' })
+  @ApiResponse({
+    status: 200,
+    description: 'Campaign resumed successfully',
+    type: MarketingCampaignResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Campaign cannot be resumed' })
+  @ApiResponse({ status: 404, description: 'Campaign not found' })
+  async resumeCampaign(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<MarketingCampaignResponseDto> {
+    this.logger.log(`Marketing team resuming campaign: ${id}`);
+    const campaign = await this.campaignService.resume(id);
+    return campaign as MarketingCampaignResponseDto;
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Cancel campaign' })
+  @ApiResponse({
+    status: 200,
+    description: 'Campaign cancelled successfully',
+    type: MarketingCampaignResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Campaign cannot be cancelled' })
+  @ApiResponse({ status: 404, description: 'Campaign not found' })
+  async cancelCampaign(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<MarketingCampaignResponseDto> {
+    this.logger.log(`Marketing team cancelling campaign: ${id}`);
+    const campaign = await this.campaignService.cancel(id);
     return campaign as MarketingCampaignResponseDto;
   }
 

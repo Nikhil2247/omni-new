@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, useInView } from 'framer-motion'
 import Lenis from 'lenis'
 import { usePublicMediaFeed } from '@/hooks/queries/use-public-vendors'
+import { useBoostedVendors } from '@/hooks/queries/use-ads'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { MasonryGrid } from '@/components/features/vendors/masonry-grid'
 import { Input } from '@/components/ui/input'
@@ -68,8 +69,10 @@ function FadeIn({
 
 function InspirationGrid({
   query,
+  boostedVendorIds,
 }: {
   query?: string
+  boostedVendorIds?: Set<string>
 }) {
   const [page, setPage] = useState(1)
   const [allMedia, setAllMedia] = useState<any[]>([])
@@ -178,7 +181,7 @@ function InspirationGrid({
 
   return (
     <>
-      <MasonryGrid items={allMedia} />
+      <MasonryGrid items={allMedia} boostedVendorIds={boostedVendorIds} />
 
       {!hasReachedEnd && (
         <div ref={loadMoreRef} className="py-12 flex justify-center w-full">
@@ -201,6 +204,12 @@ function InspirePageContent() {
   const searchParams = useSearchParams()
   const queryParam = searchParams.get('query') ?? ''
   const [searchQuery, setSearchQuery] = useState(queryParam)
+  const { data: boostedVendors = [] } = useBoostedVendors()
+
+  const boostedVendorIds = useMemo(
+    () => new Set(boostedVendors.map((entry) => entry.vendorProfileId)),
+    [boostedVendors],
+  )
 
   useSmoothScroll()
 
@@ -250,6 +259,7 @@ function InspirePageContent() {
         <InspirationGrid
           key={queryParam}
           query={queryParam}
+          boostedVendorIds={boostedVendorIds}
         />
       </div>
     </main>

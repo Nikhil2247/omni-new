@@ -111,7 +111,7 @@ export default function MarketingDashboardPage() {
               <Skeleton className="h-24" />
             ) : campaigns?.length ? (
               campaigns.map((campaign) => (
-                <CampaignItem key={campaign.id} name={campaign.name} status={campaign.status} endsAt={campaign.endsAt} />
+                <CampaignItem key={campaign.id} name={campaign.name} status={campaign.status} endsAt={campaign.endDate} />
               ))
             ) : (
               <p className="text-sm text-muted-foreground">No campaigns available.</p>

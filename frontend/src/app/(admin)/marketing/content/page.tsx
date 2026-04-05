@@ -2,14 +2,15 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Send } from 'lucide-react'
+import { ExternalLink, Search, Send, Trash2 } from 'lucide-react'
 import { useUmami } from '@/hooks/use-umami'
-import { useBlogPosts, usePublishBlogPost } from '@/hooks/queries/use-marketing'
+import { useBlogPosts, useDeleteBlogPost, usePublishBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
 import { useAuthStore } from '@/store/auth-store'
 import { ROLES } from '@/config/roles'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { BlogHealthIndicator } from '@/components/marketing/blog-health-indicator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,7 +30,9 @@ export default function MarketingContentPage() {
   const { track } = useUmami()
   const [keyword, setKeyword] = useState('')
   const [publishingId, setPublishingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const publishMutation = usePublishBlogPost()
+  const deleteMutation = useDeleteBlogPost()
   const [status, setStatus] = useState<BlogStatus | 'all'>('all')
   const [categoryId, setCategoryId] = useState('all')
   const [tagId, setTagId] = useState('all')
@@ -126,33 +129,43 @@ export default function MarketingContentPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={status} onValueChange={(value) => setStatus(value as BlogStatus | 'all')}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="PUBLISHED">Published</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
-                <SelectItem value="ARCHIVED">Archived</SelectItem>
-              </SelectContent>
-            </Select>
+            {isContentWriter ? (
+              <Badge variant="secondary" className="h-10 justify-center px-3 uppercase">
+                Draft only
+              </Badge>
+            ) : (
+              <Select value={status} onValueChange={(value) => setStatus(value as BlogStatus | 'all')}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="PUBLISHED">Published</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="ARCHIVED">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-40" />
           ) : data?.data?.length ? (
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Health</TableHead>
                   <TableHead>Read time</TableHead>
                   <TableHead>Views</TableHead>
                   <TableHead>Updated</TableHead>
-                  <TableHead />
+                  <TableHead className="sticky right-0 z-20 min-w-[210px] bg-background text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -170,16 +183,22 @@ export default function MarketingContentPage() {
                         {post.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <BlogHealthIndicator post={post} />
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{post.readingTime} min</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{post.viewCount}</TableCell>
                     <TableCell>{formatDate(post.updatedAt)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="sticky right-0 z-10 bg-background text-right">
                       <div className="flex items-center justify-end gap-2">
                         {!isContentWriter && post.status !== 'PUBLISHED' && (
                           <Button
                             variant="secondary"
                             size="sm"
+                            className="h-8 w-8 p-0"
                             disabled={publishingId === post.id}
+                            aria-label={publishingId === post.id ? 'Publishing blog post' : 'Publish blog post'}
+                            title={publishingId === post.id ? 'Publishing...' : 'Publish'}
                             onClick={async () => {
                               setPublishingId(post.id)
                               try {
@@ -189,19 +208,45 @@ export default function MarketingContentPage() {
                               }
                             }}
                           >
-                            <Send className="mr-1.5 h-3.5 w-3.5" />
-                            {publishingId === post.id ? 'Publishing…' : 'Publish'}
+                            <Send className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/marketing/content/${post.id}`}>Open</Link>
+                        {!isContentWriter && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            disabled={deletingId === post.id}
+                            aria-label={deletingId === post.id ? 'Deleting blog post' : 'Delete blog post'}
+                            title={deletingId === post.id ? 'Deleting...' : 'Delete'}
+                            onClick={async () => {
+                              if (!window.confirm('Delete this blog post? This action cannot be undone.')) {
+                                return
+                              }
+
+                              setDeletingId(post.id)
+                              try {
+                                await deleteMutation.mutateAsync(post.id)
+                              } finally {
+                                setDeletingId(null)
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0" aria-label="Open blog post" title="Open">
+                          <Link href={`/marketing/content/${post.id}`} aria-label="Open blog post" title="Open">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">No content found.</p>
           )}

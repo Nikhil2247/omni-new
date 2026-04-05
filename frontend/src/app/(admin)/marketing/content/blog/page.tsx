@@ -1,16 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { BlogHealthIndicator } from '@/components/marketing/blog-health-indicator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import type { BlogStatus } from '@/lib/api/types/marketing.types'
 
 export default function MarketingBlogPostsPage() {
   const [currentPage, setCurrentPage] = useState(1)
-  const { data, isLoading } = useBlogPosts({ status: 'PUBLISHED', page: currentPage, limit: 20 })
+  const [status, setStatus] = useState<Extract<BlogStatus, 'PUBLISHED' | 'DRAFT'>>('PUBLISHED')
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [status])
+
+  const { data, isLoading } = useBlogPosts({ status, page: currentPage, limit: 20 })
 
   return (
     <div className="space-y-6">
@@ -20,8 +29,17 @@ export default function MarketingBlogPostsPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Published posts</CardTitle>
+        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <CardTitle>{status === 'PUBLISHED' ? 'Published posts' : 'Draft posts'}</CardTitle>
+          <Select value={status} onValueChange={(value) => setStatus(value as Extract<BlogStatus, 'PUBLISHED' | 'DRAFT'>)}>
+            <SelectTrigger className="w-full md:w-40">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PUBLISHED">Published</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+            </SelectContent>
+          </Select>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -33,6 +51,7 @@ export default function MarketingBlogPostsPage() {
                   <TableHead>Title</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Health</TableHead>
                   <TableHead>Read time</TableHead>
                   <TableHead>Views</TableHead>
                   <TableHead>Updated</TableHead>
@@ -46,7 +65,10 @@ export default function MarketingBlogPostsPage() {
                       {post.category?.name ?? 'Uncategorized'}
                     </TableCell>
                     <TableCell>
-                      <Badge>{post.status}</Badge>
+                      <Badge variant={post.status === 'PUBLISHED' ? 'default' : 'secondary'}>{post.status}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <BlogHealthIndicator post={post} />
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{post.readingTime} min</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{post.viewCount}</TableCell>

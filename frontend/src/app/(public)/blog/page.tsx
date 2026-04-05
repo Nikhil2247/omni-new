@@ -6,6 +6,7 @@ import NextImage from 'next/image'
 import { trackContent } from '@/lib/analytics/umami'
 import { Clock, Eye, Search } from 'lucide-react'
 import {
+  usePublicBlogCategories,
   usePublicInfiniteBlogPosts,
 } from '@/hooks/queries/use-public-blog'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
@@ -23,11 +24,13 @@ type BlogSortOption = 'latest' | 'mostViewed'
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [keyword, setKeyword] = useState('')
+  const [categoryId, setCategoryId] = useState('all')
   const [sortBy, setSortBy] = useState<BlogSortOption>('latest')
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0,
     rootMargin: '200px',
   })
+  const { data: categories } = usePublicBlogCategories()
 
   useEffect(() => {
     trackContent.articleView('blog-list', 'Blog')
@@ -41,9 +44,10 @@ export default function BlogPage() {
     () => ({
       status: 'PUBLISHED' as const,
       keyword: keyword.trim() || undefined,
+      categoryId: categoryId === 'all' ? undefined : categoryId,
       sortBy,
     }),
-    [keyword, sortBy]
+    [keyword, categoryId, sortBy]
   )
 
   const {
@@ -76,7 +80,7 @@ export default function BlogPage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+      <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_180px_220px]">
         <div className="relative flex items-center rounded-full border border-border bg-background p-1.5 shadow-sm transition-shadow hover:shadow-md focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/20">
           <Input
             type="text"
@@ -103,6 +107,22 @@ export default function BlogPage() {
             <SelectContent>
               <SelectItem value="latest">Latest</SelectItem>
               <SelectItem value="mostViewed">Most viewed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="w-full md:w-55">
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {(categories || []).map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

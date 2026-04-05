@@ -7,6 +7,9 @@ import type {
   BlogPostSearchParams,
   BlogPostUpdatePayload,
   MarketingCampaign,
+  MarketingCampaignSearchParams,
+  MarketingCampaignStats,
+  MarketingCampaignUpdatePayload,
   MarketingCategory,
   MarketingMediaItem,
   MarketingPromotion,
@@ -14,8 +17,38 @@ import type {
 
 export const marketingService = {
   listCampaigns: async (): Promise<MarketingCampaign[]> => {
-    const { data } = await apiClient.get(API_ENDPOINTS.MARKETING.CAMPAIGNS)
+    const { data } = await apiClient.get(API_ENDPOINTS.MARKETING.CAMPAIGNS.LIST)
     return data?.data ?? data ?? []
+  },
+  searchCampaigns: async (
+    params: MarketingCampaignSearchParams = {},
+  ): Promise<PaginatedResponse<MarketingCampaign>> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.MARKETING.CAMPAIGNS.LIST, { params })
+    return data?.data ? data : data
+  },
+  getCampaign: async (id: string): Promise<MarketingCampaign> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.MARKETING.CAMPAIGNS.BY_ID(id))
+    return data?.data ?? data
+  },
+  getCampaignStats: async (id: string): Promise<MarketingCampaignStats> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.MARKETING.CAMPAIGNS.STATS(id))
+    return data?.data ?? data
+  },
+  updateCampaign: async (id: string, payload: MarketingCampaignUpdatePayload): Promise<MarketingCampaign> => {
+    const { data } = await apiClient.patch(API_ENDPOINTS.MARKETING.CAMPAIGNS.BY_ID(id), payload)
+    return data?.data ?? data
+  },
+  pauseCampaign: async (id: string): Promise<MarketingCampaign> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.MARKETING.CAMPAIGNS.PAUSE(id))
+    return data?.data ?? data
+  },
+  resumeCampaign: async (id: string): Promise<MarketingCampaign> => {
+    const { data } = await apiClient.post(API_ENDPOINTS.MARKETING.CAMPAIGNS.RESUME(id))
+    return data?.data ?? data
+  },
+  cancelCampaign: async (id: string): Promise<MarketingCampaign> => {
+    const { data } = await apiClient.delete(API_ENDPOINTS.MARKETING.CAMPAIGNS.BY_ID(id))
+    return data?.data ?? data
   },
   listCategories: async (): Promise<MarketingCategory[]> => {
     const { data } = await apiClient.get(API_ENDPOINTS.MARKETING.CATEGORIES)

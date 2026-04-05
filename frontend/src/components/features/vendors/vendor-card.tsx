@@ -16,6 +16,7 @@ import {
   wishlistKeys,
 } from '@/hooks/queries/use-wishlists'
 import { useToggleVendorFollow } from '@/hooks/queries/use-vendor-follows'
+import { useBoostedVendors, useRecordBoostClick } from '@/hooks/queries/use-ads'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
@@ -65,6 +66,8 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [locallySaved, setLocallySaved] = useState(false)
   const toggleFollow = useToggleVendorFollow()
+  const { data: boostedVendors = [] } = useBoostedVendors()
+  const recordBoostClick = useRecordBoostClick()
 
   // Use isFollowing from vendor data if available (when authenticated), otherwise false
   const [isFollowing, setIsFollowing] = useState(vendor.isFollowing ?? false)
@@ -83,13 +86,25 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
   const isFeatured = vendor.featuredUntil && new Date(vendor.featuredUntil) > new Date()
   const isPremium = vendor.planTier === 'ENTERPRISE'
   const isPro = vendor.planTier === 'PROFESSIONAL' || vendor.planTier === 'ENTERPRISE'
+  const boostedInfo = boostedVendors.find((entry) => entry.vendorProfileId === vendor.id)
+  const isBoosted = Boolean(boostedInfo)
 
   const reviewCount = vendor.reviewsCount ?? 0
   const averageRating =
     typeof vendor.averageRating === 'number' ? vendor.averageRating.toFixed(1) : null
 
   const handleCardClick = () => {
+    if (boostedInfo?.campaignId) {
+      recordBoostClick.mutate(boostedInfo.campaignId)
+    }
     router.push(`/vendors/${vendor.slug}`)
+  }
+
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleCardClick()
+    }
   }
 
   const handleSave = (e: React.MouseEvent) => {
@@ -174,7 +189,8 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
       <div
         onClick={handleCardClick}
         className={cn(
-          'group relative bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/20 cursor-pointer',
+          'group relative bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/20 cursor-pointer focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/40',
+          isBoosted && 'border-amber-300/55 shadow-amber-100/45 hover:border-amber-400/70',
           className
         )}
       >
@@ -214,9 +230,7 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
             >
             {vendor.category?.name || vendor.categoryId || 'Vendor'}
             </span>
-          </div>
-
-          {/* Action Buttons - Wishlist & Follow */}
+          </div>          {/* Action Buttons - Wishlist & Follow */}
           <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex items-center gap-1.5">
             <TooltipProvider delayDuration={300}>
               {/* Follow Button */}
