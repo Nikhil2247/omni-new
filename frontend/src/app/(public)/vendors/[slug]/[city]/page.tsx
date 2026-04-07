@@ -8,6 +8,9 @@ import { Button } from '@/components/ui/button'
 import { ChevronRight, MapPin, Star, Users } from 'lucide-react'
 import { indianCities } from '@/lib/seo/keywords'
 
+// This route fetches live discovery data that can exceed static build timeouts.
+export const dynamic = 'force-dynamic'
+
 const validCities = new Set(indianCities.map(c => c.toLowerCase().replace(/\s+/g, '-')))
 
 // Category display configurations
@@ -233,18 +236,3 @@ export default async function VendorCityCategoryPage({
   )
 }
 
-// Generate static params for top cities and categories
-export async function generateStaticParams() {
-  const categories = Object.keys(categoryDisplayConfig)
-  const cities = indianCities.slice(0, 10).map(c => c.toLowerCase().replace(/\s+/g, '-'))
-
-  const params: Array<{ slug: string; city: string }> = []
-
-  for (const category of categories) {
-    for (const city of cities) {
-      params.push({ slug: category, city })
-    }
-  }
-
-  return params
-}
