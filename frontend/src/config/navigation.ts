@@ -41,6 +41,7 @@ import {
   HeartHandshake,
   Wrench,
   BadgeCheck,
+  FilePlus2,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -324,6 +325,12 @@ export const opsAdminNav: NavGroup[] = [
         icon: Receipt,
         roles: [ROLES.OPERATIONAL_ADMIN],
       },
+      {
+        title: 'Manual Document',
+        href: '/ops/manual-document',
+        icon: FilePlus2,
+        roles: [ROLES.OPERATIONAL_ADMIN],
+      },
     ],
   },
   {
@@ -405,6 +412,12 @@ export const opsManagerNav: NavGroup[] = [
         title: 'Quotations',
         href: '/ops/quotations',
         icon: FileCheck,
+        roles: [ROLES.OPERATIONAL_MANAGER],
+      },
+      {
+        title: 'Manual Document',
+        href: '/ops/manual-document',
+        icon: FilePlus2,
         roles: [ROLES.OPERATIONAL_MANAGER],
       },
     ],

@@ -219,12 +219,14 @@ export const publicService = {
 
   getBlogCategories: async (): Promise<BlogCategory[]> => {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.BLOG.CATEGORIES)
-    return data
+    // Backend wraps responses in { success, data, meta } format
+    return data?.data || data || []
   },
 
   getBlogTags: async (): Promise<BlogTag[]> => {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.BLOG.TAGS)
-    return data
+    // Backend wraps responses in { success, data, meta } format
+    return data?.data || data || []
   },
 
   getVendorReviews: async (vendorProfileId: string): Promise<VendorReview[]> => {

@@ -48,7 +48,8 @@
       "Bash(dir /b \"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\src\\\\app\\\\\\(public\\)\")",
       "Bash(npm run lint)",
       "Bash(del /f \"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\.next\\\\lock\")",
-      "Bash(cmd /c \"del /f \"\"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\.next\\\\lock\"\" 2>nul\")"
+      "Bash(cmd /c \"del /f \"\"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\.next\\\\lock\"\" 2>nul\")",
+      "Bash(npm run build)"
     ]
   }
 }

@@ -91,10 +91,10 @@ export default function MarketingContentPage() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <CardTitle>All content</CardTitle>
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
-            <div className="relative w-full sm:w-64">
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <CardTitle className="shrink-0">All content</CardTitle>
+          <div className="grid w-full grid-cols-1 gap-2 xs:grid-cols-2 sm:flex sm:flex-wrap sm:items-center md:w-auto">
+            <div className="relative col-span-full xs:col-span-2 sm:w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search content"
@@ -104,7 +104,7 @@ export default function MarketingContentPage() {
               />
             </div>
             <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-36">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -117,7 +117,7 @@ export default function MarketingContentPage() {
               </SelectContent>
             </Select>
             <Select value={tagId} onValueChange={setTagId}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-32">
                 <SelectValue placeholder="Tag" />
               </SelectTrigger>
               <SelectContent>
@@ -135,7 +135,7 @@ export default function MarketingContentPage() {
               </Badge>
             ) : (
               <Select value={status} onValueChange={(value) => setStatus(value as BlogStatus | 'all')}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full sm:w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,18 +152,18 @@ export default function MarketingContentPage() {
           {isLoading ? (
             <Skeleton className="h-40" />
           ) : data?.data?.length ? (
-            <div className="overflow-x-auto">
+            <div className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
               <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead className="min-w-[200px]">Title</TableHead>
+                  <TableHead className="hidden sm:table-cell">Category</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Health</TableHead>
-                  <TableHead>Read time</TableHead>
-                  <TableHead>Views</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="sticky right-0 z-20 min-w-[210px] bg-background text-right">
+                  <TableHead className="hidden lg:table-cell">Health</TableHead>
+                  <TableHead className="hidden md:table-cell">Read time</TableHead>
+                  <TableHead className="hidden md:table-cell">Views</TableHead>
+                  <TableHead className="hidden sm:table-cell">Updated</TableHead>
+                  <TableHead className="sticky right-0 z-20 min-w-[100px] bg-background text-right sm:min-w-[140px]">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -171,11 +171,16 @@ export default function MarketingContentPage() {
               <TableBody>
                 {data.data.map((post) => (
                   <TableRow key={post.id}>
-                    <TableCell>
-                      <div className="font-medium">{post.title}</div>
-                      <div className="text-xs text-muted-foreground">{post.slug}</div>
+                    <TableCell className="min-w-[200px]">
+                      <div className="max-w-[200px] truncate font-medium sm:max-w-none">{post.title}</div>
+                      <div className="max-w-[200px] truncate text-xs text-muted-foreground sm:max-w-none">{post.slug}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground sm:hidden">
+                        <span>{post.category?.name ?? 'Uncategorized'}</span>
+                        <span>•</span>
+                        <span>{formatDate(post.updatedAt)}</span>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
                       {post.category?.name ?? 'Uncategorized'}
                     </TableCell>
                     <TableCell>
@@ -183,19 +188,19 @@ export default function MarketingContentPage() {
                         {post.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <BlogHealthIndicator post={post} />
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{post.readingTime} min</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{post.viewCount}</TableCell>
-                    <TableCell>{formatDate(post.updatedAt)}</TableCell>
+                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">{post.readingTime} min</TableCell>
+                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">{post.viewCount}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatDate(post.updatedAt)}</TableCell>
                     <TableCell className="sticky right-0 z-10 bg-background text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1 sm:gap-2">
                         {!isContentWriter && post.status !== 'PUBLISHED' && (
                           <Button
                             variant="secondary"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 p-0 sm:h-8 sm:w-8"
                             disabled={publishingId === post.id}
                             aria-label={publishingId === post.id ? 'Publishing blog post' : 'Publish blog post'}
                             title={publishingId === post.id ? 'Publishing...' : 'Publish'}
@@ -208,14 +213,14 @@ export default function MarketingContentPage() {
                               }
                             }}
                           >
-                            <Send className="h-3.5 w-3.5" />
+                            <Send className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </Button>
                         )}
                         {!isContentWriter && (
                           <Button
                             variant="destructive"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 p-0 sm:h-8 sm:w-8"
                             disabled={deletingId === post.id}
                             aria-label={deletingId === post.id ? 'Deleting blog post' : 'Delete blog post'}
                             title={deletingId === post.id ? 'Deleting...' : 'Delete'}
@@ -232,12 +237,12 @@ export default function MarketingContentPage() {
                               }
                             }}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </Button>
                         )}
-                        <Button asChild variant="outline" size="sm" className="h-8 w-8 p-0" aria-label="Open blog post" title="Open">
+                        <Button asChild variant="outline" size="sm" className="h-7 w-7 p-0 sm:h-8 sm:w-8" aria-label="Open blog post" title="Open">
                           <Link href={`/marketing/content/${post.id}`} aria-label="Open blog post" title="Open">
-                            <ExternalLink className="h-3.5 w-3.5" />
+                            <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </Link>
                         </Button>
                       </div>
@@ -252,9 +257,9 @@ export default function MarketingContentPage() {
           )}
 
           {data?.meta?.totalPages && data.meta.totalPages > 1 ? (
-            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
-              <p className="text-sm text-muted-foreground">
-                Page {data.meta.page} of {data.meta.totalPages} • {data.meta.total} items
+            <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t pt-4 sm:flex-row">
+              <p className="text-center text-sm text-muted-foreground sm:text-left">
+                Page {data.meta.page} of {data.meta.totalPages} <span className="hidden xs:inline">•</span> <span className="block xs:inline">{data.meta.total} items</span>
               </p>
               <div className="flex items-center gap-2">
                 <Button
