@@ -1,5 +1,6 @@
 import { apiClient } from '../client'
 import { API_ENDPOINTS } from '../endpoints'
+import { getMinioViewUrl } from '@/lib/utils/minio'
 import type {
   FeaturedListing,
   BannerAd,
@@ -9,6 +10,11 @@ import type {
   ConversionType,
 } from '../types/ads.types'
 
+const resolveMediaUrl = (value?: string | null): string | undefined => {
+  if (!value) return undefined
+  return getMinioViewUrl(value) || value
+}
+
 export const adsService = {
   /**
    * Get featured vendor listings for homepage
@@ -17,7 +23,11 @@ export const adsService = {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.ADS.FEATURED, {
       params: { limit },
     })
-    return data?.listings || data?.data?.listings || []
+    const listings = data?.listings || data?.data?.listings || []
+    return listings.map((listing: FeaturedListing) => ({
+      ...listing,
+      profilePhotoUrl: resolveMediaUrl(listing.profilePhotoUrl),
+    }))
   },
 
   /**
@@ -31,7 +41,11 @@ export const adsService = {
       API_ENDPOINTS.PUBLIC.ADS.FEATURED_BY_CATEGORY(categoryId),
       { params: { limit } },
     )
-    return data?.listings || data?.data?.listings || []
+    const listings = data?.listings || data?.data?.listings || []
+    return listings.map((listing: FeaturedListing) => ({
+      ...listing,
+      profilePhotoUrl: resolveMediaUrl(listing.profilePhotoUrl),
+    }))
   },
 
   /**
@@ -45,7 +59,18 @@ export const adsService = {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.ADS.BANNERS, {
       params: { placement, categoryId, limit },
     })
-    return data?.banners || data?.data?.banners || []
+    const banners = data?.banners || data?.data?.banners || []
+    return banners.map((banner: BannerAd) => ({
+      ...banner,
+      bannerImageUrl: resolveMediaUrl(banner.bannerImageUrl),
+      imageUrl: resolveMediaUrl(banner.imageUrl),
+      vendor: banner.vendor
+        ? {
+            ...banner.vendor,
+            profilePhotoUrl: resolveMediaUrl(banner.vendor.profilePhotoUrl),
+          }
+        : banner.vendor,
+    }))
   },
 
   /**
@@ -62,7 +87,11 @@ export const adsService = {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.ADS.ALBUMS, {
       params: { limit },
     })
-    return data?.albums || data?.data?.albums || []
+    const albums = data?.albums || data?.data?.albums || []
+    return albums.map((album: PromotedAlbum) => ({
+      ...album,
+      coverImageUrl: resolveMediaUrl(album.coverImageUrl),
+    }))
   },
 
   /**
@@ -70,7 +99,11 @@ export const adsService = {
    */
   getBoostedVendors: async (): Promise<BoostedVendor[]> => {
     const { data } = await apiClient.get(API_ENDPOINTS.PUBLIC.ADS.BOOSTED_VENDORS)
-    return data?.vendors || data?.data?.vendors || []
+    const vendors = data?.vendors || data?.data?.vendors || []
+    return vendors.map((vendor: BoostedVendor) => ({
+      ...vendor,
+      profilePhotoUrl: resolveMediaUrl(vendor.profilePhotoUrl),
+    }))
   },
 
   /**

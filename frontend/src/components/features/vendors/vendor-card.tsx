@@ -183,6 +183,7 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
   }
 
   const categoryColor = categoryColors[vendor.category?.slug || ''] || 'bg-gray-100 text-gray-800'
+  const categoryLabel = vendor.category?.name?.trim()
 
   return (
     <>
@@ -221,16 +222,20 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
           <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block" />
 
           {/* Category Badge */}
-          <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
-            <span
-            className={cn(
-              'text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold backdrop-blur-sm bg-white/90',
-              categoryColor
-            )}
-            >
-            {vendor.category?.name || vendor.categoryId || 'Vendor'}
-            </span>
-          </div>          {/* Action Buttons - Wishlist & Follow */}
+          {categoryLabel && (
+            <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+              <span
+                className={cn(
+                  'text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold backdrop-blur-sm bg-white/90',
+                  categoryColor
+                )}
+              >
+                {categoryLabel}
+              </span>
+            </div>
+          )}
+
+          {/* Action Buttons - Wishlist & Follow */}
           <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex items-center gap-1.5">
             <TooltipProvider delayDuration={300}>
               {/* Follow Button */}

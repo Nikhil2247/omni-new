@@ -52,5 +52,11 @@ export interface PromotedAlbum {
 export interface BoostedVendor {
   vendorProfileId: string
   campaignId: string
-  boostLevel: number
+  boostScore: number
+  businessName?: string
+  slug?: string
+  profilePhotoUrl?: string
+  tagline?: string
+  averageRating?: number
+  totalReviews?: number
 }

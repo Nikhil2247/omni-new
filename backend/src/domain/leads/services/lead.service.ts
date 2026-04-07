@@ -104,24 +104,20 @@ export class LeadService {
       throw new NotFoundException('Vendor profile not found');
     }
 
-    if (!vendorProfile.userId) {
-      this.logger.error(`Vendor profile has no associated user: ${dto.vendorProfileId}`);
-      throw new NotFoundException('Vendor profile has no associated user (unclaimed vendor)');
-    }
+    const vendorUserId = vendorProfile.userId;
 
-    const vendorUserId = vendorProfile.userId; // Capture non-null value for use in transaction
-    this.logger.debug(`Vendor profile userId: ${vendorUserId}`);
-
-    // Validate both users exist before creating conversation
+    // Validate planner user always. Vendor user is optional for unclaimed profiles.
     const [plannerUser, vendorUser] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: dto.plannerId },
         select: { id: true },
       }),
-      this.prisma.user.findUnique({
-        where: { id: vendorUserId },
-        select: { id: true },
-      }),
+      vendorUserId
+        ? this.prisma.user.findUnique({
+            where: { id: vendorUserId },
+            select: { id: true },
+          })
+        : Promise.resolve(null),
     ]);
 
     this.logger.debug(`Planner user found: ${!!plannerUser}, Vendor user found: ${!!vendorUser}`);
@@ -131,12 +127,16 @@ export class LeadService {
       throw new NotFoundException(`Planner user not found: ${dto.plannerId}`);
     }
 
-    if (!vendorUser) {
+    if (vendorUserId && !vendorUser) {
       this.logger.error(`Vendor user not found: ${vendorUserId}`);
       throw new NotFoundException(`Vendor user not found: ${vendorUserId}`);
     }
 
-    this.logger.debug('Both users validated successfully');
+    if (!vendorUserId) {
+      this.logger.warn(
+        `Vendor profile ${dto.vendorProfileId} is unclaimed. Lead will be created without vendor conversation and routed to ops.`,
+      );
+    }
 
     // Wrap entire lead creation flow in transaction for atomicity
     const result = await this.prisma.$transaction(async (tx) => {
@@ -173,44 +173,46 @@ export class LeadService {
         },
       });
 
-      // Create conversation for lead using vendor's userId
-      const conversation = await tx.conversation.create({
-        data: {
-          type: 'LEAD',
-          lead: { connect: { id: lead.id } },
-          participants: {
-            create: [
-              {
-                userId: dto.plannerId,
-                role: 'PLANNER',
-              },
-              {
-                userId: vendorUserId,
-                role: 'VENDOR',
-              },
-            ],
-          },
-        },
-        include: {
-          participants: true,
-        },
-      });
-
-      // Send initial message if provided
-      if (dto.initialMessage) {
-        await tx.message.create({
+      if (vendorUserId) {
+        // Create conversation only when vendor account exists.
+        const conversation = await tx.conversation.create({
           data: {
-            conversation: { connect: { id: conversation.id } },
-            sender: { connect: { id: dto.plannerId } },
-            content: dto.initialMessage,
+            type: 'LEAD',
+            lead: { connect: { id: lead.id } },
+            participants: {
+              create: [
+                {
+                  userId: dto.plannerId,
+                  role: 'PLANNER',
+                },
+                {
+                  userId: vendorUserId,
+                  role: 'VENDOR',
+                },
+              ],
+            },
+          },
+          include: {
+            participants: true,
           },
         });
 
-        // Update conversation lastMessageAt
-        await tx.conversation.update({
-          where: { id: conversation.id },
-          data: { lastMessageAt: new Date() },
-        });
+        // Send initial message only when a conversation exists.
+        if (dto.initialMessage) {
+          await tx.message.create({
+            data: {
+              conversation: { connect: { id: conversation.id } },
+              sender: { connect: { id: dto.plannerId } },
+              content: dto.initialMessage,
+            },
+          });
+
+          // Update conversation lastMessageAt
+          await tx.conversation.update({
+            where: { id: conversation.id },
+            data: { lastMessageAt: new Date() },
+          });
+        }
       }
 
       return lead;

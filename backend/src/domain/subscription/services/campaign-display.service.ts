@@ -23,6 +23,12 @@ export interface BoostedVendor {
   vendorProfileId: string;
   campaignId: string;
   boostScore: number; // Higher = more priority
+  businessName?: string;
+  slug?: string;
+  profilePhotoUrl?: string;
+  tagline?: string;
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 export interface FeaturedListing {
@@ -432,7 +438,15 @@ export class CampaignDisplayService {
       },
       include: {
         vendorProfile: {
-          select: { adCredits: true },
+          select: {
+            adCredits: true,
+            businessName: true,
+            slug: true,
+            profilePhotoUrl: true,
+            tagline: true,
+            averageRating: true,
+            totalReviews: true,
+          },
         },
       },
       orderBy: { dailyBudget: 'desc' },
@@ -452,6 +466,14 @@ export class CampaignDisplayService {
       // Boost score based on position after weighted random + budget
       // This ensures some randomness while still favoring higher budgets
       boostScore: (shuffled.length - index) * 10 + c.dailyBudget,
+      businessName: c.vendorProfile.businessName || undefined,
+      slug: c.vendorProfile.slug || undefined,
+      profilePhotoUrl: c.vendorProfile.profilePhotoUrl || undefined,
+      tagline: c.vendorProfile.tagline || undefined,
+      averageRating: c.vendorProfile.averageRating
+        ? parseFloat(c.vendorProfile.averageRating.toString())
+        : undefined,
+      totalReviews: c.vendorProfile.totalReviews,
     }));
   }
 

@@ -1074,12 +1074,16 @@ function SponsoredBannerSection() {
 
 function BoostedVendorsSection() {
   return (
-    <FeaturedVendors
-      limit={4}
-      title="Sponsored Vendors"
-      subtitle="Premium vendors ready to make your event special"
-      className="from-primary/5 via-background to-background bg-gradient-to-br"
-    />
+    <section className=" py-8">
+      <div className="mx-auto max-w-7xl px-6">
+        <FeaturedVendors
+          limit={4}
+          title="Promoted Vendors"
+          subtitle="Premium vendors ready to make your event special"
+          className=""
+        />
+      </div>
+    </section>
   );
 }
 
@@ -1087,13 +1091,13 @@ function BoostedVendorsSection() {
 
 function PromotedAlbumsSection() {
   return (
-    <section className="bg-background py-8">
+    <section className=" py-8">
       <div className="mx-auto max-w-7xl px-6">
         <PromotedAlbums
           limit={4}
           title="Trending Portfolios"
           subtitle="Discover stunning work from top vendors"
-          className="bg-muted/30"
+          className=""
         />
       </div>
     </section>
