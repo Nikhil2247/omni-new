@@ -9,6 +9,14 @@ export interface ChatbotVendorSuggestion {
   maxPrice?: number;
   isVerified?: boolean;
   responseTimeMinutes?: number;
+  profileImageUrl?: string;
+  planTier?: string;
+  searchBoost?: number;
+  isProfileBoosted?: boolean;
+  hasProBadge?: boolean;
+  hasPremiumBadge?: boolean;
+  recommendationScore?: number;
+  recommendationLabel?: 'high' | 'medium' | 'low';
   profileUrl: string;
 }
 
@@ -56,6 +64,13 @@ export interface ChatbotResponse {
     responseTime: number;
     vendorsFound: number;
     hasMoreResults: boolean;
+    route:
+      | 'welcome'
+      | 'deterministic'
+      | 'deterministic+llm-refine'
+      | 'llm-tools'
+      | 'fallback';
+    provider: string;
   };
 }
 
@@ -81,6 +96,7 @@ export interface ChatbotCard {
   title: string;
   subtitle?: string;
   description?: string;
+  imageUrl?: string;
   ctaLabel?: string;
   ctaUrl?: string;
 }

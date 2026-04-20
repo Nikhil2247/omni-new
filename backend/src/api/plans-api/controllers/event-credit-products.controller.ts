@@ -145,11 +145,44 @@ export class EventCreditProductsController {
   async getPricingSummary() {
     // UNLIMITED EVENTS MODEL - v2
     console.log('[PricingSummary] Fetching tier features for unlimited events model');
-    const [basicFeatures, premiumFeatures, comparison] = await Promise.all([
+    const [basicFeatures, premiumFeatures, comparison, basicProducts, premiumProducts] = await Promise.all([
       this.eventCreditService.getTierFeatures(EventTier.BASIC),
       this.eventCreditService.getTierFeatures(EventTier.PREMIUM),
       this.eventCreditService.getTierComparison(),
+      this.eventCreditService.getProductsByTier(EventTier.BASIC),
+      this.eventCreditService.getProductsByTier(EventTier.PREMIUM),
     ]);
+
+    const formatTierPricing = (products: ProductWithPricing[]) => {
+      if (!products.length) {
+        return {
+          price: 'Free',
+          priceSubtext: 'Unlimited events',
+        };
+      }
+
+      const baseProduct =
+        products.find((p) => p.bundleType === BundleType.SINGLE) ||
+        products
+          .slice()
+          .sort((a, b) => a.creditCount - b.creditCount)[0];
+
+      const maxDiscount = products.reduce(
+        (max, p) => Math.max(max, p.discountPercent || 0),
+        0,
+      );
+
+      return {
+        price: `Rs. ${Number(baseProduct.priceInr).toLocaleString('en-IN')}`,
+        priceSubtext:
+          maxDiscount > 0
+            ? `Per event | Packs up to ${maxDiscount}% off`
+            : 'Per event',
+      };
+    };
+
+    const basicTierPricing = formatTierPricing(basicProducts);
+    const premiumTierPricing = formatTierPricing(premiumProducts);
 
     // Format features for display
     const formatFeatures = (features: EventTierFeature[]) => {
@@ -170,15 +203,15 @@ export class EventCreditProductsController {
     return {
       // Unlimited events model info
       unlimitedEvents: true,
-      unlimitedEventsMessage: 'Create unlimited events for free. Choose a tier based on the features you need per event.',
+      unlimitedEventsMessage: 'Create unlimited events. Choose a tier based on the features you need per event.',
 
       tiers: [
         {
           tier: EventTier.BASIC,
           name: 'Basic',
           description: 'Perfect for intimate celebrations and smaller events',
-          price: 'Free',
-          priceSubtext: 'Unlimited events',
+          price: basicTierPricing.price,
+          priceSubtext: basicTierPricing.priceSubtext,
           features: formatFeatures(basicFeatures),
           isPopular: false,
         },
@@ -186,8 +219,8 @@ export class EventCreditProductsController {
           tier: EventTier.PREMIUM,
           name: 'Premium',
           description: 'Full-featured for grand celebrations and large events',
-          price: 'Free',
-          priceSubtext: 'Unlimited events',
+          price: premiumTierPricing.price,
+          priceSubtext: premiumTierPricing.priceSubtext,
           features: formatFeatures(premiumFeatures),
           isPopular: true,
         },

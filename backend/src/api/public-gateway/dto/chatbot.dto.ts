@@ -123,6 +123,30 @@ export class ChatbotVendorSuggestionDto {
   @ApiPropertyOptional({ example: true })
   isVerified?: boolean;
 
+  @ApiPropertyOptional({ example: 'https://files.omnicassion.com/vendor/profile-photo.jpg' })
+  profileImageUrl?: string;
+
+  @ApiPropertyOptional({ example: 'PREMIUM' })
+  planTier?: string;
+
+  @ApiPropertyOptional({ example: 1.4 })
+  searchBoost?: number;
+
+  @ApiPropertyOptional({ example: true })
+  isProfileBoosted?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  hasProBadge?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  hasPremiumBadge?: boolean;
+
+  @ApiPropertyOptional({ example: 86 })
+  recommendationScore?: number;
+
+  @ApiPropertyOptional({ enum: ['high', 'medium', 'low'], example: 'high' })
+  recommendationLabel?: 'high' | 'medium' | 'low';
+
   @ApiProperty({ example: '/vendors/the-brilliant-studio' })
   profileUrl: string;
 }
@@ -191,6 +215,7 @@ export class ChatbotResponseDto {
         title: { type: 'string' },
         subtitle: { type: 'string' },
         description: { type: 'string' },
+        imageUrl: { type: 'string' },
         ctaLabel: { type: 'string' },
         ctaUrl: { type: 'string' },
       },

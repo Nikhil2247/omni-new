@@ -209,8 +209,8 @@ export function CreateEventForm() {
         tier: apiTier.tier,
         name: apiTier.name || fallback.name,
         description: apiTier.description || fallback.description,
-        price: apiTier.price || 'Free',
-        priceSubtext: apiTier.priceSubtext || 'Unlimited events',
+        price: apiTier.price || (tier === 'BASIC' ? 'From Rs. 499' : 'From Rs. 1299'),
+        priceSubtext: apiTier.priceSubtext || 'Per event',
         features: apiTier.features,
         isPopular: apiTier.isPopular ?? fallback.isPopular,
       }
@@ -221,8 +221,8 @@ export function CreateEventForm() {
       tier,
       name: fallback.name,
       description: fallback.description,
-      price: 'Free',
-      priceSubtext: 'Unlimited events',
+      price: tier === 'BASIC' ? 'From Rs. 499' : 'From Rs. 1299',
+      priceSubtext: 'Per event',
       features: fallback.features.map(f => ({
         key: f.key,
         name: f.name,
@@ -272,7 +272,7 @@ export function CreateEventForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Unlimited Events Banner */}
-        <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 dark:border-emerald-800 dark:from-emerald-950/40 dark:to-green-950/30">
+        <Card className="border-emerald-200 bg-linear-to-br from-emerald-50 to-green-50 dark:border-emerald-800 dark:from-emerald-950/40 dark:to-green-950/30">
           <CardContent className="py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
@@ -280,10 +280,10 @@ export function CreateEventForm() {
               </div>
               <div>
                 <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-                  Create Unlimited Events - Free!
+                  Create Unlimited Events
                 </p>
                 <p className="text-sm text-emerald-700/80 dark:text-emerald-300/80">
-                  Choose a tier based on the features you need. Feature limits apply per event.
+                  Choose a tier based on the features and pricing that fit your celebration.
                 </p>
               </div>
             </div>

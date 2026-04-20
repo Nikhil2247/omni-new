@@ -7,3 +7,4 @@ export * from './chatbot-session-context.service';
 export * from './chatbot-persistence.service';
 export * from './chatbot-language-intent.service';
 export * from './chatbot-observability.service';
+export * from './llm';

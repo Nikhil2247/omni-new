@@ -12,6 +12,9 @@ import {
   ChatbotRankingService,
   ChatbotSessionContextService,
   ChatbotTimelineGuidanceService,
+  ChatbotLlmFactoryService,
+  GeminiChatbotLlmProvider,
+  OpenRouterChatbotLlmProvider,
 } from './services';
 
 @Module({
@@ -26,6 +29,9 @@ import {
     ChatbotPersistenceService,
     ChatbotLanguageIntentService,
     ChatbotObservabilityService,
+    ChatbotLlmFactoryService,
+    GeminiChatbotLlmProvider,
+    OpenRouterChatbotLlmProvider,
   ],
   exports: [ChatbotDomainService],
 })

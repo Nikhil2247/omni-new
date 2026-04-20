@@ -16,6 +16,7 @@ export interface VendorSearchDocument extends Record<string, unknown> {
   id: string;
   businessName: string;
   slug: string;
+  profilePhotoUrl?: string;
   tagline?: string;
   description: string;
   categoryId: string;
@@ -470,6 +471,7 @@ export class VendorIndexer implements OnModuleInit {
       id: vendor.id,
       businessName: vendor.businessName,
       slug: vendor.slug,
+      profilePhotoUrl: vendor.profilePhotoUrl || vendor.bannerImageUrl || undefined,
       tagline: vendor.tagline || undefined,
       description: vendor.description || '',
       categoryId: vendor.categoryId,

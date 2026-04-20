@@ -30,8 +30,8 @@ const TIER_INFO = {
     borderColor: 'border-blue-200 dark:border-blue-800',
     badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
     isPopular: false,
-    price: 'Free',
-    priceSubtext: 'Unlimited events',
+    price: 'From Rs. 499',
+    priceSubtext: 'Per event',
   },
   PREMIUM: {
     name: 'Premium',
@@ -40,8 +40,8 @@ const TIER_INFO = {
     borderColor: 'border-purple-200 dark:border-purple-800',
     badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
     isPopular: true,
-    price: 'Free',
-    priceSubtext: 'Unlimited events',
+    price: 'From Rs. 1299',
+    priceSubtext: 'Per event',
   },
 }
 
@@ -106,22 +106,22 @@ function EventPricingCardSkeleton() {
 
 function UnlimitedEventsBanner({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
-    <Card className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800 mb-8">
+    <Card className="bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800 mb-8">
       <CardContent className="flex flex-col md:flex-row items-center justify-between gap-4 py-6">
         <div className="flex items-center gap-4">
           <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900">
             <Gift className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-lg">Create Unlimited Events - Free!</h3>
+            <h3 className="font-semibold text-lg">Create Unlimited Events</h3>
             <p className="text-muted-foreground">
-              Plan as many events as you want. Choose a tier based on the features you need per event.
+              Plan as many events as you want. Choose a tier based on the features and pricing that fit your event.
             </p>
           </div>
         </div>
         <Button asChild variant="outline" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950">
           <Link href={isAuthenticated ? '/dashboard/events/new' : '/register'}>
-            {isAuthenticated ? 'Create Event' : 'Get Started Free'}
+            {isAuthenticated ? 'Create Event' : 'Get Started'}
           </Link>
         </Button>
       </CardContent>
@@ -164,8 +164,8 @@ const createFallbackTier = (tier: EventTier): TierData => {
     description: tier === 'BASIC'
       ? 'Perfect for intimate celebrations and smaller events'
       : 'Full-featured for grand celebrations and large events',
-    price: 'Free',
-    priceSubtext: 'Unlimited events',
+    price: tier === 'BASIC' ? 'From Rs. 499' : 'From Rs. 1299',
+    priceSubtext: 'Per event',
     features: features.map(f => ({
       key: f.key,
       name: f.name,
@@ -259,9 +259,9 @@ function EventTierCardFromBackend({ tierData, isAuthenticated }: EventTierCardFr
             {(tierData.features || []).map((feature) => (
               <li key={feature.key} className={`flex items-center gap-2 text-sm ${feature.isHighlighted ? 'font-semibold' : ''}`}>
                 {feature.included ? (
-                  <Check className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
                 ) : (
-                  <X className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+                  <X className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                 )}
                 <span className={feature.included ? (feature.isHighlighted ? 'text-emerald-600' : '') : 'text-muted-foreground/70'}>
                   {feature.name}
@@ -280,7 +280,7 @@ function EventTierCardFromBackend({ tierData, isAuthenticated }: EventTierCardFr
           size="lg"
         >
           <Link href={ctaLink}>
-            {isAuthenticated ? 'Create Event' : 'Get Started Free'}
+            {isAuthenticated ? 'Create Event' : 'Get Started'}
           </Link>
         </Button>
       </CardFooter>
@@ -395,7 +395,7 @@ function VendorPricingCard({ plan, billingCycle, isAuthenticated, userRole }: { 
         <ul className="space-y-3">
           {sortedFeatures.map((feature) => (
             <li key={feature.key} className={`flex items-start gap-3 text-sm ${feature.isHighlighted ? 'font-medium' : ''}`}>
-              <div className="flex-shrink-0 mt-0.5">{renderFeatureValue(feature)}</div>
+              <div className="shrink-0 mt-0.5">{renderFeatureValue(feature)}</div>
               <span className={feature.isHighlighted ? 'text-foreground' : 'text-muted-foreground'}>
                 {feature.name}
               </span>
@@ -533,10 +533,10 @@ export default function PricingPage() {
       {/* Header */}
       <section className="text-center space-y-4 max-w-3xl mx-auto">
         <Badge variant="secondary" className="mb-2">
-          Unlimited Events, Free Forever
+          Flexible Event Tiers
         </Badge>
         <h1 className="text-4xl font-semibold sm:text-5xl">
-          Plan unlimited events for free
+          Plan unlimited events with tier-based pricing
         </h1>
         <p className="text-lg text-muted-foreground">
           Create as many events as you want. Choose between Basic and Premium tiers
@@ -651,16 +651,16 @@ export default function PricingPage() {
       <FAQSection />
 
       {/* Final CTA */}
-      <section className="mt-12 text-center py-12 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
+      <section className="mt-12 text-center py-12 rounded-2xl bg-linear-to-br from-primary/5 via-primary/10 to-primary/5">
         <h2 className="text-2xl font-semibold">Ready to plan your event?</h2>
         <p className="text-muted-foreground mt-2">
           {isAuthenticated
             ? 'Create your next event and start planning'
-            : 'Join thousands of happy users planning their dream events - completely free'}
+            : 'Join thousands of happy users planning unforgettable events with the right tier for every celebration'}
         </p>
         <Button asChild size="lg" className="mt-6">
           <Link href={isAuthenticated ? '/dashboard/events/new' : '/register'}>
-            {isAuthenticated ? 'Create Event' : 'Get Started Free'}
+            {isAuthenticated ? 'Create Event' : 'Get Started'}
           </Link>
         </Button>
       </section>
