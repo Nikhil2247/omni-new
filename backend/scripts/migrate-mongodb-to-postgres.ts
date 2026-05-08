@@ -25,6 +25,7 @@ import * as path from 'path';
 import * as zlib from 'zlib';
 import { execSync } from 'child_process';
 import { randomUUID } from 'crypto';
+import { BSON } from 'bson';
 
 // Create Prisma client with pg-adapter
 function createPrismaClient(): PrismaClient {
@@ -117,15 +118,22 @@ function generateSlug(text: string): string {
     .substring(0, 100);
 }
 
-function parseMongoDate(dateObj: { $date: string } | string | undefined): Date {
+function parseMongoDate(dateObj: { $date: string } | string | Date | undefined): Date {
   if (!dateObj) return new Date();
+  if (dateObj instanceof Date) return dateObj;
   if (typeof dateObj === 'string') return new Date(dateObj);
-  return new Date(dateObj.$date);
+  if (typeof dateObj === 'object' && '$date' in dateObj) return new Date(dateObj.$date);
+  return new Date();
 }
 
-function getMongoId(idObj: { $oid: string } | string): string {
+function getMongoId(idObj: { $oid: string } | string | { toString(): string }): string {
   if (typeof idObj === 'string') return idObj;
-  return idObj.$oid;
+  if (typeof idObj === 'object' && '$oid' in idObj) return idObj.$oid;
+  // BSON ObjectId has toString() method
+  if (typeof idObj === 'object' && typeof idObj.toString === 'function') {
+    return idObj.toString();
+  }
+  return String(idObj);
 }
 
 async function hashPassword(password: string): Promise<string> {
@@ -144,21 +152,23 @@ function mapOldRoleToNew(oldRole: string): string {
 
 function mapOldCategoryToNew(oldCategory: string): string {
   // Map old category names to existing database category slugs
+  // Available categories: photography, videography, catering, venues, entertainment, florist, makeup-hair, decor-design
   const categoryMap: Record<string, string> = {
-    'photographer': 'photo-videography',
-    'photography': 'photo-videography',
-    'photo': 'photo-videography',
-    'videographer': 'photo-videography',
-    'videography': 'photo-videography',
-    'photo-videography': 'photo-videography',
-    'catering': 'food-catering',
-    'caterers': 'food-catering',
-    'food': 'food-catering',
-    'food-catering': 'food-catering',
-    'venue': 'venue',
-    'venues': 'venue',
-    'florist': 'decor-design',
-    'florists': 'decor-design',
+    'photographer': 'photography',
+    'photography': 'photography',
+    'photo': 'photography',
+    'videographer': 'videography',
+    'videography': 'videography',
+    'video': 'videography',
+    'catering': 'catering',
+    'caterers': 'catering',
+    'food': 'catering',
+    'food-catering': 'catering',
+    'venue': 'venues',
+    'venues': 'venues',
+    'florist': 'florist',
+    'florists': 'florist',
+    'flowers': 'florist',
     'decorator': 'decor-design',
     'decor': 'decor-design',
     'decoration': 'decor-design',
@@ -167,32 +177,31 @@ function mapOldCategoryToNew(oldCategory: string): string {
     'music': 'entertainment',
     'dj-music': 'entertainment',
     'entertainment': 'entertainment',
+    'band': 'entertainment',
     'makeup': 'makeup-hair',
     'makeup-hair': 'makeup-hair',
     'hair': 'makeup-hair',
-    'mehndi': 'mehndi-artists',
-    'mehndi-artists': 'mehndi-artists',
-    'planner': 'planner',
-    'wedding-planner': 'planner',
-    'wedding-planning': 'planner',
-    'event planner': 'event-planner',
-    'event-planner': 'event-planner',
-    'event management': 'event-management-company',
-    'event-management-company': 'event-management-company',
-    'hospitality': 'hospitality',
-    'cake': 'food-catering',
-    'cakes': 'food-catering',
-    'bakery': 'food-catering',
-    'invitation': 'planner',
-    'invitations': 'planner',
-    'rental': 'event-management-company',
-    'rentals': 'event-management-company',
-    'audio-visual': 'audio-visual',
-    'av': 'audio-visual',
+    'mehndi': 'makeup-hair',
+    'mehndi-artists': 'makeup-hair',
+    'planner': 'decor-design',
+    'wedding-planner': 'decor-design',
+    'wedding-planning': 'decor-design',
+    'event planner': 'decor-design',
+    'event-planner': 'decor-design',
+    'event management': 'decor-design',
+    'event-management-company': 'decor-design',
+    'hospitality': 'catering',
+    'cake': 'catering',
+    'cakes': 'catering',
+    'bakery': 'catering',
+    'invitation': 'decor-design',
+    'invitations': 'decor-design',
+    'rental': 'decor-design',
+    'rentals': 'decor-design',
   };
 
   const normalized = oldCategory.toLowerCase().trim();
-  return categoryMap[normalized] || 'planner';
+  return categoryMap[normalized] || 'decor-design';
 }
 
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
@@ -255,15 +264,24 @@ async function extractBackup(): Promise<void> {
 // ============================================================================
 
 function readCollection<T>(collectionName: string): T[] {
-  // MongoDB dump creates BSON files, but if exported as JSON:
+  // MongoDB dump creates BSON files - check both BSON and JSON
   const JSON_DIR = 'D:\\backup\\extracted\\json';
+  const BSON_DIR = 'D:\\backup\\extracted';
+
   const possiblePaths = [
+    // BSON paths (prioritize these)
+    path.join(BSON_DIR, 'dump', 'omnicassion', `${collectionName.toLowerCase()}.bson`),
+    path.join(BSON_DIR, 'omnicassion', `${collectionName.toLowerCase()}.bson`),
+    path.join(BSON_DIR, `${collectionName.toLowerCase()}.bson`),
+    path.join(BSON_DIR, 'dump', 'omnicassion', `${collectionName}.bson`),
+    path.join(BSON_DIR, 'omnicassion', `${collectionName}.bson`),
+    path.join(BSON_DIR, `${collectionName}.bson`),
+    // JSON paths
     path.join(JSON_DIR, `${collectionName}.json`),
     path.join(EXTRACTED_DIR, 'json', `${collectionName}.json`),
     path.join(EXTRACTED_DIR, 'dump', 'omnicassion', `${collectionName}.json`),
     path.join(EXTRACTED_DIR, 'omnicassion', `${collectionName}.json`),
     path.join(EXTRACTED_DIR, `${collectionName}.json`),
-    path.join(EXTRACTED_DIR, 'dump', 'omnicassion', `${collectionName}.bson`),
   ];
 
   for (const filePath of possiblePaths) {
@@ -271,10 +289,35 @@ function readCollection<T>(collectionName: string): T[] {
       console.log(`📖 Reading ${collectionName} from ${filePath}`);
 
       if (filePath.endsWith('.bson')) {
-        // For BSON files, you'll need to use mongorestore or bson library
-        throw new Error(`BSON file found. Please export to JSON first using: mongoexport --db=omnicassion --collection=${collectionName} --out=${collectionName}.json`);
+        // Read and parse BSON file
+        const bsonBuffer = fs.readFileSync(filePath);
+        const documents: T[] = [];
+        let offset = 0;
+
+        while (offset < bsonBuffer.length) {
+          // Read document size (first 4 bytes, little-endian)
+          const docSize = bsonBuffer.readInt32LE(offset);
+          if (docSize <= 0 || offset + docSize > bsonBuffer.length) {
+            break;
+          }
+
+          // Extract document bytes and deserialize
+          const docBuffer = bsonBuffer.subarray(offset, offset + docSize);
+          try {
+            const doc = BSON.deserialize(docBuffer, { promoteValues: true });
+            documents.push(doc as T);
+          } catch (err) {
+            console.warn(`⚠️  Failed to parse BSON document at offset ${offset}:`, err);
+          }
+
+          offset += docSize;
+        }
+
+        console.log(`   Parsed ${documents.length} documents from BSON`);
+        return documents;
       }
 
+      // JSON file handling
       const content = fs.readFileSync(filePath, 'utf-8');
 
       // Handle both array format and newline-delimited JSON
@@ -1355,6 +1398,8 @@ async function runMigration(): Promise<void> {
       'photographer',
       'photography',
       'photo',
+      'videographer',
+      'videography',
     ];
     const unclaimedCategoryDistribution = await migrateUnclaimedVendorProfiles(
       prisma,

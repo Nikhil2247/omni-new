@@ -49,7 +49,10 @@
       "Bash(npm run lint)",
       "Bash(del /f \"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\.next\\\\lock\")",
       "Bash(cmd /c \"del /f \"\"D:\\\\omnicassion\\\\omni-new\\\\frontend\\\\.next\\\\lock\"\" 2>nul\")",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(npm run migrate:mongodb:*)",
+      "Bash(npm run seed:launch:*)",
+      "Bash(npx ts-node scripts/clean-seeded-data.ts)"
     ]
   }
 }
