@@ -1,43 +1,26 @@
 # ===========================================
-# Shared Infrastructure - Coolify Compatible
+# Shared Infrastructure - Low Resource Mode
 # ===========================================
 # PostgreSQL + Dragonfly (Redis) + MinIO + Meilisearch
-# Optimized for 7GB RAM total
+# Optimized for 5GB RAM total with strict CPU limits
 #
-# Coolify Deployment:
-#   1. Create new "Docker Compose" resource in Coolify
-#   2. Paste this file or link to repository
-#   3. Set environment variables in Coolify UI (or use defaults)
-#   4. Deploy
+# Resource Allocation (5GB total):
+#   - PostgreSQL:   2GB    | 1.0 CPU
+#   - Dragonfly:    1GB    | 0.5 CPU (single thread)
+#   - MinIO:        768MB  | 0.5 CPU
+#   - Meilisearch:  768MB  | 0.5 CPU
+#   - System buffer: ~512MB
+#   - Total CPU:    2.5 cores max
 #
-# Environment Variables (set in Coolify UI):
-#   POSTGRES_USER       - PostgreSQL username (default: postgres)
-#   POSTGRES_PASSWORD   - PostgreSQL password (default: postgres123)
-#   POSTGRES_DB         - Database name (default: app_db)
-#   MINIO_ROOT_USER     - MinIO admin username (default: minioadmin)
-#   MINIO_ROOT_PASSWORD - MinIO admin password (default: minioadmin123)
-#   MINIO_SERVER_URL - Public MinIO API URL (example: https://files.omnicassion.com)
-#   MINIO_BROWSER_REDIRECT_URL - Public MinIO Console URL (example: https://minio-console.omnicassion.com)
-#   MINIO_DEFAULT_BUCKETS - Comma-separated bucket names (default: omnicassion)
-#   MEILI_MASTER_KEY    - Meilisearch master key (default: masterKey123456789)
-#   MEILISEARCH_IMAGE_TAG - Meilisearch image tag (default: v1.35.0)
+# Manual Deployment:
+#   docker compose -f docker-compose.infra.yml up -d
 #
-# Connecting from other services (use these in your app):
+# Connecting from other services:
 #   - PostgreSQL: postgresql://postgres:password@infra-postgres:5432/app_db
 #   - Dragonfly:  redis://infra-dragonfly:6379
 #   - MinIO API:  http://infra-minio:9000
 #   - MinIO Console: http://infra-minio:9001
 #   - Meilisearch: http://infra-meilisearch:7700
-#
-# To create additional databases, connect via psql or pgAdmin:
-#   CREATE DATABASE your_new_db;
-#
-# Resource Allocation (7GB total):
-#   - PostgreSQL: 3GB
-#   - Dragonfly:  1.5GB
-#   - MinIO:      1GB
-#   - Meilisearch: 1GB
-#   - Buffer:     0.5GB
 # ===========================================
 
 services:
@@ -55,7 +38,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       POSTGRES_DB: ${POSTGRES_DB:-app_db}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
-      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_MULTIPLE_DATABASES:-} 
+      POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_MULTIPLE_DATABASES:-}
     volumes:
       - infra-postgres-data:/var/lib/postgresql/data
     networks:
@@ -64,70 +47,79 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2.0"
-          memory: 3G
+          cpus: "1.0"
+          memory: 2G
         reservations:
-          cpus: "0.5"
-          memory: 1G
+          cpus: "0.25"
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-app_db}"]
-      interval: 10s
+      interval: 30s
       timeout: 5s
-      retries: 5
+      retries: 3
       start_period: 30s
     command:
       - postgres
-      # Memory settings (optimized for 3GB limit)
+      # Memory settings (optimized for 2GB limit)
       - -c
-      - shared_buffers=768MB
+      - shared_buffers=512MB
       - -c
-      - effective_cache_size=2GB
+      - effective_cache_size=1GB
       - -c
-      - maintenance_work_mem=256MB
+      - maintenance_work_mem=128MB
       - -c
-      - work_mem=16MB
-      # WAL settings
+      - work_mem=8MB
+      # WAL settings (reduced for lower memory)
       - -c
-      - wal_buffers=16MB
+      - wal_buffers=8MB
       - -c
-      - min_wal_size=512MB
+      - min_wal_size=256MB
       - -c
-      - max_wal_size=2GB
+      - max_wal_size=1GB
       - -c
       - checkpoint_completion_target=0.9
-      # Connection settings
+      # Connection settings (reduced)
       - -c
-      - max_connections=200
+      - max_connections=100
       - -c
       - superuser_reserved_connections=3
       # Performance settings
       - -c
       - random_page_cost=1.1
       - -c
-      - effective_io_concurrency=200
+      - effective_io_concurrency=100
       - -c
       - default_statistics_target=100
+      # Disable huge pages (saves memory overhead)
       - -c
-      - huge_pages=try
-      # Logging
+      - huge_pages=off
+      # Logging (minimal)
       - -c
       - log_statement=none
       - -c
-      - log_min_duration_statement=1000
+      - log_min_duration_statement=2000
       - -c
-      - log_checkpoints=on
+      - log_checkpoints=off
       - -c
       - log_connections=off
       - -c
       - log_disconnections=off
-      # Autovacuum
+      # Autovacuum (single worker to save CPU)
       - -c
-      - autovacuum_max_workers=2
+      - autovacuum_max_workers=1
       - -c
-      - autovacuum_naptime=30s
+      - autovacuum_naptime=60s
+      # Reduce parallel query workers
+      - -c
+      - max_parallel_workers_per_gather=1
+      - -c
+      - max_parallel_workers=2
+      - -c
+      - max_worker_processes=4
 
   # ===========================================
   # DragonflyDB - Redis-compatible Cache
+  # Single-threaded mode for low CPU usage
   # ===========================================
   dragonfly:
     image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
@@ -143,27 +135,26 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.0"
-          memory: 1536M
+          cpus: "0.5"
+          memory: 1G
         reservations:
-          cpus: "0.25"
-          memory: 512M
+          cpus: "0.1"
+          memory: 256M
     ulimits:
       memlock: -1
     command: >
       --logtostderr
-      --cache_mode=false
-      --maxmemory=1200mb
-      --proactor_threads=2
-      --cluster_mode=emulated
-      --lock_on_hashtags
+      --cache_mode=true
+      --maxmemory=800mb
+      --proactor_threads=1
+      --keys_output_limit=512
       --default_lua_flags=allow-undeclared-keys
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
   # ===========================================
   # MinIO - S3-compatible Object Storage
@@ -180,6 +171,8 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
       MINIO_SERVER_URL: ${MINIO_SERVER_URL:-}
       MINIO_BROWSER_REDIRECT_URL: ${MINIO_BROWSER_REDIRECT_URL:-}
+      # Limit MinIO's internal concurrency
+      GOMAXPROCS: "1"
     volumes:
       - infra-minio-data:/data
     networks:
@@ -188,18 +181,18 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.0"
-          memory: 1G
+          cpus: "0.5"
+          memory: 768M
         reservations:
-          cpus: "0.25"
-          memory: 256M
+          cpus: "0.1"
+          memory: 128M
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
-      interval: 30s
+      interval: 60s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 20s
 
   # ===========================================
   # MinIO Init - Creates default buckets
@@ -258,6 +251,9 @@ services:
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-masterKey123456789}
       MEILI_ENV: ${MEILI_ENV:-production}
       MEILI_NO_ANALYTICS: "true"
+      # Limit indexing threads
+      MEILI_MAX_INDEXING_THREADS: "1"
+      MEILI_MAX_INDEXING_MEMORY: "512MiB"
     volumes:
       - infra-meilisearch-data:/meili_data
     networks:
@@ -266,17 +262,17 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.0"
-          memory: 1G
+          cpus: "0.5"
+          memory: 768M
         reservations:
-          cpus: "0.25"
-          memory: 256M
+          cpus: "0.1"
+          memory: 128M
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:7700/health"]
-      interval: 30s
+      interval: 60s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 20s
 
 networks:
   infra-network:
