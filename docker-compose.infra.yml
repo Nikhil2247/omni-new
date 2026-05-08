@@ -40,7 +40,7 @@ services:
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
       POSTGRES_MULTIPLE_DATABASES: ${POSTGRES_MULTIPLE_DATABASES:-}
     volumes:
-      - infra-postgres-data:/var/lib/postgresql/data
+      - infra-postgres-data:/var/lib/postgresql
     networks:
       - infra-network
     restart: unless-stopped
