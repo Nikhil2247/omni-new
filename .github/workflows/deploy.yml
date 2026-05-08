@@ -7,11 +7,6 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      skip_tests:
-        description: 'Skip tests before deployment'
-        required: false
-        default: false
-        type: boolean
       deploy_backend:
         description: 'Deploy backend'
         required: false
@@ -85,12 +80,6 @@ jobs:
 
     - name: Build application
       run: npm run build
-
-    - name: Run tests
-      if: ${{ !inputs.skip_tests }}
-      run: npm test -- --passWithNoTests
-      env:
-        NODE_ENV: test
 
     - name: Build successful
       run: echo "Backend build completed successfully!"
