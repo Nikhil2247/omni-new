@@ -1,11 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
-
-  // Standalone output for PM2/Docker deployment
-  output: 'standalone',
 
   // Image optimization
   images: {
