@@ -212,7 +212,7 @@ jobs:
           echo "Running health check..."
           MAX_RETRIES=5
           RETRY_COUNT=0
-          until curl -sf http://localhost:8090/health > /dev/null 2>&1; do
+          until curl -sf http://localhost:3001/health > /dev/null 2>&1; do
             RETRY_COUNT=$((RETRY_COUNT + 1))
             if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
               echo "Health check failed after $MAX_RETRIES attempts!"
@@ -313,7 +313,7 @@ jobs:
           npm run build
 
           echo "Reloading PM2 process..."
-          pm2 reload omni-frontend --update-env || pm2 start npm --name omni-frontend -- start
+          pm2 reload omni-frontend --update-env || pm2 start "npx serve -s out -l 3000" --name omni-frontend
 
           echo "Waiting for service to be ready..."
           sleep 10
