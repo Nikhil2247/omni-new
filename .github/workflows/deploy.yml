@@ -313,7 +313,7 @@ jobs:
           npm run build
 
           echo "Reloading PM2 process..."
-          pm2 reload omni-frontend --update-env || pm2 start "npx serve -s out -l 3000" --name omni-frontend
+          pm2 reload omni-frontend --update-env || pm2 start npm --name omni-frontend -- start
 
           echo "Waiting for service to be ready..."
           sleep 10

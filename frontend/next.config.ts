@@ -4,31 +4,47 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 
-  // Static export for fast serving with 'serve' or nginx
-  output: 'export',
+  // Standalone output for PM2/Docker deployment
+  output: 'standalone',
 
-  // Static export requires unoptimized images (use external CDN/MinIO for optimization)
+  // Image optimization
   images: {
-    unoptimized: true,
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'files.omnicassion.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'backend.omnicassion.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.unsplash.com',
+      },
+    ],
   },
 
-  // Enable compression for better performance
+  // Enable compression
   compress: true,
 
   // Optimize production builds
   productionBrowserSourceMaps: false,
 
-  // Power optimizations
-  poweredByHeader: false, // Remove X-Powered-By header for security
+  // Security
+  poweredByHeader: false,
 
-  // Trailing slash - helps with static hosting
-  trailingSlash: true,
+  // Trailing slash
+  trailingSlash: false,
 
   // Generate ETags for caching
   generateEtags: true,
-
-  // Note: rewrites() and headers() don't work with static export
-  // Configure these in nginx/caddy instead
 };
 
 export default nextConfig;
