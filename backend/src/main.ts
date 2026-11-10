@@ -126,7 +126,9 @@ async function bootstrap() {
   // CORS - Strict origin whitelist
   const allowedOrigins = configService
     .get<string>('CORS_ORIGINS')
-    ?.split(',') || [
+    ?.split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean) || [
     'http://localhost:3000',
     'http://localhost:3001',
     'https://omnicassion.com',
