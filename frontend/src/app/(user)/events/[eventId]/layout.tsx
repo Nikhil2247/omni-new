@@ -41,14 +41,14 @@ export default function EventToolLayout({ children }: EventToolLayoutProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border bg-card p-3">
+      <div className="sk-paper px-4 py-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="text-ink-soft inline-flex items-center gap-2 text-sm font-bold">
             <Calendar className="h-4 w-4" />
             Selected Event
           </div>
           <Select value={currentEventId} onValueChange={handleEventChange}>
-            <SelectTrigger className="w-full sm:w-70">
+            <SelectTrigger className="border-ink bg-card w-full border-2 sm:w-70">
               <SelectValue placeholder="Select event" />
             </SelectTrigger>
             <SelectContent>

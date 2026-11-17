@@ -4,12 +4,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, DollarSign, Wallet, Sparkles, ChevronRight, Loader2, LayoutGrid, List as ListIcon } from 'lucide-react'
+import { Plus, Trash2, Wallet, Sparkles, ChevronRight, Loader2, LayoutGrid, List as ListIcon } from 'lucide-react'
 import { BUDGET_TEMPLATES, type BudgetTemplate } from '@/lib/data/recommended-templates'
-import { Badge } from '@/components/ui/badge'
+import { BrushBar, Ico, ICONS, Paper, SketchButton, Stamp } from '@/components/sketch'
 import { useAddBudgetItem, useBudget, useCreateBudget, useDeleteBudgetItem, useUpdateBudgetItem } from '@/hooks/queries/use-budget'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -157,8 +156,8 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-48 w-full rounded-2xl" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-lg" />
       </div>
     )
   }
@@ -168,9 +167,9 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="rounded-2xl border-2 border-dashed border-destructive/50 bg-destructive/5 p-8 text-center"
+        className="sk-paper px-5 py-8 text-center"
       >
-        <p className="text-sm text-destructive">Unable to load budget.</p>
+        <p className="text-rose text-sm">Unable to load budget.</p>
       </motion.div>
     )
   }
@@ -184,37 +183,30 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
         className="space-y-6"
       >
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/30 dark:via-yellow-950/30 dark:to-orange-950/30 p-8">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500">
-                <Wallet className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Set Your Budget</h1>
-                <p className="text-muted-foreground">Track expenses and stay within your budget</p>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <Button onClick={() => setShowCreateBudgetDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Custom Budget
-              </Button>
+        <Paper className="px-6 py-7">
+          <div className="flex items-center gap-4">
+            <Ico d={ICONS.wallet} className="h-14 w-14 shrink-0" />
+            <div>
+              <h2 className="font-display text-2xl font-semibold">Set Your Budget</h2>
+              <p className="text-ink-soft">Track expenses and stay within your budget</p>
             </div>
           </div>
-        </div>
+          <div className="mt-5 flex gap-3">
+            <SketchButton onClick={() => setShowCreateBudgetDialog(true)}>
+              <Plus className="h-4 w-4" />
+              Create Custom Budget
+            </SketchButton>
+          </div>
+        </Paper>
 
         {/* Recommended Templates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-amber-500" />
-              Recommended Budget Distributions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
+        <Paper className="px-6 py-5">
+          <h3 className="font-display mb-2 flex items-center gap-2 text-xl font-semibold">
+            <Sparkles className="text-gold h-5 w-5" />
+            Recommended Budget Distributions
+          </h3>
+          <div>
+            <p className="text-ink-soft mb-4 text-sm">
               Start with a pre-built budget distribution and customize it to your needs
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -226,26 +218,26 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                     setShowTemplateBudgetDialog(true)
                   }}
                   disabled={isCreatingFromTemplate || createBudget.isPending}
-                  className="group flex items-start gap-3 rounded-lg border p-4 text-left transition-all hover:border-primary/50 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group border-line hover:bg-blue-wash flex items-start gap-3 border-b-2 border-dashed px-2 py-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                    <Wallet className="h-5 w-5 text-amber-600" />
+                  <div className="bg-blue-wash text-blue flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                    <Wallet className="h-5 w-5" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium group-hover:text-primary">{template.name}</p>
-                      <Badge variant="secondary" className="text-[10px]">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{template.name}</p>
+                      <span className="sk-chip text-[10px]">
                         {template.items.length} categories
-                      </Badge>
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-1">{template.description}</p>
+                    <p className="text-ink-soft line-clamp-1 text-sm">{template.description}</p>
                   </div>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground/50 group-hover:text-primary" />
+                  <ChevronRight className="text-ink-soft h-5 w-5 shrink-0" />
                 </button>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Paper>
 
         {/* Custom Budget Dialog */}
         <Dialog open={showCreateBudgetDialog} onOpenChange={setShowCreateBudgetDialog}>
@@ -318,8 +310,8 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                 />
 
                 {selectedTemplate && (
-                  <div className="rounded-lg border bg-muted/30 p-3">
-                    <p className="text-xs font-medium mb-2">Budget Distribution:</p>
+                  <div className="bg-blue-wash rounded-lg p-3">
+                    <p className="mb-2 text-xs font-medium">Budget Distribution:</p>
                     <div className="space-y-1">
                       {selectedTemplate.items.slice(0, 5).map((item) => (
                         <div key={item.category} className="flex items-center justify-between text-xs">
@@ -388,6 +380,16 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
     return acc
   }, {} as Record<string, any[]>)
 
+  const categorySummaries = (Object.entries(itemsByCategory) as Array<[string, any[]]>).map(([category, items]) => ({
+    category,
+    planned: items.reduce((sum: number, i: any) => sum + (Number(i.estimatedCost ?? i.actualCost ?? 0) || 0), 0),
+    spent: items.reduce((sum: number, i: any) => {
+      if (!i?.isPaid) return sum
+      const paid = Number(i.actualCost ?? i.estimatedCost ?? 0)
+      return sum + (Number.isFinite(paid) ? paid : 0)
+    }, 0),
+  }))
+
   const allItems = (data.items || []).slice().sort((a: any, b: any) => {
     const byCategory = String(a.category || '').localeCompare(String(b.category || ''))
     if (byCategory !== 0) return byCategory
@@ -404,35 +406,58 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
       {/* Add Item Trigger */}
       <motion.div variants={itemVariants}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex rounded-xl border bg-background p-1 shadow-sm">
-            <Button
-              type="button"
+          <div className="inline-flex gap-2">
+            <SketchButton
               size="sm"
-              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              variant={viewMode === 'card' ? 'solid' : 'line'}
               onClick={() => setViewMode('card')}
-              className="h-8 gap-1.5 px-3"
+              aria-pressed={viewMode === 'card'}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
               Card View
-            </Button>
-            <Button
-              type="button"
+            </SketchButton>
+            <SketchButton
               size="sm"
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              variant={viewMode === 'list' ? 'solid' : 'line'}
               onClick={() => setViewMode('list')}
-              className="h-8 gap-1.5 px-3"
+              aria-pressed={viewMode === 'list'}
             >
               <ListIcon className="h-3.5 w-3.5" />
               List View
-            </Button>
+            </SketchButton>
           </div>
 
-          <Button size="sm" onClick={() => setShowAddItemDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <SketchButton size="sm" onClick={() => setShowAddItemDialog(true)}>
+            <Plus className="h-4 w-4" />
             Add Budget Item
-          </Button>
+          </SketchButton>
         </div>
       </motion.div>
+
+      {/* Spent vs planned by category */}
+      {categorySummaries.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <Paper className="px-5 py-4">
+            <h3 className="font-display mb-3 text-xl font-semibold">By category</h3>
+            <div>
+              {categorySummaries.map((c) => {
+                const pct = c.planned > 0 ? (c.spent / c.planned) * 100 : 0
+                return (
+                  <div key={c.category} className="border-line border-b-2 border-dashed py-3 last:border-b-0">
+                    <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                      <span className="font-medium">{c.category}</span>
+                      <span className="text-ink-soft text-xs">
+                        {formatCurrency(c.spent)} spent of {formatCurrency(c.planned)} planned
+                      </span>
+                    </div>
+                    <BrushBar value={pct} tone={c.spent > c.planned && c.planned > 0 ? 'gold' : 'green'} />
+                  </div>
+                )
+              })}
+            </div>
+          </Paper>
+        </motion.div>
+      )}
 
       <Dialog open={showAddItemDialog} onOpenChange={setShowAddItemDialog}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -541,17 +566,17 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
 
       {viewMode === 'list' ? (
         <motion.div variants={itemVariants}>
-          <Card className="border-muted/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">All Budget Items</CardTitle>
-              <CardDescription className="text-xs">
+          <Paper className="px-5 py-4">
+            <div className="mb-3">
+              <h3 className="font-display text-xl font-semibold">All Budget Items</h3>
+              <p className="text-ink-soft text-xs">
                 {allItems.filter((item: any) => item.isPaid).length} of {allItems.length} paid
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div>
               {/* Desktop Table View */}
-              <div className="hidden md:block overflow-hidden rounded-lg border border-muted/60">
-                <div className="grid grid-cols-12 bg-muted/50 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="hidden md:block">
+                <div className="sk-eyebrow border-ink/40 grid grid-cols-12 border-b-2 px-3 py-2">
                   <div className="col-span-4">Item</div>
                   <div className="col-span-2">Category</div>
                   <div className="col-span-2 text-right">Estimated</div>
@@ -567,9 +592,7 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className={`grid grid-cols-12 items-center gap-2 border-t px-3 py-2 text-sm ${
-                        item.isPaid ? 'bg-green-50/40 dark:bg-green-950/20' : 'hover:bg-muted/40'
-                      }`}
+                      className="border-line grid grid-cols-12 items-center gap-2 border-b-2 border-dashed px-3 py-2.5 text-sm"
                     >
                       <div className="col-span-4 flex min-w-0 items-center gap-2">
                         <Checkbox
@@ -583,26 +606,26 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                         />
                         <div className="min-w-0">
                           <p className="truncate font-medium">{item.name}</p>
-                          {item.notes && <p className="truncate text-xs text-muted-foreground">{item.notes}</p>}
+                          {item.notes && <p className="text-ink-soft truncate text-xs">{item.notes}</p>}
                         </div>
                       </div>
-                      <div className="col-span-2 truncate text-xs text-muted-foreground">{item.category || 'Uncategorized'}</div>
-                      <div className="col-span-2 text-right text-xs text-muted-foreground">
+                      <div className="text-ink-soft col-span-2 truncate text-xs">{item.category || 'Uncategorized'}</div>
+                      <div className="text-ink-soft col-span-2 text-right text-xs">
                         {item.estimatedCost ? formatCurrency(Number(item.estimatedCost)) : '-'}
                       </div>
                       <div className="col-span-2 text-right text-xs font-medium">
                         {item.actualCost ? formatCurrency(Number(item.actualCost)) : '-'}
                       </div>
                       <div className="col-span-2 flex items-center justify-end gap-1">
-                        {item.isPaid && <span className="text-xs text-green-600 dark:text-green-400">Paid</span>}
-                        <Button
+                        {item.isPaid && <Stamp>Paid</Stamp>}
+                        <SketchButton
                           variant="ghost"
                           size="icon"
                           onClick={() => deleteItem.mutate(item.id)}
-                          className="h-7 w-7"
+                          aria-label="Delete budget item"
                         >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
+                          <Trash2 className="text-rose h-3.5 w-3.5" />
+                        </SketchButton>
                       </div>
                     </motion.div>
                   ))}
@@ -619,9 +642,7 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className={`rounded-lg border p-3 ${
-                        item.isPaid ? 'border-green-200 bg-green-50/50 dark:border-green-900/30 dark:bg-green-950/20' : 'hover:bg-muted/40'
-                      }`}
+                      className="border-line border-b-2 border-dashed py-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-2.5 flex-1 min-w-0">
@@ -638,17 +659,13 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium text-sm">{item.name}</p>
-                              {item.isPaid && (
-                                <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px]">
-                                  Paid
-                                </Badge>
-                              )}
+                              {item.isPaid && <Stamp>Paid</Stamp>}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">{item.category || 'Uncategorized'}</p>
-                            {item.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.notes}</p>}
-                            <div className="flex items-center gap-3 mt-2 text-xs">
+                            <p className="text-ink-soft mt-0.5 text-xs">{item.category || 'Uncategorized'}</p>
+                            {item.notes && <p className="text-ink-soft mt-1 line-clamp-2 text-xs">{item.notes}</p>}
+                            <div className="mt-2 flex items-center gap-3 text-xs">
                               {item.estimatedCost && (
-                                <span className="text-muted-foreground">
+                                <span className="text-ink-soft">
                                   Est: {formatCurrency(Number(item.estimatedCost))}
                                 </span>
                               )}
@@ -660,21 +677,22 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                             </div>
                           </div>
                         </div>
-                        <Button
+                        <SketchButton
                           variant="ghost"
                           size="icon"
                           onClick={() => deleteItem.mutate(item.id)}
-                          className="h-8 w-8 shrink-0"
+                          className="shrink-0"
+                          aria-label="Delete budget item"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                          <Trash2 className="text-rose h-4 w-4" />
+                        </SketchButton>
                       </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </Paper>
         </motion.div>
       ) : (
         <motion.div variants={itemVariants}>
@@ -690,14 +708,10 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    className={`group relative rounded-xl border p-3 transition-all ${
-                      item.isPaid
-                        ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:border-green-900/30 dark:from-green-950/30 dark:to-emerald-950/20'
-                        : 'bg-card hover:border-primary/50 hover:shadow-lg'
-                    }`}
+                    whileHover={{ y: -2 }}
+                    className="sk-paper group relative px-3.5 py-3"
                   >
-                    <div className="absolute right-2 top-2 flex items-center gap-1">
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
                       <Checkbox
                         checked={item.isPaid}
                         onCheckedChange={(checked) =>
@@ -708,40 +722,34 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
                         }
                         className="h-4 w-4"
                       />
-                      <Button
+                      <SketchButton
                         variant="ghost"
                         size="icon"
                         onClick={() => deleteItem.mutate(item.id)}
-                        className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label="Delete budget item"
                       >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
+                        <Trash2 className="text-rose h-3 w-3" />
+                      </SketchButton>
                     </div>
 
-                    <div className="pr-14">
-                      <Badge variant="secondary" className="mb-2 text-[10px] px-1.5 py-0">
-                        {item.category || 'Other'}
-                      </Badge>
-                      <p className="text-sm font-medium line-clamp-2 leading-tight">{item.name}</p>
+                    <div className="pr-16">
+                      <span className="sk-chip mb-2 text-[10px]">{item.category || 'Other'}</span>
+                      <p className="line-clamp-2 text-sm leading-tight font-medium">{item.name}</p>
                     </div>
 
-                    <div className="mt-3 pt-2 border-t border-muted/50">
-                      <p className="text-base font-bold">{formatCurrency(cost)}</p>
-                      <div className="flex items-center justify-between mt-1">
+                    <div className="border-line mt-3 border-t-2 border-dashed pt-2">
+                      <p className="font-display text-lg font-semibold">{formatCurrency(cost)}</p>
+                      <div className="mt-1 flex items-center justify-between">
                         {item.estimatedCost && item.actualCost && Number(item.actualCost) !== Number(item.estimatedCost) ? (
-                          <span className={`text-[10px] ${Number(item.actualCost) > Number(item.estimatedCost) ? 'text-red-600' : 'text-green-600'}`}>
+                          <span className={`text-[11px] ${Number(item.actualCost) > Number(item.estimatedCost) ? 'text-rose' : 'text-leaf-deep'}`}>
                             Est: {formatCurrency(Number(item.estimatedCost))}
                           </span>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-ink-soft text-[11px]">
                             {item.actualCost ? 'Actual' : 'Estimated'}
                           </span>
                         )}
-                        {item.isPaid && (
-                          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[9px] px-1 py-0">
-                            Paid
-                          </Badge>
-                        )}
+                        {item.isPaid && <Stamp>Paid</Stamp>}
                       </div>
                     </div>
                   </motion.div>
@@ -754,15 +762,11 @@ export function BudgetPanel({ eventId }: { eventId: string }) {
 
       {allItems.length === 0 && (
         <motion.div variants={itemVariants}>
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                <DollarSign className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">No budget items yet</p>
-              <p className="mt-1 text-xs text-muted-foreground">Add your first item to start tracking expenses</p>
-            </CardContent>
-          </Card>
+          <Paper className="flex flex-col items-center justify-center px-5 py-12 text-center">
+            <Ico d={ICONS.wallet} className="mb-3 h-12 w-12" />
+            <p className="font-display text-xl font-semibold">No budget items yet</p>
+            <p className="text-ink-soft mt-1 text-sm">Add your first item to start tracking expenses</p>
+          </Paper>
         </motion.div>
       )}
     </motion.div>

@@ -8,11 +8,7 @@
 
 import { useState, useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Paper, SketchButton, Stamp } from '@/components/sketch'
 import { Download, Printer, Copy, Check, QrCode } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -172,84 +168,66 @@ export function QRCodeGenerator({ eventCode, eventName, eventDate }: QRCodeGener
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Paper tape className="space-y-6 px-5 py-6">
+      <div>
         <div className="flex items-center gap-2">
-          <QrCode className="h-5 w-5 text-primary" />
-          <CardTitle>Guest Upload QR Code</CardTitle>
+          <QrCode className="text-blue h-5 w-5" aria-hidden="true" />
+          <h2 className="font-display text-xl font-semibold">Guest Upload QR Code</h2>
         </div>
-        <CardDescription>
+        <p className="text-ink-soft mt-1 text-sm">
           Share this QR code with guests to let them upload photos and videos
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* QR Code Display */}
-        <div className="flex flex-col items-center gap-4">
-          <div 
-            ref={qrRef}
-            className="p-6 bg-white rounded-xl border-2 border-border shadow-sm"
-          >
-            <QRCodeSVG
-              value={uploadUrl}
-              size={256}
-              level="H"
-              includeMargin
-              bgColor="#ffffff"
-              fgColor="#000000"
-            />
-          </div>
-          <Badge variant="secondary" className="text-sm">
-            Event Code: {eventCode}
-          </Badge>
-        </div>
+        </p>
+      </div>
 
-        {/* Upload URL */}
-        <div className="space-y-2">
-          <Label>Guest Upload URL</Label>
-          <div className="flex gap-2">
-            <Input 
-              value={uploadUrl} 
-              readOnly 
-              className="font-mono text-sm"
-            />
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={copyToClipboard}
-              title="Copy URL"
-            >
-              {copied ? (
-                <Check className="h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+      {/* QR Code Display */}
+      <div className="flex flex-col items-center gap-4">
+        <div ref={qrRef} className="sk-paper sk-paper--alt bg-white p-4">
+          <QRCodeSVG
+            value={uploadUrl}
+            size={256}
+            level="H"
+            includeMargin
+            bgColor="#ffffff"
+            fgColor="#000000"
+            className="h-auto max-w-full"
+          />
         </div>
+        <Stamp>Event Code: {eventCode}</Stamp>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={downloadQRCode} className="flex-1">
-            <Download className="h-4 w-4 mr-2" />
-            Download PNG
-          </Button>
-          <Button onClick={printQRCode} variant="outline" className="flex-1">
-            <Printer className="h-4 w-4 mr-2" />
-            Print Poster
-          </Button>
+      {/* Upload URL */}
+      <div className="flex items-end gap-2">
+        <div className="sk-field !mb-0 flex-1">
+          <label htmlFor="qr-upload-url">Guest Upload URL</label>
+          <input id="qr-upload-url" value={uploadUrl} readOnly className="font-mono text-sm" />
         </div>
+        <SketchButton variant="line" size="icon" onClick={copyToClipboard} title="Copy URL" aria-label="Copy URL">
+          {copied ? <Check className="text-leaf-deep h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        </SketchButton>
+      </div>
 
-        {/* Instructions */}
-        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-          <p className="text-sm font-medium">How to use:</p>
-          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-            <li>Download the QR code and print it</li>
-            <li>Display it at your event venue</li>
-            <li>Guests can scan and upload photos instantly</li>
-            <li>No app download or login required</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Action Buttons */}
+      <div className="flex flex-wrap gap-3">
+        <SketchButton onClick={downloadQRCode} className="flex-1">
+          <Download className="h-4 w-4" />
+          Download PNG
+        </SketchButton>
+        <SketchButton onClick={printQRCode} variant="line" className="flex-1">
+          <Printer className="h-4 w-4" />
+          Print Poster
+        </SketchButton>
+      </div>
+
+      {/* Instructions */}
+      <div className="border-line space-y-2 border-t-2 border-dashed pt-4">
+        <p className="font-display font-semibold">How to use</p>
+        <ul className="text-ink-soft list-inside list-disc space-y-1 text-sm">
+          <li>Download the QR code and print it</li>
+          <li>Display it at your event venue</li>
+          <li>Guests can scan and upload photos instantly</li>
+          <li>No app download or login required</li>
+        </ul>
+      </div>
+    </Paper>
   )
 }

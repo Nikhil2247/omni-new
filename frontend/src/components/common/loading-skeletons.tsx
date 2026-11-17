@@ -1,5 +1,12 @@
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { CardContent, CardHeader } from '@/components/ui/card'
+import { skPaper } from '@/components/sketch'
+import { cn } from '@/lib/utils'
+
+/** A paper card that holds skeleton blocks. */
+function Card({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div className={skPaper({ className: cn('flex flex-col gap-3 py-3', className) })} {...props} />
+}
 
 export function PageSkeleton() {
   return (

@@ -12,30 +12,11 @@ import {
   useUploadGuestPhoto,
 } from '@/hooks/queries/use-guest-uploads'
 import { getMinioViewUrl } from '@/lib/utils/minio'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Progress } from '@/components/ui/progress'
-import {
-  Camera,
-  Upload,
-  CheckCircle2,
-  AlertTriangle,
-  Loader2,
-  ImageIcon,
-  X,
-  Calendar,
-  Heart,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  Plus,
-} from 'lucide-react'
+import { Camera, Upload, Loader2, X, Calendar, ChevronLeft, ChevronRight, ZoomIn, Plus } from 'lucide-react'
+import { Brush, BrushBar, Eyebrow, Ico, ICONS, Paper, SketchButton, SkContainer, Stamp } from '@/components/sketch'
 import { cn } from '@/lib/utils'
 
 export default function GuestUploadPage() {
@@ -143,128 +124,129 @@ export default function GuestUploadPage() {
     })
 
     return (
-      <div className={cn("space-y-4", isModal ? "p-5" : "p-4")}>
-      {uploadSuccess ? (
-        <div className="text-center py-6">
-          <div className="relative inline-block">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto shadow-lg animate-in zoom-in duration-300">
-              <CheckCircle2 className="h-8 w-8 text-white" />
-            </div>
-            <Heart className="absolute -top-1 -right-1 h-6 w-6 text-pink-500 fill-pink-500 animate-pulse" />
+      <div className={cn('space-y-4', isModal ? 'p-5' : 'p-1')}>
+        {uploadSuccess ? (
+          <div className="py-6 text-center">
+            <Ico d={ICONS.heart} className="mx-auto h-14 w-14" />
+            <h3 className="font-display mt-3 text-2xl font-semibold">
+              <Brush>Thank</Brush> you!
+            </h3>
+            <p className="text-ink-soft mt-2 text-sm">
+              {settings?.requireApproval ? 'Submitted for review' : 'Added to gallery'}
+            </p>
+            <SketchButton size="sm" className="mt-4" onClick={() => setUploadSuccess(false)}>
+              <Plus className="h-4 w-4" />
+              Upload Another
+            </SketchButton>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mt-4">Thank You!</h3>
-          <p className="text-gray-500 text-sm mt-1">
-            {settings?.requireApproval ? 'Submitted for review' : 'Added to gallery'}
-          </p>
-          <Button
-            size="sm"
-            className="mt-4 rounded-full px-6 bg-gradient-to-r from-pink-500 to-purple-500"
-            onClick={() => setUploadSuccess(false)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Upload Another
-          </Button>
-        </div>
-      ) : (
-        <>
-          {/* Compact Name Input */}
-          <Input
-            placeholder="Your name (optional)"
-            value={uploaderName}
-            onChange={(e) => setUploaderName(e.target.value)}
-            className="rounded-xl border-gray-200 h-10 text-sm"
-          />
-
-          {/* Dropzone */}
-          {!selectedFile ? (
-            <div
-              {...getRootProps()}
-              onClick={open}
-              className={cn(
-                "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all",
-                isDragActive
-                  ? "border-pink-400 bg-pink-50"
-                  : "border-gray-200 hover:border-pink-300 hover:bg-pink-50/50"
-              )}
-            >
-              <input {...getInputProps()} />
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center mx-auto mb-3">
-                <ImageIcon className="h-6 w-6 text-pink-500" />
-              </div>
-              <p className="text-gray-700 font-medium text-sm">
-                {isDragActive ? 'Drop here!' : 'Tap to select photo'}
-              </p>
-              <p className="text-gray-400 text-xs mt-1">JPG, PNG, HEIC, MP4 (max 20MB)</p>
-            </div>
-          ) : (
-            <div className="relative rounded-xl overflow-hidden">
-              <NextImage
-                src={preview || ''}
-                alt="Preview"
-                width={800}
-                height={600}
-                unoptimized
-                className="w-full object-cover h-40"
+        ) : (
+          <>
+            <div className="sk-field">
+              <label htmlFor={isModal ? 'guest-name-modal' : 'guest-name'}>Your name (optional)</label>
+              <input
+                id={isModal ? 'guest-name-modal' : 'guest-name'}
+                placeholder="Your name (optional)"
+                value={uploaderName}
+                onChange={(e) => setUploaderName(e.target.value)}
               />
-              <Button
-                size="icon"
-                variant="secondary"
-                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90"
-                onClick={clearSelection}
+            </div>
+
+            {/* Dropzone */}
+            {!selectedFile ? (
+              <div
+                {...getRootProps()}
+                onClick={open}
+                role="button"
+                tabIndex={0}
+                aria-label="Choose a photo or video to upload"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    open()
+                  }
+                }}
+                className={cn(
+                  'text-blue border-blue-wash grid min-h-44 cursor-pointer place-items-center rounded-[18px] border-[2.5px] border-dashed p-6 text-center font-bold transition-colors',
+                  isDragActive ? 'bg-blue-wash/30 border-blue' : 'hover:bg-blue-wash/30 hover:border-blue',
+                )}
               >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-
-          {/* Caption (only when file selected) */}
-          {selectedFile && (
-            <Textarea
-              placeholder="Add a caption..."
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              rows={2}
-              className="rounded-xl border-gray-200 text-sm resize-none"
-            />
-          )}
-
-          {/* Progress */}
-          {uploadMutation.isPending && uploadProgress > 0 && (
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Uploading...</span>
-                <span className="text-pink-500 font-medium">{uploadProgress}%</span>
+                <input {...getInputProps()} />
+                <div>
+                  <div className="font-hand text-5xl leading-none">+</div>
+                  <p className="mt-2 text-base">{isDragActive ? 'Drop here!' : 'Tap to select a photo'}</p>
+                  <p className="text-ink-soft mt-1 text-xs font-medium">JPG, PNG, HEIC, MP4 (max 20MB)</p>
+                </div>
               </div>
-              <Progress value={uploadProgress} className="h-1.5" />
-            </div>
-          )}
-
-          {/* Upload Button */}
-          <Button
-            className={cn(
-              "w-full h-11 rounded-xl font-medium transition-all",
-              selectedFile
-                ? "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg"
-                : "bg-gray-100 text-gray-400"
-            )}
-            disabled={!selectedFile || uploadMutation.isPending}
-            onClick={handleUpload}
-          >
-            {uploadMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <>
-                <Upload className="h-4 w-4 mr-2" />
-                Share Memory
-              </>
+              <div className="sk-paper relative overflow-hidden p-2">
+                <NextImage
+                  src={preview || ''}
+                  alt="Preview"
+                  width={800}
+                  height={600}
+                  unoptimized
+                  className="h-44 w-full rounded-md object-cover"
+                />
+                <SketchButton
+                  size="icon"
+                  variant="line"
+                  className="bg-card absolute top-3 right-3"
+                  onClick={clearSelection}
+                  aria-label="Remove selected photo"
+                >
+                  <X className="h-4 w-4" />
+                </SketchButton>
+              </div>
             )}
-          </Button>
 
-          {uploadMutation.isError && (
-            <p className="text-xs text-red-500 text-center">Upload failed. Try again.</p>
-          )}
-        </>
-      )}
+            {/* Caption (only when file selected) */}
+            {selectedFile && (
+              <div className="sk-field">
+                <label htmlFor={isModal ? 'guest-caption-modal' : 'guest-caption'}>Caption</label>
+                <textarea
+                  id={isModal ? 'guest-caption-modal' : 'guest-caption'}
+                  placeholder="Add a caption..."
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  rows={2}
+                />
+              </div>
+            )}
+
+            {/* Progress */}
+            {uploadMutation.isPending && uploadProgress > 0 && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-ink-soft">Uploading...</span>
+                  <span className="text-blue font-bold">{uploadProgress}%</span>
+                </div>
+                <BrushBar value={uploadProgress} />
+              </div>
+            )}
+
+            {/* Upload Button */}
+            <SketchButton
+              className="w-full"
+              disabled={!selectedFile || uploadMutation.isPending}
+              onClick={handleUpload}
+            >
+              {uploadMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Upload className="h-4 w-4" />
+                  Share Memory
+                </>
+              )}
+            </SketchButton>
+
+            {uploadMutation.isError && (
+              <p className="text-rose text-center text-sm font-bold" role="alert">
+                Upload failed. Try again.
+              </p>
+            )}
+          </>
+        )}
       </div>
     )
   }
@@ -272,189 +254,144 @@ export default function GuestUploadPage() {
   // Loading State
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 p-4">
-        <div className="mx-auto max-w-md pt-8 space-y-4">
-          <Skeleton className="h-12 w-12 rounded-full mx-auto" />
-          <Skeleton className="h-6 w-48 mx-auto" />
+      <SkContainer className="max-w-md py-10">
+        <div className="space-y-4" aria-busy="true">
+          <Skeleton className="mx-auto h-12 w-12 rounded-full" />
+          <Skeleton className="mx-auto h-6 w-48" />
           <Skeleton className="h-[200px] w-full rounded-2xl" />
         </div>
-      </div>
+      </SkContainer>
     )
   }
 
   // Error State
   if (error || !settings) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="max-w-sm w-full border-0 shadow-xl bg-white/90 backdrop-blur rounded-2xl">
-          <CardContent className="pt-8 pb-6 px-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="h-7 w-7 text-amber-500" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900">Event Not Found</h2>
-            <p className="text-gray-500 text-sm mt-2">
-              This link is invalid or has expired.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <SkContainer className="max-w-md py-12">
+        <Paper className="px-6 py-10 text-center">
+          <Ico d={ICONS.gallery} className="mx-auto mb-3 h-12 w-12" />
+          <h1 className="font-display text-2xl font-semibold">Event not found</h1>
+          <p className="text-ink-soft mt-2 text-sm">This link is invalid or has expired.</p>
+        </Paper>
+      </SkContainer>
     )
   }
 
   // Uploads Disabled State
   if (!settings.isActive || !settings.allowUploads) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="max-w-sm w-full border-0 shadow-xl bg-white/90 backdrop-blur rounded-2xl">
-          <CardContent className="pt-8 pb-6 px-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-              <Camera className="h-7 w-7 text-gray-400" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900">Uploads Paused</h2>
-            <p className="text-gray-500 text-sm mt-2">
-              Photo uploads are currently unavailable.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <SkContainer className="max-w-md py-12">
+        <Paper className="px-6 py-10 text-center">
+          <Ico d={ICONS.photography} className="mx-auto mb-3 h-12 w-12" />
+          <h1 className="font-display text-2xl font-semibold">Uploads paused</h1>
+          <p className="text-ink-soft mt-2 text-sm">Photo uploads are currently unavailable.</p>
+        </Paper>
+      </SkContainer>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-      {/* Decorative Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-64 h-64 bg-pink-200/40 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -left-32 w-64 h-64 bg-purple-200/40 rounded-full blur-3xl" />
+    <SkContainer className="max-w-3xl pb-32 sm:pb-12">
+      {/* Event Header */}
+      <div className="pt-8 pb-6 text-center">
+        <Eyebrow>Share your memories</Eyebrow>
+        <h1 className="font-display mt-3 text-[clamp(1.9rem,6vw,2.8rem)] leading-[1.05] font-semibold tracking-tight text-balance">
+          <Brush>{settings.event?.name || 'Event Memories'}</Brush>
+        </h1>
+
+        {settings.event?.date && (
+          <p className="text-ink-soft mt-3 inline-flex items-center gap-1.5 text-sm font-bold">
+            <Calendar className="text-blue h-4 w-4" aria-hidden="true" />
+            {format(new Date(settings.event.date), 'MMM d, yyyy')}
+          </p>
+        )}
       </div>
 
-      <div className="relative mx-auto max-w-md px-4 pb-28">
-        {/* Compact Event Header */}
-        <div className="pt-6 pb-4 text-center">
-          <div className="relative inline-block">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center shadow-lg shadow-pink-200/50">
-              <Camera className="h-7 w-7 text-white" />
-            </div>
-            <Sparkles className="absolute -bottom-0.5 -right-0.5 h-5 w-5 text-yellow-500" />
+      {/* Desktop/Tablet: Inline Upload Card */}
+      <div className="hidden sm:block">
+        <Paper tape className="px-5 py-5">
+          <div className="mb-2 flex items-center gap-2">
+            <Upload className="text-blue h-4 w-4" aria-hidden="true" />
+            <h2 className="font-display text-lg font-semibold">Share your photos</h2>
+            <Stamp tone={settings.requireApproval ? 'wait' : 'ok'} className="ml-auto">
+              {settings.requireApproval ? 'Reviewed' : 'Instant'}
+            </Stamp>
+          </div>
+          <UploadForm />
+        </Paper>
+      </div>
+
+      {/* Gallery Section */}
+      {gallery && gallery.uploads.length > 0 && (
+        <section className="mt-8" aria-label="Memories">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-xl font-semibold">Memories</h2>
+            <Stamp>{gallery.count} photos</Stamp>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 mt-3">
-            {settings.event?.name || 'Event Memories'}
-          </h1>
-
-          {settings.event?.date && (
-            <div className="inline-flex items-center gap-1.5 text-xs text-gray-500 mt-1.5 bg-white/60 px-3 py-1 rounded-full">
-              <Calendar className="h-3.5 w-3.5 text-pink-500" />
-              {format(new Date(settings.event.date), 'MMM d, yyyy')}
-            </div>
-          )}
-        </div>
-
-        {/* Desktop/Tablet: Inline Upload Card */}
-        <div className="hidden sm:block">
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur rounded-2xl overflow-hidden">
-            <div className="bg-gradient-to-r from-pink-500 to-purple-500 px-4 py-3">
-              <div className="flex items-center gap-2 text-white">
-                <Upload className="h-4 w-4" />
-                <span className="font-medium text-sm">Share Your Photos</span>
-                <Badge variant="secondary" className="ml-auto text-[10px] bg-white/20 text-white border-0">
-                  {settings.requireApproval ? 'Reviewed' : 'Instant'}
-                </Badge>
-              </div>
-            </div>
-            <UploadForm />
-          </Card>
-        </div>
-
-        {/* Gallery Section */}
-        {gallery && gallery.uploads.length > 0 && (
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-900">Memories</h2>
-              <Badge className="bg-pink-500/10 text-pink-600 border-0 text-xs">
-                {gallery.count} photos
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-3 gap-1.5">
-              {gallery.uploads.slice(0, 12).map((upload, index) => (
-                <button
-                  key={upload.id}
-                  onClick={() => openLightbox(index)}
-                  className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100"
-                >
-                  <NextImage
-                    src={getMinioViewUrl(upload.thumbnailUrl || upload.mediaUrl) || ''}
-                    alt={upload.caption || 'Photo'}
-                    width={300}
-                    height={300}
-                    unoptimized
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                    <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 drop-shadow-lg" />
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {gallery.count > 12 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full mt-3 text-pink-600 hover:text-pink-700 hover:bg-pink-50 text-xs"
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {gallery.uploads.slice(0, 12).map((upload, index) => (
+              <button
+                key={upload.id}
+                type="button"
+                onClick={() => openLightbox(index)}
+                aria-label={upload.caption ? `Open photo: ${upload.caption}` : 'Open photo'}
+                className="sk-paper group relative aspect-square overflow-hidden p-1.5"
               >
-                View all {gallery.count} photos
-              </Button>
-            )}
+                <NextImage
+                  src={getMinioViewUrl(upload.thumbnailUrl || upload.mediaUrl) || ''}
+                  alt={upload.caption || 'Photo'}
+                  width={300}
+                  height={300}
+                  unoptimized
+                  className="h-full w-full rounded-md object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-1.5 flex items-center justify-center rounded-md bg-black/0 transition-colors group-hover:bg-black/10">
+                  <ZoomIn className="h-5 w-5 text-white opacity-0 drop-shadow-lg group-hover:opacity-100" />
+                </div>
+              </button>
+            ))}
           </div>
-        )}
 
-        {/* Empty Gallery State */}
-        {(!gallery || gallery.uploads.length === 0) && (
-          <div className="mt-6 text-center py-8 bg-white/50 rounded-2xl border border-dashed border-pink-200">
-            <ImageIcon className="h-10 w-10 text-pink-300 mx-auto mb-2" />
-            <p className="text-gray-500 text-sm">No photos yet</p>
-            <p className="text-gray-400 text-xs">Be the first to share!</p>
-          </div>
-        )}
+          {gallery.count > 12 && (
+            <SketchButton variant="ghost" size="sm" className="mt-4 w-full">
+              View all {gallery.count} photos
+            </SketchButton>
+          )}
+        </section>
+      )}
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <div className="inline-flex items-center gap-1 text-gray-400 text-[10px]">
-            <Heart className="h-2.5 w-2.5 fill-current" />
-            Powered by Omnicassion
-          </div>
-        </div>
-      </div>
+      {/* Empty Gallery State */}
+      {(!gallery || gallery.uploads.length === 0) && (
+        <Paper alt className="mt-8 px-6 py-8 text-center">
+          <Ico d={ICONS.gallery} className="mx-auto mb-2 h-10 w-10" />
+          <p className="font-display text-lg font-semibold">No photos yet</p>
+          <p className="text-ink-soft text-sm">Be the first to share!</p>
+        </Paper>
+      )}
 
-      {/* Mobile: Floating Camera Button - positioned above bottom nav */}
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 sm:hidden z-50">
-        <Button
-          onClick={() => setShowUploadModal(true)}
-          className="h-12 px-5 rounded-full shadow-2xl bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 gap-2"
-        >
+      {/* Footer */}
+      <p className="text-ink-soft mt-8 text-center text-xs">Powered by Omnicassion</p>
+
+      {/* Mobile: Floating Camera Button */}
+      <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 sm:hidden">
+        <SketchButton onClick={() => setShowUploadModal(true)} className="px-7 py-3.5 text-base shadow-lg">
           <Camera className="h-5 w-5" />
-          <span className="font-medium text-sm">Add Photo</span>
-        </Button>
+          Add Photo
+        </SketchButton>
       </div>
 
       {/* Mobile: Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="sm:hidden max-w-[calc(100%-2rem)] rounded-2xl p-0 border-0 bg-white">
-          <div className="bg-gradient-to-r from-pink-500 to-purple-500 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-white">
-              <Camera className="h-4 w-4" />
-              <span className="font-medium text-sm">Share a Memory</span>
+        <DialogContent className="bg-card max-w-[calc(100%-2rem)] rounded-2xl border-0 p-0 sm:hidden">
+          <div className="flex items-center justify-between px-5 pt-5">
+            <div className="flex items-center gap-2">
+              <Camera className="text-blue h-4 w-4" aria-hidden="true" />
+              <span className="font-display text-lg font-semibold">Share a memory</span>
             </div>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-white hover:bg-white/20"
-              onClick={resetAndClose}
-            >
+            <SketchButton size="icon" variant="ghost" onClick={resetAndClose} aria-label="Close">
               <X className="h-4 w-4" />
-            </Button>
+            </SketchButton>
           </div>
           <UploadForm isModal />
         </DialogContent>
@@ -462,7 +399,7 @@ export default function GuestUploadPage() {
 
       {/* Lightbox Dialog */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-4xl w-full p-0 bg-black/95 border-0 rounded-xl overflow-hidden">
+        <DialogContent className="w-full max-w-4xl overflow-hidden rounded-xl border-0 bg-black/95 p-0">
           {gallery?.uploads[lightboxIndex] && (
             <div className="relative">
               <NextImage
@@ -471,7 +408,7 @@ export default function GuestUploadPage() {
                 width={1200}
                 height={900}
                 unoptimized
-                className="w-full h-auto max-h-[85vh] object-contain"
+                className="h-auto max-h-[85vh] w-full object-contain"
               />
 
               {gallery.uploads.length > 1 && (
@@ -479,7 +416,8 @@ export default function GuestUploadPage() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                    aria-label="Previous photo"
+                    className="absolute top-1/2 left-2 h-10 w-10 -translate-y-1/2 rounded-full bg-white/10 text-white hover:bg-white/20"
                     onClick={prevImage}
                   >
                     <ChevronLeft className="h-5 w-5" />
@@ -487,7 +425,8 @@ export default function GuestUploadPage() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                    aria-label="Next photo"
+                    className="absolute top-1/2 right-2 h-10 w-10 -translate-y-1/2 rounded-full bg-white/10 text-white hover:bg-white/20"
                     onClick={nextImage}
                   >
                     <ChevronRight className="h-5 w-5" />
@@ -495,14 +434,14 @@ export default function GuestUploadPage() {
                 </>
               )}
 
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+              <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                 {gallery.uploads[lightboxIndex].uploaderName && (
-                  <p className="text-white/70 text-xs">by {gallery.uploads[lightboxIndex].uploaderName}</p>
+                  <p className="text-xs text-white/70">by {gallery.uploads[lightboxIndex].uploaderName}</p>
                 )}
                 {gallery.uploads[lightboxIndex].caption && (
-                  <p className="text-white text-sm mt-0.5">{gallery.uploads[lightboxIndex].caption}</p>
+                  <p className="mt-0.5 text-sm text-white">{gallery.uploads[lightboxIndex].caption}</p>
                 )}
-                <p className="text-white/40 text-[10px] mt-1">
+                <p className="mt-1 text-[10px] text-white/40">
                   {lightboxIndex + 1} / {gallery.uploads.length}
                 </p>
               </div>
@@ -510,7 +449,8 @@ export default function GuestUploadPage() {
               <Button
                 size="icon"
                 variant="ghost"
-                className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                aria-label="Close"
+                className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/10 text-white hover:bg-white/20"
                 onClick={() => setLightboxOpen(false)}
               >
                 <X className="h-4 w-4" />
@@ -519,6 +459,6 @@ export default function GuestUploadPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </SkContainer>
   )
 }

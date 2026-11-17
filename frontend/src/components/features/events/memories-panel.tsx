@@ -18,7 +18,7 @@ import {
 } from '@/hooks/queries/use-guest-uploads'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Brush, Eyebrow, Ico, ICONS, Paper, SketchButton, Stamp } from '@/components/sketch'
 import {
   Dialog,
   DialogContent,
@@ -31,11 +31,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import {
-  ImageIcon,
   Clock,
-  QrCode,
   Copy,
   CheckCircle2,
   AlertCircle,
@@ -49,8 +46,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  Users,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -147,8 +142,8 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-48 w-full rounded-2xl" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     )
   }
@@ -158,9 +153,10 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="rounded-2xl border-2 border-dashed border-destructive/50 bg-destructive/5 p-8 text-center"
+        className="sk-paper px-6 py-8 text-center"
+        role="alert"
       >
-        <p className="text-sm text-destructive">
+        <p className="text-rose text-sm font-bold">
           Unable to load memories settings. {error instanceof Error ? error.message : 'Unknown error'}
         </p>
       </motion.div>
@@ -176,33 +172,19 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
         transition={{ duration: 0.5 }}
         className="space-y-6"
       >
-        {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 dark:from-pink-950/30 dark:via-purple-950/30 dark:to-blue-950/30 p-8">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500">
-                <ImageIcon className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">Create Memory Wall</h1>
-                <p className="text-muted-foreground">Let guests share photos and videos from your event</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Enable Guest Memories</CardTitle>
-            <CardDescription>
-              Create a memory wall where guests can upload and share photos and videos from your event
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button size="lg" onClick={() => setShowCreateMemoryDialog(true)}>
+        <Paper tape className="px-6 py-8 sm:px-8">
+          <Ico d={ICONS.gallery} className="mb-3 h-12 w-12" />
+          <Eyebrow>Guest memories</Eyebrow>
+          <h2 className="font-display mt-2 text-[clamp(1.6rem,3.6vw,2.2rem)] leading-[1.05] font-semibold tracking-tight">
+            Create your <Brush>Memory</Brush> Wall
+          </h2>
+          <p className="text-ink-soft mt-2 mb-5 max-w-xl">
+            Create a memory wall where guests can upload and share photos and videos from your event
+          </p>
+          <div>
+            <SketchButton onClick={() => setShowCreateMemoryDialog(true)}>
               Create Memory Wall
-            </Button>
+            </SketchButton>
 
             <Dialog open={showCreateMemoryDialog} onOpenChange={setShowCreateMemoryDialog}>
               <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
@@ -218,7 +200,7 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
                       control={form.control}
                       name="isActive"
                       render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <FormItem className="border-line flex items-center justify-between rounded-lg border-2 border-dashed p-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base font-medium">Active Status</FormLabel>
                             <FormDescription>
@@ -235,7 +217,7 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
                       control={form.control}
                       name="allowUploads"
                       render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <FormItem className="border-line flex items-center justify-between rounded-lg border-2 border-dashed p-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base font-medium flex items-center gap-2">
                               <Upload className="h-4 w-4" />
@@ -255,7 +237,7 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
                       control={form.control}
                       name="requireApproval"
                       render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                        <FormItem className="border-line flex items-center justify-between rounded-lg border-2 border-dashed p-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base font-medium flex items-center gap-2">
                               <Shield className="h-4 w-4" />
@@ -302,8 +284,8 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
                 </Form>
               </DialogContent>
             </Dialog>
-          </CardContent>
-        </Card>
+          </div>
+        </Paper>
       </motion.div>
     )
   }
@@ -320,92 +302,79 @@ export function MemoriesPanel({ eventId }: { eventId: string }) {
       {/* Settings & QR Code Row */}
       <motion.div variants={itemVariants} className="grid gap-4 md:grid-cols-2">
         {/* QR Code Card */}
-        <Card className="border-muted/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <QrCode className="h-4 w-4" />
-              Guest Upload Link
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Input
-                value={guestUrl}
-                readOnly
-                className="font-mono text-xs"
-              />
-              <Button size="icon" variant="outline" onClick={copyGuestLink}>
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
+        <Paper tape className="space-y-4 px-5 py-5">
+          <h2 className="font-display flex items-center gap-2 text-lg font-semibold">
+            <Ico d={ICONS.gallery} className="h-5 w-5" />
+            Guest Upload Link
+          </h2>
+          <div className="flex items-center gap-2">
+            <Input
+              value={guestUrl}
+              readOnly
+              aria-label="Guest upload link"
+              className="font-mono text-xs"
+            />
+            <SketchButton size="icon" variant="line" onClick={copyGuestLink} aria-label="Copy guest link">
+              <Copy className="h-4 w-4" />
+            </SketchButton>
+          </div>
 
-            <div className="flex items-center gap-4">
-              <div className="bg-white p-3 rounded-lg border shrink-0">
-                <QRCodeReact
-                  value={guestUrl}
-                  size={100}
-                  level="H"
-                />
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Guests can scan this QR code to upload photos and view the gallery.
-                </p>
-                <Button size="sm" variant="outline" onClick={downloadQRCode}>
-                  <Download className="h-3.5 w-3.5 mr-1.5" />
-                  Download QR
-                </Button>
-              </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="sk-paper sk-paper--alt shrink-0 bg-white p-3">
+              <QRCodeReact
+                value={guestUrl}
+                size={100}
+                level="H"
+              />
             </div>
-          </CardContent>
-        </Card>
+            <div className="min-w-0 flex-1 basis-40 space-y-2">
+              <p className="text-ink-soft text-xs">
+                Guests can scan this QR code to upload photos and view the gallery.
+              </p>
+              <SketchButton size="sm" variant="line" onClick={downloadQRCode}>
+                <Download className="h-3.5 w-3.5" />
+                Download QR
+              </SketchButton>
+            </div>
+          </div>
+        </Paper>
 
         {/* Settings Overview Card */}
-        <Card className="border-muted/60">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Settings</CardTitle>
-              <Badge variant={data.isActive ? 'default' : 'secondary'}>
-                {data.isActive ? 'Active' : 'Inactive'}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3">
-              <div className="flex items-center gap-3 rounded-lg border p-3">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${data.allowUploads ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-900/30'}`}>
-                  <Upload className={`h-4 w-4 ${data.allowUploads ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`} />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Uploads</p>
-                  <p className="text-sm font-medium">{data.allowUploads ? 'Enabled' : 'Disabled'}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-lg border p-3">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${data.requireApproval ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}>
-                  <Shield className={`h-4 w-4 ${data.requireApproval ? 'text-orange-600 dark:text-orange-400' : 'text-blue-600 dark:text-blue-400'}`} />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Approval</p>
-                  <p className="text-sm font-medium">{data.requireApproval ? 'Required' : 'Auto-approve'}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-lg border p-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                  <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Expires</p>
-                  <p className="text-sm font-medium">
-                    {data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : 'Never'}
-                  </p>
-                </div>
+        <Paper className="px-5 py-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold">Settings</h2>
+            <Stamp tone={data.isActive ? 'ok' : 'wait'}>
+              {data.isActive ? 'Active' : 'Inactive'}
+            </Stamp>
+          </div>
+          <div>
+            <div className="border-line flex items-center gap-3 border-b-2 border-dashed py-3">
+              <Upload className="text-blue h-4 w-4 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="sk-eyebrow">Uploads</p>
+                <p className="text-sm font-bold">{data.allowUploads ? 'Enabled' : 'Disabled'}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="border-line flex items-center gap-3 border-b-2 border-dashed py-3">
+              <Shield className="text-blue h-4 w-4 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="sk-eyebrow">Approval</p>
+                <p className="text-sm font-bold">{data.requireApproval ? 'Required' : 'Auto-approve'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-3">
+              <Clock className="text-blue h-4 w-4 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="sk-eyebrow">Expires</p>
+                <p className="text-sm font-bold">
+                  {data.expiresAt ? new Date(data.expiresAt).toLocaleDateString() : 'Never'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Paper>
       </motion.div>
 
       {/* Photo Gallery & Moderation */}
@@ -439,76 +408,61 @@ function GalleryModeration({
       {/* Header with View Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold">Guest Uploads</h2>
+          <h2 className="font-display text-2xl font-semibold">
+            Guest <Brush>Uploads</Brush>
+          </h2>
           {requireApproval && pendingCount && pendingCount.pendingCount > 0 && (
-            <Badge variant="destructive" className="animate-pulse">
+            <Stamp tone="wait">
               {pendingCount.pendingCount} Pending
-            </Badge>
+            </Stamp>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
+          <SketchButton
             size="sm"
-            variant={viewMode === 'card' ? 'default' : 'ghost'}
+            variant={viewMode === 'card' ? 'solid' : 'ghost'}
+            aria-pressed={viewMode === 'card'}
             onClick={() => setViewMode('card')}
-            className="h-8 gap-1.5 px-3"
           >
             <LayoutGrid className="h-3.5 w-3.5" />
             Card View
-          </Button>
-          <Button
-            type="button"
+          </SketchButton>
+          <SketchButton
             size="sm"
-            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            variant={viewMode === 'list' ? 'solid' : 'ghost'}
+            aria-pressed={viewMode === 'list'}
             onClick={() => setViewMode('list')}
-            className="h-8 gap-1.5 px-3"
           >
             <ListIcon className="h-3.5 w-3.5" />
             List View
-          </Button>
+          </SketchButton>
         </div>
       </div>
 
       {/* Tabs */}
       {requireApproval && (
-        <div className="flex gap-2 border-b mb-4">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'all'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2 ${
-              activeTab === 'pending'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Pending Review
-            {pendingCount && pendingCount.pendingCount > 0 && (
-              <span className="bg-orange-100 text-orange-700 text-xs px-1.5 py-0.5 rounded-full">
-                {pendingCount.pendingCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('approved')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'approved'
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Approved
-          </button>
+        <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filter uploads">
+          {(
+            [
+              ['all', 'All'],
+              ['pending', 'Pending Review'],
+              ['approved', 'Approved'],
+            ] as const
+          ).map(([key, label]) => (
+            <SketchButton
+              key={key}
+              size="sm"
+              variant={activeTab === key ? 'solid' : 'line'}
+              aria-pressed={activeTab === key}
+              onClick={() => setActiveTab(key)}
+            >
+              {label}
+              {key === 'pending' && pendingCount && pendingCount.pendingCount > 0 && (
+                <span className="font-hand text-base">({pendingCount.pendingCount})</span>
+              )}
+            </SketchButton>
+          ))}
         </div>
       )}
 
@@ -559,9 +513,9 @@ function UploadGrid({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {[...Array(10)].map((_, i) => (
-          <Skeleton key={i} className="aspect-square rounded-xl" />
+          <Skeleton key={i} className="aspect-square rounded-lg" />
         ))}
       </div>
     )
@@ -569,26 +523,24 @@ function UploadGrid({
 
   if (!uploads?.uploads?.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border-2 border-dashed border-muted">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 dark:from-rose-900/30 dark:to-pink-900/30">
-          <ImageIcon className="h-8 w-8 text-rose-500" />
-        </div>
-        <p className="text-sm font-medium text-muted-foreground">No uploads yet</p>
-        <p className="mt-1 text-xs text-muted-foreground">
+      <Paper alt className="px-6 py-14 text-center">
+        <Ico d={ICONS.gallery} className="mx-auto mb-3 h-12 w-12" />
+        <p className="font-display text-xl font-semibold">No uploads yet</p>
+        <p className="text-ink-soft mt-1 text-sm">
           Share the QR code with guests to start collecting memories
         </p>
-      </div>
+      </Paper>
     )
   }
 
   if (viewMode === 'list') {
     return (
       <>
-        <Card className="border-muted/60">
-          <CardContent className="p-0">
+        <Paper className="p-0">
+          <div>
             {/* Desktop Table */}
             <div className="hidden md:block overflow-hidden">
-              <div className="grid grid-cols-12 bg-muted/50 px-4 py-2.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground border-b">
+              <div className="sk-eyebrow border-line grid grid-cols-12 border-b-2 border-dashed px-4 py-3">
                 <div className="col-span-1">Preview</div>
                 <div className="col-span-3">Uploader</div>
                 <div className="col-span-4">Caption</div>
@@ -604,7 +556,7 @@ function UploadGrid({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="grid grid-cols-12 items-center gap-2 border-b last:border-0 px-4 py-3 hover:bg-muted/40"
+                    className="border-line grid grid-cols-12 items-center gap-2 border-b-2 border-dashed px-4 py-3 last:border-0 hover:bg-blue-wash/20"
                   >
                     <div className="col-span-1">
                       <button
@@ -628,50 +580,45 @@ function UploadGrid({
                       <p className="text-sm font-medium truncate">
                         {upload.uploaderName || 'Anonymous'}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[10px] text-ink-soft">
                         {new Date(upload.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="col-span-4 text-sm text-muted-foreground truncate">
+                    <div className="col-span-4 text-sm text-ink-soft truncate">
                       {upload.caption || '-'}
                     </div>
                     <div className="col-span-2">
-                      <Badge
-                        variant={upload.status === 'APPROVED' ? 'default' : upload.status === 'PENDING' ? 'secondary' : 'destructive'}
-                        className="text-[10px]"
-                      >
-                        {upload.status}
-                      </Badge>
+                      <Stamp tone={upload.status === 'APPROVED' ? 'ok' : upload.status === 'PENDING' ? 'wait' : 'late'}>{upload.status}</Stamp>
                     </div>
                     <div className="col-span-2 flex justify-end gap-1">
                       {upload.status === 'PENDING' && (
                         <>
-                          <Button
+                          <SketchButton
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7"
+                            aria-label="Approve"
                             onClick={() => approveUpload.mutate(upload.id)}
                           >
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                          </Button>
-                          <Button
+                            <CheckCircle2 className="text-leaf-deep h-3.5 w-3.5" />
+                          </SketchButton>
+                          <SketchButton
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7"
+                            aria-label="Reject"
                             onClick={() => rejectUpload.mutate(upload.id)}
                           >
-                            <AlertCircle className="h-3.5 w-3.5 text-orange-600" />
-                          </Button>
+                            <AlertCircle className="text-gold h-3.5 w-3.5" />
+                          </SketchButton>
                         </>
                       )}
-                      <Button
+                      <SketchButton
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7"
+                        aria-label="Delete"
                         onClick={() => deleteUpload.mutate(upload.id)}
                       >
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
+                        <Trash2 className="text-rose h-3.5 w-3.5" />
+                      </SketchButton>
                     </div>
                   </motion.div>
                 ))}
@@ -679,7 +626,7 @@ function UploadGrid({
             </div>
 
             {/* Mobile Cards */}
-            <div className="md:hidden divide-y">
+            <div className="md:hidden">
               <AnimatePresence mode="popLayout">
                 {uploads.uploads.map((upload, index) => (
                   <motion.div
@@ -688,7 +635,7 @@ function UploadGrid({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="p-4"
+                    className="border-line border-b-2 border-dashed p-4 last:border-0"
                   >
                     <div className="flex gap-3">
                       <button
@@ -708,51 +655,45 @@ function UploadGrid({
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="text-sm font-medium">{upload.uploaderName || 'Anonymous'}</p>
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-[10px] text-ink-soft">
                               {new Date(upload.createdAt).toLocaleDateString()}
                             </p>
                           </div>
-                          <Badge
-                            variant={upload.status === 'APPROVED' ? 'default' : upload.status === 'PENDING' ? 'secondary' : 'destructive'}
-                            className="text-[10px] shrink-0"
-                          >
-                            {upload.status}
-                          </Badge>
+                          <Stamp tone={upload.status === 'APPROVED' ? 'ok' : upload.status === 'PENDING' ? 'wait' : 'late'}>{upload.status}</Stamp>
                         </div>
                         {upload.caption && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{upload.caption}</p>
+                          <p className="text-xs text-ink-soft mt-1 line-clamp-2">{upload.caption}</p>
                         )}
                         <div className="flex items-center gap-1 mt-2">
                           {upload.status === 'PENDING' && (
                             <>
-                              <Button
-                                variant="outline"
+                              <SketchButton
+                                variant="line"
                                 size="sm"
-                                className="h-7 text-xs"
                                 onClick={() => approveUpload.mutate(upload.id)}
                               >
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                <CheckCircle2 className="h-3 w-3" />
                                 Approve
-                              </Button>
-                              <Button
-                                variant="outline"
+                              </SketchButton>
+                              <SketchButton
+                                variant="line"
                                 size="sm"
-                                className="h-7 text-xs"
                                 onClick={() => rejectUpload.mutate(upload.id)}
                               >
-                                <AlertCircle className="h-3 w-3 mr-1" />
+                                <AlertCircle className="h-3 w-3" />
                                 Reject
-                              </Button>
+                              </SketchButton>
                             </>
                           )}
-                          <Button
+                          <SketchButton
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 ml-auto"
+                            className="ml-auto"
+                            aria-label="Delete"
                             onClick={() => deleteUpload.mutate(upload.id)}
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
+                            <Trash2 className="text-rose h-3.5 w-3.5" />
+                          </SketchButton>
                         </div>
                       </div>
                     </div>
@@ -760,8 +701,8 @@ function UploadGrid({
                 ))}
               </AnimatePresence>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Paper>
 
         {/* Lightbox */}
         <LightboxDialog
@@ -779,12 +720,10 @@ function UploadGrid({
   // Card View - Grid Layout
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         <AnimatePresence mode="popLayout">
           {uploads.uploads.map((upload, index) => {
             const isPending = upload.status === 'PENDING'
-            const isApproved = upload.status === 'APPROVED'
-            const isRejected = upload.status === 'REJECTED'
 
             return (
               <motion.div
@@ -794,20 +733,14 @@ function UploadGrid({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 whileHover={{ scale: 1.02, y: -2 }}
-                className={`group relative rounded-xl border overflow-hidden transition-all ${
-                  isApproved
-                    ? 'border-green-200 dark:border-green-900/30'
-                    : isPending
-                    ? 'border-orange-200 dark:border-orange-900/30'
-                    : isRejected
-                    ? 'border-red-200 dark:border-red-900/30'
-                    : 'border-muted'
-                }`}
+                className="sk-paper group relative overflow-hidden p-2"
               >
                 {/* Image */}
                 <button
+                  type="button"
                   onClick={() => openLightbox(index)}
-                  className="w-full aspect-square bg-muted relative"
+                  aria-label={upload.caption ? `Open photo: ${upload.caption}` : 'Open photo'}
+                  className="bg-muted relative aspect-square w-full overflow-hidden rounded-md"
                 >
                   <NextImage
                     src={getMinioViewUrl(upload.thumbnailUrl || upload.mediaUrl) || ''}
@@ -823,54 +756,52 @@ function UploadGrid({
                 </button>
 
                 {/* Status Badge */}
-                <div className="absolute top-2 left-2">
-                  <Badge
-                    variant={isApproved ? 'default' : isPending ? 'secondary' : 'destructive'}
-                    className="text-[9px] px-1.5 py-0 shadow-sm"
-                  >
-                    {upload.status}
-                  </Badge>
+                <div className="absolute top-3.5 left-3.5">
+                  <Stamp tone={upload.status === 'APPROVED' ? 'ok' : upload.status === 'PENDING' ? 'wait' : 'late'}>{upload.status}</Stamp>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Action Buttons (always visible on touch, on hover/focus from sm up) */}
+                <div className="absolute top-3.5 right-3.5 flex items-center gap-1 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
                   {isPending && (
                     <>
-                      <Button
-                        variant="secondary"
+                      <SketchButton
+                        variant="line"
                         size="icon"
                         onClick={() => approveUpload.mutate(upload.id)}
-                        className="h-6 w-6 bg-white/90 hover:bg-green-100"
+                        aria-label="Approve"
+                        className="bg-card !px-2 !py-1"
                       >
-                        <CheckCircle2 className="h-3 w-3 text-green-600" />
-                      </Button>
-                      <Button
-                        variant="secondary"
+                        <CheckCircle2 className="text-leaf-deep h-3.5 w-3.5" />
+                      </SketchButton>
+                      <SketchButton
+                        variant="line"
                         size="icon"
                         onClick={() => rejectUpload.mutate(upload.id)}
-                        className="h-6 w-6 bg-white/90 hover:bg-orange-100"
+                        aria-label="Reject"
+                        className="bg-card !px-2 !py-1"
                       >
-                        <AlertCircle className="h-3 w-3 text-orange-600" />
-                      </Button>
+                        <AlertCircle className="text-gold h-3.5 w-3.5" />
+                      </SketchButton>
                     </>
                   )}
-                  <Button
-                    variant="secondary"
+                  <SketchButton
+                    variant="line"
                     size="icon"
                     onClick={() => deleteUpload.mutate(upload.id)}
-                    className="h-6 w-6 bg-white/90 hover:bg-red-100"
+                    aria-label="Delete"
+                    className="bg-card !px-2 !py-1"
                   >
-                    <Trash2 className="h-3 w-3 text-destructive" />
-                  </Button>
+                    <Trash2 className="text-rose h-3.5 w-3.5" />
+                  </SketchButton>
                 </div>
 
                 {/* Info Footer */}
-                <div className="p-2 bg-card">
-                  <p className="text-[10px] font-medium truncate">
+                <div className="px-1 pt-2 pb-0.5">
+                  <p className="truncate text-xs font-bold">
                     {upload.uploaderName || 'Anonymous'}
                   </p>
                   {upload.caption && (
-                    <p className="text-[9px] text-muted-foreground truncate mt-0.5">
+                    <p className="text-ink-soft mt-0.5 truncate text-[11px]">
                       {upload.caption}
                     </p>
                   )}
@@ -950,12 +881,7 @@ function LightboxDialog({
 
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
             <div className="flex items-center gap-2">
-              <Badge
-                variant={currentUpload.status === 'APPROVED' ? 'default' : currentUpload.status === 'PENDING' ? 'secondary' : 'destructive'}
-                className="text-xs"
-              >
-                {currentUpload.status}
-              </Badge>
+              <Stamp tone={currentUpload.status === 'APPROVED' ? 'ok' : currentUpload.status === 'PENDING' ? 'wait' : 'late'}>{currentUpload.status}</Stamp>
               {currentUpload.uploaderName && (
                 <span className="text-white/70 text-xs">by {currentUpload.uploaderName}</span>
               )}

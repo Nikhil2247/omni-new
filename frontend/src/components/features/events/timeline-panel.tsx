@@ -7,7 +7,7 @@ import * as z from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCreateTimeline, useTimeline, useUpdateTimeline, useAddTimelineItem, useUpdateTimelineItem, useDeleteTimelineItem } from '@/hooks/queries/use-timeline'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Brush, Chip, Eyebrow, Ico, ICONS, PaintedNum, Paper, SketchButton, skPaper } from '@/components/sketch'
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,8 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Clock, Calendar, Plus, Edit, Trash2, Settings, Sparkles, ChevronRight, Loader2, LayoutGrid, List as ListIcon } from 'lucide-react'
+import { Clock, Calendar, Plus, Edit, Trash2, Settings, ChevronRight, Loader2, LayoutGrid, List as ListIcon } from 'lucide-react'
 import { TIMELINE_TEMPLATES, type TimelineTemplate } from '@/lib/data/recommended-templates'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { TimelineForm } from '@/components/forms/timeline-form'
 import { TimelineItemForm } from '@/components/forms/timeline-item-form'
@@ -254,12 +253,10 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
 
   if (error) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="rounded-2xl border-2 border-dashed border-destructive/50 bg-destructive/5 p-8 text-center"
-      >
-        <p className="text-sm text-destructive">Unable to load timeline.</p>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+        <Paper className="px-6 py-8 text-center">
+          <p className="text-rose text-sm font-semibold">Unable to load timeline.</p>
+        </Paper>
       </motion.div>
     )
   }
@@ -273,69 +270,56 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
         className="space-y-6"
       >
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-sky-50 via-cyan-50 to-blue-50 dark:from-sky-950/30 dark:via-cyan-950/30 dark:to-blue-950/30 p-8">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500">
-                <Clock className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Create Your Timeline</h1>
-                <p className="text-muted-foreground">Plan your event day schedule</p>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <Button onClick={() => setIsCreateTimelineOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Custom Timeline
-              </Button>
-            </div>
+        <Paper className="px-6 py-6">
+          <Eyebrow>Timeline</Eyebrow>
+          <h2 className="font-display mt-2.5 text-[clamp(1.6rem,3vw,2.2rem)] leading-[1.05] font-semibold tracking-tight">
+            Create Your <Brush>Timeline</Brush>
+          </h2>
+          <p className="text-ink-soft mt-2">Plan your event day schedule</p>
+          <div className="mt-5 flex gap-3">
+            <SketchButton onClick={() => setIsCreateTimelineOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Create Custom Timeline
+            </SketchButton>
           </div>
-        </div>
+        </Paper>
 
         {/* Recommended Templates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-sky-500" />
-              Recommended Schedules
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Start with a pre-built schedule and customize it to your needs
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {TIMELINE_TEMPLATES.map((template) => (
-                <button
-                  key={template.id}
-                  onClick={() => onCreateFromTemplate(template)}
-                  disabled={isCreatingFromTemplate || createTimeline.isPending}
-                  className="group flex items-start gap-3 rounded-lg border p-4 text-left transition-all hover:border-primary/50 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/30">
-                    {isCreatingFromTemplate ? (
-                      <Loader2 className="h-5 w-5 text-sky-600 animate-spin" />
-                    ) : (
-                      <Calendar className="h-5 w-5 text-sky-600" />
-                    )}
+        <Paper alt className="px-6 py-5">
+          <h2 className="font-display text-xl font-semibold">Recommended Schedules</h2>
+          <p className="text-ink-soft mt-1 mb-4 text-sm">
+            Start with a pre-built schedule and customize it to your needs
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {TIMELINE_TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                onClick={() => onCreateFromTemplate(template)}
+                disabled={isCreatingFromTemplate || createTimeline.isPending}
+                className={skPaper({
+                  className:
+                    'group flex items-start gap-3 px-4 py-3.5 text-left transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50',
+                })}
+              >
+                <PaintedNum>
+                  {isCreatingFromTemplate ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Calendar className="h-4 w-4" />
+                  )}
+                </PaintedNum>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-display font-semibold">{template.name}</p>
+                    <Chip>{template.items.length} items</Chip>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium group-hover:text-primary">{template.name}</p>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {template.items.length} items
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-1">{template.description}</p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground/50 group-hover:text-primary" />
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                  <p className="text-ink-soft line-clamp-1 text-sm">{template.description}</p>
+                </div>
+                <ChevronRight className="text-ink-soft h-5 w-5 shrink-0" />
+              </button>
+            ))}
+          </div>
+        </Paper>
 
         {/* Custom Timeline Dialog */}
         <Dialog open={isCreateTimelineOpen} onOpenChange={setIsCreateTimelineOpen}>
@@ -407,264 +391,165 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
     >
       {/* View Toggle & Add Button */}
       <motion.div variants={itemVariants}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex rounded-xl border bg-background p-1 shadow-sm">
-            <Button
-              type="button"
-              size="sm"
-              variant={viewMode === 'card' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('card')}
-              className="h-8 gap-1.5 px-3"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              Card View
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('list')}
-              className="h-8 gap-1.5 px-3"
-            >
-              <ListIcon className="h-3.5 w-3.5" />
-              List View
-            </Button>
-          </div>
+        <Paper className="px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <SketchButton
+                size="sm"
+                variant={viewMode === 'card' ? 'solid' : 'line'}
+                aria-pressed={viewMode === 'card'}
+                onClick={() => setViewMode('card')}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Card View
+              </SketchButton>
+              <SketchButton
+                size="sm"
+                variant={viewMode === 'list' ? 'solid' : 'line'}
+                aria-pressed={viewMode === 'list'}
+                onClick={() => setViewMode('list')}
+              >
+                <ListIcon className="h-3.5 w-3.5" />
+                List View
+              </SketchButton>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditTimelineOpen(true)}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Button>
-            <Button size="sm" onClick={() => {
-              setEditingItem(null)
-              setIsItemFormOpen(true)
-            }}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <SketchButton variant="line" size="sm" onClick={() => setIsEditTimelineOpen(true)}>
+                <Settings className="h-4 w-4" />
+                Settings
+              </SketchButton>
+              <SketchButton
+                size="sm"
+                onClick={() => {
+                  setEditingItem(null)
+                  setIsItemFormOpen(true)
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                Add Item
+              </SketchButton>
+            </div>
           </div>
-        </div>
+        </Paper>
       </motion.div>
 
       {/* List View */}
       {viewMode === 'list' ? (
         <motion.div variants={itemVariants}>
-          <Card className="border-muted/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">{data.name}</CardTitle>
-              <CardDescription className="text-xs">
-                {allItems.length} schedule items
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-hidden rounded-lg border border-muted/60">
-                <div className="grid grid-cols-12 bg-muted/50 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  <div className="col-span-2">Time</div>
-                  <div className="col-span-4">Event</div>
-                  <div className="col-span-2">Duration</div>
-                  <div className="col-span-2">Description</div>
-                  <div className="col-span-2 text-right">Actions</div>
-                </div>
+          <Paper className="px-5 py-4">
+            <h2 className="font-display text-xl font-semibold">{data.name}</h2>
+            <p className="text-ink-soft mb-1 text-sm">{allItems.length} schedule items</p>
 
-                <AnimatePresence mode="popLayout">
-                  {allItems.map((item: any) => (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="grid grid-cols-12 items-center gap-2 border-t px-3 py-2 text-sm hover:bg-muted/40"
-                    >
-                      <div className="col-span-2">
-                        <Badge className="bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400 text-xs font-bold">
-                          {formatTimeDisplay(item.scheduledTime)}
-                        </Badge>
-                      </div>
-                      <div className="col-span-4 min-w-0">
-                        <p className="truncate font-medium">{item.title}</p>
-                      </div>
-                      <div className="col-span-2 text-xs text-muted-foreground">
-                        {item.duration ? `${item.duration} min` : '-'}
-                      </div>
-                      <div className="col-span-2 text-xs text-muted-foreground truncate">
-                        {item.description || '-'}
-                      </div>
-                      <div className="col-span-2 flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditingItem(item)
-                            setIsItemFormOpen(true)
-                          }}
-                          className="h-7 w-7"
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteItemId(item.id)}
-                          className="h-7 w-7"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-2">
-                <AnimatePresence mode="popLayout">
-                  {allItems.map((item: any) => (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="rounded-lg border p-3 hover:bg-muted/40"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                          <Badge className="bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400 text-xs font-bold shrink-0">
-                            {formatTimeDisplay(item.scheduledTime)}
-                          </Badge>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">{item.title}</p>
-                            {item.description && <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>}
-                            {item.duration && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Duration: {item.duration} min
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setEditingItem(item)
-                              setIsItemFormOpen(true)
-                            }}
-                            className="h-8 w-8"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteItemId(item.id)}
-                            className="h-8 w-8"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-
-              {allItems.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                    <Clock className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground">No schedule items yet</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Add your first item to get started</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      ) : (
-        /* Card View - Grid Layout */
-        <motion.div variants={itemVariants}>
-          {allItems.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <ul>
               <AnimatePresence mode="popLayout">
                 {allItems.map((item: any) => (
-                  <motion.div
+                  <motion.li
                     key={item.id}
                     layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    className="group relative rounded-xl border p-3 transition-all bg-card hover:border-primary/50 hover:shadow-lg"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="border-line flex flex-wrap items-center gap-x-4 gap-y-2 border-b-2 border-dashed py-3 last:border-b-0"
                   >
-                    <div className="absolute right-2 top-2 flex items-center gap-1">
-                      <Button
+                    <b className="font-display w-24 shrink-0 text-base">{formatTimeDisplay(item.scheduledTime)}</b>
+                    <div className="min-w-0 flex-1 basis-48">
+                      <p className="font-semibold">{item.title}</p>
+                      {item.description && <p className="text-ink-soft text-sm">{item.description}</p>}
+                    </div>
+                    {item.duration ? <Chip>{item.duration} min</Chip> : null}
+                    <div className="flex gap-1">
+                      <SketchButton
                         variant="ghost"
                         size="icon"
+                        aria-label={`Edit ${item.title}`}
                         onClick={() => {
                           setEditingItem(item)
                           setIsItemFormOpen(true)
                         }}
-                        className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                       >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
+                        <Edit className="h-4 w-4" />
+                      </SketchButton>
+                      <SketchButton
                         variant="ghost"
                         size="icon"
+                        aria-label={`Delete ${item.title}`}
                         onClick={() => setDeleteItemId(item.id)}
-                        className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                       >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
+                        <Trash2 className="text-rose h-4 w-4" />
+                      </SketchButton>
                     </div>
-
-                    <div className="pr-14">
-                      <Badge className="mb-2 bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400 text-[10px] px-1.5 py-0 font-bold">
-                        {formatTimeDisplay(item.scheduledTime)}
-                      </Badge>
-                      <p className="text-sm font-medium line-clamp-2 leading-tight">{item.title}</p>
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-muted/50">
-                      {item.duration && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>{item.duration} min</span>
-                        </div>
-                      )}
-                      {item.description && (
-                        <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1">{item.description}</p>
-                      )}
-                      {!item.duration && !item.description && (
-                        <p className="text-[10px] text-muted-foreground">No details</p>
-                      )}
-                    </div>
-                  </motion.div>
+                  </motion.li>
                 ))}
               </AnimatePresence>
-            </div>
+            </ul>
+
+            {allItems.length === 0 && <EmptyItems />}
+          </Paper>
+        </motion.div>
+      ) : (
+        /* Card View - vertical dotted timeline */
+        <motion.div variants={itemVariants}>
+          {allItems.length > 0 ? (
+            <Paper className="px-5 py-5">
+              <h2 className="font-display mb-3 text-xl font-semibold">{data.name}</h2>
+              <ol className="relative grid gap-5 pl-[30px] before:absolute before:top-1.5 before:bottom-1.5 before:left-[8px] before:border-l-[3px] before:border-dotted before:border-ink-soft">
+                <AnimatePresence mode="popLayout">
+                  {allItems.map((item: any) => (
+                    <motion.li
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="relative before:absolute before:top-[6px] before:-left-[29px] before:size-[15px] before:rounded-[50%_46%_52%_48%] before:bg-blue"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <b className="font-display block text-lg leading-tight">{formatTimeDisplay(item.scheduledTime)}</b>
+                          <p className="font-semibold">{item.title}</p>
+                          {item.description && <p className="text-ink-soft mt-0.5 text-sm">{item.description}</p>}
+                          {item.duration ? (
+                            <Chip className="mt-2">
+                              <Clock className="h-3 w-3" />
+                              {item.duration} min
+                            </Chip>
+                          ) : null}
+                        </div>
+                        <div className="flex gap-1">
+                          <SketchButton
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Edit ${item.title}`}
+                            onClick={() => {
+                              setEditingItem(item)
+                              setIsItemFormOpen(true)
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </SketchButton>
+                          <SketchButton
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Delete ${item.title}`}
+                            onClick={() => setDeleteItemId(item.id)}
+                          >
+                            <Trash2 className="text-rose h-4 w-4" />
+                          </SketchButton>
+                        </div>
+                      </div>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ol>
+            </Paper>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                  <Clock className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium text-muted-foreground">No schedule items yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">Add your first item to get started</p>
-              </CardContent>
-            </Card>
+            <Paper className="px-5 py-4">
+              <EmptyItems />
+            </Paper>
           )}
         </motion.div>
       )}
-
       {/* Forms and Dialogs */}
       <TimelineForm
         open={isEditTimelineOpen}
@@ -703,5 +588,16 @@ export function TimelinePanel({ eventId, defaultDate }: { eventId: string; defau
         </AlertDialogContent>
       </AlertDialog>
     </motion.div>
+  )
+}
+
+
+function EmptyItems() {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center">
+      <Ico d={ICONS.clock} className="text-blue mb-3 h-10 w-10" />
+      <p className="font-display text-lg font-semibold">No schedule items yet</p>
+      <p className="text-ink-soft mt-1 text-sm">Add your first item to get started</p>
+    </div>
   )
 }

@@ -3,6 +3,7 @@
 import { AuthGuard, RoleGuard, OnboardingGuard } from '@/components/auth';
 import { PublicLayout } from '@/components/layouts/public';
 import { ROLES } from '@/config/roles';
+import { SkContainer } from '@/components/sketch';
 
 export default function UserLayout({
   children,
@@ -14,9 +15,8 @@ export default function UserLayout({
       <RoleGuard allowedRoles={[ROLES.USER]} redirectOnFail={true}>
         <OnboardingGuard>
           <PublicLayout>
-            <main className="p-4 sm:p-4 lg:p-4">
-              <div className="mx-auto w-full max-w-8xl">{children}</div>
-            </main>
+            {/* Same page width as the public pages */}
+            <SkContainer className="py-4 sm:py-6">{children}</SkContainer>
           </PublicLayout>
         </OnboardingGuard>
       </RoleGuard>

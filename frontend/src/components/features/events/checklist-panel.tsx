@@ -5,14 +5,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, CheckSquare, Calendar, Award, ListChecks, Sparkles, ChevronRight, Loader2, LayoutGrid, List as ListIcon } from 'lucide-react'
+import { Plus, Trash2, CheckSquare, Calendar, ListChecks, ChevronRight, Loader2, LayoutGrid, List as ListIcon } from 'lucide-react'
 import { CHECKLIST_TEMPLATES, type ChecklistTemplate } from '@/lib/data/recommended-templates'
 import { useAddChecklistItem, useChecklist, useCreateChecklist, useDeleteChecklistItem, useUpdateChecklistItem } from '@/hooks/queries/use-checklists'
 import { useExportChecklist } from '@/hooks/queries/use-export'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Brush, BrushBar, Chip, Eyebrow, Ico, ICONS, PaintedNum, Paper, SketchButton, Stamp, skPaper } from '@/components/sketch'
 import {
   Dialog,
   DialogContent,
@@ -152,12 +150,10 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
 
   if (error) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="rounded-2xl border-2 border-dashed border-destructive/50 bg-destructive/5 p-8 text-center"
-      >
-        <p className="text-sm text-destructive">Unable to load checklist.</p>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+        <Paper className="px-6 py-8 text-center">
+          <p className="text-rose text-sm font-semibold">Unable to load checklist.</p>
+        </Paper>
       </motion.div>
     )
   }
@@ -171,68 +167,55 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
         className="space-y-6"
       >
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30 p-8">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600">
-                <CheckSquare className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Create Your Checklist</h1>
-                <p className="text-muted-foreground">Never miss a task with organized to-dos</p>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <Button onClick={() => setShowCreateChecklistDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Custom Checklist
-              </Button>
-            </div>
+        <Paper className="px-6 py-6">
+          <Eyebrow>Checklist</Eyebrow>
+          <h2 className="font-display mt-2.5 text-[clamp(1.6rem,3vw,2.2rem)] leading-[1.05] font-semibold tracking-tight">
+            Create Your <Brush>Checklist</Brush>
+          </h2>
+          <p className="text-ink-soft mt-2">Never miss a task with organized to-dos</p>
+          <div className="mt-5 flex gap-3">
+            <SketchButton onClick={() => setShowCreateChecklistDialog(true)}>
+              <Plus className="h-4 w-4" />
+              Create Custom Checklist
+            </SketchButton>
           </div>
-        </div>
+        </Paper>
 
         {/* Recommended Templates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-blue-500" />
-              Recommended Checklists
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Start with a pre-built checklist and customize it to your needs
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {CHECKLIST_TEMPLATES.map((template) => (
-                <button
-                  key={template.id}
-                  onClick={() => {
-                    setSelectedTemplate(template)
-                    setShowTemplateDialog(true)
-                  }}
-                  disabled={isCreatingFromTemplate || createChecklist.isPending}
-                  className="group flex items-start gap-3 rounded-lg border p-4 text-left transition-all hover:border-primary/50 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                    <ListChecks className="h-5 w-5 text-blue-600" />
+        <Paper alt className="px-6 py-5">
+          <h2 className="font-display text-xl font-semibold">Recommended Checklists</h2>
+          <p className="text-ink-soft mt-1 mb-4 text-sm">
+            Start with a pre-built checklist and customize it to your needs
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {CHECKLIST_TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                onClick={() => {
+                  setSelectedTemplate(template)
+                  setShowTemplateDialog(true)
+                }}
+                disabled={isCreatingFromTemplate || createChecklist.isPending}
+                className={skPaper({
+                  className:
+                    'group flex items-start gap-3 px-4 py-3.5 text-left transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50',
+                })}
+              >
+                <PaintedNum tone="green">
+                  <ListChecks className="h-4 w-4" />
+                </PaintedNum>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-display font-semibold">{template.name}</p>
+                    <Chip>{template.items.length} tasks</Chip>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium group-hover:text-primary">{template.name}</p>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {template.items.length} tasks
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-1">{template.description}</p>
-                  </div>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground/50 group-hover:text-primary" />
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                  <p className="text-ink-soft line-clamp-1 text-sm">{template.description}</p>
+                </div>
+                <ChevronRight className="text-ink-soft h-5 w-5 shrink-0" />
+              </button>
+            ))}
+          </div>
+        </Paper>
 
         {/* Custom Checklist Dialog */}
         <Dialog open={showCreateChecklistDialog} onOpenChange={setShowCreateChecklistDialog}>
@@ -377,46 +360,57 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
     >
       {/* View Toggle & Add Button */}
       <motion.div variants={itemVariants}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex rounded-xl border bg-background p-1 shadow-sm">
-            <Button
-              type="button"
-              size="sm"
-              variant={viewMode === 'card' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('card')}
-              className="h-8 gap-1.5 px-3"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              Card View
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('list')}
-              className="h-8 gap-1.5 px-3"
-            >
-              <ListIcon className="h-3.5 w-3.5" />
-              List View
-            </Button>
+        <Paper className="px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <SketchButton
+                size="sm"
+                variant={viewMode === 'card' ? 'solid' : 'line'}
+                aria-pressed={viewMode === 'card'}
+                onClick={() => setViewMode('card')}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Card View
+              </SketchButton>
+              <SketchButton
+                size="sm"
+                variant={viewMode === 'list' ? 'solid' : 'line'}
+                aria-pressed={viewMode === 'list'}
+                onClick={() => setViewMode('list')}
+              >
+                <ListIcon className="h-3.5 w-3.5" />
+                List View
+              </SketchButton>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <ExportDropdown
+                type="checklist"
+                id={data.id}
+                filename={`checklist-${(data.name || 'checklist').toLowerCase().replace(/\s+/g, '-')}`}
+                onExport={async (format) => {
+                  await exportChecklist.mutateAsync({ id: data.id, format })
+                }}
+                disabled={exportChecklist.isPending}
+              />
+              <SketchButton size="sm" onClick={() => setShowAddTaskDialog(true)}>
+                <Plus className="h-4 w-4" />
+                Add Task
+              </SketchButton>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <ExportDropdown
-              type="checklist"
-              id={data.id}
-              filename={`checklist-${(data.name || 'checklist').toLowerCase().replace(/\s+/g, '-')}`}
-              onExport={async (format) => {
-                await exportChecklist.mutateAsync({ id: data.id, format })
-              }}
-              disabled={exportChecklist.isPending}
-            />
-            <Button size="sm" onClick={() => setShowAddTaskDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Task
-            </Button>
+          <div className="mt-3">
+            <div className="mb-1.5 flex items-center justify-between text-sm">
+              <span className="sk-eyebrow">Overall progress</span>
+              <span className="flex items-center gap-2 font-semibold">
+                {isComplete && <Stamp>All done</Stamp>}
+                {progress}%
+              </span>
+            </div>
+            <BrushBar value={progress} tone="green" />
           </div>
-        </div>
+        </Paper>
       </motion.div>
 
       {/* Add Task Dialog */}
@@ -486,165 +480,90 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
       {/* List View */}
       {viewMode === 'list' ? (
         <motion.div variants={itemVariants}>
-          <Card className="border-muted/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">{data.name}</CardTitle>
-              <CardDescription className="text-xs">
-                {completedCount} of {totalCount} completed
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-hidden rounded-lg border border-muted/60">
-                <div className="grid grid-cols-12 bg-muted/50 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  <div className="col-span-5">Task</div>
-                  <div className="col-span-3">Due Date</div>
-                  <div className="col-span-2">Status</div>
-                  <div className="col-span-2 text-right">Actions</div>
-                </div>
+          <Paper className="px-5 py-4">
+            <h2 className="font-display text-xl font-semibold">{data.name}</h2>
+            <p className="text-ink-soft mb-1 text-sm">
+              {completedCount} of {totalCount} completed
+            </p>
 
-                <AnimatePresence mode="popLayout">
-                  {allItems.map((item: any) => {
-                    const dueDate = item.dueDate ? new Date(item.dueDate) : null
-                    const isOverdue = dueDate && !item.isCompleted && dueDate < new Date()
+            <ul>
+              <AnimatePresence mode="popLayout">
+                {allItems.map((item: any) => {
+                  const dueDate = item.dueDate ? new Date(item.dueDate) : null
+                  const isOverdue = dueDate && !item.isCompleted && dueDate < new Date()
 
-                    return (
-                      <motion.div
-                        key={item.id}
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className={`grid grid-cols-12 items-center gap-2 border-t px-3 py-2 text-sm ${
-                          item.isCompleted ? 'bg-green-50/40 dark:bg-green-950/20' : isOverdue ? 'bg-red-50/40 dark:bg-red-950/20' : 'hover:bg-muted/40'
-                        }`}
-                      >
-                        <div className="col-span-5 flex min-w-0 items-center gap-2">
-                          <Checkbox
-                            checked={item.isCompleted}
-                            onCheckedChange={(checked) =>
-                              updateItem.mutate({
-                                itemId: item.id,
-                                input: { isCompleted: Boolean(checked) },
-                              })
-                            }
-                          />
-                          <div className="min-w-0">
-                            <p className={`truncate font-medium ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{item.title}</p>
-                            {item.description && <p className="truncate text-xs text-muted-foreground">{item.description}</p>}
-                          </div>
+                  return (
+                    <motion.li
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="border-line flex flex-wrap items-center gap-x-4 gap-y-2 border-b-2 border-dashed py-3 last:border-b-0"
+                    >
+                      <div className="flex min-w-0 flex-1 basis-60 items-center gap-3">
+                        <input
+                          type="checkbox"
+                          className="sk-check"
+                          aria-label={`Mark "${item.title}" as ${item.isCompleted ? 'not done' : 'done'}`}
+                          checked={!!item.isCompleted}
+                          onChange={(e) =>
+                            updateItem.mutate({
+                              itemId: item.id,
+                              input: { isCompleted: e.target.checked },
+                            })
+                          }
+                        />
+                        <div className="min-w-0">
+                          <p className={`font-semibold ${item.isCompleted ? 'text-ink-soft line-through' : ''}`}>{item.title}</p>
+                          {item.description && <p className="text-ink-soft truncate text-sm">{item.description}</p>}
                         </div>
-                        <div className="col-span-3 text-xs text-muted-foreground">
-                          {dueDate ? (
-                            <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                      </div>
+                      <div className="text-ink-soft flex items-center gap-1.5 text-sm">
+                        {dueDate ? (
+                          <>
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span className={isOverdue ? 'text-rose font-semibold' : ''}>
                               {dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                              {isOverdue && ' (Overdue)'}
                             </span>
-                          ) : '-'}
-                        </div>
-                        <div className="col-span-2">
-                          {item.isCompleted ? (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px]">Done</Badge>
-                          ) : isOverdue ? (
-                            <Badge variant="destructive" className="text-[10px]">Overdue</Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-[10px]">Pending</Badge>
-                          )}
-                        </div>
-                        <div className="col-span-2 flex justify-end">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteItem.mutate(item.id)}
-                            className="h-7 w-7"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
-              </div>
-
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-2">
-                <AnimatePresence mode="popLayout">
-                  {allItems.map((item: any) => {
-                    const dueDate = item.dueDate ? new Date(item.dueDate) : null
-                    const isOverdue = dueDate && !item.isCompleted && dueDate < new Date()
-
-                    return (
-                      <motion.div
-                        key={item.id}
-                        layout
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className={`rounded-lg border p-3 ${
-                          item.isCompleted ? 'border-green-200 bg-green-50/50 dark:border-green-900/30 dark:bg-green-950/20' : isOverdue ? 'border-red-200 bg-red-50/50 dark:border-red-900/30 dark:bg-red-950/20' : 'hover:bg-muted/40'
-                        }`}
+                          </>
+                        ) : (
+                          '-'
+                        )}
+                      </div>
+                      <div>
+                        {item.isCompleted ? (
+                          <Stamp>Done</Stamp>
+                        ) : isOverdue ? (
+                          <Stamp tone="late">Overdue</Stamp>
+                        ) : (
+                          <Stamp tone="wait">Pending</Stamp>
+                        )}
+                      </div>
+                      <SketchButton
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Delete task ${item.title}`}
+                        onClick={() => deleteItem.mutate(item.id)}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                            <Checkbox
-                              checked={item.isCompleted}
-                              onCheckedChange={(checked) =>
-                                updateItem.mutate({
-                                  itemId: item.id,
-                                  input: { isCompleted: Boolean(checked) },
-                                })
-                              }
-                              className="mt-0.5"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-medium text-sm ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{item.title}</p>
-                              {item.description && <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>}
-                              {dueDate && (
-                                <div className="flex items-center gap-1.5 mt-1.5">
-                                  <Calendar className="h-3 w-3" />
-                                  <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
-                                    {dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                    {isOverdue && ' (Overdue)'}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteItem.mutate(item.id)}
-                            className="h-8 w-8 shrink-0"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
-              </div>
+                        <Trash2 className="text-rose h-4 w-4" />
+                      </SketchButton>
+                    </motion.li>
+                  )
+                })}
+              </AnimatePresence>
+            </ul>
 
-              {totalCount === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                    <ListChecks className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground">No tasks yet</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Add your first task to get started</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            {totalCount === 0 && <EmptyTasks />}
+          </Paper>
         </motion.div>
       ) : (
         /* Card View - Grid Layout */
         <motion.div variants={itemVariants}>
           {totalCount > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               <AnimatePresence mode="popLayout">
-                {allItems.map((item: any) => {
+                {allItems.map((item: any, idx: number) => {
                   const dueDate = item.dueDate ? new Date(item.dueDate) : null
                   const isOverdue = dueDate && !item.isCompleted && dueDate < new Date()
                   const isDueSoon = dueDate && !item.isCompleted && dueDate > new Date() &&
@@ -657,73 +576,61 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      className={`group relative rounded-xl border p-3 transition-all ${
-                        item.isCompleted
-                          ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:border-green-900/30 dark:from-green-950/30 dark:to-emerald-950/20'
-                          : isOverdue
-                          ? 'border-red-200 bg-gradient-to-br from-red-50 to-orange-50 dark:border-red-900/30 dark:from-red-950/30 dark:to-orange-950/20'
-                          : isDueSoon
-                          ? 'border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 dark:border-orange-900/30 dark:from-orange-950/30 dark:to-amber-950/20'
-                          : 'bg-card hover:border-primary/50 hover:shadow-lg'
-                      }`}
+                      whileHover={{ y: -2 }}
+                      className={skPaper({ alt: idx % 2 === 1, className: 'group relative px-4 py-3.5' })}
                     >
-                      <div className="absolute right-2 top-2 flex items-center gap-1">
-                        <Checkbox
-                          checked={item.isCompleted}
-                          onCheckedChange={(checked) =>
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          className="sk-check mt-0.5"
+                          aria-label={`Mark "${item.title}" as ${item.isCompleted ? 'not done' : 'done'}`}
+                          checked={!!item.isCompleted}
+                          onChange={(e) =>
                             updateItem.mutate({
                               itemId: item.id,
-                              input: { isCompleted: Boolean(checked) },
+                              input: { isCompleted: e.target.checked },
                             })
                           }
-                          className="h-4 w-4"
                         />
-                        <Button
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1.5">
+                            {item.isCompleted ? (
+                              <Stamp>Done</Stamp>
+                            ) : isOverdue ? (
+                              <Stamp tone="late">Overdue</Stamp>
+                            ) : isDueSoon ? (
+                              <Stamp tone="wait">Due Soon</Stamp>
+                            ) : (
+                              <Stamp tone="wait">Pending</Stamp>
+                            )}
+                          </div>
+                          <p className={`font-semibold leading-tight ${item.isCompleted ? 'text-ink-soft line-through' : ''}`}>
+                            {item.title}
+                          </p>
+                        </div>
+                        <SketchButton
                           variant="ghost"
                           size="icon"
+                          aria-label={`Delete task ${item.title}`}
                           onClick={() => deleteItem.mutate(item.id)}
-                          className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                          className="shrink-0 opacity-60 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                         >
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
-                      </div>
-
-                      <div className="pr-14">
-                        {item.isCompleted ? (
-                          <Badge className="mb-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0">
-                            Done
-                          </Badge>
-                        ) : isOverdue ? (
-                          <Badge variant="destructive" className="mb-2 text-[10px] px-1.5 py-0">
-                            Overdue
-                          </Badge>
-                        ) : isDueSoon ? (
-                          <Badge className="mb-2 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[10px] px-1.5 py-0">
-                            Due Soon
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="mb-2 text-[10px] px-1.5 py-0">
-                            Pending
-                          </Badge>
-                        )}
-                        <p className={`text-sm font-medium line-clamp-2 leading-tight ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
-                          {item.title}
-                        </p>
+                          <Trash2 className="text-rose h-4 w-4" />
+                        </SketchButton>
                       </div>
 
                       {(dueDate || item.description) && (
-                        <div className="mt-3 pt-2 border-t border-muted/50">
+                        <div className="border-line mt-3 border-t-2 border-dashed pt-2">
                           {dueDate && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                            <div className="text-ink-soft flex items-center gap-1.5 text-xs">
                               <Calendar className="h-3 w-3" />
-                              <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                              <span className={isOverdue ? 'text-rose font-semibold' : ''}>
                                 {dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
                             </div>
                           )}
                           {item.description && (
-                            <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1">{item.description}</p>
+                            <p className="text-ink-soft mt-1 line-clamp-2 text-xs">{item.description}</p>
                           )}
                         </div>
                       )}
@@ -733,18 +640,22 @@ export function ChecklistPanel({ eventId }: { eventId: string }) {
               </AnimatePresence>
             </div>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                  <ListChecks className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium text-muted-foreground">No tasks yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">Add your first task to get started</p>
-              </CardContent>
-            </Card>
+            <Paper className="px-5 py-4">
+              <EmptyTasks />
+            </Paper>
           )}
         </motion.div>
       )}
     </motion.div>
+  )
+}
+
+function EmptyTasks() {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 text-center">
+      <Ico d={ICONS.planner} className="text-blue mb-3 h-10 w-10" />
+      <p className="font-display text-lg font-semibold">No tasks yet</p>
+      <p className="text-ink-soft mt-1 text-sm">Add your first task to get started</p>
+    </div>
   )
 }

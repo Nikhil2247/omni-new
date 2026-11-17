@@ -4,11 +4,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { trackOnboarding } from '@/lib/analytics/umami'
-import { Heart, CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
+import { Loader2, ArrowRight } from 'lucide-react'
 import { useAcceptPartnerInvite } from '@/hooks/queries/use-onboarding'
 import { useAuthStore } from '@/store/auth-store'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Brush, Ico, ICONS, Paper, SketchButton, SkContainer, Stamp } from '@/components/sketch'
 
 export default function AcceptInvitePage() {
   const params = useParams()
@@ -51,115 +50,99 @@ export default function AcceptInvitePage() {
 
   if (!hasHydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-pink-50 to-white">
-        <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
-      </div>
+      <SkContainer className="max-w-md py-16">
+        <div className="flex justify-center" role="status" aria-label="Loading">
+          <Loader2 className="text-blue h-8 w-8 animate-spin" />
+        </div>
+      </SkContainer>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-pink-50 via-white to-purple-50 p-4">
-      <Card className="max-w-md w-full border-pink-100 shadow-lg">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4">
-            {status === 'success' ? (
-              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="h-10 w-10 text-green-600" />
-              </div>
-            ) : status === 'error' ? (
-              <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
-                <XCircle className="h-10 w-10 text-red-600" />
-              </div>
-            ) : (
-              <div className="h-16 w-16 rounded-full bg-pink-100 flex items-center justify-center">
-                <Heart className="h-10 w-10 text-pink-500" />
-              </div>
-            )}
-          </div>
-          <CardTitle className="text-2xl">
-            {status === 'success'
-              ? 'Welcome to the Team!'
-              : status === 'error'
-              ? 'Unable to Accept'
-              : 'Wedding Invitation'}
-          </CardTitle>
-          <CardDescription>
-            {status === 'success'
-              ? 'You now have access to the wedding planning board.'
-              : status === 'error'
+    <SkContainer className="max-w-md py-10 sm:py-14">
+      <Paper tape className="px-6 py-8 text-center">
+        <Ico d={status === 'success' ? ICONS.shield : ICONS.heart} className="mx-auto mb-3 h-14 w-14" />
+        {status === 'error' && <Stamp tone="late">Not accepted</Stamp>}
+        {status === 'success' && <Stamp>Accepted</Stamp>}
+        <h1 className="font-display mt-3 text-[clamp(1.8rem,6vw,2.4rem)] leading-[1.05] font-semibold tracking-tight text-balance">
+          {status === 'success' ? (
+            <>
+              Welcome to the <Brush>Team</Brush>!
+            </>
+          ) : status === 'error' ? (
+            <>
+              Unable to <Brush>accept</Brush>
+            </>
+          ) : (
+            <>
+              Wedding <Brush>Invitation</Brush>
+            </>
+          )}
+        </h1>
+        <p className="text-ink-soft mt-3">
+          {status === 'success'
+            ? 'You now have access to the wedding planning board.'
+            : status === 'error'
               ? errorMessage
-              : 'You\'ve been invited to join a wedding planning board.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+              : "You've been invited to join a wedding planning board."}
+        </p>
+
+        <div className="mt-6 space-y-3">
           {status === 'idle' && (
             <>
               {!isAuthenticated ? (
-                <div className="space-y-4">
-                  <p className="text-sm text-center text-muted-foreground">
+                <>
+                  <p className="text-ink-soft text-sm">
                     Please log in or create an account to accept this invitation.
                   </p>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                      asChild
-                    >
-                      <Link href={`/login?returnUrl=/invite/${token}`}>
-                        Log In to Accept
-                      </Link>
-                    </Button>
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link href={`/register?returnUrl=/invite/${token}`}>
-                        Create Account
-                      </Link>
-                    </Button>
+                  <div className="flex flex-col gap-3">
+                    <SketchButton asChild className="w-full">
+                      <Link href={`/login?returnUrl=/invite/${token}`}>Log In to Accept</Link>
+                    </SketchButton>
+                    <SketchButton asChild variant="line" className="w-full">
+                      <Link href={`/register?returnUrl=/invite/${token}`}>Create Account</Link>
+                    </SketchButton>
                   </div>
-                </div>
+                </>
               ) : (
-                <div className="space-y-2">
-                  <Button
-                    className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                    onClick={handleAccept}
-                  >
+                <div className="flex flex-col gap-3">
+                  <SketchButton className="w-full" onClick={handleAccept}>
                     Accept Invitation
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" className="w-full" onClick={handleSwitchAccount}>
+                    <ArrowRight className="h-4 w-4" />
+                  </SketchButton>
+                  <SketchButton variant="line" className="w-full" onClick={handleSwitchAccount}>
                     Use a different account
-                  </Button>
+                  </SketchButton>
                 </div>
               )}
             </>
           )}
 
           {status === 'loading' && (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
+            <div className="flex items-center justify-center py-4" role="status" aria-label="Accepting invitation">
+              <Loader2 className="text-blue h-8 w-8 animate-spin" />
             </div>
           )}
 
           {status === 'success' && (
-            <Button
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-              onClick={() => router.push('/dashboard')}
-            >
+            <SketchButton className="w-full" onClick={() => router.push('/dashboard')}>
               Go to Dashboard
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+              <ArrowRight className="h-4 w-4" />
+            </SketchButton>
           )}
 
           {status === 'error' && (
-            <div className="flex flex-col gap-2">
-              <Button variant="outline" className="w-full" onClick={() => setStatus('idle')}>
+            <div className="flex flex-col gap-3">
+              <SketchButton variant="line" className="w-full" onClick={() => setStatus('idle')}>
                 Try Again
-              </Button>
-              <Button variant="ghost" className="w-full" asChild>
+              </SketchButton>
+              <SketchButton asChild variant="ghost" className="w-full">
                 <Link href="/">Go to Homepage</Link>
-              </Button>
+              </SketchButton>
             </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </Paper>
+    </SkContainer>
   )
 }

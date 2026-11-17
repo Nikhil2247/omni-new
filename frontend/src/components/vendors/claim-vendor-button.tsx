@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Shield } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { SketchButton } from '@/components/sketch'
 import { ClaimVendorModal } from './claim-vendor-modal'
 import { cn } from '@/lib/utils'
 
@@ -25,14 +25,10 @@ export function ClaimVendorButton({
 
   return (
     <>
-      <Button
-        variant="outline"
-        className={cn(className)}
-        onClick={() => setModalOpen(true)}
-      >
+      <SketchButton variant="line" size="sm" className={cn(className)} onClick={() => setModalOpen(true)}>
         <Shield className="h-4 w-4" />
         Claim this business
-      </Button>
+      </SketchButton>
 
       <ClaimVendorModal
         open={modalOpen}

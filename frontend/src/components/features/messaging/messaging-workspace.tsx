@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Ico, ICONS, SketchButton } from '@/components/sketch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
@@ -46,7 +47,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import {
-  MessageSquareText,
   FileText,
   Send,
   Smile,
@@ -373,8 +373,8 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
       const elementHeight = element.offsetHeight
       const containerHeight = container.clientHeight
       container.scrollTop = elementTop - containerHeight / 2 + elementHeight / 2
-      element.classList.add('bg-primary/20')
-      setTimeout(() => element.classList.remove('bg-primary/20'), 2000)
+      element.classList.add('bg-blue-wash')
+      setTimeout(() => element.classList.remove('bg-blue-wash'), 2000)
     }
   }, [])
 
@@ -585,23 +585,23 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
   const messageGroups = useMemo(() => groupMessagesByDate(messages), [messages])
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border bg-background shadow-xl">
+    <div className="sk-paper flex h-[calc(100vh-8rem)] min-h-[480px] overflow-hidden p-0">
       {/* Conversation List - Hidden on mobile when chat is open */}
       <div
         className={cn(
-          'w-full flex-shrink-0 border-r bg-muted/30 md:w-[340px] lg:w-[380px]',
+          'border-line w-full flex-shrink-0 md:w-[340px] md:border-r-2 md:border-dashed lg:w-[380px]',
           showMobileChat && 'hidden md:flex'
         )}
       >
         <div className="flex h-full w-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b bg-background/80 px-4 py-4 backdrop-blur-sm">
-            <h1 className="text-xl font-semibold">Messages</h1>
+          <div className="border-line flex items-center justify-between border-b-2 border-dashed px-4 py-4">
+            <h1 className="font-display text-2xl font-semibold">Messages</h1>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+                <SketchButton variant="ghost" size="icon" aria-label="Conversation options">
                   <MoreVertical className="h-5 w-5" />
-                </Button>
+                </SketchButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={() => conversationsQuery.refetch()}>
@@ -613,21 +613,19 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
           </div>
 
           {/* Search */}
-          <div className="border-b px-3 py-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="border-line border-b-2 border-dashed px-3 py-3">
+            <div className="sk-pill !py-1 !pl-4">
+              <Search className="text-ink-soft h-4 w-4 shrink-0" />
               <input
                 type="text"
                 placeholder="Search conversations..."
+                aria-label="Search conversations"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl bg-muted/50 py-2.5 pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:bg-muted"
+                className="text-sm"
               />
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
+                <button type="button" aria-label="Clear search" onClick={() => setSearchQuery('')} className="!size-8">
                   <X className="h-4 w-4" />
                 </button>
               )}
@@ -637,21 +635,21 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
           {/* Conversations List */}
           <ScrollArea className="flex-1">
             {conversationsQuery.isLoading ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+              <div className="flex flex-col items-center justify-center gap-3 py-12 text-ink-soft">
                 <Loader2 className="h-8 w-8 animate-spin" />
                 <span className="text-sm">Loading conversations...</span>
               </div>
             ) : conversationsQuery.isError ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+              <div className="flex flex-col items-center justify-center gap-3 py-12 text-ink-soft">
                 <AlertCircle className="h-8 w-8" />
                 <span className="text-sm">Unable to load conversations</span>
-                <Button variant="outline" size="sm" onClick={() => conversationsQuery.refetch()}>
+                <SketchButton variant="line" size="sm" onClick={() => conversationsQuery.refetch()}>
                   Try Again
-                </Button>
+                </SketchButton>
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
-                <MessageSquareText className="h-10 w-10" />
+              <div className="flex flex-col items-center justify-center gap-3 py-12 text-ink-soft">
+                <Ico d={ICONS.chat} className="!size-12" />
                 <span className="text-sm">
                   {searchQuery ? 'No conversations found' : 'No conversations yet'}
                 </span>
@@ -664,41 +662,46 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
                   const title = getConversationTitle(conversation, user?.id)
                   const subtitle = getConversationSubtitle(conversation, user?.id)
                   const avatarUrl = getConversationAvatar(conversation, user?.id)
+                  const unreadCount = Number((conversation as { unreadCount?: number }).unreadCount ?? 0)
 
                   return (
                     <button
                       key={conversation.id}
                       className={cn(
-                        'flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50',
-                        isActive && 'bg-primary/10 hover:bg-primary/15'
+                        'border-line hover:bg-blue-wash flex w-full items-center gap-3 border-b-2 border-dashed px-3 py-3 text-left transition-colors',
+                        isActive && 'bg-blue-wash'
                       )}
                       onClick={() => handleConversationSelect(conversation.id)}
                     >
                       <div className="relative flex-shrink-0">
-                        <Avatar className="h-12 w-12">
+                        <Avatar className="border-ink h-12 w-12 border-2">
                           <AvatarImage src={avatarUrl} alt={title} />
-                          <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">
+                          <AvatarFallback className="bg-card text-ink font-display font-semibold">
                             {getInitials(title)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background bg-emerald-500" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate font-semibold">{title}</span>
-                          <span className="flex-shrink-0 text-xs text-muted-foreground">
+                          <span className="text-ink-soft flex-shrink-0 text-xs">
                             {formatConversationTime(conversation.lastMessageAt || conversation.createdAt)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <div className="text-ink-soft flex min-w-0 items-center gap-1.5 text-sm">
                             {lastMessage?.senderId === user?.id && (
-                              <CheckCheck className="h-4 w-4 flex-shrink-0 text-primary" />
+                              <CheckCheck className="text-blue h-4 w-4 flex-shrink-0" />
                             )}
                             <span className="truncate">
                               {lastMessage?.content || `Start chatting with ${subtitle}`}
                             </span>
                           </div>
+                          {unreadCount > 0 && (
+                            <span className="bg-blue text-on-blue min-w-5 flex-shrink-0 rounded-full px-1.5 text-center text-[11px] leading-5 font-bold">
+                              {unreadCount}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </button>
@@ -720,52 +723,52 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
         {activeConversation ? (
           <>
             {/* Chat Header */}
-            <div className="flex items-center justify-between border-b bg-background/80 px-3 py-3 backdrop-blur-sm md:px-6">
+            <div className="border-line flex items-center justify-between border-b-2 border-dashed px-3 py-3 md:px-6">
               <div className="flex items-center gap-2 md:gap-3">
                 {/* Back button - mobile only */}
-                <Button
+                <SketchButton
                   variant="ghost"
                   size="icon"
-                  className="rounded-full md:hidden"
+                  className="md:hidden"
+                  aria-label="Back to conversations"
                   onClick={handleBackToList}
                 >
                   <ArrowLeft className="h-5 w-5" />
-                </Button>
+                </SketchButton>
                 <div className="relative">
-                  <Avatar className="h-9 w-9 md:h-10 md:w-10">
+                  <Avatar className="border-ink h-9 w-9 border-2 md:h-10 md:w-10">
                     <AvatarImage
                       src={getConversationAvatar(activeConversation, user?.id)}
                       alt={getConversationTitle(activeConversation, user?.id)}
                     />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-sm text-primary-foreground">
+                    <AvatarFallback className="bg-card text-ink font-display text-sm font-semibold">
                       {getInitials(getConversationTitle(activeConversation, user?.id))}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500 md:h-3 md:w-3" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="truncate text-sm font-semibold md:text-base">
+                  <h2 className="font-display truncate text-base font-semibold md:text-lg">
                     {getConversationTitle(activeConversation, user?.id)}
                   </h2>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="text-ink-soft truncate text-xs">
                     {typingLabel || getConversationSubtitle(activeConversation, user?.id)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Button
+                <SketchButton
                   variant="ghost"
                   size="icon"
-                  className="rounded-full text-muted-foreground"
+                  aria-label="Search messages"
                   onClick={() => setIsMessageSearchOpen(!isMessageSearchOpen)}
                 >
                   <Search className="h-5 w-5" />
-                </Button>
+                </SketchButton>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground">
+                    <SketchButton variant="ghost" size="icon" aria-label="Chat options">
                       <MoreVertical className="h-5 w-5" />
-                    </Button>
+                    </SketchButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => setIsMessageSearchOpen(true)}>
@@ -801,9 +804,9 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
 
             {/* Message Search Bar */}
             {isMessageSearchOpen && (
-              <div className="flex items-center gap-2 border-b bg-muted/30 px-3 py-2 md:px-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <div className="border-line flex items-center gap-2 border-b-2 border-dashed px-3 py-2 md:px-6">
+                <div className="sk-pill !py-1 !pl-4 flex-1">
+                  <Search className="text-ink-soft h-4 w-4 shrink-0" />
                   <input
                     ref={searchInputRef}
                     type="text"
@@ -813,12 +816,13 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
                       setMessageSearchQuery(e.target.value)
                       setCurrentSearchIndex(0)
                     }}
-                    className="w-full rounded-lg bg-background py-2 pl-10 pr-4 text-sm outline-none ring-1 ring-border focus:ring-primary"
+                    aria-label="Search in messages"
+                    className="text-sm"
                   />
                 </div>
                 {searchMatchingMessages.length > 0 && (
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-ink-soft text-xs">
                       {currentSearchIndex + 1}/{searchMatchingMessages.length}
                     </span>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSearchPrev}>
@@ -838,24 +842,19 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
             {/* Messages */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto"
-              style={{
-                backgroundImage: `linear-gradient(to bottom, hsl(var(--muted)/0.3), hsl(var(--muted)/0.3))`,
-              }}
+              className="min-h-0 flex-1 overflow-y-auto"
             >
               <div className="min-h-full px-3 py-4 md:px-8 lg:px-16">
                 {messagesLoading ? (
                   <div className="flex h-full items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <Loader2 className="text-ink-soft h-8 w-8 animate-spin" />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-                    <div className="rounded-full bg-primary/10 p-6">
-                      <MessageSquareText className="h-12 w-12 text-primary" />
-                    </div>
+                    <Ico d={ICONS.chat} className="!size-16" />
                     <div>
-                      <h3 className="font-semibold">Start a conversation</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <h3 className="font-display text-xl font-semibold">Start a conversation</h3>
+                      <p className="text-ink-soft mt-1 text-sm">
                         Send a message to begin chatting
                       </p>
                     </div>
@@ -866,7 +865,7 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
                       <div key={groupIndex}>
                         {/* Date Separator */}
                         <div className="mb-4 flex justify-center">
-                          <span className="rounded-lg bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
+                          <span className="sk-chip">
                             {formatDate(group.date)}
                           </span>
                         </div>
@@ -912,43 +911,38 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
             </div>
 
             {/* Input Area */}
-            <div className="border-t bg-background/80 px-2 py-2 backdrop-blur-sm md:px-4 md:py-3">
+            <div className="border-line border-t-2 border-dashed px-2 py-2 md:px-4 md:py-3">
               {!hasMessagingAccess && scope === 'business' ? (
                 /* Upgrade prompt for vendors without messaging access */
-                <div className="flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-3 md:px-4">
+                <div className="sk-paper sk-paper--alt flex items-center justify-between gap-3 px-3 py-3 md:px-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20">
-                      <Lock className="h-4 w-4 text-primary" />
+                    <div className="border-ink bg-card flex h-9 w-9 items-center justify-center rounded-full border-2">
+                      <Lock className="text-blue h-4 w-4" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">Messaging requires a Professional plan</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-ink-soft text-xs">
                         Upgrade to send messages and connect with potential clients
                       </p>
                     </div>
                   </div>
-                  <Link href="/business/settings/subscription">
-                    <Button size="sm" className="gap-1.5">
+                  <SketchButton asChild size="sm">
+                    <Link href="/business/settings/subscription">
                       <Sparkles className="h-3.5 w-3.5" />
                       Upgrade
-                    </Button>
-                  </Link>
+                    </Link>
+                  </SketchButton>
                 </div>
               ) : (
                 <div className="flex items-end gap-1 md:gap-2">
                   <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
                     <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground md:h-10 md:w-10"
-                      >
+                      <SketchButton type="button" size="icon" variant="ghost" aria-label="Insert emoji">
                         <Smile className="h-5 w-5 md:h-6 md:w-6" />
-                      </Button>
+                      </SketchButton>
                     </PopoverTrigger>
                     <PopoverContent align="start" side="top" className="w-64 p-3 md:w-72">
-                      <p className="mb-2 text-xs font-medium text-muted-foreground">Quick Reactions</p>
+                      <p className="text-ink-soft mb-2 text-xs font-medium">Quick Reactions</p>
                       <div className="grid grid-cols-6 gap-1">
                         {QUICK_EMOJIS.map((emoji) => (
                           <Button
@@ -965,16 +959,17 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
                     </PopoverContent>
                   </Popover>
 
-                  <Button
+                  <SketchButton
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="hidden h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground hover:text-foreground md:flex md:h-10 md:w-10"
+                    className="max-md:hidden"
+                    aria-label="Attach file"
                   >
                     <Paperclip className="h-5 w-5" />
-                  </Button>
+                  </SketchButton>
 
-                  <div className="flex-1">
+                  <div className="sk-pill !py-1 !pr-4 flex-1">
                     <Textarea
                       ref={textareaRef}
                       value={draft}
@@ -982,35 +977,34 @@ export function MessagingWorkspace({ scope }: MessagingWorkspaceProps) {
                       onKeyDown={handleKeyDown}
                       placeholder="Type a message..."
                       rows={1}
-                      className="max-h-32 min-h-[40px] resize-none rounded-2xl border-0 bg-muted/50 px-3 py-2.5 text-sm focus-visible:ring-1 focus-visible:ring-primary md:min-h-[44px] md:px-4 md:py-3"
+                      aria-label="Type a message"
+                      className="max-h-32 min-h-[40px] flex-1 resize-none rounded-none border-0 bg-transparent px-0 py-2.5 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
                       disabled={!activeConversationId}
                     />
                   </div>
 
-                  <Button
+                  <SketchButton
                     onClick={handleSend}
                     disabled={!draft.trim() || sending || !activeConversationId}
                     size="icon"
-                    className="h-9 w-9 flex-shrink-0 rounded-full md:h-10 md:w-10"
+                    aria-label="Send message"
                   >
                     {sending ? (
                       <Loader2 className="h-4 w-4 animate-spin md:h-5 md:w-5" />
                     ) : (
                       <Send className="h-4 w-4 md:h-5 md:w-5" />
                     )}
-                  </Button>
+                  </SketchButton>
                 </div>
               )}
             </div>
           </>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-4 text-center">
-            <div className="rounded-full bg-muted p-6 md:p-8">
-              <MessageSquareText className="h-12 w-12 text-muted-foreground md:h-16 md:w-16" />
-            </div>
+            <Ico d={ICONS.chat} className="!size-20" />
             <div>
-              <h2 className="text-lg font-semibold md:text-xl">Select a conversation</h2>
-              <p className="mt-2 text-sm text-muted-foreground md:text-base">
+              <h2 className="font-display text-xl font-semibold md:text-2xl">Select a conversation</h2>
+              <p className="text-ink-soft mt-2 text-sm md:text-base">
                 Choose a conversation from the list to start messaging
               </p>
             </div>
@@ -1231,7 +1225,7 @@ function MessageBubble({
     const parts = text.split(new RegExp(`(${query})`, 'gi'))
     return parts.map((part, i) =>
       part.toLowerCase() === query.toLowerCase() ? (
-        <mark key={i} className="bg-yellow-300 text-foreground">
+        <mark key={i} className="bg-gold/40 text-ink">
           {part}
         </mark>
       ) : (
@@ -1251,11 +1245,11 @@ function MessageBubble({
       <div className={cn('group flex max-w-[85%] items-end gap-2 md:max-w-[75%]', isMine && 'flex-row-reverse')}>
         {/* Avatar for received messages */}
         {!isMine && isLast && (
-          <Avatar className="mb-1 h-6 w-6 flex-shrink-0 md:h-7 md:w-7">
+          <Avatar className="border-ink mb-1 h-6 w-6 flex-shrink-0 border-2 md:h-7 md:w-7">
             <AvatarImage
               src={message.sender?.vendorProfile?.profilePhotoUrl || message.sender?.avatarUrl || ''}
             />
-            <AvatarFallback className="bg-gradient-to-br from-slate-500 to-slate-600 text-[9px] text-white md:text-[10px]">
+            <AvatarFallback className="bg-card text-ink text-[9px] font-semibold md:text-[10px]">
               {getInitials(senderLabel)}
             </AvatarFallback>
           </Avatar>
@@ -1265,21 +1259,17 @@ function MessageBubble({
         <div className={cn('flex flex-col gap-1', isMine ? 'items-end' : 'items-start')}>
           {/* Sender name for first message in group */}
           {!isMine && isFirst && (
-            <span className="ml-1 text-xs font-medium text-primary">{senderLabel}</span>
+            <span className="text-blue ml-1 text-xs font-semibold">{senderLabel}</span>
           )}
 
           {/* Message bubble */}
           <div
             className={cn(
-              'relative px-3 py-2 shadow-sm',
+              'relative px-3.5 py-2',
               isMine
-                ? 'rounded-2xl rounded-br-md bg-primary text-primary-foreground'
-                : 'rounded-2xl rounded-bl-md bg-background text-foreground',
-              isFirst && isMine && 'rounded-tr-2xl',
-              isFirst && !isMine && 'rounded-tl-2xl',
-              isLast && isMine && 'rounded-br-2xl',
-              isLast && !isMine && 'rounded-bl-2xl',
-              isHighlighted && 'ring-2 ring-yellow-400'
+                ? 'bg-blue text-on-blue rounded-[18px_18px_4px_18px]'
+                : 'border-ink bg-card text-ink rounded-[18px_18px_18px_4px] border-2',
+              isHighlighted && 'ring-gold ring-2'
             )}
           >
             {/* Message content */}
@@ -1300,7 +1290,7 @@ function MessageBubble({
             <div
               className={cn(
                 'mt-1 flex items-center gap-1 text-[10px] md:text-[11px]',
-                isMine ? 'justify-end text-primary-foreground/70' : 'text-muted-foreground'
+                isMine ? 'justify-end opacity-80' : 'text-ink-soft'
               )}
             >
               <span>{formatTime(message.createdAt)}</span>
@@ -1324,10 +1314,10 @@ function MessageBubble({
                 {reactionGroups.map(([emoji, count]) => (
                   <span
                     key={emoji}
-                    className="flex items-center gap-0.5 rounded-full bg-background px-1.5 py-0.5 text-xs shadow-md"
+                    className="border-ink bg-card flex items-center gap-0.5 rounded-full border-2 px-1.5 py-0.5 text-xs"
                   >
                     {emoji}
-                    {count > 1 && <span className="text-muted-foreground">{count}</span>}
+                    {count > 1 && <span className="text-ink-soft">{count}</span>}
                   </span>
                 ))}
               </div>
@@ -1345,7 +1335,7 @@ function MessageBubble({
               <button
                 key={emoji}
                 onClick={() => onReact(emoji)}
-                className="rounded-full p-1 text-sm hover:bg-muted"
+                className="hover:bg-blue-wash rounded-full p-1 text-sm"
               >
                 {emoji}
               </button>
@@ -1382,10 +1372,10 @@ function AttachmentPreview({ attachment }: { attachment: MessageAttachment }) {
       href={attachment.url}
       target="_blank"
       rel="noreferrer"
-      className="flex items-center gap-3 rounded-xl bg-background/20 px-3 py-2 transition-colors hover:bg-background/30"
+      className="border-ink bg-card text-ink hover:bg-blue-wash flex items-center gap-3 rounded-xl border-2 px-3 py-2 transition-colors"
     >
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20 md:h-10 md:w-10">
-        {isVideo ? <Video className="h-4 w-4 text-primary md:h-5 md:w-5" /> : <FileText className="h-4 w-4 text-primary md:h-5 md:w-5" />}
+      <div className="bg-blue-wash flex h-9 w-9 items-center justify-center rounded-lg md:h-10 md:w-10">
+        {isVideo ? <Video className="h-4 w-4 text-blue md:h-5 md:w-5" /> : <FileText className="h-4 w-4 text-blue md:h-5 md:w-5" />}
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{attachment.fileName}</p>
@@ -1400,11 +1390,11 @@ function TypingIndicator() {
     <div className="flex justify-start">
       <div className="flex max-w-[75%] items-end gap-2">
         <div className="w-6 flex-shrink-0 md:w-7" />
-        <div className="rounded-2xl rounded-bl-md bg-background px-4 py-3 shadow-sm">
+        <div className="border-ink bg-card rounded-[18px_18px_18px_4px] border-2 px-4 py-3">
           <div className="flex items-center gap-1">
-            <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.3s]" />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:-0.15s]" />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/60" />
+            <span className="h-2 w-2 animate-bounce rounded-full bg-ink-soft [animation-delay:-0.3s]" />
+            <span className="h-2 w-2 animate-bounce rounded-full bg-ink-soft [animation-delay:-0.15s]" />
+            <span className="h-2 w-2 animate-bounce rounded-full bg-ink-soft" />
           </div>
         </div>
       </div>

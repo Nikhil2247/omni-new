@@ -6,15 +6,14 @@ import { format } from 'date-fns'
 import { useGuestUploads } from '@/hooks/queries/use-guest-uploads'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { ImageIcon, User, Calendar, X } from 'lucide-react'
+import { Ico, ICONS, Paper, Stamp } from '@/components/sketch'
+import { User, Calendar } from 'lucide-react'
 
 interface MemoryGalleryProps {
   memoryId: string
@@ -26,7 +25,7 @@ export function MemoryGallery({ memoryId }: MemoryGalleryProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <Skeleton key={i} className="aspect-square rounded-lg" />
         ))}
@@ -36,23 +35,19 @@ export function MemoryGallery({ memoryId }: MemoryGalleryProps) {
 
   if (error) {
     return (
-      <div className="text-sm text-destructive text-center py-8">
+      <p className="text-rose py-8 text-center text-sm font-bold" role="alert">
         Failed to load gallery. Please try again.
-      </div>
+      </p>
     )
   }
 
   if (!data?.uploads?.length) {
     return (
-      <div className="text-center py-12 space-y-3">
-        <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-        <div>
-          <h3 className="font-medium">No photos yet</h3>
-          <p className="text-sm text-muted-foreground">
-            Approved photos will appear here once guests upload them.
-          </p>
-        </div>
-      </div>
+      <Paper alt className="px-6 py-12 text-center">
+        <Ico d={ICONS.gallery} className="mx-auto mb-3 h-12 w-12" />
+        <h3 className="font-display text-lg font-semibold">No photos yet</h3>
+        <p className="text-ink-soft text-sm">Approved photos will appear here once guests upload them.</p>
+      </Paper>
     )
   }
 
@@ -62,15 +57,17 @@ export function MemoryGallery({ memoryId }: MemoryGalleryProps) {
     <>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Badge variant="secondary">{data.count} photos</Badge>
+          <Stamp>{data.count} photos</Stamp>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {data.uploads.map((upload) => (
             <button
               key={upload.id}
+              type="button"
               onClick={() => setSelectedPhoto(upload.id)}
-              className="relative aspect-square rounded-lg overflow-hidden bg-muted group focus:outline-none focus:ring-2 focus:ring-primary"
+              aria-label={upload.caption ? `Open photo: ${upload.caption}` : 'Open photo'}
+              className="sk-paper group relative aspect-square overflow-hidden p-1.5"
             >
               <NextImage
                 src={getMinioViewUrl(upload.thumbnailUrl || upload.mediaUrl) || ''}
@@ -79,11 +76,11 @@ export function MemoryGallery({ memoryId }: MemoryGalleryProps) {
                 height={600}
                 unoptimized={true}
                 priority={true}
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                className="h-full w-full rounded-md object-cover transition-transform group-hover:scale-105"
               />
               {upload.uploaderName && (
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <p className="text-white text-xs truncate">{upload.uploaderName}</p>
+                <div className="absolute inset-x-1.5 bottom-1.5 rounded-b-md bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <p className="truncate text-xs text-white">{upload.uploaderName}</p>
                 </div>
               )}
             </button>
@@ -99,7 +96,7 @@ export function MemoryGallery({ memoryId }: MemoryGalleryProps) {
           </DialogHeader>
           {selectedUpload && (
             <div className="space-y-4">
-              <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted">
+              <div className="bg-muted relative aspect-[4/3] overflow-hidden rounded-lg">
                 <NextImage
                   src={getMinioViewUrl(selectedUpload.mediaUrl) || ''}
                   alt={selectedUpload.caption || 'Guest photo'}
@@ -107,14 +104,12 @@ export function MemoryGallery({ memoryId }: MemoryGalleryProps) {
                   height={900}
                   unoptimized={true}
                   priority={true}
-                  className="w-full h-full object-contain"
+                  className="h-full w-full object-contain"
                 />
               </div>
               <div className="space-y-2">
-                {selectedUpload.caption && (
-                  <p className="text-sm">{selectedUpload.caption}</p>
-                )}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                {selectedUpload.caption && <p className="text-sm">{selectedUpload.caption}</p>}
+                <div className="text-ink-soft flex items-center gap-4 text-xs">
                   {selectedUpload.uploaderName && (
                     <span className="flex items-center gap-1">
                       <User className="h-3 w-3" />

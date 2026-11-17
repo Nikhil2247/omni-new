@@ -38,7 +38,7 @@ import { WhatsAppInvitePanel } from './whatsapp-invite-panel'
 import { SendToGuestsDialog } from '@/components/features/einvite/send-to-guests-dialog'
 import { useExportGuestlist } from '@/hooks/queries/use-export'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Paper, SketchButton, Stamp, Ico, ICONS } from '@/components/sketch'
 import {
   Dialog,
   DialogContent,
@@ -52,7 +52,6 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ExportDropdown } from '@/components/common/export-dropdown'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import type { RSVPStatus, Guest } from '@/lib/api/types/guestlist.types'
 
@@ -66,12 +65,25 @@ const addGuestSchema = z.object({
 
 type AddGuestValues = z.infer<typeof addGuestSchema>
 
-const RSVP_OPTIONS: { label: string; value: RSVPStatus; color: string; bgColor: string }[] = [
-  { label: 'Pending', value: 'PENDING', color: 'text-gray-700 dark:text-gray-300', bgColor: 'bg-gray-100 dark:bg-gray-800' },
-  { label: 'Attending', value: 'ATTENDING', color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30' },
-  { label: 'Declined', value: 'NOT_ATTENDING', color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' },
-  { label: 'Maybe', value: 'MAYBE', color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' },
+const RSVP_OPTIONS: { label: string; value: RSVPStatus; tone: 'ok' | 'wait' | 'late' }[] = [
+  { label: 'Pending', value: 'PENDING', tone: 'wait' },
+  { label: 'Attending', value: 'ATTENDING', tone: 'ok' },
+  { label: 'Declined', value: 'NOT_ATTENDING', tone: 'late' },
+  { label: 'Maybe', value: 'MAYBE', tone: 'wait' },
 ]
+
+function EmptyGuests({ filtered, bare }: { filtered: boolean; bare?: boolean }) {
+  const Wrap = bare ? 'div' : Paper
+  return (
+    <Wrap className="flex flex-col items-center justify-center px-5 py-12 text-center">
+      <Ico d={ICONS.guests} className="mb-3 h-12 w-12" />
+      <p className="font-display text-xl font-semibold">
+        {filtered ? 'No guests match your filter' : 'No guests yet'}
+      </p>
+      <p className="text-ink-soft mt-1 text-sm">Add your first guest to get started</p>
+    </Wrap>
+  )
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -217,8 +229,8 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-48 w-full rounded-2xl" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-lg" />
       </div>
     )
   }
@@ -228,9 +240,9 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="rounded-2xl border-2 border-dashed border-destructive/50 bg-destructive/5 p-8 text-center"
+        className="sk-paper px-5 py-8 text-center"
       >
-        <p className="text-sm text-destructive">Unable to load guest list.</p>
+        <p className="text-rose text-sm">Unable to load guest list.</p>
       </motion.div>
     )
   }
@@ -244,36 +256,29 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
         className="space-y-6"
       >
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-950/30 dark:via-purple-950/30 dark:to-fuchsia-950/30 p-8">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600">
-                <Users className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">Create Your Guest List</h1>
-                <p className="text-muted-foreground">Track RSVPs and manage your guests</p>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <Button onClick={handleCreate} disabled={createGuestlist.isPending}>
-                <Plus className="mr-2 h-4 w-4" />
-                {createGuestlist.isPending ? 'Creating...' : 'Create Guest List'}
-              </Button>
+        <Paper className="px-6 py-7">
+          <div className="flex items-center gap-4">
+            <Ico d={ICONS.guests} className="h-14 w-14 shrink-0" />
+            <div>
+              <h2 className="font-display text-2xl font-semibold">Create Your Guest List</h2>
+              <p className="text-ink-soft">Track RSVPs and manage your guests</p>
             </div>
           </div>
-        </div>
+          <div className="mt-5 flex gap-3">
+            <SketchButton onClick={handleCreate} disabled={createGuestlist.isPending}>
+              <Plus className="h-4 w-4" />
+              {createGuestlist.isPending ? 'Creating...' : 'Create Guest List'}
+            </SketchButton>
+          </div>
+        </Paper>
 
         {/* Features */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-violet-500" />
-              Guest List Features
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Paper className="px-6 py-5">
+          <h3 className="font-display mb-4 flex items-center gap-2 text-xl font-semibold">
+            <Sparkles className="text-gold h-5 w-5" />
+            Guest List Features
+          </h3>
+          <div>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
                 { icon: UserPlus, title: 'Add Guests', desc: 'Manually add guests or import from CSV' },
@@ -281,19 +286,19 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
                 { icon: MessageCircle, title: 'WhatsApp Integration', desc: 'Share invites via WhatsApp' },
                 { icon: Send, title: 'E-Invite Integration', desc: 'Send digital invitations' },
               ].map((feature, i) => (
-                <div key={i} className="flex items-start gap-3 rounded-lg border p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30">
-                    <feature.icon className="h-5 w-5 text-violet-600" />
+                <div key={i} className="border-line flex items-start gap-3 border-b-2 border-dashed py-3">
+                  <div className="bg-blue-wash text-blue flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                    <feature.icon className="h-5 w-5" />
                   </div>
                   <div>
                     <p className="font-medium">{feature.title}</p>
-                    <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                    <p className="text-ink-soft text-sm">{feature.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Paper>
       </motion.div>
     )
   }
@@ -330,30 +335,28 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
       {/* View Toggle & Actions */}
       <motion.div variants={itemVariants}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex rounded-xl border bg-background p-1 shadow-sm">
-            <Button
-              type="button"
+          <div className="inline-flex gap-2">
+            <SketchButton
               size="sm"
-              variant={viewMode === 'card' ? 'default' : 'ghost'}
+              variant={viewMode === 'card' ? 'solid' : 'line'}
               onClick={() => setViewMode('card')}
-              className="h-8 gap-1.5 px-3"
+              aria-pressed={viewMode === 'card'}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
               Card View
-            </Button>
-            <Button
-              type="button"
+            </SketchButton>
+            <SketchButton
               size="sm"
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              variant={viewMode === 'list' ? 'solid' : 'line'}
               onClick={() => setViewMode('list')}
-              className="h-8 gap-1.5 px-3"
+              aria-pressed={viewMode === 'list'}
             >
               <ListIcon className="h-3.5 w-3.5" />
               List View
-            </Button>
+            </SketchButton>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ExportDropdown
               type="guestlist"
               id={data.id}
@@ -363,14 +366,14 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
               }}
               disabled={exportGuestlist.isPending}
             />
-            <Button size="sm" variant="outline" onClick={() => setShowImportDialog(true)}>
-              <Upload className="mr-2 h-4 w-4" />
+            <SketchButton size="sm" variant="line" onClick={() => setShowImportDialog(true)}>
+              <Upload className="h-4 w-4" />
               Import
-            </Button>
-            <Button size="sm" onClick={() => setShowAddGuestDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+            </SketchButton>
+            <SketchButton size="sm" onClick={() => setShowAddGuestDialog(true)}>
+              <Plus className="h-4 w-4" />
               Add Guest
-            </Button>
+            </SketchButton>
           </div>
         </div>
       </motion.div>
@@ -378,13 +381,13 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
       {/* Search & Filter */}
       <motion.div variants={itemVariants}>
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+          <div className="sk-pill flex-1 sm:max-w-xs">
+            <Search className="text-ink-soft h-4 w-4 shrink-0" />
+            <input
               placeholder="Search guests..."
+              aria-label="Search guests"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
             />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as RSVPStatus | 'ALL')}>
@@ -405,38 +408,38 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
       {/* Warning: Guests Missing RSVP Links */}
       {guestsMissingTokens > 0 && (
         <motion.div variants={itemVariants}>
-          <div className="flex items-center justify-between rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 p-4">
+          <Paper alt className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <div className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <AlertCircle className="text-gold h-5 w-5 shrink-0" />
               <div>
-                <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                <p className="font-medium">
                   {guestsMissingTokens} guest{guestsMissingTokens > 1 ? 's' : ''} missing RSVP link
                 </p>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">Generate links to enable sharing.</p>
+                <p className="text-ink-soft text-sm">Generate links to enable sharing.</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleGenerateTokens} disabled={generateTokens.isPending}>
-              <Link2 className="mr-2 h-4 w-4" />
+            <SketchButton variant="line" size="sm" onClick={handleGenerateTokens} disabled={generateTokens.isPending}>
+              <Link2 className="h-4 w-4" />
               {generateTokens.isPending ? 'Generating...' : 'Generate Links'}
-            </Button>
-          </div>
+            </SketchButton>
+          </Paper>
         </motion.div>
       )}
 
       {/* List View */}
       {viewMode === 'list' ? (
         <motion.div variants={itemVariants}>
-          <Card className="border-muted/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Guests</CardTitle>
-              <CardDescription className="text-xs">
+          <Paper className="px-5 py-4">
+            <div className="mb-3">
+              <h3 className="font-display text-xl font-semibold">Guests</h3>
+              <p className="text-ink-soft text-xs">
                 {filteredGuests.length} of {stats.total} guests
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div>
               {/* Desktop Table View */}
-              <div className="hidden md:block overflow-hidden rounded-lg border border-muted/60">
-                <div className="grid grid-cols-12 bg-muted/50 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="hidden md:block">
+                <div className="sk-eyebrow border-ink/40 grid grid-cols-12 border-b-2 px-3 py-2">
                   <div className="col-span-3">Name</div>
                   <div className="col-span-3">Contact</div>
                   <div className="col-span-2">RSVP</div>
@@ -454,30 +457,28 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="grid grid-cols-12 items-center gap-2 border-t px-3 py-2 text-sm hover:bg-muted/40"
+                        className="border-line grid grid-cols-12 items-center gap-2 border-b-2 border-dashed px-3 py-2.5 text-sm"
                       >
                         <div className="col-span-3 min-w-0">
                           <p className="truncate font-medium">{guest.firstName} {guest.lastName ?? ''}</p>
                         </div>
-                        <div className="col-span-3 text-xs text-muted-foreground truncate">
+                        <div className="text-ink-soft col-span-3 truncate text-xs">
                           {guest.email || guest.phone || '-'}
                         </div>
                         <div className="col-span-2">
-                          <Badge className={`${rsvpOpt.bgColor} ${rsvpOpt.color} text-[10px]`}>
-                            {rsvpOpt.label}
-                          </Badge>
+                          <Stamp tone={rsvpOpt.tone}>{rsvpOpt.label}</Stamp>
                         </div>
                         <div className="col-span-1 text-xs">{guest.plusOne || 0}</div>
                         <div className="col-span-3 flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyRsvpLink(guest.rsvpToken)} title="Copy link">
+                          <SketchButton variant="ghost" size="icon" onClick={() => copyRsvpLink(guest.rsvpToken)} title="Copy link" aria-label="Copy RSVP link">
                             <Copy className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => shareViaWhatsApp(guest)} title="WhatsApp">
-                            <MessageCircle className="h-3.5 w-3.5 text-green-600" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteGuest.mutate(guest.id)}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
+                          </SketchButton>
+                          <SketchButton variant="ghost" size="icon" onClick={() => shareViaWhatsApp(guest)} title="WhatsApp" aria-label="Share via WhatsApp">
+                            <MessageCircle className="text-leaf-deep h-3.5 w-3.5" />
+                          </SketchButton>
+                          <SketchButton variant="ghost" size="icon" onClick={() => deleteGuest.mutate(guest.id)} title="Delete guest" aria-label="Delete guest">
+                            <Trash2 className="text-rose h-3.5 w-3.5" />
+                          </SketchButton>
                         </div>
                       </motion.div>
                     )
@@ -497,33 +498,31 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="rounded-lg border p-3"
+                        className="border-line border-b-2 border-dashed py-3"
                       >
                         <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-medium text-sm">{guest.firstName} {guest.lastName ?? ''}</p>
-                              <Badge className={`${rsvpOpt.bgColor} ${rsvpOpt.color} text-[10px]`}>
-                                {rsvpOpt.label}
-                              </Badge>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-medium">{guest.firstName} {guest.lastName ?? ''}</p>
+                              <Stamp tone={rsvpOpt.tone}>{rsvpOpt.label}</Stamp>
                             </div>
                             {(guest.email || guest.phone) && (
-                              <p className="text-xs text-muted-foreground mt-0.5">{guest.email || guest.phone}</p>
+                              <p className="text-ink-soft mt-0.5 text-xs break-all">{guest.email || guest.phone}</p>
                             )}
                             {guest.plusOne > 0 && (
-                              <p className="text-xs text-muted-foreground mt-1">+{guest.plusOne} guest{guest.plusOne > 1 ? 's' : ''}</p>
+                              <p className="text-ink-soft mt-1 text-xs">+{guest.plusOne} guest{guest.plusOne > 1 ? 's' : ''}</p>
                             )}
                           </div>
-                          <div className="flex gap-1 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyRsvpLink(guest.rsvpToken)}>
+                          <div className="flex shrink-0 gap-1">
+                            <SketchButton variant="ghost" size="icon" onClick={() => copyRsvpLink(guest.rsvpToken)} aria-label="Copy RSVP link">
                               <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shareViaWhatsApp(guest)}>
-                              <MessageCircle className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteGuest.mutate(guest.id)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                            </SketchButton>
+                            <SketchButton variant="ghost" size="icon" onClick={() => shareViaWhatsApp(guest)} aria-label="Share via WhatsApp">
+                              <MessageCircle className="text-leaf-deep h-4 w-4" />
+                            </SketchButton>
+                            <SketchButton variant="ghost" size="icon" onClick={() => deleteGuest.mutate(guest.id)} aria-label="Delete guest">
+                              <Trash2 className="text-rose h-4 w-4" />
+                            </SketchButton>
                           </div>
                         </div>
                       </motion.div>
@@ -533,18 +532,10 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
               </div>
 
               {filteredGuests.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                    <Users className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {searchQuery || statusFilter !== 'ALL' ? 'No guests match your filter' : 'No guests yet'}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">Add your first guest to get started</p>
-                </div>
+                <EmptyGuests bare filtered={Boolean(searchQuery) || statusFilter !== 'ALL'} />
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </Paper>
         </motion.div>
       ) : (
         /* Card View - Grid Layout */
@@ -554,8 +545,6 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
               <AnimatePresence mode="popLayout">
                 {filteredGuests.map((guest: Guest) => {
                   const rsvpOpt = getRsvpOption(guest.rsvpStatus)
-                  const isAttending = guest.rsvpStatus === 'ATTENDING'
-                  const isDeclined = guest.rsvpStatus === 'NOT_ATTENDING'
 
                   return (
                     <motion.div
@@ -564,67 +553,44 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      className={`group relative rounded-xl border p-3 transition-all ${
-                        isAttending
-                          ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 dark:border-green-900/30 dark:from-green-950/30 dark:to-emerald-950/20'
-                          : isDeclined
-                          ? 'border-red-200 bg-gradient-to-br from-red-50 to-orange-50 dark:border-red-900/30 dark:from-red-950/30 dark:to-orange-950/20'
-                          : 'bg-card hover:border-primary/50 hover:shadow-lg'
-                      }`}
+                      whileHover={{ y: -2 }}
+                      className="sk-paper group relative px-3.5 py-3"
                     >
-                      <div className="absolute right-2 top-2 flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyRsvpLink(guest.rsvpToken)}
-                          className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => shareViaWhatsApp(guest)}
-                          className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                          <MessageCircle className="h-3 w-3 text-green-600" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteGuest.mutate(guest.id)}
-                          className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
+                      <div className="mb-2 flex items-start justify-between gap-1">
+                        <Stamp tone={rsvpOpt.tone}>{rsvpOpt.label}</Stamp>
+                        <div className="-mt-1 -mr-1 flex items-center gap-0.5">
+                          <SketchButton variant="ghost" size="icon" onClick={() => copyRsvpLink(guest.rsvpToken)} aria-label="Copy RSVP link">
+                            <Copy className="h-3 w-3" />
+                          </SketchButton>
+                          <SketchButton variant="ghost" size="icon" onClick={() => shareViaWhatsApp(guest)} aria-label="Share via WhatsApp">
+                            <MessageCircle className="text-leaf-deep h-3 w-3" />
+                          </SketchButton>
+                          <SketchButton variant="ghost" size="icon" onClick={() => deleteGuest.mutate(guest.id)} aria-label="Delete guest">
+                            <Trash2 className="text-rose h-3 w-3" />
+                          </SketchButton>
+                        </div>
                       </div>
 
-                      <div className="pr-20">
-                        <Badge className={`mb-2 ${rsvpOpt.bgColor} ${rsvpOpt.color} text-[10px] px-1.5 py-0`}>
-                          {rsvpOpt.label}
-                        </Badge>
-                        <p className="text-sm font-medium line-clamp-1 leading-tight">
-                          {guest.firstName} {guest.lastName ?? ''}
-                        </p>
-                      </div>
+                      <p className="font-display line-clamp-1 text-base leading-tight font-semibold">
+                        {guest.firstName} {guest.lastName ?? ''}
+                      </p>
 
-                      <div className="mt-3 pt-2 border-t border-muted/50">
+                      <div className="border-line mt-2 border-t-2 border-dashed pt-2">
                         {(guest.email || guest.phone) && (
-                          <p className="text-[10px] text-muted-foreground line-clamp-1">
+                          <p className="text-ink-soft line-clamp-1 text-[11px]">
                             {guest.email || guest.phone}
                           </p>
                         )}
-                        <div className="flex items-center justify-between mt-1">
+                        <div className="mt-1 flex items-center justify-between">
                           {guest.plusOne > 0 ? (
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-ink-soft text-[11px]">
                               +{guest.plusOne} guest{guest.plusOne > 1 ? 's' : ''}
                             </span>
                           ) : (
-                            <span className="text-[10px] text-muted-foreground">No +1</span>
+                            <span className="text-ink-soft text-[11px]">No +1</span>
                           )}
                           {guest.rsvpAt && (
-                            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                            <span className="text-ink-soft flex items-center gap-0.5 text-[11px]">
                               <Clock className="h-2.5 w-2.5" />
                               {format(new Date(guest.rsvpAt), 'MMM d')}
                             </span>
@@ -637,17 +603,7 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
               </AnimatePresence>
             </div>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                  <Users className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  {searchQuery || statusFilter !== 'ALL' ? 'No guests match your filter' : 'No guests yet'}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">Add your first guest to get started</p>
-              </CardContent>
-            </Card>
+            <EmptyGuests filtered={Boolean(searchQuery) || statusFilter !== 'ALL'} />
           )}
         </motion.div>
       )}
@@ -724,15 +680,15 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
             <DialogDescription>Upload a CSV file to bulk import guests.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/30">
+            <div className="border-line flex items-center justify-between gap-3 border-b-2 border-dashed pb-4">
               <div>
-                <p className="font-medium text-sm">CSV Template</p>
-                <p className="text-xs text-muted-foreground">Download to see the required format</p>
+                <p className="text-sm font-medium">CSV Template</p>
+                <p className="text-ink-soft text-xs">Download to see the required format</p>
               </div>
-              <Button variant="outline" size="sm" onClick={downloadTemplate}>
-                <Download className="mr-2 h-4 w-4" />
+              <SketchButton variant="line" size="sm" onClick={downloadTemplate}>
+                <Download className="h-4 w-4" />
                 Download
-              </Button>
+              </SketchButton>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Upload CSV File</label>
@@ -751,17 +707,17 @@ export function GuestlistPanel({ eventId }: { eventId: string }) {
               <div className="space-y-3 rounded-lg border p-4">
                 <h4 className="font-medium text-sm">Import Results</h4>
                 <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-2">
-                    <div className="text-lg font-bold text-green-600">{importResult.imported}</div>
-                    <div className="text-xs text-green-700 dark:text-green-400">Imported</div>
+                  <div className="bg-blue-wash rounded-lg p-2">
+                    <div className="font-display text-leaf-deep text-lg font-bold">{importResult.imported}</div>
+                    <div className="text-ink-soft text-xs">Imported</div>
                   </div>
-                  <div className="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-2">
-                    <div className="text-lg font-bold text-yellow-600">{importResult.skipped}</div>
-                    <div className="text-xs text-yellow-700 dark:text-yellow-400">Skipped</div>
+                  <div className="bg-blue-wash rounded-lg p-2">
+                    <div className="font-display text-gold text-lg font-bold">{importResult.skipped}</div>
+                    <div className="text-ink-soft text-xs">Skipped</div>
                   </div>
-                  <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-2">
-                    <div className="text-lg font-bold text-red-600">{importResult.errors.length}</div>
-                    <div className="text-xs text-red-700 dark:text-red-400">Errors</div>
+                  <div className="bg-blue-wash rounded-lg p-2">
+                    <div className="font-display text-rose text-lg font-bold">{importResult.errors.length}</div>
+                    <div className="text-ink-soft text-xs">Errors</div>
                   </div>
                 </div>
               </div>

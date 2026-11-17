@@ -9,9 +9,8 @@ import { useCreateEvent } from '@/hooks/queries/use-events'
 import { useEventTypes } from '@/hooks/queries/use-lookups'
 import { useEventCreditPricing } from '@/hooks/queries/use-subscription'
 import { trackEventPlanning } from '@/lib/analytics/umami'
-import { Button } from '@/components/ui/button'
+import { Ico, ICONS, Paper, SketchButton, Stamp } from '@/components/sketch'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
   Form,
@@ -24,12 +23,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { Gift, Check, Crown, Infinity } from 'lucide-react'
+import { Check, Infinity } from 'lucide-react'
 import type { EventTier } from '@/lib/api/types/subscription.types'
 
 const createEventSchema = z.object({
@@ -110,58 +105,44 @@ interface TierOptionProps {
 }
 
 function TierOption({ tierData, isSelected, onSelect }: TierOptionProps) {
-  const isBasic = tierData.tier === 'BASIC'
-  const colorClasses = isBasic
-    ? {
-        base: 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950',
-        selected: 'border-blue-500 bg-blue-100 dark:border-blue-400 dark:bg-blue-900 ring-blue-500',
-        icon: 'text-blue-500',
-      }
-    : {
-        base: 'border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950',
-        selected: 'border-purple-500 bg-purple-100 dark:border-purple-400 dark:bg-purple-900 ring-purple-500',
-        icon: 'text-purple-500',
-      }
-
   return (
     <button
       type="button"
       onClick={onSelect}
+      aria-pressed={isSelected}
       className={cn(
-        'relative w-full p-4 rounded-lg border-2 text-left transition-all cursor-pointer',
-        isSelected ? colorClasses.selected : colorClasses.base,
-        isSelected && 'ring-2 ring-offset-2 ring-offset-background',
-        'hover:border-muted-foreground/50',
+        'sk-paper relative w-full cursor-pointer p-4 text-left transition-transform hover:-translate-y-0.5',
+        tierData.tier === 'PREMIUM' && 'sk-paper--alt',
+        isSelected && 'bg-blue-wash',
       )}
     >
       {/* Popular Badge */}
       {tierData.isPopular && (
-        <Badge className="absolute -top-2 right-3 bg-purple-500 text-white">
-          <Crown className="h-3 w-3 mr-1" />
+        <Stamp tone="wait" className="absolute -top-2 right-3">
           Best Value
-        </Badge>
+        </Stamp>
       )}
 
-      <div className="flex items-start justify-between mb-2">
+      <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-lg">{tierData.name}</span>
-          {isSelected && <Check className={cn('h-5 w-5', colorClasses.icon)} />}
+          <span className="font-display text-xl font-semibold">{tierData.name}</span>
+          {isSelected && <Check className="text-blue h-5 w-5" />}
         </div>
         <div className="text-right">
-          <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+          <div className="text-leaf-deep flex items-center gap-1">
             <Infinity className="h-4 w-4" />
             <span className="text-sm font-semibold">Unlimited</span>
           </div>
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground mb-3">{tierData.description}</p>
+      <p className="text-ink-soft mb-3 text-sm">{tierData.description}</p>
 
       <ul className="space-y-1">
         {(tierData.features || []).slice(0, 5).map((feature) => (
           <li key={feature.key} className="flex items-center gap-2 text-sm">
-            <Check className={cn('h-3 w-3', feature.included ? colorClasses.icon : 'text-muted-foreground/50')} />
-            <span className={feature.included ? '' : 'text-muted-foreground/70 line-through'}>{feature.name}</span>
+            <Check className={cn('h-3 w-3', feature.included ? 'text-blue' : 'text-ink-soft/50')} />
+            <span className={feature.included ? '' : 'text-ink-soft/70 line-through'}>{feature.name}</span>
           </li>
         ))}
       </ul>
@@ -272,23 +253,15 @@ export function CreateEventForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Unlimited Events Banner */}
-        <Card className="border-emerald-200 bg-linear-to-br from-emerald-50 to-green-50 dark:border-emerald-800 dark:from-emerald-950/40 dark:to-green-950/30">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-                <Gift className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-                  Create Unlimited Events
-                </p>
-                <p className="text-sm text-emerald-700/80 dark:text-emerald-300/80">
-                  Choose a tier based on the features and pricing that fit your celebration.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <Paper tape className="flex items-center gap-3 px-5 py-4">
+          <Ico d={ICONS.heart} className="h-10 w-10" />
+          <div>
+            <p className="font-display text-lg font-semibold">Create Unlimited Events</p>
+            <p className="text-ink-soft text-sm">
+              Choose a tier based on the features and pricing that fit your celebration.
+            </p>
+          </div>
+        </Paper>
 
         {/* Tier Selection */}
         <FormField
@@ -330,17 +303,15 @@ export function CreateEventForm() {
         />
 
         {/* Selected Tier Info */}
-        <Card className="bg-muted/50">
-          <CardContent className="py-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Infinity className="h-4 w-4 text-emerald-600" />
-              <span className="text-muted-foreground">
-                You selected <span className="font-medium text-foreground">{selectedTier}</span> tier.
-                Feature limits will apply to this event based on your selection.
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        <Paper alt className="px-5 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Infinity className="text-leaf-deep h-4 w-4" />
+            <span className="text-ink-soft">
+              You selected <span className="text-ink font-semibold">{selectedTier}</span> tier.
+              Feature limits will apply to this event based on your selection.
+            </span>
+          </div>
+        </Paper>
 
         {/* Event type — pill buttons */}
         <FormField
@@ -360,11 +331,10 @@ export function CreateEventForm() {
                           key={et.id}
                           type="button"
                           onClick={() => field.onChange(et.id)}
+                          aria-pressed={field.value === et.id}
                           className={cn(
-                            'rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all',
-                            field.value === et.id
-                              ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                              : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                            'sk-chip cursor-pointer px-3.5 py-2 text-sm transition-colors',
+                            field.value === et.id ? 'bg-blue text-on-blue' : 'hover:bg-blue-wash',
                           )}
                         >
                           {et.name}
@@ -454,21 +424,12 @@ export function CreateEventForm() {
         />
 
         <div className="flex items-center gap-3">
-          <Button
-            type="submit"
-            className="rounded-full px-6"
-            disabled={createEvent.isPending || isEventTypesLoading}
-          >
+          <SketchButton type="submit" disabled={createEvent.isPending || isEventTypesLoading}>
             {createEvent.isPending ? 'Creating...' : 'Create Event'}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="rounded-full"
-            onClick={() => router.push('/events')}
-          >
+          </SketchButton>
+          <SketchButton variant="ghost" onClick={() => router.push('/events')}>
             Cancel
-          </Button>
+          </SketchButton>
         </div>
       </form>
     </Form>

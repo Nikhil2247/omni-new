@@ -8,7 +8,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useAddEventVendor, useDeleteEventVendor, useEventVendors, useUpdateEventVendor } from '@/hooks/queries/use-event-vendors'
 import type { EventVendorStatus } from '@/lib/api/types/event-vendor.types'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Paper, SketchButton } from '@/components/sketch'
 import {
   Dialog,
   DialogContent,
@@ -82,16 +82,15 @@ export function EventVendorsPanel({ eventId }: { eventId: string }) {
   }
 
   if (error) {
-    return <div className="text-sm text-destructive">Unable to load vendors.</div>
+    return <div className="text-sm text-rose">Unable to load vendors.</div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => setShowAddVendorDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+        <SketchButton size="sm" onClick={() => setShowAddVendorDialog(true)}>
           Add Vendor
-        </Button>
+        </SketchButton>
       </div>
 
       <Dialog open={showAddVendorDialog} onOpenChange={setShowAddVendorDialog}>
@@ -192,11 +191,9 @@ export function EventVendorsPanel({ eventId }: { eventId: string }) {
         </DialogContent>
       </Dialog>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Event vendors</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Paper className="px-5 py-5">
+        <h2 className="font-display mb-3 text-2xl font-semibold">Event vendors</h2>
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -241,9 +238,14 @@ export function EventVendorsPanel({ eventId }: { eventId: string }) {
                       {vendor.depositPaid ? `₹${Number(vendor.depositPaid).toLocaleString()}` : '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => deleteVendor.mutate(vendor.id)}>
+                      <SketchButton
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Remove vendor"
+                        onClick={() => deleteVendor.mutate(vendor.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </SketchButton>
                     </TableCell>
                   </TableRow>
                 ))
@@ -256,8 +258,8 @@ export function EventVendorsPanel({ eventId }: { eventId: string }) {
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+        </div>
+      </Paper>
     </div>
   )
 }

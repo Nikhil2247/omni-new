@@ -727,7 +727,6 @@ export default function VendorPageClient({
                   vendorName={vendor.businessName}
                   contactEmail={vendor.contactEmail}
                   contactPhone={vendor.contactPhone}
-                  className="h-9 gap-1.5 px-3"
                 />
               )}
             </div>
@@ -1461,8 +1460,8 @@ export default function VendorPageClient({
                             className={cn(
                               'h-8 w-8 transition-colors',
                               star <= (hoveredRating || reviewForm.rating)
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'text-muted-foreground/30'
+                                ? 'text-gold fill-current'
+                                : 'text-line'
                             )}
                           />
                         </button>

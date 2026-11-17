@@ -4,33 +4,19 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { trackDashboard } from '@/lib/analytics/umami'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import {
-  ArrowDown,
-  ArrowRight,
-  AlertTriangle,
-  Calendar,
-  CheckCircle2,
-  CheckSquare,
-  Clock,
-  Image,
-  LayoutGrid,
-  List,
-  Mail,
-  PlusCircle,
-  Send,
-  Sparkles,
-  Users,
-  Wallet,
-  ChevronRight,
-  AlertCircle,
-  PartyPopper,
-  ShieldAlert,
-  Siren,
-} from 'lucide-react'
+  Brush,
+  BrushBar,
+  Eyebrow,
+  Ico,
+  ICONS,
+  Paper,
+  PaintedNum,
+  SketchButton,
+  Stamp,
+  skPaper,
+  type IcoName,
+} from '@/components/sketch'
 import { useEvents } from '@/hooks/queries/use-events'
 import { useChecklist } from '@/hooks/queries/use-checklists'
 import { useBudget } from '@/hooks/queries/use-budget'
@@ -42,14 +28,23 @@ import { useMemories } from '@/hooks/queries/use-memories'
 import { cn } from '@/lib/utils'
 
 // Tool flow order matching the screenshot
-const TOOL_FLOW = [
+const TOOL_FLOW: Array<{
+  id: string
+  step: number
+  title: string
+  description: string
+  icon: IcoName
+  href?: string
+  segment?: string
+  isRequired?: boolean
+  badge?: string
+}> = [
   {
     id: 'create-event',
     step: 1,
     title: 'Create Event',
     description: 'Start by creating your event',
-    icon: Calendar,
-    color: 'purple',
+    icon: 'calendar',
     href: '/events/new',
     isRequired: true,
   },
@@ -58,8 +53,7 @@ const TOOL_FLOW = [
     step: 2,
     title: 'Event Timeline',
     description: 'Plan your day schedule',
-    icon: Clock,
-    color: 'sky',
+    icon: 'clock',
     segment: 'timeline',
   },
   {
@@ -67,8 +61,7 @@ const TOOL_FLOW = [
     step: 3,
     title: 'Budget & Calculator',
     description: 'Track expenses and spending',
-    icon: Wallet,
-    color: 'amber',
+    icon: 'wallet',
     segment: 'budget',
   },
   {
@@ -76,8 +69,7 @@ const TOOL_FLOW = [
     step: 4,
     title: 'Event Checklist',
     description: 'Manage tasks and to-dos',
-    icon: CheckSquare,
-    color: 'emerald',
+    icon: 'planner',
     segment: 'checklist',
   },
   {
@@ -85,8 +77,7 @@ const TOOL_FLOW = [
     step: 5,
     title: 'E-Invite Create',
     description: 'Design & generate digital invitations',
-    icon: Send,
-    color: 'green',
+    icon: 'mail',
     segment: 'einvite',
     badge: 'WhatsApp',
   },
@@ -95,8 +86,7 @@ const TOOL_FLOW = [
     step: 6,
     title: 'Guestlist',
     description: 'Manage your guests',
-    icon: Users,
-    color: 'violet',
+    icon: 'guests',
     segment: 'guestlist',
   },
   {
@@ -104,8 +94,7 @@ const TOOL_FLOW = [
     step: 7,
     title: 'RSVP',
     description: 'Track guest responses',
-    icon: Mail,
-    color: 'pink',
+    icon: 'heart',
     segment: 'guestlist',
     badge: 'In Guestlist',
   },
@@ -114,62 +103,10 @@ const TOOL_FLOW = [
     step: 8,
     title: 'Memories',
     description: 'Photos & videos from guests',
-    icon: Image,
-    color: 'rose',
+    icon: 'gallery',
     segment: 'memories',
   },
 ]
-
-const COLOR_STYLES: Record<string, { bg: string; text: string; border: string; light: string }> = {
-  purple: {
-    bg: 'bg-purple-100 dark:bg-purple-900/30',
-    text: 'text-purple-600 dark:text-purple-400',
-    border: 'border-purple-200 dark:border-purple-800',
-    light: 'bg-purple-50 dark:bg-purple-950/20',
-  },
-  sky: {
-    bg: 'bg-sky-100 dark:bg-sky-900/30',
-    text: 'text-sky-600 dark:text-sky-400',
-    border: 'border-sky-200 dark:border-sky-800',
-    light: 'bg-sky-50 dark:bg-sky-950/20',
-  },
-  amber: {
-    bg: 'bg-amber-100 dark:bg-amber-900/30',
-    text: 'text-amber-600 dark:text-amber-400',
-    border: 'border-amber-200 dark:border-amber-800',
-    light: 'bg-amber-50 dark:bg-amber-950/20',
-  },
-  emerald: {
-    bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-    text: 'text-emerald-600 dark:text-emerald-400',
-    border: 'border-emerald-200 dark:border-emerald-800',
-    light: 'bg-emerald-50 dark:bg-emerald-950/20',
-  },
-  green: {
-    bg: 'bg-green-100 dark:bg-green-900/30',
-    text: 'text-green-600 dark:text-green-400',
-    border: 'border-green-200 dark:border-green-800',
-    light: 'bg-green-50 dark:bg-green-950/20',
-  },
-  violet: {
-    bg: 'bg-violet-100 dark:bg-violet-900/30',
-    text: 'text-violet-600 dark:text-violet-400',
-    border: 'border-violet-200 dark:border-violet-800',
-    light: 'bg-violet-50 dark:bg-violet-950/20',
-  },
-  pink: {
-    bg: 'bg-pink-100 dark:bg-pink-900/30',
-    text: 'text-pink-600 dark:text-pink-400',
-    border: 'border-pink-200 dark:border-pink-800',
-    light: 'bg-pink-50 dark:bg-pink-950/20',
-  },
-  rose: {
-    bg: 'bg-rose-100 dark:bg-rose-900/30',
-    text: 'text-rose-600 dark:text-rose-400',
-    border: 'border-rose-200 dark:border-rose-800',
-    light: 'bg-rose-50 dark:bg-rose-950/20',
-  },
-}
 
 export default function UserToolsPage() {
   const router = useRouter()
@@ -317,7 +254,7 @@ export default function UserToolsPage() {
       return {
         healthScore: 0,
         healthLabel: 'Not Started',
-        healthTone: 'text-muted-foreground',
+        healthTone: 'text-ink-soft',
         topActions: ['Create your first event to unlock your planning command center.'],
         risks: [],
       }
@@ -414,12 +351,12 @@ export default function UserToolsPage() {
       healthScore >= 85 ? 'Excellent' : healthScore >= 70 ? 'Strong' : healthScore >= 45 ? 'At Risk' : 'Critical'
     const healthTone =
       healthScore >= 85
-        ? 'text-emerald-600 dark:text-emerald-400'
+        ? 'text-leaf-deep'
         : healthScore >= 70
-        ? 'text-sky-600 dark:text-sky-400'
+        ? 'text-blue'
         : healthScore >= 45
-        ? 'text-amber-600 dark:text-amber-400'
-        : 'text-red-600 dark:text-red-400'
+        ? 'text-gold'
+        : 'text-rose'
 
     return {
       healthScore,
@@ -437,12 +374,12 @@ export default function UserToolsPage() {
 
     const healthTone =
       plannerInsightsData.healthScore >= 85
-        ? 'text-emerald-600 dark:text-emerald-400'
+        ? 'text-leaf-deep'
         : plannerInsightsData.healthScore >= 70
-        ? 'text-sky-600 dark:text-sky-400'
+        ? 'text-blue'
         : plannerInsightsData.healthScore >= 45
-        ? 'text-amber-600 dark:text-amber-400'
-        : 'text-red-600 dark:text-red-400'
+        ? 'text-gold'
+        : 'text-rose'
 
     return {
       healthScore: plannerInsightsData.healthScore,
@@ -453,293 +390,194 @@ export default function UserToolsPage() {
     }
   }, [plannerInsightsData, fallbackPlannerInsights])
 
+  const visibleTools = TOOL_FLOW.filter((tool) => tool.id !== 'create-event')
+
   return (
-    <div className="space-y-4 pb-4">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-violet-200/60 bg-linear-to-br from-violet-50 via-fuchsia-50 to-rose-50 p-4 shadow-sm dark:border-violet-900/40 dark:from-violet-950/30 dark:via-fuchsia-950/20 dark:to-rose-950/20 sm:p-4">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-fuchsia-300/30 blur-3xl dark:bg-fuchsia-500/20" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-rose-300/30 blur-3xl dark:bg-rose-500/20" />
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <Badge className="mb-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-violet-700 shadow-sm dark:bg-violet-950/70 dark:text-violet-200">
-              Smart Planning Command Center
-            </Badge>
-            <h1 className="text-lg font-semibold tracking-tight sm:text-lg">Planning Tools</h1>
-            <p className="mt-2 text-base text-muted-foreground">
-              {primaryEvent ? (
-                <>
-                  Planning for <span className="font-medium text-foreground">{primaryEvent.name}</span>
-                </>
-              ) : (
-                'Follow the flow to plan your perfect event'
-              )}
-            </p>
-            {eventId && (
-              <div className="mt-4 flex items-center gap-3">
-                <Progress value={overallProgress} className="h-2.5 w-44 bg-white/70 dark:bg-muted/50" />
-                <span className="text-xs font-semibold text-violet-700 dark:text-violet-300">{overallProgress}% complete</span>
-              </div>
+    <div className="space-y-6 pb-4">
+      {/* Header */}
+      <header className="flex flex-wrap items-end justify-between gap-5">
+        <div className="max-w-2xl">
+          <Eyebrow>Smart Planning Command Center</Eyebrow>
+          <h1 className="font-display mt-2.5 text-[clamp(1.9rem,4vw,2.8rem)] leading-[1.05] font-semibold tracking-tight">
+            Planning <Brush>Tools</Brush>
+          </h1>
+          <p className="text-ink-soft mt-3">
+            {primaryEvent ? (
+              <>
+                Planning for <span className="text-ink font-semibold">{primaryEvent.name}</span>
+              </>
+            ) : (
+              'Follow the flow to plan your perfect event'
             )}
-
-            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-              <div className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-violet-900/50 dark:bg-violet-950/40">
-                <p className="text-[11px] text-muted-foreground">Flow Steps</p>
-                <p className="font-semibold">{TOOL_FLOW.length} total</p>
-              </div>
-              <div className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-violet-900/50 dark:bg-violet-950/40">
-                <p className="text-[11px] text-muted-foreground">Tools Set Up</p>
-                <p className="font-semibold">{setUpCount}</p>
-              </div>
-              <div className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-violet-900/50 dark:bg-violet-950/40 col-span-2 sm:col-span-1">
-                <p className="text-[11px] text-muted-foreground">Planner Health</p>
-                <p className="font-semibold">{eventId ? `${plannerInsights.healthScore}/100` : 'Not started'}</p>
-              </div>
+          </p>
+          {eventId && (
+            <div className="mt-3 flex max-w-sm items-center gap-3">
+              <BrushBar value={overallProgress} className="mt-0 flex-1" />
+              <span className="text-ink-soft text-xs font-semibold whitespace-nowrap">{overallProgress}% complete</span>
             </div>
-          </div>
-
-          <Button
-            asChild
-            className="self-start rounded-full border-0 bg-foreground px-6 text-background shadow-md transition-transform hover:scale-[1.02] hover:bg-foreground/90 sm:self-auto"
-            variant={primaryEvent ? 'outline' : 'default'}
-          >
-            <Link href={primaryEvent ? '/events' : '/events/new'}>
-              {primaryEvent ? (
-                <>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  My Events
-                </>
-              ) : (
-                <>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Event
-                </>
-              )}
-            </Link>
-          </Button>
+          )}
         </div>
+
+        <SketchButton asChild variant={primaryEvent ? 'line' : 'solid'}>
+          <Link href={primaryEvent ? '/events' : '/events/new'}>
+            <Ico d={ICONS.calendar} className="!size-5" />
+            {primaryEvent ? 'My Events' : 'Create Event'}
+          </Link>
+        </SketchButton>
+      </header>
+
+      {/* Quick stats */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Paper className="px-4 py-3">
+          <span className="sk-eyebrow">Flow Steps</span>
+          <p className="font-display mt-1 text-2xl font-semibold">{TOOL_FLOW.length} total</p>
+        </Paper>
+        <Paper alt className="px-4 py-3">
+          <span className="sk-eyebrow">Tools Set Up</span>
+          <p className="font-display mt-1 text-2xl font-semibold">{setUpCount}</p>
+          <p className="text-ink-soft text-xs">of {TOOL_FLOW.length} configured</p>
+        </Paper>
+        <Paper className="px-4 py-3">
+          <span className="sk-eyebrow">Remaining</span>
+          <p className="font-display mt-1 text-2xl font-semibold">{remainingToolsCount}</p>
+          <p className="text-ink-soft text-xs">steps pending completion</p>
+        </Paper>
+        <Paper alt className="px-4 py-3">
+          <span className="sk-eyebrow">Planner Health</span>
+          <p className="font-display mt-1 text-2xl font-semibold">
+            {eventId ? `${plannerInsights.healthScore}/100` : 'Not started'}
+          </p>
+        </Paper>
       </div>
 
-      {/* Planning Overview */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="rounded-2xl border-violet-200/70 bg-linear-to-br from-violet-50 to-white dark:border-violet-900/60 dark:from-violet-950/25 dark:to-transparent">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Progress</p>
-            <div className="mt-2 flex items-end gap-2">
-              <p className="text-2xl font-bold">{overallProgress}%</p>
-              <p className="pb-0.5 text-xs text-muted-foreground">overall</p>
-            </div>
-            <Progress value={overallProgress} className="mt-3 h-2" />
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-sky-200/70 bg-linear-to-br from-sky-50 to-white dark:border-sky-900/60 dark:from-sky-950/25 dark:to-transparent">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Tools Ready</p>
-            <p className="mt-2 text-2xl font-bold">{setUpCount}</p>
-            <p className="mt-2 text-xs text-muted-foreground">of {TOOL_FLOW.length} configured</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-rose-200/70 bg-linear-to-br from-rose-50 to-white dark:border-rose-900/60 dark:from-rose-950/25 dark:to-transparent">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Remaining</p>
-            <p className="mt-2 text-2xl font-bold">{remainingToolsCount}</p>
-            <p className="mt-2 text-xs text-muted-foreground">steps pending completion</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-emerald-200/70 bg-linear-to-br from-emerald-50 to-white dark:border-emerald-900/60 dark:from-emerald-950/25 dark:to-transparent">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Next Action</p>
-            <p className="mt-2 line-clamp-3 text-sm font-medium">{nextActionLabel}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Paper className="flex items-start gap-3 px-5 py-4">
+        <Ico d={ICONS.target} className="!size-8 shrink-0" />
+        <div>
+          <span className="sk-eyebrow">Next Action</span>
+          <p className="mt-1 text-sm font-medium">{nextActionLabel}</p>
+        </div>
+      </Paper>
 
       {/* No Event Warning */}
       {!eventId && !eventsLoading && (
-        <Card className="rounded-2xl border-amber-200 bg-linear-to-br from-amber-50 to-orange-50 dark:border-amber-900/50 dark:from-amber-950/30 dark:to-orange-950/20">
-          <CardContent className="flex items-start gap-3 p-4">
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
-            <div>
-              <p className="font-medium text-amber-800 dark:text-amber-300">Start with Step 1</p>
-              <p className="mt-0.5 text-sm text-amber-700/80 dark:text-amber-400/80">
-                Create your event first to unlock all planning tools. Each tool is linked to your event.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <Paper alt tape className="flex items-start gap-3 px-5 py-4">
+          <Ico d={ICONS.star} className="!size-8 shrink-0" />
+          <div>
+            <p className="font-display text-lg font-semibold">Start with Step 1</p>
+            <p className="text-ink-soft mt-0.5 text-sm">
+              Create your event first to unlock all planning tools. Each tool is linked to your event.
+            </p>
+          </div>
+        </Paper>
       )}
 
       {/* Planner Intelligence */}
       {eventId && (
         <div className="grid gap-4 lg:grid-cols-3">
-          {plannerInsightsLoading ? (
-            <>
-              <Card className="rounded-2xl border-violet-200/70 bg-white/80 dark:border-violet-900/60 dark:bg-violet-950/20 lg:col-span-1">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Siren className="h-4 w-4" />
-                    Event Health Score
-                  </CardTitle>
-                  <CardDescription>Snapshot of planning readiness across timeline, budget, tasks, and RSVP.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-9 w-24 animate-pulse rounded bg-muted" />
-                  <div className="mt-2 h-4 w-20 animate-pulse rounded bg-muted" />
-                  <div className="mt-3 h-2 w-full animate-pulse rounded bg-muted" />
-                </CardContent>
-              </Card>
+          <Paper className="px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Ico d={ICONS.chart} className="!size-7" />
+              <h2 className="font-display text-lg font-semibold">Event Health Score</h2>
+            </div>
+            <p className="text-ink-soft mt-1 text-sm">
+              Snapshot of planning readiness across timeline, budget, tasks, and RSVP.
+            </p>
+            {plannerInsightsLoading ? (
+              <div className="mt-3">
+                <div className="bg-line h-9 w-24 animate-pulse rounded" />
+                <div className="bg-line mt-2 h-4 w-20 animate-pulse rounded" />
+                <div className="bg-line mt-3 h-3 w-full animate-pulse rounded" />
+              </div>
+            ) : (
+              <div className="mt-3">
+                <div className="flex items-end gap-2">
+                  <span className={cn('font-display text-3xl font-semibold', plannerInsights.healthTone)}>
+                    {plannerInsights.healthScore}
+                  </span>
+                  <span className="text-ink-soft pb-1 text-sm">/100</span>
+                </div>
+                <p className={cn('mt-1 text-sm font-semibold', plannerInsights.healthTone)}>{plannerInsights.healthLabel}</p>
+                <BrushBar value={plannerInsights.healthScore} />
+              </div>
+            )}
+          </Paper>
 
-              <Card className="rounded-2xl border-sky-200/70 bg-white/80 dark:border-sky-900/60 dark:bg-sky-950/20 lg:col-span-1">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Sparkles className="h-4 w-4" />
-                    Top 3 Actions
-                  </CardTitle>
-                  <CardDescription>Highest impact moves to improve your plan this week.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2.5">
-                  {[1, 2, 3].map((item) => (
+          <Paper alt className="px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Ico d={ICONS.star} className="!size-7" />
+              <h2 className="font-display text-lg font-semibold">Top 3 Actions</h2>
+            </div>
+            <p className="text-ink-soft mt-1 text-sm">Highest impact moves to improve your plan this week.</p>
+            <div className="mt-3 space-y-2.5">
+              {plannerInsightsLoading
+                ? [1, 2, 3].map((item) => (
                     <div key={item} className="flex items-start gap-2">
-                      <div className="mt-0.5 h-5 w-5 animate-pulse rounded-full bg-muted" />
-                      <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                      <div className="bg-line mt-0.5 h-5 w-5 animate-pulse rounded-full" />
+                      <div className="bg-line h-4 w-full animate-pulse rounded" />
+                    </div>
+                  ))
+                : plannerInsights.topActions.map((action, index) => (
+                    <div key={`${action}-${index}`} className="flex items-start gap-2.5 text-sm">
+                      <PaintedNum className="!size-6 shrink-0 text-xs">{index + 1}</PaintedNum>
+                      <p className="text-ink-soft">{action}</p>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+            </div>
+          </Paper>
 
-              <Card className="rounded-2xl border-rose-200/70 bg-white/80 dark:border-rose-900/60 dark:bg-rose-950/20 lg:col-span-1">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <ShieldAlert className="h-4 w-4" />
-                    Risk Alerts
-                  </CardTitle>
-                  <CardDescription>Potential blockers that need attention now.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2.5">
-                  {[1, 2].map((item) => (
-                    <div key={item} className="rounded-md border p-2.5">
-                      <div className="h-3.5 w-32 animate-pulse rounded bg-muted" />
-                      <div className="mt-2 h-3 w-full animate-pulse rounded bg-muted" />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <>
-              <Card className="rounded-2xl border-violet-200/70 bg-white/85 shadow-sm dark:border-violet-900/60 dark:bg-violet-950/20 lg:col-span-1">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Siren className="h-4 w-4" />
-                    Event Health Score
-                  </CardTitle>
-                  <CardDescription>Snapshot of planning readiness across timeline, budget, tasks, and RSVP.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-end gap-2">
-                    <span className={cn('text-2xl font-semibold', plannerInsights.healthTone)}>{plannerInsights.healthScore}</span>
-                    <span className="text-sm text-muted-foreground">/100</span>
+          <Paper className="px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Ico d={ICONS.shield} className="!size-7" />
+              <h2 className="font-display text-lg font-semibold">Risk Alerts</h2>
+            </div>
+            <p className="text-ink-soft mt-1 text-sm">Potential blockers that need attention now.</p>
+            <div className="mt-3 space-y-2.5">
+              {plannerInsightsLoading ? (
+                [1, 2].map((item) => (
+                  <div key={item} className="border-line rounded-md border-2 border-dashed p-2.5">
+                    <div className="bg-line h-3.5 w-32 animate-pulse rounded" />
+                    <div className="bg-line mt-2 h-3 w-full animate-pulse rounded" />
                   </div>
-                  <p className={cn('mt-1 text-sm font-medium', plannerInsights.healthTone)}>{plannerInsights.healthLabel}</p>
-                  <Progress value={plannerInsights.healthScore} className="mt-3 h-2" />
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-sky-200/70 bg-white/85 shadow-sm dark:border-sky-900/60 dark:bg-sky-950/20 lg:col-span-1">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Sparkles className="h-4 w-4" />
-                    Top 3 Actions
-                  </CardTitle>
-                  <CardDescription>Highest impact moves to improve your plan this week.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2.5">
-                  {plannerInsights.topActions.map((action, index) => (
-                    <div key={`${action}-${index}`} className="flex items-start gap-2 text-sm">
-                      <Badge variant="outline" className="mt-0.5 h-5 min-w-5 justify-center rounded-full px-1 text-[10px]">
-                        {index + 1}
-                      </Badge>
-                      <p className="text-muted-foreground">{action}</p>
+                ))
+              ) : plannerInsights.risks.length === 0 ? (
+                <Stamp>No immediate risks detected. Keep this momentum.</Stamp>
+              ) : (
+                plannerInsights.risks.map((risk) => (
+                  <div key={risk.id} className="border-line border-b-2 border-dashed pb-2.5 last:border-b-0 last:pb-0">
+                    <div className="flex items-center gap-2">
+                      <Stamp tone={risk.level === 'high' ? 'late' : 'wait'}>{risk.level}</Stamp>
+                      <p className="text-sm font-semibold">{risk.title}</p>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="rounded-2xl border-rose-200/70 bg-white/85 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/20 lg:col-span-1">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <ShieldAlert className="h-4 w-4" />
-                    Risk Alerts
-                  </CardTitle>
-                  <CardDescription>Potential blockers that need attention now.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2.5">
-                  {plannerInsights.risks.length === 0 ? (
-                    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400">
-                      No immediate risks detected. Keep this momentum.
-                    </div>
-                  ) : (
-                    plannerInsights.risks.map((risk) => (
-                      <div
-                        key={risk.id}
-                        className={cn(
-                          'rounded-md border p-2.5',
-                          risk.level === 'high'
-                            ? 'border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-950/30'
-                            : risk.level === 'medium'
-                            ? 'border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/30'
-                            : 'border-sky-200 bg-sky-50 dark:border-sky-900/60 dark:bg-sky-950/30',
-                        )}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <AlertTriangle
-                            className={cn(
-                              'h-3.5 w-3.5',
-                              risk.level === 'high'
-                                ? 'text-red-600 dark:text-red-400'
-                                : risk.level === 'medium'
-                                ? 'text-amber-600 dark:text-amber-400'
-                                : 'text-sky-600 dark:text-sky-400',
-                            )}
-                          />
-                          <p className="text-xs font-medium">{risk.title}</p>
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{risk.detail}</p>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
+                    <p className="text-ink-soft mt-1 text-xs">{risk.detail}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </Paper>
         </div>
       )}
 
       {/* Planning Tools Section Header with View Toggle */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Planning Tools</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-2xl font-semibold">Planning Tools</h2>
         {eventId && (
-          <div className="flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
-            <Button
-              variant={displayMode === 'tiles' ? 'secondary' : 'ghost'}
+          <div className="flex items-center gap-2">
+            <SketchButton
               size="sm"
-              className="h-8 px-3"
+              variant={displayMode === 'tiles' ? 'solid' : 'line'}
+              aria-pressed={displayMode === 'tiles'}
               onClick={() => setDisplayMode('tiles')}
             >
-              <LayoutGrid className="mr-1.5 h-4 w-4" />
               Tiles
-            </Button>
-            <Button
-              variant={displayMode === 'stepper' ? 'secondary' : 'ghost'}
+            </SketchButton>
+            <SketchButton
               size="sm"
-              className="h-8 px-3"
+              variant={displayMode === 'stepper' ? 'solid' : 'line'}
+              aria-pressed={displayMode === 'stepper'}
               onClick={() => setDisplayMode('stepper')}
             >
-              <List className="mr-1.5 h-4 w-4" />
               Steps
-            </Button>
+            </SketchButton>
           </div>
         )}
       </div>
@@ -747,54 +585,36 @@ export default function UserToolsPage() {
       {/* Quick Tiles View - Grid Layout */}
       {displayMode === 'tiles' && eventId && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {TOOL_FLOW.filter(tool => tool.id !== 'create-event').map((tool) => {
-            const Icon = tool.icon
-            const colors = COLOR_STYLES[tool.color]
+          {visibleTools.map((tool) => {
             const href = getToolHref(tool)
             const isSetUp = toolSetup[tool.id as keyof typeof toolSetup]
+            const progress = toolProgress[tool.id]
+            const showProgress =
+              isSetUp && progress && progress.total > 0 && !['e-invite', 'guestlist', 'rsvp', 'memories'].includes(tool.id)
 
             return (
-              <Link key={tool.id} href={href} className="group block">
-                <Card
-                  className={cn(
-                    'h-full rounded-2xl border transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg',
-                    isSetUp && 'border-green-200 dark:border-green-800',
-                    !isSetUp && colors.light
-                  )}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div
-                        className={cn(
-                          'flex h-12 w-12 items-center justify-center rounded-xl border shadow-sm',
-                          colors.bg,
-                          colors.border
-                        )}
-                      >
-                        <Icon className={cn('h-6 w-6', colors.text)} />
-                      </div>
-                      {isSetUp && (
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                      )}
-                    </div>
-                    <div className="mt-3">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold transition-colors group-hover:text-primary">
-                          {tool.title}
-                        </p>
-                        {tool.badge && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            {tool.badge}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                        {tool.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+              <Paper key={tool.id} alt={tool.step % 2 === 1} className="flex h-full flex-col px-5 py-5">
+                <div className="flex items-start justify-between gap-2">
+                  <Ico d={ICONS[tool.icon]} className="!size-12" />
+                  <Stamp tone={isSetUp ? 'ok' : 'wait'}>{isSetUp ? 'Started' : 'Not started'}</Stamp>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <h3 className="font-display text-xl font-semibold">{tool.title}</h3>
+                  {tool.badge && <span className="sk-chip">{tool.badge}</span>}
+                </div>
+                <p className="text-ink-soft mt-1 line-clamp-2 flex-1 text-sm">{tool.description}</p>
+                {showProgress && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <BrushBar value={progress.percentage} tone="green" className="mt-0 flex-1" />
+                    <span className="text-ink-soft text-xs">
+                      {progress.completed}/{progress.total}
+                    </span>
+                  </div>
+                )}
+                <SketchButton asChild size="sm" variant={isSetUp ? 'line' : 'solid'} className="mt-4 self-start">
+                  <Link href={href}>Open {tool.title}</Link>
+                </SketchButton>
+              </Paper>
             )
           })}
         </div>
@@ -802,178 +622,91 @@ export default function UserToolsPage() {
 
       {/* Stepper View - Sequential Steps (shown when no event or stepper mode selected) */}
       {(displayMode === 'stepper' || !eventId) && (
-        <div className="relative">
-          {/* Flow connector line */}
-          <div className="absolute bottom-0 left-6 top-0 hidden w-0.5 bg-linear-to-b from-violet-300 via-cyan-300 to-rose-300 dark:from-violet-700 dark:via-cyan-700 dark:to-rose-700 sm:block" />
+        <ol className="space-y-4">
+          {TOOL_FLOW.map((tool) => {
+            const href = getToolHref(tool)
+            const isSetUp = toolSetup[tool.id as keyof typeof toolSetup]
+            const progress = toolProgress[tool.id]
+            const isLocked = !eventId && tool.id !== 'create-event'
+            const showProgress =
+              isSetUp && progress && progress.total > 0 && !['e-invite', 'guestlist', 'rsvp', 'memories'].includes(tool.id)
 
-          <div className="space-y-4">
-            {TOOL_FLOW.map((tool, index) => {
-              const Icon = tool.icon
-              const colors = COLOR_STYLES[tool.color]
-              const href = getToolHref(tool)
-              const isSetUp = toolSetup[tool.id as keyof typeof toolSetup]
-              const progress = toolProgress[tool.id]
-              const isLocked = !eventId && tool.id !== 'create-event'
-
-              return (
-                <div key={tool.id} className="relative">
-                  {/* Step connector */}
-                  <div className="absolute left-6 -translate-x-1/2 hidden sm:flex flex-col items-center">
-                    <div
-                      className={cn(
-                        'z-10 flex h-12 w-12 items-center justify-center rounded-full border-4 bg-background shadow-sm ring-4 ring-background/80',
-                        isSetUp ? 'border-green-500' : colors.border
-                      )}
-                    >
-                      {isSetUp ? (
-                        <CheckCircle2 className="h-6 w-6 text-green-500" />
-                      ) : (
-                        <span className={cn('text-lg font-bold', colors.text)}>{tool.step}</span>
-                      )}
+            return (
+              <li key={tool.id}>
+                <Paper
+                  alt={tool.step % 2 === 0}
+                  className={cn('flex flex-wrap items-center gap-4 px-5 py-4', isLocked && 'opacity-70')}
+                >
+                  <PaintedNum tone={isSetUp ? 'green' : 'blue'}>{isSetUp ? '✓' : tool.step}</PaintedNum>
+                  <Ico d={ICONS[tool.icon]} className="!size-10 max-sm:hidden" />
+                  <div className="min-w-0 flex-1 basis-56">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-display text-lg leading-tight font-semibold">{tool.title}</h3>
+                      {tool.badge && <span className="sk-chip">{tool.badge}</span>}
+                      <Stamp tone={isSetUp ? 'ok' : 'wait'}>{isSetUp ? 'Started' : 'Not started'}</Stamp>
                     </div>
-                  </div>
-
-                  {/* Tool Card */}
-                  <Link
-                    href={isLocked ? '#' : href}
-                    onClick={(e) => {
-                      if (isLocked) {
-                        e.preventDefault()
-                        router.push('/events/new')
-                      }
-                    }}
-                    className={cn(
-                      'group block sm:ml-16',
-                      isLocked && 'cursor-not-allowed opacity-60'
+                    <p className="text-ink-soft mt-0.5 text-sm">{tool.description}</p>
+                    {showProgress && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <BrushBar value={progress.percentage} tone="green" className="mt-0 w-28" />
+                        <span className="text-ink-soft text-xs">
+                          {progress.completed}/{progress.total}
+                        </span>
+                      </div>
                     )}
-                  >
-                    <Card
-                      className={cn(
-                        'rounded-2xl border transition-all duration-200',
-                        !isLocked && 'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg',
-                        isSetUp && 'border-green-200 dark:border-green-800',
-                        !isSetUp && colors.light,
-                      )}
+                  </div>
+                  <SketchButton asChild size="sm" variant={isSetUp ? 'line' : 'solid'}>
+                    <Link
+                      href={isLocked ? '#' : href}
+                      onClick={(e) => {
+                        if (isLocked) {
+                          e.preventDefault()
+                          router.push('/events/new')
+                        }
+                      }}
                     >
-                      <CardContent className="flex items-center gap-4 p-4">
-                        <div className={cn('h-14 w-1 rounded-full hidden sm:block', colors.bg)} />
-
-                        {/* Mobile step indicator */}
-                        <div
-                          className={cn(
-                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border sm:hidden',
-                            isSetUp ? 'bg-green-100 dark:bg-green-900/30' : colors.bg
-                          )}
-                        >
-                          {isSetUp ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <span className={cn('font-bold', colors.text)}>{tool.step}</span>
-                          )}
-                        </div>
-
-                        {/* Icon */}
-                        <div className={cn('hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-sm sm:flex', colors.bg, colors.border)}>
-                          <Icon className={cn('h-6 w-6', colors.text)} />
-                        </div>
-
-                        {/* Content */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold leading-tight transition-colors group-hover:text-primary">
-                              {tool.title}
-                            </p>
-                            {tool.badge && (
-                              <Badge variant="secondary" className="text-xs">
-                                {tool.badge}
-                              </Badge>
-                            )}
-                            {isSetUp && (
-                              <Badge variant="outline" className="border-green-200 bg-green-50 text-xs text-green-700">
-                                Set up
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="mt-0.5 text-sm text-muted-foreground">{tool.description}</p>
-
-                          {/* Progress bar for set up tools - exclude e-invite, guestlist, rsvp, memories */}
-                          {isSetUp && progress && progress.total > 0 &&
-                           !['e-invite', 'guestlist', 'rsvp', 'memories'].includes(tool.id) && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <Progress value={progress.percentage} className="h-1.5 w-24" />
-                              <span className="text-xs text-muted-foreground">
-                                {progress.completed}/{progress.total}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Arrow */}
-                        {isLocked ? (
-                          <AlertCircle className="h-5 w-5 shrink-0 text-muted-foreground/40" />
-                        ) : (
-                          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                        )}
-                      </CardContent>
-                    </Card>
-                  </Link>
-
-                  {/* Arrow connector between steps */}
-                  {index < TOOL_FLOW.length - 1 && (
-                    <div className="flex justify-center py-1 sm:hidden">
-                      <ArrowDown className="h-4 w-4 text-muted-foreground/30" />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
+                      {isLocked ? 'Create event first' : `Open ${tool.title}`}
+                    </Link>
+                  </SketchButton>
+                </Paper>
+              </li>
+            )
+          })}
+        </ol>
       )}
 
       {/* Completion celebration */}
       {overallProgress === 100 && eventId && (
-        <Card className="rounded-2xl border-green-200 bg-linear-to-r from-green-50 to-emerald-50 shadow-sm dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20">
-          <CardContent className="flex items-center gap-4 p-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <PartyPopper className="h-7 w-7 text-green-600" />
-            </div>
-            <div>
-              <p className="font-semibold text-green-800 dark:text-green-300">All tools set up!</p>
-              <p className="text-sm text-green-700/80 dark:text-green-400/80">
-                Your event planning is complete. Keep updating as needed.
-              </p>
-            </div>
-            <Link href={`/events/${eventId}`} className="ml-auto">
-              <Button variant="outline" className="border-green-300 hover:bg-green-100">
-                View Event
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <Paper tape className="flex flex-wrap items-center gap-4 px-5 py-4">
+          <Ico d={ICONS.star} className="!size-10" />
+          <div>
+            <p className="font-display text-lg font-semibold">All tools set up!</p>
+            <p className="text-ink-soft text-sm">Your event planning is complete. Keep updating as needed.</p>
+          </div>
+          <SketchButton asChild variant="line" className="ml-auto">
+            <Link href={`/events/${eventId}`}>View Event</Link>
+          </SketchButton>
+        </Paper>
       )}
 
       {/* Quick tips */}
       {eventId && overallProgress < 100 && (
-        <Card className="rounded-2xl border-dashed border-violet-200 dark:border-violet-900/60">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Next Steps</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-1">
+        <div className={skPaper({ alt: true, className: 'px-5 py-4' })}>
+          <h2 className="font-display text-lg font-semibold">Next Steps</h2>
+          <div className="text-ink-soft mt-1 space-y-1 text-sm">
             {!toolSetup.timeline && <p>Set up your event timeline to plan the day schedule</p>}
             {!toolSetup.budget && toolSetup.timeline && <p>Add budget items to track expenses</p>}
             {!toolSetup.checklist && toolSetup.budget && <p>Create a checklist to manage tasks</p>}
             {!toolSetup.guestlist && toolSetup.checklist && <p>Add your guestlist and send invites</p>}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Switch event hint */}
       {eventId && eventsData?.meta && Number(eventsData.meta.total) > 1 && (
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-ink-soft text-center text-xs">
           Tools are linked to your most recent event.{' '}
-          <Link href="/events" className="font-medium underline underline-offset-2">
+          <Link href="/events" className="text-blue font-semibold underline underline-offset-2">
             Switch event
           </Link>
         </p>

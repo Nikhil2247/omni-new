@@ -7,9 +7,8 @@ import { ChecklistPanel } from '@/components/features/events/checklist-panel'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useEvent } from '@/hooks/queries/use-events'
 import { useChecklist } from '@/hooks/queries/use-checklists'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { CheckSquare, ArrowLeft, ListChecks, Clock } from 'lucide-react'
+import { Brush, Eyebrow, Paper, SketchButton } from '@/components/sketch'
+import { ArrowLeft } from 'lucide-react'
 
 export default function ChecklistPage() {
   const params = useParams()
@@ -35,61 +34,50 @@ export default function ChecklistPage() {
   }).length || 0
 
   return (
-    <div className="space-y-4 pb-4">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 p-4 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/30 dark:via-green-950/20 dark:to-teal-950/20 sm:p-4">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-green-300/30 blur-3xl dark:bg-green-500/20" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-teal-300/30 blur-3xl dark:bg-teal-500/20" />
+    <div className="space-y-5 pb-4">
+      {/* Header */}
+      <header>
+        <SketchButton variant="ghost" size="sm" asChild className="mb-3">
+          <Link href={`/events/${eventId}`}>
+            <ArrowLeft className="h-4 w-4" />
+            Back to event
+          </Link>
+        </SketchButton>
 
-        <div className="relative">
-          <Button variant="ghost" size="sm" asChild className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
-            <Link href={`/events/${eventId}`}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to event
-            </Link>
-          </Button>
+        <Eyebrow>Event Checklist</Eyebrow>
+        <h1 className="font-display mt-2.5 text-[clamp(1.9rem,4vw,2.8rem)] leading-[1.05] font-semibold tracking-tight">
+          Tasks &amp; <Brush>To-dos</Brush>
+        </h1>
+        <p className="text-ink-soft mt-2 text-base">
+          {event?.name ? (
+            <>
+              Manage tasks for <span className="text-ink font-semibold">{event.name}</span>
+            </>
+          ) : (
+            'Organize your event tasks and never miss a detail'
+          )}
+        </p>
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <Badge className="mb-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 shadow-sm dark:bg-emerald-950/70 dark:text-emerald-200">
-                Event Checklist
-              </Badge>
-              <h1 className="text-lg font-semibold tracking-tight sm:text-lg">
-                Tasks & To-dos
-              </h1>
-              <p className="mt-2 text-base text-muted-foreground">
-                {event?.name ? (
-                  <>Manage tasks for <span className="font-medium text-foreground">{event.name}</span></>
-                ) : (
-                  'Organize your event tasks and never miss a detail'
-                )}
-              </p>
-
-              {/* Quick Stats */}
-              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-                <div className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-emerald-900/50 dark:bg-emerald-950/40">
-                  <p className="text-[11px] text-muted-foreground">Progress</p>
-                  <p className="font-semibold">{progress}%</p>
-                </div>
-                <div className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-emerald-900/50 dark:bg-emerald-950/40">
-                  <p className="text-[11px] text-muted-foreground">Completed</p>
-                  <p className="font-semibold">{completedTasks} / {totalTasks}</p>
-                </div>
-                <div className="col-span-2 rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-emerald-900/50 dark:bg-emerald-950/40 sm:col-span-1">
-                  <p className="text-[11px] text-muted-foreground">Overdue</p>
-                  <p className={`font-semibold ${overdueTasks > 0 ? 'text-red-600' : ''}`}>
-                    {overdueTasks}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 shadow-lg self-start lg:self-auto">
-              <CheckSquare className="h-8 w-8 text-white" />
-            </div>
-          </div>
+        {/* Quick Stats */}
+        <div className="mt-5 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
+          <Paper className="px-4 py-3">
+            <p className="sk-eyebrow">Progress</p>
+            <p className="font-display text-2xl font-semibold">{progress}%</p>
+          </Paper>
+          <Paper alt className="px-4 py-3">
+            <p className="sk-eyebrow">Completed</p>
+            <p className="font-display text-2xl font-semibold">
+              {completedTasks} / {totalTasks}
+            </p>
+          </Paper>
+          <Paper className="col-span-2 px-4 py-3 sm:col-span-1">
+            <p className="sk-eyebrow">Overdue</p>
+            <p className={`font-display text-2xl font-semibold ${overdueTasks > 0 ? 'text-rose' : ''}`}>
+              {overdueTasks}
+            </p>
+          </Paper>
         </div>
-      </div>
+      </header>
 
       {/* Checklist Panel */}
       <ChecklistPanel eventId={eventId} />

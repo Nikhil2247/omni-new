@@ -13,6 +13,7 @@ import { useEvent } from '@/hooks/queries/use-events'
 import { EInviteEditor } from '@/components/features/einvite/einvite-editor'
 import { SendToGuestsDialog } from '@/components/features/einvite/send-to-guests-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Paper, Stamp } from '@/components/sketch'
 import { toast } from 'sonner'
 import type { EInviteCategory } from '@/lib/api/types/einvite.types'
 
@@ -103,15 +104,14 @@ export function EInvitePanel({ eventId }: EInvitePanelProps) {
   // Error state
   if (einviteError && (einviteError as any)?.response?.status !== 404) {
     return (
-      <div className="h-[calc(100vh-180px)] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive">
-            Unable to load e-invite editor.
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
+      <div className="flex h-[calc(100vh-180px)] items-center justify-center">
+        <Paper className="px-8 py-6 text-center">
+          <Stamp tone="late">Error</Stamp>
+          <p className="font-display mt-3 text-lg font-semibold">Unable to load e-invite editor.</p>
+          <p className="text-ink-soft mt-1 text-sm">
             {einviteError instanceof Error ? einviteError.message : 'Unknown error'}
           </p>
-        </div>
+        </Paper>
       </div>
     )
   }
@@ -119,7 +119,7 @@ export function EInvitePanel({ eventId }: EInvitePanelProps) {
   return (
     <>
       {/* Full-height Editor */}
-      <div className="h-[calc(100vh-180px)] rounded-lg overflow-hidden border bg-white dark:bg-gray-900">
+      <div className="sk-paper h-[calc(100vh-180px)] overflow-hidden p-0">
         <EInviteEditor
           eventId={eventId}
           einvite={einvite ?? null}

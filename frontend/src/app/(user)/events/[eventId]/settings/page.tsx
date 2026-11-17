@@ -8,9 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useEvent, useUpdateEvent, useDeleteEvent } from '@/hooks/queries/use-events'
 import { useEventTypes } from '@/hooks/queries/use-lookups'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { BrushTitle, Eyebrow, Paper, SketchButton, Stamp } from '@/components/sketch'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -27,18 +25,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
-import {
-  Settings,
-  Calendar,
-  MapPin,
-  Users,
-  FileText,
-  Save,
-  Trash2,
-  AlertTriangle,
-  Crown,
-  Coins,
-} from 'lucide-react'
+import { Calendar, MapPin, Users, FileText } from 'lucide-react'
 
 const eventSettingsSchema = z.object({
   name: z.string().min(2, 'Event name is required'),
@@ -116,7 +103,7 @@ export default function EventSettingsPage() {
   const selectedEventType = eventTypes?.find((et) => et.id === selectedEventTypeId)
 
   if (!eventId) {
-    return <div className="text-sm text-muted-foreground">Loading event settings...</div>
+    return <div className="text-ink-soft text-sm">Loading event settings...</div>
   }
 
   if (isLoading) {
@@ -129,79 +116,49 @@ export default function EventSettingsPage() {
   }
 
   if (error || !data) {
-    return <div className="text-sm text-destructive">Unable to load event settings.</div>
+    return <div className="text-rose text-sm">Unable to load event settings.</div>
   }
 
   const eventTier = (data as { tier?: string }).tier || 'BASIC'
 
   return (
     <div className="space-y-4 pb-4">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-br from-slate-50 via-zinc-50 to-stone-50 p-4 shadow-sm dark:border-slate-800/40 dark:from-slate-950/30 dark:via-zinc-950/20 dark:to-stone-950/20 sm:p-4">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-slate-300/30 blur-3xl dark:bg-slate-500/20" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-zinc-300/30 blur-3xl dark:bg-zinc-500/20" />
+      {/* Header */}
+      <div className="max-w-2xl">
+        <Eyebrow>Event Settings</Eyebrow>
+        <h1 className="font-display mt-2.5 text-[clamp(1.9rem,4vw,2.8rem)] leading-[1.05] font-semibold tracking-tight">
+          <BrushTitle title={data.name} />
+        </h1>
+        <p className="text-ink-soft mt-3">Update your event details and preferences</p>
 
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <Badge className="mb-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-700 shadow-sm dark:bg-slate-950/70 dark:text-slate-200">
-              Event Settings
-            </Badge>
-            <h1 className="text-lg font-semibold tracking-tight sm:text-lg">
-              {data.name}
-            </h1>
-            <p className="mt-2 text-base text-muted-foreground">
-              Update your event details and preferences
+        {/* Event Info Stats */}
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Paper className="px-4 py-3">
+            <p className="sk-eyebrow">Event Type</p>
+            <p className="font-display mt-1 text-lg font-semibold">{selectedEventType?.name || 'Loading...'}</p>
+          </Paper>
+          <Paper alt className="px-4 py-3">
+            <p className="sk-eyebrow">Event Date</p>
+            <p className="font-display mt-1 text-lg font-semibold">
+              {data.date ? new Date(data.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set'}
             </p>
-
-            {/* Event Info Stats */}
-            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-              <div className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-slate-900/50 dark:bg-slate-950/40">
-                <p className="text-[11px] text-muted-foreground">Event Type</p>
-                <p className="font-semibold">{selectedEventType?.name || 'Loading...'}</p>
-              </div>
-              <div className="rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-slate-900/50 dark:bg-slate-950/40">
-                <p className="text-[11px] text-muted-foreground">Event Date</p>
-                <p className="font-semibold">
-                  {data.date ? new Date(data.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set'}
-                </p>
-              </div>
-              <div className="col-span-2 rounded-xl border border-white/60 bg-white/70 px-3 py-2 text-sm shadow-sm backdrop-blur dark:border-slate-900/50 dark:bg-slate-950/40 sm:col-span-1">
-                <p className="text-[11px] text-muted-foreground">Event Tier</p>
-                <div className="flex items-center gap-1.5">
-                  {eventTier === 'PREMIUM' ? (
-                    <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                      <Crown className="mr-1 h-3 w-3" />
-                      Premium
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                      <Coins className="mr-1 h-3 w-3" />
-                      Basic
-                    </Badge>
-                  )}
-                </div>
-              </div>
+          </Paper>
+          <Paper className="col-span-2 px-4 py-3 sm:col-span-1">
+            <p className="sk-eyebrow">Event Tier</p>
+            <div className="mt-1">
+              <Stamp tone={eventTier === 'PREMIUM' ? 'ok' : 'wait'}>{eventTier === 'PREMIUM' ? 'Premium' : 'Basic'}</Stamp>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <Settings className="h-5 w-5 text-muted-foreground" />
-          </div>
+          </Paper>
         </div>
       </div>
 
       {/* Event Details Form */}
-      <Card className="rounded-2xl border-slate-200/70 bg-gradient-to-br from-white to-slate-50/50 shadow-sm dark:border-slate-800/60 dark:from-slate-900/50 dark:to-slate-950/30">
-        <CardHeader className="border-b border-slate-100 dark:border-slate-800">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileText className="h-5 w-5 text-slate-500" />
-            Event Details
-          </CardTitle>
-          <CardDescription>
-            Update your event information. Changes are saved automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
+      <Paper className="px-5 py-5 sm:px-7 sm:py-6">
+        <div className="border-line mb-5 border-b-2 border-dashed pb-4">
+          <h2 className="font-display text-2xl font-semibold">Event Details</h2>
+          <p className="text-ink-soft mt-1 text-sm">Update your event information. Changes are saved automatically.</p>
+        </div>
+        <div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Event Name */}
@@ -211,7 +168,7 @@ export default function EventSettingsPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <Calendar className="h-4 w-4 text-ink-soft" />
                       Event Name
                     </FormLabel>
                     <FormControl>
@@ -247,11 +204,10 @@ export default function EventSettingsPage() {
                                 key={et.id}
                                 type="button"
                                 onClick={() => field.onChange(et.id)}
+                                aria-pressed={field.value === et.id}
                                 className={cn(
-                                  'rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all',
-                                  field.value === et.id
-                                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                                    : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                                  'sk-chip cursor-pointer px-3.5 py-2 text-sm transition-colors',
+                                  field.value === et.id ? 'bg-blue text-on-blue' : 'hover:bg-blue-wash',
                                 )}
                               >
                                 {et.name}
@@ -272,7 +228,7 @@ export default function EventSettingsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <Calendar className="h-4 w-4 text-ink-soft" />
                         Event Date
                       </FormLabel>
                       <FormControl>
@@ -288,7 +244,7 @@ export default function EventSettingsPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <MapPin className="h-4 w-4 text-ink-soft" />
                         Venue
                       </FormLabel>
                       <FormControl>
@@ -311,7 +267,7 @@ export default function EventSettingsPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <Users className="h-4 w-4 text-ink-soft" />
                       Expected Guests
                     </FormLabel>
                     <FormControl>
@@ -335,7 +291,7 @@ export default function EventSettingsPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <FileText className="h-4 w-4 text-ink-soft" />
                       Notes
                       <span className="text-muted-foreground font-normal">(optional)</span>
                     </FormLabel>
@@ -354,48 +310,37 @@ export default function EventSettingsPage() {
 
               {/* Save Button */}
               <div className="flex items-center gap-3 pt-2">
-                <Button
-                  type="submit"
-                  className="rounded-full px-6"
-                  disabled={updateEvent.isPending}
-                >
-                  <Save className="mr-2 h-4 w-4" />
+                <SketchButton type="submit" disabled={updateEvent.isPending}>
                   {updateEvent.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
+                </SketchButton>
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </Paper>
 
       {/* Danger Zone */}
-      <Card className="rounded-2xl border-red-200/70 bg-gradient-to-br from-red-50/50 to-white dark:border-red-900/50 dark:from-red-950/20 dark:to-transparent">
-        <CardHeader className="border-b border-red-100 dark:border-red-900/30">
-          <CardTitle className="flex items-center gap-2 text-lg text-red-700 dark:text-red-400">
-            <AlertTriangle className="h-5 w-5" />
-            Danger Zone
-          </CardTitle>
-          <CardDescription>
-            Irreversible actions that permanently affect your event.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
+      <Paper alt className="px-5 py-5 sm:px-7 sm:py-6">
+        <div className="border-line mb-5 border-b-2 border-dashed pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="font-display text-2xl font-semibold">Danger Zone</h2>
+            <Stamp tone="late">Irreversible</Stamp>
+          </div>
+          <p className="text-ink-soft mt-1 text-sm">Irreversible actions that permanently affect your event.</p>
+        </div>
+        <div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-medium text-red-700 dark:text-red-400">Delete this event</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-display text-lg font-semibold">Delete this event</p>
+              <p className="text-ink-soft text-sm">
                 Once deleted, all event data including guests, budget, timeline, and invitations will be permanently removed.
               </p>
             </div>
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  className="rounded-full shrink-0"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                <SketchButton variant="line" className="shrink-0">
                   Delete Event
-                </Button>
+                </SketchButton>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -426,8 +371,8 @@ export default function EventSettingsPage() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </Paper>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageCircle, Send, Users, CheckCircle, Clock, AlertCircle, RefreshCw, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import {
   useSendWhatsAppInvite,
   useSendWhatsAppBulk,
@@ -10,7 +10,7 @@ import {
 } from '@/hooks/queries/use-whatsapp'
 import type { Guest } from '@/lib/api/types/guestlist.types'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Ico, ICONS, Paper, SketchButton, Stamp } from '@/components/sketch'
 import {
   Dialog,
   DialogContent,
@@ -29,8 +29,6 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -139,58 +137,44 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-green-600" />
+    <Paper className="space-y-6 px-5 py-5">
+      <div>
+        <h2 className="font-display flex items-center gap-2 text-2xl font-semibold">
+          <Ico d={ICONS.chat} className="h-7 w-7" />
           WhatsApp Invitations
-        </CardTitle>
-        <CardDescription>
-          Send invites directly to your guests via WhatsApp
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+        </h2>
+        <p className="text-ink-soft mt-1 text-sm">Send invites directly to your guests via WhatsApp</p>
+      </div>
+      <div className="space-y-6">
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-lg bg-green-50 p-3 text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {summary?.totalSent ?? 0}
-            </div>
-            <div className="text-xs text-green-700">Total Sent</div>
-          </div>
-          <div className="rounded-lg bg-blue-50 p-3 text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {summary?.delivered ?? 0}
-            </div>
-            <div className="text-xs text-blue-700">Delivered</div>
-          </div>
-          <div className="rounded-lg bg-yellow-50 p-3 text-center">
-            <div className="text-2xl font-bold text-yellow-600">
-              {summary?.pending ?? pendingGuests.length}
-            </div>
-            <div className="text-xs text-yellow-700">Pending RSVP</div>
-          </div>
-          <div className="rounded-lg bg-gray-50 p-3 text-center">
-            <div className="text-2xl font-bold text-gray-600">
-              {guestsWithPhone.length}
-            </div>
-            <div className="text-xs text-gray-700">With Phone</div>
-          </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Paper className="px-4 py-3 text-center">
+            <div className="font-display text-leaf-deep text-2xl font-semibold">{summary?.totalSent ?? 0}</div>
+            <div className="sk-eyebrow mt-1">Total Sent</div>
+          </Paper>
+          <Paper alt className="px-4 py-3 text-center">
+            <div className="font-display text-blue text-2xl font-semibold">{summary?.delivered ?? 0}</div>
+            <div className="sk-eyebrow mt-1">Delivered</div>
+          </Paper>
+          <Paper className="px-4 py-3 text-center">
+            <div className="font-display text-gold text-2xl font-semibold">{summary?.pending ?? pendingGuests.length}</div>
+            <div className="sk-eyebrow mt-1">Pending RSVP</div>
+          </Paper>
+          <Paper alt className="px-4 py-3 text-center">
+            <div className="font-display text-2xl font-semibold">{guestsWithPhone.length}</div>
+            <div className="sk-eyebrow mt-1">With Phone</div>
+          </Paper>
         </div>
 
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Send className="mr-2 h-4 w-4" />
-                Send Invites
-              </Button>
+              <SketchButton>Send Invites</SketchButton>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 text-green-600" />
                   Send WhatsApp Invitations
                 </DialogTitle>
                 <DialogDescription>
@@ -210,9 +194,7 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
                       {templates.map(template => (
                         <SelectItem key={template.id} value={template.id}>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
-                              {template.type}
-                            </Badge>
+                            <span className="sk-chip text-[10px]">{template.type}</span>
                             {template.name}
                           </div>
                         </SelectItem>
@@ -230,7 +212,7 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
                     onChange={(e) => setCustomMessage(e.target.value)}
                     rows={3}
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-ink-soft text-xs">
                     Use {'{guestName}'} to personalize the message
                   </p>
                 </div>
@@ -253,7 +235,7 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
 
                   <div className="max-h-60 overflow-y-auto border rounded-lg">
                     {guestsWithPhone.length === 0 ? (
-                      <div className="p-4 text-center text-muted-foreground">
+                      <div className="p-4 text-center text-ink-soft">
                         No guests have phone numbers added
                       </div>
                     ) : (
@@ -262,8 +244,8 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
                           <label
                             key={guest.id}
                             className={cn(
-                              'flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50',
-                              selectedGuests.includes(guest.id) && 'bg-green-50'
+                              'flex items-center justify-between p-3 cursor-pointer hover:bg-blue-wash',
+                              selectedGuests.includes(guest.id) && 'bg-blue-wash'
                             )}
                           >
                             <div className="flex items-center gap-3">
@@ -275,22 +257,22 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
                                 <p className="font-medium">
                                   {guest.firstName} {guest.lastName}
                                 </p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm text-ink-soft">
                                   {guest.phone}
                                 </p>
                               </div>
                             </div>
-                            <Badge
-                              variant={
+                            <Stamp
+                              tone={
                                 guest.rsvpStatus === 'ATTENDING'
-                                  ? 'default'
+                                  ? 'ok'
                                   : guest.rsvpStatus === 'PENDING'
-                                  ? 'secondary'
-                                  : 'outline'
+                                  ? 'wait'
+                                  : 'late'
                               }
                             >
                               {guest.rsvpStatus.toLowerCase()}
-                            </Badge>
+                            </Stamp>
                           </label>
                         ))}
                       </div>
@@ -298,7 +280,7 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
                   </div>
 
                   {selectedGuests.length > 0 && !sendToAll && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-ink-soft">
                       {selectedGuests.length} guest(s) selected
                     </p>
                   )}
@@ -309,14 +291,13 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button
+                <SketchButton
                   onClick={handleSend}
                   disabled={
                     (selectedGuests.length === 0 && !sendToAll) ||
                     sendInvite.isPending ||
                     sendBulk.isPending
                   }
-                  className="bg-green-600 hover:bg-green-700"
                 >
                   {sendInvite.isPending || sendBulk.isPending ? (
                     <>
@@ -324,26 +305,22 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
                       Sending...
                     </>
                   ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Send to {sendToAll ? guestsWithPhone.length : selectedGuests.length} guests
-                    </>
+                    <>Send to {sendToAll ? guestsWithPhone.length : selectedGuests.length} guests</>
                   )}
-                </Button>
+                </SketchButton>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
-          <Button variant="outline" onClick={() => toast.info('Reminder feature coming soon!')}>
-            <Clock className="mr-2 h-4 w-4" />
+          <SketchButton variant="line" onClick={() => toast.info('Reminder feature coming soon!')}>
             Send Reminders
-          </Button>
+          </SketchButton>
         </div>
 
         {/* Quick Send Links */}
         {guestsWithPhone.length > 0 && (
           <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">Quick Send (opens WhatsApp)</Label>
+            <Label className="text-ink-soft text-sm">Quick Send (opens WhatsApp)</Label>
             <div className="flex flex-wrap gap-2">
               {guestsWithPhone.slice(0, 5).map(guest => (
                 <a
@@ -351,21 +328,20 @@ export function WhatsAppInvitePanel({ guestlistId, guests }: WhatsAppInvitePanel
                   href={generateWhatsAppLink(guest)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-sm hover:bg-green-200 transition-colors"
+                  className="sk-chip hover:bg-blue-wash transition-colors"
                 >
-                  <MessageCircle className="h-3 w-3" />
                   {guest.firstName}
                 </a>
               ))}
               {guestsWithPhone.length > 5 && (
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-gray-100 text-gray-600 text-sm">
+                <span className="sk-chip text-ink-soft">
                   +{guestsWithPhone.length - 5} more
                 </span>
               )}
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </Paper>
   )
 }

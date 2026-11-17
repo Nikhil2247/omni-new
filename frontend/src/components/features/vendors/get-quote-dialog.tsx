@@ -8,14 +8,13 @@ import * as z from 'zod'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { FileText, CheckCircle2, CalendarIcon, Calendar as CalendarIconOutline, Users, Sparkles } from 'lucide-react'
+import { FileText, CheckCircle2, Calendar as CalendarIconOutline, Users, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/store/auth-store'
 import { useCreateLead } from '@/hooks/queries/use-leads'
 import { useEventsEnabled } from '@/hooks/queries/use-events'
 import { trackQuote } from '@/lib/analytics/umami'
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Dialog,
   DialogContent,
@@ -40,7 +39,6 @@ import {
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
 import type { EventSummary } from '@/lib/api/types/event.types'
 
 const quoteSchema = z.object({
@@ -349,37 +347,13 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Event date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  'w-full justify-start text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? (
-                                  format(field.value, 'PPP')
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) =>
-                                date < new Date(new Date().setHours(0, 0, 0, 0))
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
+                        <FormControl>
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            minDate={new Date(new Date().setHours(0, 0, 0, 0))}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

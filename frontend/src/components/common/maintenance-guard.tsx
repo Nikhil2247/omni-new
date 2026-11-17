@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth-store'
 import { useSystemStatus } from '@/hooks/queries/use-public'
 import { ROLES } from '@/config/roles'
 import { Wrench } from 'lucide-react'
+import { SplashScreen } from '@/components/common/splash-screen'
 
 interface MaintenanceGuardProps {
   children: React.ReactNode
@@ -105,15 +106,5 @@ function MaintenanceScreen({ supportEmail }: { supportEmail?: string }) {
 }
 
 function MaintenanceLoading() {
-  return (
-    <div className="relative min-h-screen">
-      <div className="absolute inset-0 bg-background" />
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-      <div className="relative flex min-h-screen items-center justify-center px-6">
-        <div className="mx-auto w-full max-w-sm rounded-2xl border bg-card p-6 text-center shadow-lg">
-          <p className="text-sm text-muted-foreground">Checking system status…</p>
-        </div>
-      </div>
-    </div>
-  )
+  return <SplashScreen />
 }

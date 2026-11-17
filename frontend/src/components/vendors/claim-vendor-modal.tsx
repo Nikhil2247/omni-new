@@ -620,7 +620,7 @@ export function ClaimVendorModal({
                           key={url}
                           className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3 min-w-0"
                         >
-                          <CheckCircle className="h-4 w-4 shrink-0 text-green-500" />
+                          <CheckCircle className="h-4 w-4 shrink-0 text-leaf-deep" />
                           <span className="text-sm flex-1 min-w-0 truncate">
                             {getFileNameFromUrl(url)}
                           </span>
@@ -811,14 +811,14 @@ export function ClaimVendorModal({
                 className={cn(
                   'mb-4 flex h-16 w-16 items-center justify-center rounded-full',
                   claimPending
-                    ? 'bg-amber-100 dark:bg-amber-900/30'
-                    : 'bg-green-100 dark:bg-green-900/30'
+                    ? 'bg-gold/20'
+                    : 'bg-leaf-light/50'
                 )}
               >
                 {claimPending ? (
-                  <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                  <Clock className="h-8 w-8 text-gold" />
                 ) : (
-                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  <CheckCircle className="h-8 w-8 text-leaf-deep" />
                 )}
               </motion.div>
               <h3 className="text-lg font-semibold">
@@ -1070,9 +1070,9 @@ export function ClaimVendorModal({
                     variants={successIconVariants}
                     initial="initial"
                     animate="animate"
-                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30"
+                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-leaf-light/50"
                   >
-                    <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                    <CheckCircle className="h-8 w-8 text-leaf-deep" />
                   </motion.div>
                   <h3 className="text-lg font-semibold">Claim Approved!</h3>
                   <p className="mt-2 max-w-xs text-sm text-muted-foreground">
@@ -1086,9 +1086,9 @@ export function ClaimVendorModal({
                     variants={successIconVariants}
                     initial="initial"
                     animate="animate"
-                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30"
+                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gold/20"
                   >
-                    <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                    <Clock className="h-8 w-8 text-gold" />
                   </motion.div>
                   <h3 className="text-lg font-semibold">Claim Under Review</h3>
                   <p className="mt-2 max-w-xs text-sm text-muted-foreground">

@@ -5,9 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useEvents } from '@/hooks/queries/use-events'
 import { TOOL_MAP, type ToolSlug } from '@/lib/tools/tool-catalog'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, CheckCircle2, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Brush, Eyebrow, Ico, ICONS, PaintedNum, Paper, SketchButton, type IcoName } from '@/components/sketch'
 
 const EVENT_TOOL_SEGMENTS: Partial<Record<ToolSlug, string>> = {
   guestlist: 'guestlist',
@@ -15,6 +13,15 @@ const EVENT_TOOL_SEGMENTS: Partial<Record<ToolSlug, string>> = {
   budget: 'budget',
   timeline: 'timeline',
   memories: 'memories',
+}
+
+const TOOL_ICONS: Partial<Record<ToolSlug, IcoName>> = {
+  guestlist: 'guests',
+  checklist: 'planner',
+  budget: 'wallet',
+  timeline: 'clock',
+  memories: 'gallery',
+  events: 'calendar',
 }
 
 export default function ToolDetailPage() {
@@ -36,80 +43,81 @@ export default function ToolDetailPage() {
   if (!tool) {
     return (
       <div className="space-y-4">
-        <Button variant="ghost" asChild className="px-0">
-          <Link href="/tools">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to tools
-          </Link>
-        </Button>
-        <p className="text-sm text-muted-foreground">Tool not found.</p>
+        <SketchButton asChild variant="ghost" size="sm">
+          <Link href="/tools">Back to tools</Link>
+        </SketchButton>
+        <Paper className="px-5 py-4">
+          <p className="text-ink-soft text-sm">Tool not found.</p>
+        </Paper>
       </div>
     )
   }
 
+  const icon = TOOL_ICONS[tool.slug] ?? 'star'
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Back */}
-      <Button variant="ghost" asChild className="px-0">
-        <Link href="/tools">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          All tools
-        </Link>
-      </Button>
+      <SketchButton asChild variant="ghost" size="sm">
+        <Link href="/tools">All tools</Link>
+      </SketchButton>
 
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold sm:text-lg">{tool.label}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
-      </div>
+      <header className="flex items-start gap-4">
+        <Ico d={ICONS[icon]} className="!size-14 shrink-0" />
+        <div>
+          <Eyebrow>Planning tool</Eyebrow>
+          <h1 className="font-display mt-2.5 text-[clamp(1.9rem,4vw,2.8rem)] leading-[1.05] font-semibold tracking-tight">
+            <Brush>{tool.label}</Brush>
+          </h1>
+          <p className="text-ink-soft mt-3 max-w-2xl">{tool.description}</p>
+        </div>
+      </header>
 
-      {/* What it helps with */}
-      <div className="rounded-xl border bg-card p-4 sm:p-5">
-        <p className="mb-3 text-sm font-semibold">What this tool helps with</p>
-        <ul className="space-y-2">
-          {tool.details.map((point) => (
-            <li key={point} className="flex items-start gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-              {point}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Quick steps */}
-      <div className="rounded-xl border bg-card p-4 sm:p-5">
-        <p className="mb-3 text-sm font-semibold">Quick steps</p>
-        <ol className="space-y-2">
-          {tool.steps.map((step, index) => (
-            <li key={step} className="flex items-start gap-3 text-sm text-muted-foreground">
-              <span
-                className={cn(
-                  'flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
-                  'bg-primary/10 text-primary',
-                )}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* What it helps with */}
+        <Paper className="px-5 py-5">
+          <h2 className="font-display text-xl font-semibold">What this tool helps with</h2>
+          <ul className="mt-3 space-y-2">
+            {tool.details.map((point) => (
+              <li
+                key={point}
+                className="text-ink-soft border-line flex items-start gap-2.5 border-b-2 border-dashed pb-2 text-sm last:border-b-0 last:pb-0"
               >
-                {index + 1}
-              </span>
-              {step}
-            </li>
-          ))}
-        </ol>
+                <PaintedNum tone="green" className="!size-6 shrink-0 text-xs">
+                  ✓
+                </PaintedNum>
+                {point}
+              </li>
+            ))}
+          </ul>
+        </Paper>
+
+        {/* Quick steps */}
+        <Paper alt className="px-5 py-5">
+          <h2 className="font-display text-xl font-semibold">Quick steps</h2>
+          <ol className="mt-3 space-y-2">
+            {tool.steps.map((step, index) => (
+              <li
+                key={step}
+                className="text-ink-soft border-line flex items-start gap-2.5 border-b-2 border-dashed pb-2 text-sm last:border-b-0 last:pb-0"
+              >
+                <PaintedNum className="!size-6 shrink-0 text-xs">{index + 1}</PaintedNum>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </Paper>
       </div>
 
       {/* CTA */}
-      <div className="flex flex-wrap gap-2">
-        <Button asChild className="rounded-full">
-          <Link href={primaryAction.href}>
-            {primaryAction.label}
-            <ChevronRight className="ml-1.5 h-4 w-4" />
-          </Link>
-        </Button>
-        <Button variant="outline" asChild className="rounded-full">
-          <Link href="/events">
-            <Calendar className="mr-2 h-4 w-4" />
-            All Events
-          </Link>
-        </Button>
+      <div className="flex flex-wrap gap-3">
+        <SketchButton asChild>
+          <Link href={primaryAction.href}>{primaryAction.label}</Link>
+        </SketchButton>
+        <SketchButton asChild variant="line">
+          <Link href="/events">All Events</Link>
+        </SketchButton>
       </div>
     </div>
   )

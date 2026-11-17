@@ -13,10 +13,8 @@ import {
   useBulkRejectUploads,
 } from '@/hooks/queries/use-guest-uploads'
 import { getMinioViewUrl } from '@/lib/utils/minio'
-import { Button } from '@/components/ui/button'
+import { Ico, ICONS, Paper, SketchButton, Stamp } from '@/components/sketch'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,10 +31,8 @@ import {
   Trash2,
   CheckCheck,
   XCircle,
-  Clock,
   User,
   Loader2,
-  ImageIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -136,23 +132,19 @@ export function MemoryModeration({ memoryId }: MemoryModerationProps) {
 
   if (error) {
     return (
-      <div className="text-sm text-destructive text-center py-8">
+      <p className="text-rose py-8 text-center text-sm font-bold" role="alert">
         Failed to load pending uploads.
-      </div>
+      </p>
     )
   }
 
   if (!data?.uploads?.length) {
     return (
-      <div className="text-center py-12 space-y-3">
-        <Clock className="mx-auto h-12 w-12 text-muted-foreground" />
-        <div>
-          <h3 className="font-medium">No pending uploads</h3>
-          <p className="text-sm text-muted-foreground">
-            New guest uploads will appear here for review.
-          </p>
-        </div>
-      </div>
+      <Paper alt className="px-6 py-12 text-center">
+        <Ico d={ICONS.clock} className="mx-auto mb-3 h-12 w-12" />
+        <h3 className="font-display text-lg font-semibold">No pending uploads</h3>
+        <p className="text-ink-soft text-sm">New guest uploads will appear here for review.</p>
+      </Paper>
     )
   }
 
@@ -168,50 +160,50 @@ export function MemoryModeration({ memoryId }: MemoryModerationProps) {
         {/* Header with bulk actions */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">
+            <Stamp tone="wait">
               {pendingCount?.pendingCount ?? data.count} pending
-            </Badge>
+            </Stamp>
             {selectedIds.size > 0 && (
-              <Badge variant="outline">{selectedIds.size} selected</Badge>
+              <Stamp>{selectedIds.size} selected</Stamp>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {selectedIds.size > 0 ? (
               <>
-                <Button
+                <SketchButton
                   size="sm"
-                  variant="outline"
+                  variant="line"
                   onClick={handleBulkApprove}
                   disabled={isProcessing}
                 >
                   {bulkApprove.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <CheckCheck className="h-4 w-4 mr-1" />
+                    <CheckCheck className="h-4 w-4" />
                   )}
                   Approve all
-                </Button>
-                <Button
+                </SketchButton>
+                <SketchButton
                   size="sm"
-                  variant="outline"
+                  variant="line"
                   onClick={handleBulkReject}
                   disabled={isProcessing}
                 >
                   {bulkReject.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <XCircle className="h-4 w-4 mr-1" />
+                    <XCircle className="h-4 w-4" />
                   )}
                   Reject all
-                </Button>
-                <Button size="sm" variant="ghost" onClick={clearSelection}>
+                </SketchButton>
+                <SketchButton size="sm" variant="ghost" onClick={clearSelection}>
                   Clear
-                </Button>
+                </SketchButton>
               </>
             ) : (
-              <Button size="sm" variant="ghost" onClick={selectAll}>
+              <SketchButton size="sm" variant="ghost" onClick={selectAll}>
                 Select all
-              </Button>
+              </SketchButton>
             )}
           </div>
         </div>
@@ -221,19 +213,21 @@ export function MemoryModeration({ memoryId }: MemoryModerationProps) {
           {data.uploads.map((upload) => (
             <div
               key={upload.id}
-              className="relative rounded-lg overflow-hidden border bg-card"
+              className="sk-paper relative overflow-hidden p-2"
             >
               {/* Selection checkbox */}
-              <div className="absolute top-2 left-2 z-10">
-                <Checkbox
+              <div className="absolute top-3.5 left-3.5 z-10">
+                <input
+                  type="checkbox"
+                  className="sk-check"
+                  aria-label="Select photo"
                   checked={selectedIds.has(upload.id)}
-                  onCheckedChange={() => toggleSelection(upload.id)}
-                  className="bg-background/80 backdrop-blur-sm"
+                  onChange={() => toggleSelection(upload.id)}
                 />
               </div>
 
               {/* Image */}
-              <div className="aspect-square bg-muted">
+              <div className="bg-muted aspect-square overflow-hidden rounded-md">
                 <NextImage
                   src={getMinioViewUrl(upload.thumbnailUrl || upload.mediaUrl) || ''}
                   alt={upload.caption || 'Guest photo'}
@@ -246,53 +240,54 @@ export function MemoryModeration({ memoryId }: MemoryModerationProps) {
               </div>
 
               {/* Info and actions */}
-              <div className="p-3 space-y-2">
+              <div className="space-y-2 px-1 pt-3 pb-1">
                 {upload.uploaderName && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1 text-xs text-ink-soft">
                     <User className="h-3 w-3" />
                     <span className="truncate">{upload.uploaderName}</span>
                   </div>
                 )}
                 {upload.caption && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">
+                  <p className="text-xs text-ink-soft line-clamp-2">
                     {upload.caption}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-ink-soft">
                   {format(new Date(upload.createdAt), 'MMM d, h:mm a')}
                 </p>
 
                 {/* Action buttons */}
                 <div className="flex items-center gap-2 pt-1">
-                  <Button
+                  <SketchButton
                     size="sm"
-                    variant="outline"
-                    className="flex-1 h-8"
+                    variant="line"
+                    className="flex-1"
                     onClick={() => handleApprove(upload.id)}
                     disabled={isProcessing}
                   >
-                    <Check className="h-3 w-3 mr-1" />
+                    <Check className="h-3 w-3" />
                     Approve
-                  </Button>
-                  <Button
+                  </SketchButton>
+                  <SketchButton
                     size="sm"
-                    variant="outline"
-                    className="flex-1 h-8"
+                    variant="line"
+                    className="flex-1"
                     onClick={() => handleReject(upload.id)}
                     disabled={isProcessing}
                   >
-                    <X className="h-3 w-3 mr-1" />
+                    <X className="h-3 w-3" />
                     Reject
-                  </Button>
-                  <Button
+                  </SketchButton>
+                  <SketchButton
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 text-destructive"
+                    className="text-rose"
+                    aria-label="Delete photo"
                     onClick={() => setDeleteTarget(upload.id)}
                     disabled={isProcessing}
                   >
                     <Trash2 className="h-3 w-3" />
-                  </Button>
+                  </SketchButton>
                 </div>
               </div>
             </div>

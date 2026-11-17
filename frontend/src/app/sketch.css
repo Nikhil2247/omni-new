@@ -707,4 +707,67 @@
 @media (max-width: 560px) {
   .sk-tilt-host > .sk-vcard:nth-child(n) { transform: none; }
 }
+
+  /* ---------- shadcn buttons inside dialogs: brush look ---------- */
+  [data-slot='dialog-content'] [data-slot='button']:not([data-variant='link']),
+  [data-slot='alert-dialog-content'] [data-slot='button']:not([data-variant='link']) {
+    position: relative;
+    isolation: isolate;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-weight: 700;
+  }
+  [data-slot='dialog-content'] [data-slot='button']::before,
+  [data-slot='alert-dialog-content'] [data-slot='button']::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--blue);
+    border-radius: var(--hand);
+    filter: url(#sk-rough);
+    transition: transform 0.15s;
+  }
+  [data-slot='dialog-content'] [data-slot='button']:hover::before,
+  [data-slot='alert-dialog-content'] [data-slot='button']:hover::before {
+    transform: rotate(-1.2deg) scale(1.04);
+  }
+  [data-slot='dialog-content'] [data-slot='button']:not([data-variant]),
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='default'],
+  [data-slot='alert-dialog-content'] [data-slot='button']:not([data-variant]),
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='default'] {
+    color: var(--on-blue) !important;
+  }
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='outline'],
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='secondary'],
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='outline'],
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='secondary'] {
+    color: var(--ink) !important;
+  }
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='outline']::before,
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='secondary']::before,
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='outline']::before,
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='secondary']::before {
+    background: transparent;
+    border: 2px solid var(--ink);
+  }
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='ghost'],
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='ghost'] {
+    color: var(--blue) !important;
+  }
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='ghost']::before,
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='ghost']::before {
+    background: transparent;
+    border-bottom: 3px solid var(--blue-wash);
+    border-radius: 2px;
+  }
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='destructive'],
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='destructive'] {
+    color: #fff !important;
+  }
+  [data-slot='dialog-content'] [data-slot='button'][data-variant='destructive']::before,
+  [data-slot='alert-dialog-content'] [data-slot='button'][data-variant='destructive']::before {
+    background: var(--destructive);
+  }
 }
