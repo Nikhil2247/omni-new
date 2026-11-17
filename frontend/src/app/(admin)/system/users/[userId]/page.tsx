@@ -82,12 +82,12 @@ export default function SystemUserDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Skeleton className="h-8 w-20" />
         </div>
         <Skeleton className="h-36 w-full rounded-xl" />
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           <Skeleton className="lg:col-span-2 h-72" />
           <Skeleton className="h-72" />
         </div>
@@ -113,7 +113,7 @@ export default function SystemUserDetailPage() {
   const initials = getInitials(user)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Back nav */}
       <Button asChild variant="ghost" size="sm" className="-ml-2">
         <Link href="/system/users">
@@ -123,7 +123,7 @@ export default function SystemUserDetailPage() {
 
       {/* Profile overview card */}
       <Card className="overflow-hidden">
-        <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             {/* Avatar */}
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-semibold text-primary">
@@ -159,7 +159,7 @@ export default function SystemUserDetailPage() {
             </div>
           </div>
           {/* Quick stats */}
-          <div className="flex flex-wrap gap-6 text-sm">
+          <div className="flex flex-wrap gap-4 text-sm">
             <div className="text-center">
               <p className="text-2xl font-semibold">{sessionList.length}</p>
               <p className="text-xs text-muted-foreground">Active sessions</p>
@@ -177,7 +177,7 @@ export default function SystemUserDetailPage() {
       </Card>
 
       {/* Management + Details */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
 
         {/* Left: Status + Role management (spans 2 cols) */}
         <Card className="lg:col-span-2">
@@ -187,7 +187,7 @@ export default function SystemUserDetailPage() {
               Account management
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
 
             {/* Status section */}
             <div className="space-y-3">

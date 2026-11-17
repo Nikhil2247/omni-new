@@ -22,9 +22,9 @@ export default function MarketingAnalyticsPage() {
 
   return (
     <RoleGuard allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]} redirectOnFail={true}>
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Marketing analytics</h1>
+        <h1 className="text-lg font-semibold">Marketing analytics</h1>
         <p className="text-muted-foreground">Performance summary for marketing content.</p>
       </div>
 

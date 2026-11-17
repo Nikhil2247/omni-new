@@ -67,14 +67,14 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 px-4 sm:gap-4 md:px-6 lg:px-8 shadow-sm">
+    <header className="z-30 flex h-12 shrink-0 items-center gap-3 border-b bg-card px-3 sm:px-4">
       {/* Mobile menu button */}
       <button
         onClick={toggle}
-        className="rounded-lg p-2 hover:bg-accent transition-colors md:hidden"
+        className="rounded-md p-1.5 hover:bg-accent transition-colors md:hidden"
         aria-label="Toggle menu"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="h-4 w-4" />
       </button>
 
       {/* Spacer */}
@@ -85,13 +85,13 @@ export function Header() {
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
-          className="rounded-lg p-2 hover:bg-accent transition-colors"
+          className="rounded-md p-1.5 hover:bg-accent transition-colors"
           aria-label="Toggle theme"
         >
           {isDark ? (
-            <Sun className="h-5 w-5 text-yellow-500" />
+            <Sun className="h-4 w-4 text-yellow-500" />
           ) : (
-            <Moon className="h-5 w-5 text-blue-600" />
+            <Moon className="h-4 w-4 text-primary" />
           )}
         </button>
 
@@ -103,14 +103,14 @@ export function Header() {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-accent transition-colors sm:p-2"
+              className="flex items-center gap-2 rounded-md p-1 hover:bg-accent transition-colors"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary/60 text-primary-foreground font-semibold shadow-md">
+              <div className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="hidden text-left lg:block">
-                <p className="text-sm font-medium">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">{roleLabel}</p>
+                <p className="text-[13px] leading-tight font-medium">{user?.name}</p>
+                <p className="text-[11px] leading-tight text-muted-foreground">{roleLabel}</p>
               </div>
             </button>
 
@@ -121,21 +121,21 @@ export function Header() {
                   className="fixed inset-0 z-40"
                   onClick={() => setShowUserMenu(false)}
                 />
-                <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2">
-                  <div className="border-b px-4 py-3">
+                <div className="absolute right-0 top-full z-50 mt-1.5 w-60 rounded-md border bg-popover shadow-md animate-in fade-in-0 zoom-in-95 slide-in-from-top-2">
+                  <div className="border-b px-3 py-2">
                     <p className="text-sm font-medium">{user?.name}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                     <p className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       {roleLabel}
                     </p>
                   </div>
-                  <div className="py-2">
+                  <div className="py-1">
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
                         router.push(profilePath);
                       }}
-                      className="flex w-full items-center gap-3 rounded-md px-4 py-2 text-sm hover:bg-accent transition-colors"
+                      className="flex w-full items-center gap-2.5 px-3 py-1.5 text-[13px] hover:bg-accent transition-colors"
                     >
                       <User className="h-4 w-4" />
                       Profile
@@ -145,16 +145,16 @@ export function Header() {
                         setShowUserMenu(false);
                         router.push(settingsPath);
                       }}
-                      className="flex w-full items-center gap-3 rounded-md px-4 py-2 text-sm hover:bg-accent transition-colors"
+                      className="flex w-full items-center gap-2.5 px-3 py-1.5 text-[13px] hover:bg-accent transition-colors"
                     >
                       <Settings className="h-4 w-4" />
                       Settings
                     </button>
                   </div>
-                  <div className="border-t py-2">
+                  <div className="border-t py-1">
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-md px-4 py-2 text-sm text-destructive hover:bg-accent transition-colors"
+                      className="flex w-full items-center gap-2.5 px-3 py-1.5 text-[13px] text-destructive hover:bg-accent transition-colors"
                     >
                       <LogOut className="h-4 w-4" />
                       Logout

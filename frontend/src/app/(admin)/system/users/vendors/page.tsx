@@ -31,9 +31,9 @@ export default function SystemVendorUsersPage() {
   const { data, isLoading } = useAdminUsers(params)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Vendors</h1>
+        <h1 className="text-lg font-semibold">Vendors</h1>
         <p className="text-muted-foreground">Accounts with vendor access.</p>
       </div>
 

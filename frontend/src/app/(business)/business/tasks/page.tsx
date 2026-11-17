@@ -138,9 +138,9 @@ function TasksPageContent() {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Assigned Tasks</h1>
+          <h1 className="text-lg font-semibold">Assigned Tasks</h1>
           <p className="text-muted-foreground">View tasks assigned to you</p>
         </div>
         <Card>
@@ -160,10 +160,10 @@ function TasksPageContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Assigned Tasks</h1>
+        <h1 className="text-lg font-semibold">Assigned Tasks</h1>
         <p className="text-muted-foreground">Tasks assigned to you by event organizers</p>
       </div>
 
@@ -275,7 +275,7 @@ function TasksPageContent() {
 
             return (
               <Card key={task.id} className={isOverdue ? 'border-red-300' : ''}>
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -301,7 +301,7 @@ function TasksPageContent() {
                         </p>
                       )}
 
-                      <div className="flex items-center gap-6 text-sm">
+                      <div className="flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="text-muted-foreground">Event:</span>

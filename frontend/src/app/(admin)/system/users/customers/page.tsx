@@ -31,9 +31,9 @@ export default function SystemCustomerUsersPage() {
   const { data, isLoading } = useAdminUsers(params)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Customers</h1>
+        <h1 className="text-lg font-semibold">Customers</h1>
         <p className="text-muted-foreground">Planner accounts and end users.</p>
       </div>
 

@@ -159,9 +159,9 @@ export default function WeddingIdentitySettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Wedding Identity</h1>
+          <h1 className="text-lg font-semibold">Wedding Identity</h1>
           <p className="text-muted-foreground">Manage your joint profile</p>
         </div>
         <Skeleton className="h-64" />
@@ -171,9 +171,9 @@ export default function WeddingIdentitySettingsPage() {
 
   if (!identity) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Wedding Identity</h1>
+          <h1 className="text-lg font-semibold">Wedding Identity</h1>
           <p className="text-muted-foreground">Create a joint profile for you and your partner</p>
         </div>
         <Card>
@@ -271,10 +271,10 @@ export default function WeddingIdentitySettingsPage() {
   const partners = identity.partners ?? []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Wedding Identity</h1>
+          <h1 className="text-lg font-semibold">Wedding Identity</h1>
           <p className="text-muted-foreground">Manage your joint profile</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()}>

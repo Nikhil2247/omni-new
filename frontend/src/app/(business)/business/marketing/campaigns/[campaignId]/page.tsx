@@ -109,8 +109,8 @@ export default function CampaignDetailPage() {
         feature="marketing.campaigns"
         fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
       >
-        <div className="container py-8">
-          <Skeleton className="h-8 w-48 mb-6" />
+        <div className="container py-4">
+          <Skeleton className="h-8 w-48 mb-4" />
           <Skeleton className="h-64 w-full" />
         </div>
       </FeatureFlagGate>
@@ -123,7 +123,7 @@ export default function CampaignDetailPage() {
         feature="marketing.campaigns"
         fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
       >
-        <div className="container py-8">
+        <div className="container py-4">
           <Card>
             <CardContent className="py-10 text-center">
               <h2 className="text-xl font-semibold mb-2">Campaign not found</h2>
@@ -142,20 +142,20 @@ export default function CampaignDetailPage() {
       feature="marketing.campaigns"
       fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
     >
-      <div className="container py-8">
+      <div className="container py-4">
       <Link
         href="/business/marketing/campaigns"
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Campaigns
       </Link>
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">{campaign.name}</h1>
+            <h1 className="text-lg font-semibold">{campaign.name}</h1>
             <Badge className={statusColors[campaign.status]}>{campaign.status}</Badge>
           </div>
           <p className="text-muted-foreground mt-1">{campaign.description}</p>
@@ -203,7 +203,7 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-4 mb-8">
+      <div className="grid gap-4 md:grid-cols-4 mb-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Impressions</CardTitle>
@@ -255,7 +255,7 @@ export default function CampaignDetailPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Campaign Details */}
         <Card>
           <CardHeader>

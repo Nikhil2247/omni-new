@@ -191,19 +191,19 @@ export default function OpsAgreementsPage() {
 
   if (eventsLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Vendor Agreements</h1>
+          <h1 className="text-lg font-semibold">Vendor Agreements</h1>
           <p className="text-muted-foreground">Manage vendor contracts and agreements.</p>
         </div>
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           <Card className="animate-pulse">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="h-32 bg-muted rounded" />
             </CardContent>
           </Card>
           <Card className="lg:col-span-2 animate-pulse">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="h-32 bg-muted rounded" />
             </CardContent>
           </Card>
@@ -213,14 +213,14 @@ export default function OpsAgreementsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Vendor Agreements</h1>
+        <h1 className="text-lg font-semibold">Vendor Agreements</h1>
         <p className="text-muted-foreground">Manage vendor contracts and agreements.</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Left: Events List */}
         <div className="space-y-4">
           <div className="relative">
@@ -236,7 +236,7 @@ export default function OpsAgreementsPage() {
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {filteredEvents.length === 0 ? (
               <Card>
-                <CardContent className="py-8 text-center">
+                <CardContent className="py-4 text-center">
                   <Calendar className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground text-sm">No events found.</p>
                 </CardContent>
@@ -396,7 +396,7 @@ export default function OpsAgreementsPage() {
                 </CardHeader>
                 <CardContent>
                   {filteredAgreements.length === 0 ? (
-                    <div className="text-center py-8">
+                    <div className="text-center py-4">
                       <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                       <p className="text-muted-foreground">No agreements found.</p>
                       <Button

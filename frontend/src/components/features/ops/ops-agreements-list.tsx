@@ -206,7 +206,7 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-4">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
@@ -214,7 +214,7 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-destructive">
+      <div className="flex flex-col items-center justify-center py-4 text-destructive">
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="font-medium">Failed to load agreements</p>
       </div>
@@ -226,7 +226,7 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
   const lockedCount = data?.filter(a => a.status === 'LOCKED' || a.status === 'FULFILLED').length || 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -262,7 +262,7 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
       {/* Agreements List */}
       {!data?.length ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <Users className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground font-medium">No vendor agreements yet</p>
             <p className="text-sm text-muted-foreground mt-1">Create agreements with vendors for this event.</p>

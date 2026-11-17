@@ -66,7 +66,7 @@ export default function BudgetPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
         <div className="grid gap-4 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -129,7 +129,7 @@ export default function BudgetPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-4"
     >
       {/* Hero Section with Gradient */}
       <motion.div 
@@ -139,8 +139,8 @@ export default function BudgetPage() {
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
         
-        <div className="relative z-10 p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div className="relative z-10 p-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <motion.div 
                 whileHover={{ rotate: 360, scale: 1.1 }}
@@ -150,7 +150,7 @@ export default function BudgetPage() {
                 <DollarSign className="h-8 w-8 text-white" />
               </motion.div>
               <div>
-                <h1 className="text-3xl font-bold bg-linear-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
+                <h1 className="text-lg font-semibold bg-linear-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
                   Budget Manager
                 </h1>
                 <p className="mt-1 text-muted-foreground">
@@ -166,7 +166,7 @@ export default function BudgetPage() {
               className="flex items-center gap-4 rounded-2xl bg-white/50 dark:bg-black/20 backdrop-blur-sm px-6 py-4 shadow-lg"
             >
               <div className="text-right">
-                <p className="text-3xl font-bold bg-linear-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
+                <p className="text-2xl font-semibold bg-linear-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
                   {percentUsed}%
                 </p>
                 <p className="text-sm text-muted-foreground">Budget Used</p>
@@ -183,11 +183,11 @@ export default function BudgetPage() {
           transition={{ type: "spring", stiffness: 300 }}
         >
           <Card className="overflow-hidden transition-shadow hover:shadow-lg">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Total Budget</p>
-                  <p className="text-3xl font-bold">{formatCurrency(totalBudget)}</p>
+                  <p className="text-2xl font-semibold">{formatCurrency(totalBudget)}</p>
                 </div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/30">
                   <Wallet className="h-7 w-7 text-blue-600 dark:text-blue-400" />
@@ -202,11 +202,11 @@ export default function BudgetPage() {
           transition={{ type: "spring", stiffness: 300 }}
         >
           <Card className="overflow-hidden transition-shadow hover:shadow-lg">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Total Spent</p>
-                  <p className="text-3xl font-bold">{formatCurrency(totalSpent)}</p>
+                  <p className="text-2xl font-semibold">{formatCurrency(totalSpent)}</p>
                 </div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 dark:bg-orange-900/30">
                   <TrendingUp className="h-7 w-7 text-orange-600 dark:text-orange-400" />
@@ -221,11 +221,11 @@ export default function BudgetPage() {
           transition={{ type: "spring", stiffness: 300 }}
         >
           <Card className="overflow-hidden transition-shadow hover:shadow-lg">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Remaining</p>
-                  <p className={`text-3xl font-bold ${remaining < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
+                  <p className={`text-2xl font-semibold ${remaining < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
                     {formatCurrency(remaining)}
                   </p>
                 </div>

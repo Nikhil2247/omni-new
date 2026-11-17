@@ -123,12 +123,12 @@ export default function InvoiceDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10" />
           <Skeleton className="h-8 w-48" />
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <Skeleton className="h-64" />
           <Skeleton className="h-64" />
         </div>
@@ -155,7 +155,7 @@ export default function InvoiceDetailPage() {
   const canMarkPaid = invoice.status !== 'PAID' && invoice.status !== 'CANCELLED'
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -164,7 +164,7 @@ export default function InvoiceDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{invoice.invoiceNumber}</h1>
+              <h1 className="text-lg font-semibold">{invoice.invoiceNumber}</h1>
               <Badge variant="outline" className={statusConfig.color}>
                 {statusConfig.icon}
                 <span className="ml-1">{statusConfig.label}</span>
@@ -212,7 +212,7 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Invoice Details */}
         <Card>
           <CardHeader>

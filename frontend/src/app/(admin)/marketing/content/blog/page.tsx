@@ -22,9 +22,9 @@ export default function MarketingBlogPostsPage() {
   const { data, isLoading } = useBlogPosts({ status, page: currentPage, limit: 20 })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Blog posts</h1>
+        <h1 className="text-lg font-semibold">Blog posts</h1>
         <p className="text-muted-foreground">Published marketing articles.</p>
       </div>
 

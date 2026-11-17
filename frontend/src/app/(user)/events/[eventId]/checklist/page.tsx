@@ -35,9 +35,9 @@ export default function ChecklistPage() {
   }).length || 0
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-4 pb-4">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 p-6 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/30 dark:via-green-950/20 dark:to-teal-950/20 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 p-4 shadow-sm dark:border-emerald-900/40 dark:from-emerald-950/30 dark:via-green-950/20 dark:to-teal-950/20 sm:p-4">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-green-300/30 blur-3xl dark:bg-green-500/20" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-teal-300/30 blur-3xl dark:bg-teal-500/20" />
 
@@ -49,12 +49,12 @@ export default function ChecklistPage() {
             </Link>
           </Button>
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <Badge className="mb-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 shadow-sm dark:bg-emerald-950/70 dark:text-emerald-200">
                 Event Checklist
               </Badge>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="text-lg font-semibold tracking-tight sm:text-lg">
                 Tasks & To-dos
               </h1>
               <p className="mt-2 text-base text-muted-foreground">

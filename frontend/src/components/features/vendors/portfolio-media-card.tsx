@@ -198,7 +198,7 @@ export function PortfolioMediaCard({ item, priority = false, isBoosted = false }
             />
 
             {/* Info overlay at bottom */}
-            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/50 to-transparent p-6">
+            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/50 to-transparent p-4">
               <div className="flex items-end justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs uppercase tracking-wider text-white/70 mb-1">

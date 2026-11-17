@@ -11,9 +11,9 @@ export default function UserSettingsPage() {
   }, [])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Settings</h1>
+        <h1 className="text-lg font-semibold">Settings</h1>
         <p className="text-muted-foreground">Manage your account preferences and personal information.</p>
       </div>
 

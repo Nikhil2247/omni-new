@@ -9,9 +9,9 @@ export default function OpsEventTasksPage() {
 
   if (!eventId) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Operational Tasks</h1>
+          <h1 className="text-lg font-semibold">Operational Tasks</h1>
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -19,9 +19,9 @@ export default function OpsEventTasksPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Operational Tasks</h1>
+        <h1 className="text-lg font-semibold">Operational Tasks</h1>
         <p className="text-muted-foreground">Manage tasks for event execution</p>
       </div>
       <OpsTasksList activeEventId={eventId} />

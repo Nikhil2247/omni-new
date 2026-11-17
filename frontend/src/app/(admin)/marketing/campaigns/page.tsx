@@ -119,10 +119,10 @@ export default function MarketingCampaignsPage() {
   }, [campaignRows])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Campaigns</h1>
+          <h1 className="text-lg font-semibold">Campaigns</h1>
           <p className="text-muted-foreground">Edit, pause/resume, and retire campaigns from one place.</p>
         </div>
         <Button asChild>

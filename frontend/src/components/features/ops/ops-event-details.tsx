@@ -26,7 +26,7 @@ export function OpsEventDetails({ eventId }: { eventId: string }) {
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-4 text-center">
           <p className="text-sm text-destructive">Failed to load event details.</p>
         </CardContent>
       </Card>
@@ -34,7 +34,7 @@ export function OpsEventDetails({ eventId }: { eventId: string }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">

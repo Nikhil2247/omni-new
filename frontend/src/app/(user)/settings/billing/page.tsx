@@ -157,9 +157,9 @@ export default function BillingPage() {
   const invoices = invoicesData?.invoices || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Billing & Invoices</h1>
+        <h1 className="text-lg font-semibold">Billing & Invoices</h1>
         <p className="text-muted-foreground">View your payment history and download invoices</p>
       </div>
 
@@ -254,13 +254,13 @@ export default function BillingPage() {
               ))}
             </div>
           ) : error ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-4 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Failed to load payment history</p>
               <p className="text-sm">Please try again later</p>
             </div>
           ) : !payments || payments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-4 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No payment history yet</p>
               <p className="text-sm">Your transactions will appear here once you make a payment</p>
@@ -364,13 +364,13 @@ export default function BillingPage() {
               ))}
             </div>
           ) : invoicesError ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-4 text-muted-foreground">
               <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Failed to load invoices</p>
               <p className="text-sm">Please try again later</p>
             </div>
           ) : invoices.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-4 text-muted-foreground">
               <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No invoices yet</p>
               <p className="text-sm">Your invoices will appear here after successful payments</p>

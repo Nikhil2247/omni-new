@@ -163,7 +163,7 @@ export default function TimelinePage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -215,12 +215,12 @@ export default function TimelinePage() {
   const pastCount = events.length - upcomingCount
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-orange-50 via-pink-50 to-rose-50 dark:from-orange-950/30 dark:via-pink-950/30 dark:to-rose-950/30 p-6">
+      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-orange-50 via-pink-50 to-rose-50 dark:from-orange-950/30 dark:via-pink-950/30 dark:to-rose-950/30 p-4">
         <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold md:text-3xl">Event Timeline</h1>
+            <h1 className="text-lg font-semibold md:text-lg">Event Timeline</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Plan every moment of your special day
             </p>

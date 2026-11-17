@@ -243,11 +243,11 @@ export default function CreditsPage() {
   const totalCredits = basicCredits + premiumCredits + (hasFreeEvent ? 1 : 0)
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Event Credits</h1>
+          <h1 className="text-lg font-semibold">Event Credits</h1>
           <p className="text-muted-foreground mt-1">
             Manage your event credits and view transaction history
           </p>
@@ -263,7 +263,7 @@ export default function CreditsPage() {
       {/* Summary Card */}
       <Card className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Available</p>
               {isBalanceLoading ? (

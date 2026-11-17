@@ -74,7 +74,7 @@ export default function AdminInsightsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="space-y-2">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-4 w-96" />
@@ -102,11 +102,11 @@ export default function AdminInsightsPage() {
   }
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 pb-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Platform Insights</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Platform Insights</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Real-time analytics, metrics, and performance insights
           </p>
@@ -142,7 +142,7 @@ export default function AdminInsightsPage() {
       )}
 
       {/* Main Tabs */}
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="grid w-full grid-cols-5 lg:w-auto">
           <TabsTrigger value="overview">
             <BarChart3 className="mr-2 h-4 w-4" />
@@ -167,31 +167,31 @@ export default function AdminInsightsPage() {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-4">
           <ExecutiveMetrics counts={counts} />
           <EngagementMetrics counts={counts} />
           {dashboard && <PlatformHealthMetrics dashboard={dashboard} />}
         </TabsContent>
 
         {/* Users Tab */}
-        <TabsContent value="users" className="space-y-6">
+        <TabsContent value="users" className="space-y-4">
           <UserMetrics counts={counts} />
           {dashboard && <UserEngagementDetails dashboard={dashboard} />}
         </TabsContent>
 
         {/* Vendors Tab */}
-        <TabsContent value="vendors" className="space-y-6">
+        <TabsContent value="vendors" className="space-y-4">
           <VendorMetrics counts={counts} />
           {dashboard && <VendorPerformanceDetails dashboard={dashboard} />}
         </TabsContent>
 
         {/* Leads Tab */}
-        <TabsContent value="leads" className="space-y-6">
+        <TabsContent value="leads" className="space-y-4">
           <LeadMetrics counts={counts} />
         </TabsContent>
 
         {/* Content Tab */}
-        <TabsContent value="content" className="space-y-6">
+        <TabsContent value="content" className="space-y-4">
           <ContentMetrics counts={counts} />
         </TabsContent>
       </Tabs>
@@ -291,7 +291,7 @@ function UserMetrics({ counts }: { counts: any }) {
   const verifiedPercentage = counts.totalUsers > 0 ? (counts.verifiedUsers / counts.totalUsers) * 100 : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* User Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -360,7 +360,7 @@ function VendorMetrics({ counts }: { counts: any }) {
   const verifiedPercentage = counts.totalVendors > 0 ? (counts.verifiedVendors / counts.totalVendors) * 100 : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Vendors"
@@ -427,7 +427,7 @@ function LeadMetrics({ counts }: { counts: any }) {
   const contactedRate = counts.totalLeads > 0 ? (counts.contactedLeads / counts.totalLeads) * 100 : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Leads"
@@ -652,7 +652,7 @@ function StatCard({
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>

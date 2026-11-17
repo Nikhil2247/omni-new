@@ -29,10 +29,10 @@ export default function SalesDashboardPage() {
   }, [])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-2xl font-bold">Sales Dashboard</h1>
+        <h1 className="text-lg font-semibold">Sales Dashboard</h1>
         <p className="text-muted-foreground">
           Welcome, {user?.name || 'Team Member'} ({roleLabel})
         </p>
@@ -75,9 +75,9 @@ export default function SalesDashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Sales Pipeline */}
-        <div className="lg:col-span-2 rounded-lg border bg-card p-6">
+        <div className="lg:col-span-2 rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Sales Pipeline</h2>
             <a href="/sales/pipeline" className="text-sm text-primary hover:underline">
@@ -125,9 +125,9 @@ export default function SalesDashboardPage() {
         </div>
 
         {/* Quick Stats & Actions */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Today's Tasks */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <h2 className="mb-4 text-lg font-semibold">Today&apos;s Tasks</h2>
             <div className="space-y-3">
               <TaskItem
@@ -154,7 +154,7 @@ export default function SalesDashboardPage() {
           </div>
 
           {/* Target Progress */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <h2 className="mb-4 text-lg font-semibold">Monthly Target</h2>
             <div className="space-y-4">
               <div>
@@ -183,9 +183,9 @@ export default function SalesDashboardPage() {
       </div>
 
       {/* Leads & Deals */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Recent Leads */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Recent Leads</h2>
             <a href="/sales/leads" className="text-sm text-primary hover:underline">
@@ -218,7 +218,7 @@ export default function SalesDashboardPage() {
         </div>
 
         {/* Hot Deals */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Hot Deals</h2>
             <a href="/sales/deals" className="text-sm text-primary hover:underline">
@@ -252,7 +252,7 @@ export default function SalesDashboardPage() {
       </div>
 
       {/* Activity Feed */}
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-card p-4">
         <h2 className="mb-4 text-lg font-semibold">Recent Activity</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <ActivityCard
@@ -305,7 +305,7 @@ function StatCard({
   comparison: string;
 }) {
   return (
-    <div className="rounded-lg border bg-card p-6">
+    <div className="rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{title}</p>
         <Icon className="h-5 w-5 text-muted-foreground" />

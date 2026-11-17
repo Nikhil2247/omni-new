@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function MarketingContentCalendarPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Content calendar</h1>
+        <h1 className="text-lg font-semibold">Content calendar</h1>
         <p className="text-muted-foreground">Scheduling view will appear once calendar data is available.</p>
       </div>
 

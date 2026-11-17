@@ -103,8 +103,8 @@ export function CreateEventForm() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
                 name="origin"

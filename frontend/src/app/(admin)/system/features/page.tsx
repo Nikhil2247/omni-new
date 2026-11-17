@@ -207,9 +207,9 @@ export default function SystemFeaturesPage() {
   const enabledFlags = Array.isArray(data) ? data.filter((f) => f.enabled).length : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">System Features</h1>
+        <h1 className="text-lg font-semibold">System Features</h1>
         <p className="text-muted-foreground">
           Manage feature flags to control platform functionality. {totalFlags} flags configured,{' '}
           {enabledFlags} enabled.

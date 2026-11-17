@@ -15,7 +15,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <AuthGuard>
-      <div className="relative min-h-screen bg-background">
+      <div className="relative h-screen overflow-hidden bg-background">
         {/* Mobile overlay */}
         {isOpen && (
           <div
@@ -31,16 +31,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Main content area */}
         <div
           className={cn(
-            'flex min-h-screen flex-col transition-all duration-300 ease-in-out',
-            'md:ml-16 lg:ml-64',
-            isCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+            'flex h-screen flex-col transition-all duration-200 ease-in-out',
+            'md:ml-14 lg:ml-60',
+            isCollapsed ? 'lg:ml-14' : 'lg:ml-60'
           )}
         >
           {/* Header */}
           <Header />
 
           {/* Page content */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <main className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
             <div className="mx-auto max-w-9xl">
               {children}
             </div>

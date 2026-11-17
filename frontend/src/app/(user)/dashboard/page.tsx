@@ -61,11 +61,11 @@ export default function UserDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Hero Header with Gradient */}
-      <div className="relative overflow-hidden rounded-xl border bg-linear-to-br from-violet-50 via-purple-50 to-pink-50 dark:from-violet-950/30 dark:via-purple-950/30 dark:to-pink-950/30 p-6">
+      <div className="relative overflow-hidden rounded-xl border bg-linear-to-br from-violet-50 via-purple-50 to-pink-50 dark:from-violet-950/30 dark:via-purple-950/30 dark:to-pink-950/30 p-4">
         <div className="relative z-10">
-          <h1 className="text-2xl font-bold md:text-3xl">
+          <h1 className="text-lg font-semibold md:text-lg">
             {getGreeting()}, {user?.name?.split(' ')[0] || 'Planner'}! ✨
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -125,7 +125,7 @@ export default function UserDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Upcoming Events - Takes 2 columns */}
         <div className="lg:col-span-2">
           <Card>
@@ -186,7 +186,7 @@ export default function UserDashboardPage() {
                   </Link>
                 ))
               ) : (
-                <div className="rounded-xl border-2 border-dashed p-8 text-center">
+                <div className="rounded-xl border-2 border-dashed p-4 text-center">
                   <Sparkles className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
                   <p className="text-sm font-medium text-muted-foreground">No events yet</p>
                   <p className="text-xs text-muted-foreground">Start planning by creating your first event</p>
@@ -284,7 +284,7 @@ export default function UserDashboardPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-xl border-2 border-dashed p-6 text-center">
+            <div className="rounded-xl border-2 border-dashed p-4 text-center">
               <MessageSquare className="mx-auto mb-2 h-10 w-10 text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">No inquiries yet</p>
             </div>

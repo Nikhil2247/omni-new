@@ -259,7 +259,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with Quick Templates */}
       <div className="flex items-center justify-between">
         <div>
@@ -337,7 +337,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
           })
         ) : (
           <Card>
-            <CardContent className="py-8 text-center">
+            <CardContent className="py-4 text-center">
               <p className="text-muted-foreground mb-4">No requirements added yet</p>
               <p className="text-sm text-muted-foreground">Try using a quick template or add items manually</p>
             </CardContent>

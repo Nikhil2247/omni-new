@@ -217,9 +217,9 @@ export function QuotationBuilder({
   const isSending = sendQuotation.isPending
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSave)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -499,7 +499,7 @@ export function QuotationBuilder({
           </Card>
 
           {/* Discount & Summary */}
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             {/* Discount */}
             <Card>
               <CardHeader className="pb-3">

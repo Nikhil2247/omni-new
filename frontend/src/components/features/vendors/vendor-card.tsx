@@ -212,7 +212,7 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
             </div>
           ) : (
             <div className="w-full aspect-3/2 bg-linear-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary/60 text-3xl font-bold text-primary-foreground shadow-lg">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary/60 text-2xl font-semibold text-primary-foreground shadow-lg">
                 {vendor.businessName?.charAt(0) || 'V'}
               </div>
             </div>

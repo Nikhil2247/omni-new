@@ -239,7 +239,7 @@ export function GetQuoteDialog({ open, onOpenChange, vendorId, vendorName }: Get
 
         {submitted ? (
           /* ── Success state ── */
-          <div className="flex flex-col items-center py-8 text-center gap-3">
+          <div className="flex flex-col items-center py-4 text-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
               <CheckCircle2 className="h-7 w-7 text-green-600 dark:text-green-400" />
             </div>

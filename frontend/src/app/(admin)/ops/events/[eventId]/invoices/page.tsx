@@ -11,9 +11,9 @@ export default function OpsEventInvoicesPage() {
 
   if (!eventId) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Invoices</h1>
+          <h1 className="text-lg font-semibold">Invoices</h1>
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -21,9 +21,9 @@ export default function OpsEventInvoicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Invoices</h1>
+        <h1 className="text-lg font-semibold">Invoices</h1>
         <p className="text-muted-foreground">Manage invoices for vendor agreements</p>
       </div>
       <OpsInvoicesList

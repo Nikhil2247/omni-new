@@ -33,9 +33,9 @@ export default function MemoriesPage() {
   const pendingApprovals = pendingCount?.pendingCount || 0
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-4 pb-4">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-rose-200/60 bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 p-6 shadow-sm dark:border-rose-900/40 dark:from-rose-950/30 dark:via-pink-950/20 dark:to-fuchsia-950/20 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-rose-200/60 bg-gradient-to-br from-rose-50 via-pink-50 to-fuchsia-50 p-4 shadow-sm dark:border-rose-900/40 dark:from-rose-950/30 dark:via-pink-950/20 dark:to-fuchsia-950/20 sm:p-4">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-pink-300/30 blur-3xl dark:bg-pink-500/20" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-fuchsia-300/30 blur-3xl dark:bg-fuchsia-500/20" />
 
@@ -47,12 +47,12 @@ export default function MemoriesPage() {
             </Link>
           </Button>
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <Badge className="mb-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-rose-700 shadow-sm dark:bg-rose-950/70 dark:text-rose-200">
                 Photo Memories
               </Badge>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="text-lg font-semibold tracking-tight sm:text-lg">
                 Memory Wall
               </h1>
               <p className="mt-2 text-base text-muted-foreground">

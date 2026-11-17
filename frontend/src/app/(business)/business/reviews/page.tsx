@@ -100,9 +100,9 @@ export default function BusinessReviewsPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Reviews</h1>
+          <h1 className="text-lg font-semibold">Reviews</h1>
           <p className="text-muted-foreground">Monitor feedback from your clients</p>
         </div>
         <Card>
@@ -122,9 +122,9 @@ export default function BusinessReviewsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Reviews</h1>
+        <h1 className="text-lg font-semibold">Reviews</h1>
         <p className="text-muted-foreground">Monitor feedback from your clients</p>
       </div>
 

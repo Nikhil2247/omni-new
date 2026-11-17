@@ -180,7 +180,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-4">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
@@ -188,7 +188,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-destructive">
+      <div className="flex flex-col items-center justify-center py-4 text-destructive">
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="font-medium">Failed to load requirements</p>
       </div>
@@ -197,7 +197,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
 
   if (!data) {
     return (
-      <div className="flex flex-col items-center justify-center py-8">
+      <div className="flex flex-col items-center justify-center py-4">
         <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
         <p className="text-muted-foreground font-medium mb-2">No requirement sheet found</p>
         <p className="text-sm text-muted-foreground mb-4">Create a requirement sheet to start adding vendor requirements.</p>
@@ -216,7 +216,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
   const fulfilledCount = data.items?.filter(item => item.status === 'FULFILLED').length || 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -255,7 +255,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
       {/* Requirements List */}
       {data.items?.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <Package className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground font-medium">No requirements added yet</p>
             <p className="text-sm text-muted-foreground mt-1">Click "Add Requirement" to get started.</p>

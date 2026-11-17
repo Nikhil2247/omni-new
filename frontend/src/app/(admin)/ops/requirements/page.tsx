@@ -270,12 +270,12 @@ export default function OpsRequirementsPage() {
 
   if (eventsLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Requirements Management</h1>
+          <h1 className="text-lg font-semibold">Requirements Management</h1>
           <p className="text-muted-foreground">Manage event requirements and sourcing items.</p>
         </div>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
           <Card className="animate-pulse">
             <CardHeader>
               <div className="bg-muted h-4 w-1/2 rounded" />
@@ -285,7 +285,7 @@ export default function OpsRequirementsPage() {
             </CardContent>
           </Card>
           <Card className="animate-pulse">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="bg-muted h-32 rounded" />
             </CardContent>
           </Card>
@@ -295,14 +295,14 @@ export default function OpsRequirementsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Requirements Management</h1>
+        <h1 className="text-lg font-semibold">Requirements Management</h1>
         <p className="text-muted-foreground">Manage event requirements and sourcing items.</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Left: Events List */}
         <div className="space-y-4">
           <div className="relative">
@@ -318,7 +318,7 @@ export default function OpsRequirementsPage() {
           <div className="max-h-[600px] space-y-2 overflow-y-auto">
             {filteredEvents.length === 0 ? (
               <Card>
-                <CardContent className="py-8 text-center">
+                <CardContent className="py-4 text-center">
                   <Calendar className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
                   <p className="text-muted-foreground text-sm">No events found.</p>
                 </CardContent>
@@ -388,7 +388,7 @@ export default function OpsRequirementsPage() {
                 <CardDescription>This event doesn't have a requirement sheet yet.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="py-8 text-center">
+                <div className="py-4 text-center">
                   <ClipboardList className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                   <p className="text-muted-foreground mb-4">
                     Create a requirement sheet to start tracking items needed for this event.
@@ -605,7 +605,7 @@ export default function OpsRequirementsPage() {
                 </CardHeader>
                 <CardContent>
                   {!requirements?.items || requirements.items.length === 0 ? (
-                    <div className="py-8 text-center">
+                    <div className="py-4 text-center">
                       <Package className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
                       <p className="text-muted-foreground">No items added yet.</p>
                       <Button

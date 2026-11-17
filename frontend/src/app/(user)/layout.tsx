@@ -14,7 +14,7 @@ export default function UserLayout({
       <RoleGuard allowedRoles={[ROLES.USER]} redirectOnFail={true}>
         <OnboardingGuard>
           <PublicLayout>
-            <main className="p-4 sm:p-6 lg:p-6">
+            <main className="p-4 sm:p-4 lg:p-4">
               <div className="mx-auto w-full max-w-8xl">{children}</div>
             </main>
           </PublicLayout>

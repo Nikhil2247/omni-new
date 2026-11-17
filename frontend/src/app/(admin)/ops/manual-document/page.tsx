@@ -419,11 +419,11 @@ export default function ManualDocumentPage() {
   }, [data, documentType, subtotal, discountAmount, taxAmount, grandTotal, track])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Manual Document Generator</h1>
+          <h1 className="text-lg font-semibold">Manual Document Generator</h1>
           <p className="text-muted-foreground">
             Create custom invoices and quotations without existing agreements
           </p>
@@ -454,9 +454,9 @@ export default function ManualDocumentPage() {
         </TabsList>
 
         <TabsContent value={documentType} className="mt-6">
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             {/* Left Column - Document Info */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Document Details */}
               <Card>
                 <CardHeader>
@@ -587,7 +587,7 @@ export default function ManualDocumentPage() {
             </div>
 
             {/* Right Column - Line Items & Totals */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Line Items */}
               <Card>
                 <CardHeader>
@@ -769,7 +769,7 @@ export default function ManualDocumentPage() {
           </div>
 
           {/* Notes & Bank Details */}
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Notes & Terms</CardTitle>

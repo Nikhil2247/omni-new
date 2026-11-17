@@ -33,7 +33,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-4 text-center">
           <p className="text-sm text-destructive">Failed to load dispute details.</p>
         </CardContent>
       </Card>
@@ -55,7 +55,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {data.description && (
           <div>
             <h3 className="text-sm font-medium mb-2 flex items-center gap-2">

@@ -72,9 +72,9 @@ export default function AdminAuditPage() {
   }, [data])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Audit Logs</h1>
+        <h1 className="text-lg font-semibold tracking-tight">Audit Logs</h1>
         <p className="mt-1 text-sm text-muted-foreground">Track all administrative changes and system actions</p>
       </div>
 

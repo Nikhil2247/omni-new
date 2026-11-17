@@ -15,13 +15,13 @@ function PaymentFailedContent() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-4">
       <Card className="max-w-md w-full">
-        <CardContent className="pt-10 pb-8 text-center space-y-6">
+        <CardContent className="pt-10 pb-8 text-center space-y-4">
           <div className="mx-auto w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
             <XCircle className="h-10 w-10 text-red-600" />
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Payment Failed</h1>
+            <h1 className="text-lg font-semibold">Payment Failed</h1>
             <p className="text-muted-foreground">
               {error || "We couldn't process your payment. Please try again."}
             </p>

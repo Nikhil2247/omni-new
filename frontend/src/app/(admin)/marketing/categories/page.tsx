@@ -10,9 +10,9 @@ export default function MarketingCategoriesPage() {
   const { data, isLoading } = useMarketingCategories()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Categories</h1>
+        <h1 className="text-lg font-semibold">Categories</h1>
         <p className="text-muted-foreground">Marketing taxonomy and content grouping.</p>
       </div>
 

@@ -152,7 +152,7 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
   if (!vendorAgreementId && !activeEventId) {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-4 text-center">
           <Receipt className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
           <p className="text-muted-foreground font-medium">Select an agreement to view invoices</p>
           <p className="text-sm text-muted-foreground mt-1">Invoices are linked to vendor agreements.</p>
@@ -163,7 +163,7 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-4">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
@@ -171,7 +171,7 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-destructive">
+      <div className="flex flex-col items-center justify-center py-4 text-destructive">
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="font-medium">Failed to load invoices</p>
       </div>
@@ -198,7 +198,7 @@ export function OpsInvoicesList({ activeEventId, vendorAgreementId, showCreateBu
 
       {/* Invoices List */}
       {!data?.length ? (
-        <div className="py-8 text-center text-sm text-muted-foreground">
+        <div className="py-4 text-center text-sm text-muted-foreground">
           No invoices yet
         </div>
       ) : (

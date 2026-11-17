@@ -14,15 +14,15 @@ export default function OpsAssistantsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Operational Assistants</h1>
+          <h1 className="text-lg font-semibold">Operational Assistants</h1>
           <p className="text-muted-foreground">View and manage operational assistants</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="h-4 bg-muted rounded w-3/4 mb-2" />
                 <div className="h-3 bg-muted rounded w-1/2" />
               </CardContent>
@@ -34,7 +34,7 @@ export default function OpsAssistantsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
         <Link href="/ops/dashboard">
@@ -45,7 +45,7 @@ export default function OpsAssistantsPage() {
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Operational Assistants</h1>
+            <h1 className="text-lg font-semibold">Operational Assistants</h1>
             <p className="text-muted-foreground">
               {assistants.length} assistant{assistants.length !== 1 ? 's' : ''} in the team
             </p>
@@ -56,11 +56,11 @@ export default function OpsAssistantsPage() {
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Assistants</p>
-                <p className="text-3xl font-bold text-primary">{assistants.length}</p>
+                <p className="text-2xl font-semibold text-primary">{assistants.length}</p>
               </div>
               <div className="p-3 rounded-lg bg-primary/10">
                 <Users className="h-6 w-6 text-primary" />
@@ -70,11 +70,11 @@ export default function OpsAssistantsPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Tasks Assigned</p>
-                <p className="text-3xl font-bold text-blue-600">
+                <p className="text-2xl font-semibold text-blue-600">
                   {assistants.reduce((sum, a) => sum + (a.assignedTasksCount || 0), 0)}
                 </p>
               </div>
@@ -86,11 +86,11 @@ export default function OpsAssistantsPage() {
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Avg Tasks per Assistant</p>
-                <p className="text-3xl font-bold text-green-600">
+                <p className="text-2xl font-semibold text-green-600">
                   {assistants.length > 0
                     ? Math.round(
                         assistants.reduce((sum, a) => sum + (a.assignedTasksCount || 0), 0) /

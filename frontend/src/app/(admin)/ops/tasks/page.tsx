@@ -91,9 +91,9 @@ export default function OpsTasksPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Operational Tasks</h1>
+          <h1 className="text-lg font-semibold">Operational Tasks</h1>
           <p className="text-muted-foreground">Manage and track operational tasks.</p>
         </div>
         <div className="space-y-2">
@@ -112,9 +112,9 @@ export default function OpsTasksPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Operational Tasks</h1>
+          <h1 className="text-lg font-semibold">Operational Tasks</h1>
         </div>
         <div className="text-sm text-destructive">Failed to load tasks. Please try again.</div>
       </div>
@@ -122,11 +122,11 @@ export default function OpsTasksPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Operational Tasks</h1>
+          <h1 className="text-lg font-semibold">Operational Tasks</h1>
           <p className="text-muted-foreground">Manage and track operational tasks.</p>
         </div>
       </div>
@@ -227,7 +227,7 @@ export default function OpsTasksPage() {
       {/* Tasks List */}
       {filteredTasks.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <ListTodo className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-muted-foreground">No tasks found.</p>
           </CardContent>

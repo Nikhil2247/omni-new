@@ -46,8 +46,8 @@ export default function SystemDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8">
+      <div className="space-y-4">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-4">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="mt-2 h-4 w-96" />
         </div>
@@ -77,9 +77,9 @@ export default function SystemDashboardPage() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-8">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background p-4">
         <div className="absolute right-0 top-0 -mr-20 -mt-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
         <div className="absolute bottom-0 left-1/2 -mb-32 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
 
@@ -90,7 +90,7 @@ export default function SystemDashboardPage() {
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-tight">System Dashboard</h1>
+                <h1 className="text-lg font-semibold tracking-tight">System Dashboard</h1>
                 <Badge
                   variant={healthPercent >= 90 ? 'default' : healthPercent >= 75 ? 'secondary' : 'destructive'}
                   className="gap-1"
@@ -114,7 +114,7 @@ export default function SystemDashboardPage() {
       </div>
 
       {/* Platform Stats & Health */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Platform Health Ring */}
         <Card>
           <CardHeader>
@@ -277,7 +277,7 @@ export default function SystemDashboardPage() {
               </TableBody>
             </Table>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="flex flex-col items-center justify-center py-4 text-center">
               <Activity className="h-10 w-10 text-muted-foreground/50" />
               <p className="mt-2 text-sm text-muted-foreground">No audit events found</p>
             </div>

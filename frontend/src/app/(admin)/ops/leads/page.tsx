@@ -158,9 +158,9 @@ export default function OpsLeadsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Leads</h1>
+          <h1 className="text-lg font-semibold">Leads</h1>
           <p className="text-muted-foreground">Manage incoming leads and convert to events.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-4">
@@ -189,9 +189,9 @@ export default function OpsLeadsPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Leads</h1>
+          <h1 className="text-lg font-semibold">Leads</h1>
         </div>
         <Card className="border-destructive">
           <CardHeader>
@@ -209,11 +209,11 @@ export default function OpsLeadsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Leads</h1>
+          <h1 className="text-lg font-semibold">Leads</h1>
           <p className="text-muted-foreground">Manage incoming leads and convert to events.</p>
         </div>
         <Link href="/ops/events/new">
@@ -324,7 +324,7 @@ export default function OpsLeadsPage() {
       {/* Leads List */}
       {filteredLeads.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <UserPlus className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-muted-foreground">No leads found.</p>
             <p className="text-xs text-muted-foreground mt-1">

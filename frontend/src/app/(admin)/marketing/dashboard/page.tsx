@@ -39,9 +39,9 @@ export default function MarketingDashboardPage() {
       allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]}
       redirectOnFail={true}
     >
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Marketing dashboard</h1>
+        <h1 className="text-lg font-semibold">Marketing dashboard</h1>
         <p className="text-muted-foreground">
           Welcome, {user?.name || 'Team Member'} {roleLabel ? `(${roleLabel})` : ''}
         </p>
@@ -54,7 +54,7 @@ export default function MarketingDashboardPage() {
         <StatCard title="Active campaigns" value={campaigns?.length ?? 0} icon={Megaphone} loading={campaignsLoading} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent content</CardTitle>
@@ -75,7 +75,7 @@ export default function MarketingDashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Quick actions</CardTitle>
@@ -101,7 +101,7 @@ export default function MarketingDashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Campaigns snapshot</CardTitle>

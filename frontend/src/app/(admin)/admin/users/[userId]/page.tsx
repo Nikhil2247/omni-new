@@ -60,9 +60,9 @@ export default function AdminUserDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-28 w-full rounded-2xl" />
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           <Skeleton className="h-40" />
           <Skeleton className="h-40" />
           <Skeleton className="h-40" />
@@ -83,16 +83,16 @@ export default function AdminUserDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2">
           <Link href="/admin/users"><ArrowLeft className="mr-1 h-4 w-4" />Users</Link>
         </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">{formatName(user)}</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{formatName(user)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Status card */}
         <Card>
           <CardHeader>

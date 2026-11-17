@@ -13,9 +13,9 @@ export default function MarketingPagesContentPage() {
   const { data, isLoading } = useBlogPosts({ page: currentPage, limit: 20 })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Pages</h1>
+        <h1 className="text-lg font-semibold">Pages</h1>
         <p className="text-muted-foreground">Marketing landing pages and static content.</p>
       </div>
 

@@ -173,10 +173,10 @@ export default function MarketingContentNewPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Create Blog Post</h1>
+          <h1 className="text-lg font-semibold">Create Blog Post</h1>
           <p className="text-muted-foreground mt-1">
             {isContentWriter
               ? 'Create a draft blog post for marketing admin review.'
@@ -193,7 +193,7 @@ export default function MarketingContentNewPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="content" className="space-y-6">
+      <Tabs defaultValue="content" className="space-y-4">
         <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
           <TabsTrigger value="content" className="gap-2">
             <FileText className="h-4 w-4" />
@@ -214,7 +214,7 @@ export default function MarketingContentNewPage() {
         </TabsList>
 
         {/* Content Tab */}
-        <TabsContent value="content" className="space-y-6">
+        <TabsContent value="content" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Post Details</CardTitle>
@@ -304,7 +304,7 @@ export default function MarketingContentNewPage() {
         </TabsContent>
 
         {/* Media Tab */}
-        <TabsContent value="media" className="space-y-6">
+        <TabsContent value="media" className="space-y-4">
 
           <Card>
             <CardHeader>
@@ -483,7 +483,7 @@ export default function MarketingContentNewPage() {
         </TabsContent>
 
         {/* SEO Tab */}
-        <TabsContent value="seo" className="space-y-6">
+        <TabsContent value="seo" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>SEO Settings</CardTitle>
@@ -548,7 +548,7 @@ export default function MarketingContentNewPage() {
         </TabsContent>
 
         {/* Tags Tab */}
-        <TabsContent value="tags" className="space-y-6">
+        <TabsContent value="tags" className="space-y-4">
 
           <Card>
             <CardHeader>
@@ -595,7 +595,7 @@ export default function MarketingContentNewPage() {
                   </ScrollArea>
                 </div>
               ) : (
-                <div className="text-center py-8">
+                <div className="text-center py-4">
                   <p className="text-sm text-muted-foreground">No tags available yet.</p>
                   <p className="text-xs text-muted-foreground mt-1">Create tags in the tag management section.</p>
                 </div>

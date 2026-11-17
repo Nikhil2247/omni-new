@@ -49,7 +49,7 @@ export default function ChecklistPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -114,7 +114,7 @@ export default function ChecklistPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-4"
     >
       {/* Hero Section with Gradient */}
       <motion.div 
@@ -124,8 +124,8 @@ export default function ChecklistPage() {
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
         
-        <div className="relative z-10 p-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div className="relative z-10 p-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <motion.div 
                 whileHover={{ rotate: 360, scale: 1.1 }}
@@ -135,7 +135,7 @@ export default function ChecklistPage() {
                 <CheckSquare className="h-8 w-8 text-white" />
               </motion.div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
                   Wedding Checklists
                 </h1>
                 <p className="mt-1 text-muted-foreground">
@@ -200,11 +200,11 @@ export default function ChecklistPage() {
           transition={{ type: "spring", stiffness: 300 }}
         >
           <Card className="overflow-hidden transition-shadow hover:shadow-lg">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Completed</p>
-                  <p className="text-3xl font-bold">{completed}</p>
+                  <p className="text-2xl font-semibold">{completed}</p>
                   <p className="text-xs text-muted-foreground mt-1">Event{completed !== 1 ? 's' : ''}</p>
                 </div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 dark:bg-green-900/30">
@@ -220,11 +220,11 @@ export default function ChecklistPage() {
           transition={{ type: "spring", stiffness: 300 }}
         >
           <Card className="overflow-hidden transition-shadow hover:shadow-lg">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">In Progress</p>
-                  <p className="text-3xl font-bold">{inProgress}</p>
+                  <p className="text-2xl font-semibold">{inProgress}</p>
                   <p className="text-xs text-muted-foreground mt-1">Event{inProgress !== 1 ? 's' : ''}</p>
                 </div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 dark:bg-blue-900/30">
@@ -240,11 +240,11 @@ export default function ChecklistPage() {
           transition={{ type: "spring", stiffness: 300 }}
         >
           <Card className="overflow-hidden transition-shadow hover:shadow-lg">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Not Started</p>
-                  <p className="text-3xl font-bold">{notStarted}</p>
+                  <p className="text-2xl font-semibold">{notStarted}</p>
                   <p className="text-xs text-muted-foreground mt-1">Event{notStarted !== 1 ? 's' : ''}</p>
                 </div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-900/30">

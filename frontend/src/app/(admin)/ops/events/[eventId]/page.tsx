@@ -307,7 +307,7 @@ export default function OpsEventDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-4 md:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -321,13 +321,13 @@ export default function OpsEventDetailPage() {
 
   if (error || !event) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Link href="/ops/events" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Events
         </Link>
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <AlertCircle className="mx-auto h-8 w-8 text-destructive mb-2" />
             <p className="text-destructive font-medium">Failed to load event details</p>
             <p className="text-sm text-muted-foreground mt-1">The event may not exist or there was a server error.</p>
@@ -437,7 +437,7 @@ export default function OpsEventDetailPage() {
 
       {/* Event Header Card with Workflow */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           {/* Title and Status */}
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -814,7 +814,7 @@ export default function OpsEventDetailPage() {
             </CardHeader>
             <CardContent>
               {quotationsCount === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-4 text-muted-foreground">
                   No quotations yet
                 </div>
               ) : (

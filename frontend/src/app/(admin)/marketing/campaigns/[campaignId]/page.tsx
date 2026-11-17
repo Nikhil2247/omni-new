@@ -80,10 +80,10 @@ export default function MarketingCampaignDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">{campaign.name}</h1>
+          <h1 className="text-lg font-semibold">{campaign.name}</h1>
           <p className="text-sm text-muted-foreground">Campaign ID: {campaign.id}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export default function MarketingCampaignDetailPage() {
         <MetricCard title="Conversions" value={String(stats?.conversions ?? campaign.conversions)} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>Performance and budget</CardTitle>

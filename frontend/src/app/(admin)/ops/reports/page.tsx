@@ -96,11 +96,11 @@ export default function OpsReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Operations Reports</h1>
+          <h1 className="text-lg font-semibold">Operations Reports</h1>
           <p className="text-muted-foreground">Comprehensive overview of operational performance and metrics</p>
         </div>
         <Button
@@ -200,7 +200,7 @@ export default function OpsReportsPage() {
             </CardHeader>
             <CardContent>
               {Object.keys(metrics.activeEvents.byStatus).length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No events to display</p>
+                <p className="text-muted-foreground text-center py-4">No events to display</p>
               ) : (
                 <div className="space-y-4">
                   {Object.entries(metrics.activeEvents.byStatus)
@@ -234,7 +234,7 @@ export default function OpsReportsPage() {
           </Card>
 
           {/* KYC and Disputes Row */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {/* KYC Status */}
             <Card>
               <CardHeader>
@@ -362,17 +362,17 @@ export default function OpsReportsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-6 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="text-center p-4 rounded-lg border">
-                  <div className="text-3xl font-bold text-primary">{metrics.tasks.totalAssigned}</div>
+                  <div className="text-2xl font-semibold text-primary">{metrics.tasks.totalAssigned}</div>
                   <p className="text-sm text-muted-foreground mt-1">Total Tasks</p>
                 </div>
                 <div className="text-center p-4 rounded-lg border bg-green-50">
-                  <div className="text-3xl font-bold text-green-600">{metrics.tasks.completed}</div>
+                  <div className="text-2xl font-semibold text-green-600">{metrics.tasks.completed}</div>
                   <p className="text-sm text-green-700 mt-1">Completed</p>
                 </div>
                 <div className="text-center p-4 rounded-lg border bg-red-50">
-                  <div className="text-3xl font-bold text-red-600">{metrics.tasks.overdue}</div>
+                  <div className="text-2xl font-semibold text-red-600">{metrics.tasks.overdue}</div>
                   <p className="text-sm text-red-700 mt-1">Overdue</p>
                 </div>
               </div>

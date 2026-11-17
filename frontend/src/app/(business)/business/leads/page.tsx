@@ -225,11 +225,11 @@ function LeadsPageContent() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Leads</h1>
+          <h1 className="text-lg font-semibold">Leads</h1>
           <p className="text-muted-foreground">
             Manage inquiries from event planners and convert them to events.
           </p>
@@ -311,7 +311,7 @@ function LeadsPageContent() {
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row">
                     {/* Left Section - Planner Info */}
-                    <div className="flex-1 p-4 md:p-6">
+                    <div className="flex-1 p-4 md:p-4">
                       <div className="flex items-start gap-4">
                         {/* Avatar */}
                         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">

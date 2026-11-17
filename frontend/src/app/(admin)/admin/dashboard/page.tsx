@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-32 w-full rounded-xl" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -117,10 +117,10 @@ export default function AdminDashboardPage() {
   const healthPercent = normalizeHealthPercent(overview.platformHealth)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Dashboard</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Admin Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">Platform overview and key performance signals</p>
         </div>
         <DateRangeSelector value={dateRange} onChange={setDateRange} />
@@ -194,7 +194,7 @@ export default function AdminDashboardPage() {
               {healthPercent}%
             </Badge>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {/* Health Ring */}
             <div className="flex justify-center">
               <div className="relative flex h-32 w-32 items-center justify-center">
@@ -340,7 +340,7 @@ export default function AdminDashboardPage() {
         </CardHeader>
         <CardContent>
           {topVendors.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
+            <p className="py-4 text-center text-sm text-muted-foreground">
               No vendor performance data yet.
             </p>
           ) : (

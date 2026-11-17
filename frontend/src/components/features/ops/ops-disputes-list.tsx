@@ -48,7 +48,7 @@ export function OpsDisputesList() {
   if (!data?.length) {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-4 text-center">
           <p className="text-muted-foreground">No disputes found.</p>
         </CardContent>
       </Card>

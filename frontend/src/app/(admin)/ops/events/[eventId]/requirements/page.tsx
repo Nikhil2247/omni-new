@@ -9,9 +9,9 @@ export default function OpsEventRequirementsPage() {
 
   if (!eventId) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Requirement Sheet</h1>
+          <h1 className="text-lg font-semibold">Requirement Sheet</h1>
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -19,9 +19,9 @@ export default function OpsEventRequirementsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Requirement Sheet</h1>
+        <h1 className="text-lg font-semibold">Requirement Sheet</h1>
         <p className="text-muted-foreground">Manage vendor requirements for this event</p>
       </div>
       <OpsRequirementsPanel activeEventId={eventId} />

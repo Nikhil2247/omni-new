@@ -16,10 +16,10 @@ export default function ContentWriterDashboardPage() {
 
   return (
     <RoleGuard allowedRoles={[ROLES.CONTENT_WRITER]} redirectOnFail={true} exactMatch>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Content Writer Dashboard</h1>
+            <h1 className="text-lg font-semibold">Content Writer Dashboard</h1>
             <p className="text-muted-foreground">Create and edit your draft blog posts. Publishing is handled by Marketing Admin.</p>
           </div>
           <Button asChild>

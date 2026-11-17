@@ -76,11 +76,11 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
     return (
       <div
         ref={ref}
-        className="bg-white rounded-lg shadow-lg p-8 border-4 border-black max-w-4xl mx-auto"
+        className="bg-white rounded-lg shadow-lg p-4 border-4 border-black max-w-4xl mx-auto"
         style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
       >
         {/* Header */}
-        <div className="flex justify-between items-start mb-6 pb-4 border-b-2 border-black">
+        <div className="flex justify-between items-start mb-4 pb-4 border-b-2 border-black">
           <div>
             <img
               alt="Omnicassion"
@@ -107,15 +107,15 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
         </div>
 
         {/* Title and Number */}
-        <div className="flex justify-between items-start mb-6">
-          <h1 className="text-3xl font-bold">{title}</h1>
+        <div className="flex justify-between items-start mb-4">
+          <h1 className="text-lg font-semibold">{title}</h1>
           <div className="border-2 border-black px-4 py-2">
             <span className="text-sm font-semibold">{data.quotationNumber}</span>
           </div>
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-3 gap-8 mb-6 text-sm">
+        <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
           <div>
             <p className="font-semibold mb-1">Date Issued:</p>
             <p className="mb-4">{formatDate(data.dateIssued)}</p>
@@ -143,7 +143,7 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
         </div>
 
         {/* Items Table */}
-        <table className="w-full mb-6 border-collapse border border-gray-300">
+        <table className="w-full mb-4 border-collapse border border-gray-300">
           <thead>
             <tr className="bg-black text-white">
               <th className="text-left px-3 py-2 text-sm font-semibold border-r border-gray-400">
@@ -267,7 +267,7 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
 
         {/* Notes Section */}
         {(data.notes || data.termsAndConditions) && (
-          <div className="mb-6 p-4 bg-gray-50 rounded border border-gray-200">
+          <div className="mb-4 p-4 bg-gray-50 rounded border border-gray-200">
             {data.notes && (
               <div className="mb-3">
                 <p className="font-bold text-sm mb-1">Notes:</p>
@@ -284,7 +284,7 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
         )}
 
         {/* Bank Details */}
-        <div className="mb-8 mt-6 p-5 bg-gray-50 rounded">
+        <div className="mb-4 mt-6 p-5 bg-gray-50 rounded">
           <p className="font-bold text-sm mb-3">Company Bank Detail:</p>
           <p className="text-sm mb-2">Bank Name: {data.bankName || 'HDFC BANK'}</p>
           <p className="text-sm mb-2">Account No: {data.accountNumber || '50100570331614'}</p>

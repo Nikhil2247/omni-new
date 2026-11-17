@@ -100,10 +100,10 @@ export default function AdCreditsPage() {
   )?.limitValue || 0;
 
   return (
-    <div className="container py-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="container py-4">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-3xl font-bold">Ad Credits</h1>
+          <h1 className="text-lg font-semibold">Ad Credits</h1>
           <p className="text-muted-foreground">Manage your advertising credits</p>
         </div>
         <Button onClick={() => setIsPurchaseModalOpen(true)}>
@@ -113,9 +113,9 @@ export default function AdCreditsPage() {
       </div>
 
       {/* Balance Overview */}
-      <Card className="mb-8">
+      <Card className="mb-4">
         <CardContent className="pt-6">
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             {/* Total Balance - Main */}
             <div className="md:col-span-1">
               <div className="flex items-center gap-2 mb-2">
@@ -180,7 +180,7 @@ export default function AdCreditsPage() {
 
       {/* Spending by Campaign Type */}
       {spending?.byCampaignType && Object.keys(spending.byCampaignType).length > 0 && (
-        <Card className="mb-8">
+        <Card className="mb-4">
           <CardHeader>
             <CardTitle>Spending by Campaign Type</CardTitle>
             <CardDescription>Last 30 days breakdown</CardDescription>
@@ -212,7 +212,7 @@ export default function AdCreditsPage() {
               ))}
             </div>
           ) : history?.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-4 text-muted-foreground">
               <Coins className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No transactions yet</p>
             </div>

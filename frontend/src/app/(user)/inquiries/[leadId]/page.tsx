@@ -56,7 +56,7 @@ export default function InquiryDetailPage() {
   const StatusIcon = config.icon
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
@@ -65,7 +65,7 @@ export default function InquiryDetailPage() {
           </Link>
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">Quote Request Details</h1>
+          <h1 className="text-lg font-semibold">Quote Request Details</h1>
           <p className="text-sm text-muted-foreground">Review your inquiry and vendor response</p>
         </div>
       </div>

@@ -33,9 +33,9 @@ export default function SystemRolesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Roles</h1>
+        <h1 className="text-lg font-semibold">Roles</h1>
         <p className="text-muted-foreground">Manage system roles and hierarchy.</p>
       </div>
 

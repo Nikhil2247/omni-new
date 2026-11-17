@@ -49,18 +49,18 @@ export default function EventsPage() {
   const hasAnyCredits = totalCredits > 0 || hasFreeEvent
 
   return (
-    <div className="space-y-8 pb-4">
+    <div className="space-y-4 pb-4">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-purple-200/60 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-6 shadow-sm dark:border-purple-900/40 dark:from-purple-950/30 dark:via-pink-950/20 dark:to-orange-950/20 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-purple-200/60 bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 p-4 shadow-sm dark:border-purple-900/40 dark:from-purple-950/30 dark:via-pink-950/20 dark:to-orange-950/20 sm:p-4">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-pink-300/30 blur-3xl dark:bg-pink-500/20" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-orange-300/30 blur-3xl dark:bg-orange-500/20" />
 
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <Badge className="mb-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-purple-700 shadow-sm dark:bg-purple-950/70 dark:text-purple-200">
               Event Management
             </Badge>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h1 className="text-lg font-semibold tracking-tight sm:text-lg">
               Your Events
             </h1>
             <p className="mt-2 text-base text-muted-foreground">

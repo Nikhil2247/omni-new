@@ -128,7 +128,7 @@ export default function LeadDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <Link href="/ops/leads">
             <Button variant="ghost" size="sm">
@@ -137,8 +137,8 @@ export default function LeadDetailPage() {
             </Button>
           </Link>
         </div>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-4">
             <Card className="animate-pulse">
               <CardHeader>
                 <div className="h-6 bg-muted rounded w-1/3 mb-2" />
@@ -152,9 +152,9 @@ export default function LeadDetailPage() {
               </CardContent>
             </Card>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             <Card className="animate-pulse">
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="h-32 bg-muted rounded" />
               </CardContent>
             </Card>
@@ -166,7 +166,7 @@ export default function LeadDetailPage() {
 
   if (!isValidUUID || error || !lead) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <Link href="/ops/leads">
             <Button variant="ghost" size="sm">
@@ -202,7 +202,7 @@ export default function LeadDetailPage() {
   const canConvert = lead.status !== 'WON' && lead.status !== 'LOST'
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
@@ -213,7 +213,7 @@ export default function LeadDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">{plannerName}</h1>
+            <h1 className="text-lg font-semibold">{plannerName}</h1>
             <p className="text-muted-foreground">Lead ID: {lead.id.substring(0, 12)}...</p>
           </div>
         </div>
@@ -230,16 +230,16 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
           {/* Lead Information */}
           <Card>
             <CardHeader>
               <CardTitle>Lead Information</CardTitle>
               <CardDescription>Details about this inquiry</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {/* Event Details */}
               <div>
                 <h4 className="font-medium mb-3">Event Details</h4>
@@ -368,7 +368,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Client Information */}
           <Card>
             <CardHeader>

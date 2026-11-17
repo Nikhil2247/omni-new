@@ -103,10 +103,10 @@ export function OpsManagerDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-2xl font-bold">Event Execution Hub</h1>
+        <h1 className="text-lg font-semibold">Event Execution Hub</h1>
         <p className="text-muted-foreground">
           Welcome, {user?.name || 'Ops Manager'} - Manage your assigned events
         </p>
@@ -149,9 +149,9 @@ export function OpsManagerDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* My Assigned Events */}
-        <div className="lg:col-span-2 rounded-lg border bg-card p-6">
+        <div className="lg:col-span-2 rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">My Assigned Events</h2>
             <a href="/ops/events" className="text-sm text-primary hover:underline">
@@ -185,7 +185,7 @@ export function OpsManagerDashboard() {
                 );
               })
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-4 text-muted-foreground">
                 <Calendar className="mx-auto h-12 w-12 mb-2 opacity-50" />
                 <p>No events assigned yet</p>
               </div>
@@ -194,9 +194,9 @@ export function OpsManagerDashboard() {
         </div>
 
         {/* Quick Actions & Team */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Quick Actions */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
             <div className="space-y-2">
               <QuickAction
@@ -228,7 +228,7 @@ export function OpsManagerDashboard() {
           </div>
 
           {/* My Team */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">My Assistants</h2>
               <a href="/ops/team/assistants/new" className="text-sm text-primary hover:underline">
@@ -271,9 +271,9 @@ export function OpsManagerDashboard() {
       </div>
 
       {/* Vendor Agreements & Task Review */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Pending Vendor Agreements */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Vendor Agreements</h2>
             <a href="/ops/agreements" className="text-sm text-primary hover:underline">
@@ -313,7 +313,7 @@ export function OpsManagerDashboard() {
         </div>
 
         {/* Tasks Pending Review */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Tasks Pending Review</h2>
             <a href="/ops/tasks/review" className="text-sm text-primary hover:underline">
@@ -342,7 +342,7 @@ export function OpsManagerDashboard() {
                 );
               })
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-4 text-muted-foreground">
                 <CheckCircle2 className="mx-auto h-12 w-12 mb-2 opacity-50" />
                 <p>No tasks pending review</p>
               </div>
@@ -352,7 +352,7 @@ export function OpsManagerDashboard() {
       </div>
 
       {/* Cost vs Budget Overview */}
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-card p-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Cost vs Budget - My Events</h2>
           <a href="/ops/reports/budget" className="text-sm text-primary hover:underline">
@@ -377,7 +377,7 @@ export function OpsManagerDashboard() {
               );
             })
           ) : (
-            <div className="col-span-3 text-center py-8 text-muted-foreground">
+            <div className="col-span-3 text-center py-4 text-muted-foreground">
               <DollarSign className="mx-auto h-12 w-12 mb-2 opacity-50" />
               <p>No budget data available</p>
             </div>

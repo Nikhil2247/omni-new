@@ -9,9 +9,9 @@ export default function OpsEventAgreementsPage() {
 
   if (!eventId) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Vendor Agreements</h1>
+          <h1 className="text-lg font-semibold">Vendor Agreements</h1>
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -19,9 +19,9 @@ export default function OpsEventAgreementsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Vendor Agreements</h1>
+        <h1 className="text-lg font-semibold">Vendor Agreements</h1>
         <p className="text-muted-foreground">Manage contracts and agreements with vendors</p>
       </div>
       <OpsAgreementsList activeEventId={eventId} />

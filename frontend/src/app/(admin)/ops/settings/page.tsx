@@ -5,9 +5,9 @@ import { SettingsCard } from '@/components/settings/settings-card'
 
 export default function OpsSettingsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Settings</h1>
+        <h1 className="text-lg font-semibold">Settings</h1>
         <p className="text-muted-foreground">Manage your operations account preferences.</p>
       </div>
 

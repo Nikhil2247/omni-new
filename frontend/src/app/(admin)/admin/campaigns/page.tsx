@@ -187,10 +187,10 @@ export default function AdminCampaignsPage() {
   const hasActiveFilters = search || status !== 'all' || type !== 'all' || fromDate || toDate
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Campaign Approval</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Campaign Approval</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Review and moderate vendor ad campaigns
           </p>

@@ -156,11 +156,11 @@ export function VisualRequirementsBuilder({ activeEventId, onSave }: VisualRequi
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Requirement Sheet Builder</h2>
+          <h2 className="text-base font-bold">Requirement Sheet Builder</h2>
           <p className="text-muted-foreground">Create a detailed list of event requirements</p>
         </div>
         <div className="flex gap-2">
@@ -205,7 +205,7 @@ export function VisualRequirementsBuilder({ activeEventId, onSave }: VisualRequi
         </CardHeader>
         <CardContent className="space-y-3">
           {items.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-4 text-muted-foreground">
               <p>No requirements added yet</p>
               <p className="text-sm">Add your first requirement below</p>
             </div>

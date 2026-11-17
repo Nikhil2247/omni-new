@@ -156,7 +156,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
   if (kycError || !kyc) {
     return (
       <Card className="border-destructive">
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-4 text-center">
           <AlertCircle className="mx-auto h-10 w-10 text-destructive mb-3" />
           <p className="text-destructive font-medium">Failed to load KYC record</p>
           <p className="text-sm text-muted-foreground mt-1">The record may not exist or you may not have permission to view it.</p>
@@ -178,7 +178,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
     null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Back Button */}
       <Button variant="ghost" size="sm" onClick={() => router.push('/ops/kyc')}>
         <ArrowLeft className="h-4 w-4 mr-2" />
@@ -211,7 +211,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
         <CardContent>
           {/* Onboarding Progress */}
           {onboardingStatus && (
-            <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+            <div className="mb-4 p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Onboarding Progress</span>
                 <span className="text-sm text-muted-foreground">
@@ -327,11 +327,11 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             {/* Profile Tab */}
             <TabsContent value="profile" className="mt-4">
               {isOnboardingLoading ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-4">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : onboardingData?.profile ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Business Name</p>
@@ -368,7 +368,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   </div> */}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-4 text-muted-foreground">
                   <UserCircle className="mx-auto h-10 w-10 mb-3 opacity-50" />
                   <p className="font-medium">No profile data available</p>
                 </div>
@@ -376,11 +376,11 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             </TabsContent>
 
             {/* KYC Tab */}
-            <TabsContent value="kyc" className="mt-4 space-y-6">
+            <TabsContent value="kyc" className="mt-4 space-y-4">
               {/* Business Details */}
               <div>
                 <h4 className="font-medium mb-4">Business Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Business Name</p>
@@ -438,7 +438,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
               <div>
                 <h4 className="font-medium mb-4">Documents</h4>
                 {!kyc.documents || kyc.documents.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-4 text-muted-foreground">
                     <FileText className="mx-auto h-10 w-10 mb-3 opacity-50" />
                     <p className="font-medium">No documents uploaded yet</p>
                     <p className="text-sm mt-1">The vendor has not uploaded any KYC documents.</p>
@@ -518,7 +518,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             {/* Consents Tab */}
             <TabsContent value="consents" className="mt-4">
               {isOnboardingLoading ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-4">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : onboardingData?.consentStatus ? (
@@ -597,7 +597,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   )}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-4 text-muted-foreground">
                   <ScrollText className="mx-auto h-10 w-10 mb-3 opacity-50" />
                   <p className="font-medium">No consent data available</p>
                 </div>
@@ -607,11 +607,11 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             {/* Contract Tab */}
             <TabsContent value="contract" className="mt-4">
               {isOnboardingLoading ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-4">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : onboardingData?.contract ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Contract Status */}
                   <div className="flex items-center gap-4">
                     <Badge
@@ -635,7 +635,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   </div>
 
                   {/* Contract Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Contract Number</p>
@@ -704,7 +704,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-4 text-muted-foreground">
                   <FileSignature className="mx-auto h-10 w-10 mb-3 opacity-50" />
                   <p className="font-medium">No contract created yet</p>
                 </div>
@@ -714,13 +714,13 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             {/* Bank Details Tab */}
             <TabsContent value="bank" className="mt-4">
               {isOnboardingLoading ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-4">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : onboardingData?.contract && (
                 onboardingData.contract.bankAccountNumber || onboardingData.contract.upiId
               ) ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Bank Account Name</p>
@@ -747,7 +747,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-4 text-muted-foreground">
                   <Landmark className="mx-auto h-10 w-10 mb-3 opacity-50" />
                   <p className="font-medium">No bank details provided yet</p>
                 </div>
@@ -816,7 +816,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   title={selectedDocument.fileName}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full p-8">
+                <div className="flex flex-col items-center justify-center h-full p-4">
                   <FileText className="h-16 w-16 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Preview not available for this file type</p>
                   <Button variant="outline" className="mt-4" asChild>

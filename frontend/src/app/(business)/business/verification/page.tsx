@@ -246,10 +246,10 @@ export default function VerificationPage() {
         />
       }
     >
-      <div className="container max-w-4xl py-8 space-y-8">
+      <div className="container max-w-4xl py-4 space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">KYC Verification</h1>
+        <h1 className="text-lg font-semibold">KYC Verification</h1>
         <p className="text-muted-foreground mt-1">
           Complete your business verification to unlock all features
         </p>
@@ -370,7 +370,7 @@ export default function VerificationPage() {
             Upload required documents for verification
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* Required Documents Checklist */}
           <div className="space-y-2">
             <h4 className="font-medium text-sm">Required Documents</h4>
@@ -436,7 +436,7 @@ export default function VerificationPage() {
 
               <div
                 {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
                   isDragActive
                     ? 'border-primary bg-primary/5'
                     : selectedDocType

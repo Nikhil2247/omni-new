@@ -315,11 +315,11 @@ export default function OpsQuotationsPage() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Quotations</h1>
+          <h1 className="text-lg font-semibold">Quotations</h1>
           <p className="text-muted-foreground">
             Manage quotations for vendor agreements
           </p>
@@ -432,18 +432,18 @@ export default function OpsQuotationsPage() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 space-y-4">
+            <div className="p-4 space-y-4">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           ) : error ? (
-            <div className="p-8 text-center">
+            <div className="p-4 text-center">
               <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
               <p className="text-destructive font-medium">Failed to load quotations</p>
             </div>
           ) : filteredQuotations.length === 0 ? (
-            <div className="p-8 text-center">
+            <div className="p-4 text-center">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
               <p className="text-muted-foreground">No quotations found</p>
             </div>
@@ -781,7 +781,7 @@ export default function OpsQuotationsPage() {
               Create a new quotation for a vendor agreement.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-4">
             {/* Event Selection */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

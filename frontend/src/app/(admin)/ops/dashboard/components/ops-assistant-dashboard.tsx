@@ -128,10 +128,10 @@ export function OpsAssistantDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-2xl font-bold">My Tasks</h1>
+        <h1 className="text-lg font-semibold">My Tasks</h1>
         <p className="text-muted-foreground">
           Welcome, {user?.name || 'Ops Assistant'} - Your assigned work for today
         </p>
@@ -166,11 +166,11 @@ export function OpsAssistantDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Today's Tasks */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
           {/* Urgent Tasks */}
-          <div className="rounded-lg border border-orange-500 bg-card p-6">
+          <div className="rounded-lg border border-orange-500 bg-card p-4">
             <div className="mb-4 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               <h2 className="text-lg font-semibold">Urgent Tasks</h2>
@@ -190,7 +190,7 @@ export function OpsAssistantDashboard() {
                   />
                 ))
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-4 text-muted-foreground">
                   <CheckCircle2 className="mx-auto h-12 w-12 mb-2 opacity-50" />
                   <p>No urgent tasks - Great job!</p>
                 </div>
@@ -199,7 +199,7 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* Other Tasks */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">Other Tasks</h2>
               <a href="/ops/tasks" className="text-sm text-primary hover:underline">
@@ -221,7 +221,7 @@ export function OpsAssistantDashboard() {
                   />
                 ))
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-4 text-muted-foreground">
                   <Clock className="mx-auto h-12 w-12 mb-2 opacity-50" />
                   <p>No upcoming tasks</p>
                 </div>
@@ -230,7 +230,7 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* Tasks Awaiting Review */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <h2 className="mb-4 text-lg font-semibold">Submitted - Awaiting Review</h2>
             <div className="space-y-3">
               {myTasks.submitted.length > 0 ? (
@@ -251,11 +251,11 @@ export function OpsAssistantDashboard() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Quick Upload */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <h2 className="mb-4 text-lg font-semibold">Quick Upload</h2>
-            <div className="rounded-lg border-2 border-dashed p-6 text-center">
+            <div className="rounded-lg border-2 border-dashed p-4 text-center">
               <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
               <p className="mt-2 text-sm text-muted-foreground">
                 Drag & drop files or click to upload
@@ -270,7 +270,7 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* Processing Queue */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <h2 className="mb-4 text-lg font-semibold">Processing Queue</h2>
             <div className="space-y-3">
               <ProcessingItem
@@ -301,7 +301,7 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* Today's Schedule */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">Today&apos;s Schedule</h2>
               <a href="/ops/calendar" className="text-sm text-primary hover:underline">
@@ -328,7 +328,7 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* My Stats */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <h2 className="mb-4 text-lg font-semibold">This Week</h2>
             <div className="space-y-3">
               <WeekStatItem label="Tasks Completed" value={String(weeklyStats.completed)} />

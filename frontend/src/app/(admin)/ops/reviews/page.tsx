@@ -158,11 +158,11 @@ export default function OpsReviewsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Reviews & Feedback</h1>
+          <h1 className="text-lg font-semibold">Reviews & Feedback</h1>
           <p className="text-muted-foreground">
             Manage post-event reviews and client feedback
           </p>
@@ -282,7 +282,7 @@ export default function OpsReviewsPage() {
                 ))}
               </div>
             ) : completedEvents.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">No completed events yet</p>
+              <p className="text-center py-4 text-muted-foreground">No completed events yet</p>
             ) : (
               <div className="space-y-3">
                 {completedEvents.slice(0, 5).map((event) => (
@@ -323,7 +323,7 @@ export default function OpsReviewsPage() {
         </CardHeader>
         <CardContent className="p-0">
           {filteredReviews.length === 0 ? (
-            <div className="p-8 text-center">
+            <div className="p-4 text-center">
               <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
               <p className="text-muted-foreground">No reviews found</p>
             </div>

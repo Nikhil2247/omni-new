@@ -167,11 +167,11 @@ export default function OpsInvoicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Invoices</h1>
+          <h1 className="text-lg font-semibold">Invoices</h1>
           <p className="text-muted-foreground">Manage all vendor invoices across events</p>
         </div>
       </div>

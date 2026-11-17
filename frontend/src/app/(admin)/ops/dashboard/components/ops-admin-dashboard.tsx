@@ -54,10 +54,10 @@ export function OpsAdminDashboard() {
   const totalAssistants = assistants.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-2xl font-bold">Control Tower</h1>
+        <h1 className="text-lg font-semibold">Control Tower</h1>
         <p className="text-muted-foreground">
           Welcome, {user?.name || 'Ops Admin'} - Full operational oversight
         </p>
@@ -98,9 +98,9 @@ export function OpsAdminDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Leads Ready for Conversion */}
-        <div className="lg:col-span-2 rounded-lg border bg-card p-6">
+        <div className="lg:col-span-2 rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Recent Leads</h2>
             <a href="/ops/leads" className="text-sm text-primary hover:underline">
@@ -108,7 +108,7 @@ export function OpsAdminDashboard() {
             </a>
           </div>
           {leads.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-4 text-center text-muted-foreground">
               No leads available
             </div>
           ) : (
@@ -156,8 +156,8 @@ export function OpsAdminDashboard() {
         </div>
 
         {/* Team Overview */}
-        <div className="space-y-6">
-          <div className="rounded-lg border bg-card p-6">
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-card p-4">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">Ops Team</h2>
             </div>
@@ -190,7 +190,7 @@ export function OpsAdminDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="rounded-lg border bg-card p-6">
+          <div className="rounded-lg border bg-card p-4">
             <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
             <div className="space-y-2">
               <QuickAction
@@ -219,9 +219,9 @@ export function OpsAdminDashboard() {
       </div>
 
       {/* Events Needing Assignment & Recent Activity */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Unassigned Events */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Unassigned Events</h2>
             <span className="rounded-full bg-orange-100 px-2 py-1 text-xs text-orange-800 dark:bg-orange-900 dark:text-orange-200">
@@ -229,7 +229,7 @@ export function OpsAdminDashboard() {
             </span>
           </div>
           {unassignedEvents === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-4 text-center text-muted-foreground">
               All events are assigned
             </div>
           ) : (
@@ -260,10 +260,10 @@ export function OpsAdminDashboard() {
         </div>
 
         {/* Recent Tasks */}
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-4">
           <h2 className="mb-4 text-lg font-semibold">Recent Tasks</h2>
           {tasks.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-4 text-center text-muted-foreground">
               No tasks assigned yet
             </div>
           ) : (
@@ -291,8 +291,8 @@ export function OpsAdminDashboard() {
       </div>
 
       {/* Manager Performance */}
-      <div className="grid gap-6 lg:grid-cols-1">
-        <div className="rounded-lg border bg-card p-6">
+      <div className="grid gap-4 lg:grid-cols-1">
+        <div className="rounded-lg border bg-card p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Manager Performance</h2>
             <a href="/ops/team/managers" className="text-sm text-primary hover:underline">
@@ -300,7 +300,7 @@ export function OpsAdminDashboard() {
             </a>
           </div>
           {managers.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-4 text-center text-muted-foreground">
               No managers available
             </div>
           ) : (

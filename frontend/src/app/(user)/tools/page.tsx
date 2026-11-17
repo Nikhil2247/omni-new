@@ -454,17 +454,17 @@ export default function UserToolsPage() {
   }, [plannerInsightsData, fallbackPlannerInsights])
 
   return (
-    <div className="space-y-8 pb-4">
+    <div className="space-y-4 pb-4">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-violet-200/60 bg-linear-to-br from-violet-50 via-fuchsia-50 to-rose-50 p-6 shadow-sm dark:border-violet-900/40 dark:from-violet-950/30 dark:via-fuchsia-950/20 dark:to-rose-950/20 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-violet-200/60 bg-linear-to-br from-violet-50 via-fuchsia-50 to-rose-50 p-4 shadow-sm dark:border-violet-900/40 dark:from-violet-950/30 dark:via-fuchsia-950/20 dark:to-rose-950/20 sm:p-4">
         <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-fuchsia-300/30 blur-3xl dark:bg-fuchsia-500/20" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-rose-300/30 blur-3xl dark:bg-rose-500/20" />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <Badge className="mb-3 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-violet-700 shadow-sm dark:bg-violet-950/70 dark:text-violet-200">
               Smart Planning Command Center
             </Badge>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Planning Tools</h1>
+            <h1 className="text-lg font-semibold tracking-tight sm:text-lg">Planning Tools</h1>
             <p className="mt-2 text-base text-muted-foreground">
               {primaryEvent ? (
                 <>
@@ -639,7 +639,7 @@ export default function UserToolsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-end gap-2">
-                    <span className={cn('text-3xl font-bold', plannerInsights.healthTone)}>{plannerInsights.healthScore}</span>
+                    <span className={cn('text-2xl font-semibold', plannerInsights.healthTone)}>{plannerInsights.healthScore}</span>
                     <span className="text-sm text-muted-foreground">/100</span>
                   </div>
                   <p className={cn('mt-1 text-sm font-medium', plannerInsights.healthTone)}>{plannerInsights.healthLabel}</p>
@@ -934,7 +934,7 @@ export default function UserToolsPage() {
       {/* Completion celebration */}
       {overallProgress === 100 && eventId && (
         <Card className="rounded-2xl border-green-200 bg-linear-to-r from-green-50 to-emerald-50 shadow-sm dark:border-green-800 dark:from-green-950/20 dark:to-emerald-950/20">
-          <CardContent className="flex items-center gap-4 p-6">
+          <CardContent className="flex items-center gap-4 p-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
               <PartyPopper className="h-7 w-7 text-green-600" />
             </div>

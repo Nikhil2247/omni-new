@@ -371,9 +371,9 @@ export default function BusinessPortfolioPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Portfolio</h1>
+          <h1 className="text-lg font-semibold">Portfolio</h1>
           <p className="text-muted-foreground">Showcase your work</p>
         </div>
         <Card>
@@ -405,11 +405,11 @@ export default function BusinessPortfolioPage() {
       : deleteTarget?.media.altText || 'this media item'
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Portfolio</h1>
+          <h1 className="text-lg font-semibold">Portfolio</h1>
           <p className="text-muted-foreground">
             Organize your media into albums ({totalAlbums} albums)
           </p>
@@ -504,7 +504,7 @@ export default function BusinessPortfolioPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle>Albums</CardTitle>
@@ -961,7 +961,7 @@ function MediaGrid({
   onCaption: (item: MediaItem) => void
 }) {
   if (items.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground">No media available.</div>
+    return <div className="text-center py-4 text-muted-foreground">No media available.</div>
   }
 
   if (viewMode === 'list') {

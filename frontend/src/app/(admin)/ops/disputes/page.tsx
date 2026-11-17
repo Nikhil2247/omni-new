@@ -99,9 +99,9 @@ export default function OpsDisputesPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Disputes</h1>
+          <h1 className="text-lg font-semibold">Disputes</h1>
           <p className="text-muted-foreground">Manage vendor disputes and complaints.</p>
         </div>
         <div className="space-y-2">
@@ -120,9 +120,9 @@ export default function OpsDisputesPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Disputes</h1>
+          <h1 className="text-lg font-semibold">Disputes</h1>
         </div>
         <div className="text-sm text-destructive">Failed to load disputes. Please try again.</div>
       </div>
@@ -130,10 +130,10 @@ export default function OpsDisputesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Disputes</h1>
+        <h1 className="text-lg font-semibold">Disputes</h1>
         <p className="text-muted-foreground">Manage vendor disputes and complaints.</p>
       </div>
 
@@ -208,7 +208,7 @@ export default function OpsDisputesPage() {
       {/* Disputes List */}
       {filteredDisputes.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <p className="text-muted-foreground">No disputes found.</p>
           </CardContent>
         </Card>

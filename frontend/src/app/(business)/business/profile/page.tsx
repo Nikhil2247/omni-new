@@ -557,12 +557,12 @@ export default function BusinessProfilePage() {
           />
         }
       >
-        <main className="mx-auto max-w-5xl px-4 py-8">
-          <div className="rounded-3xl border bg-card p-8 text-center sm:p-10">
+        <main className="mx-auto max-w-5xl px-4 py-4">
+          <div className="rounded-3xl border bg-card p-4 text-center sm:p-10">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Store className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="font-serif text-2xl font-bold">Create your business profile</h1>
+            <h1 className="font-serif text-lg font-semibold">Create your business profile</h1>
             <p className="text-muted-foreground mx-auto mt-2 max-w-xl">
               Set up your profile and publish your business identity.
             </p>
@@ -812,10 +812,10 @@ export default function BusinessProfilePage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-4">
         <section className="pb-10">
           {bannerViewUrl && (
-            <div className="mb-6 h-40 w-full overflow-hidden rounded-2xl border bg-muted sm:h-52">
+            <div className="mb-4 h-40 w-full overflow-hidden rounded-2xl border bg-muted sm:h-52">
               <NextImage
                 src={bannerViewUrl}
                 alt={`${profile.businessName} banner`}
@@ -828,7 +828,7 @@ export default function BusinessProfilePage() {
             </div>
           )}
 
-          <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
+          <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
             <div className="relative shrink-0">
               <div className="relative h-37.5 w-37.5 rounded-full p-0.75 md:h-42 md:w-42">
                 <div className="absolute inset-0 rounded-full bg-linear-to-tr from-primary via-primary/80 to-primary/60" />
@@ -860,7 +860,7 @@ export default function BusinessProfilePage() {
             <div className="flex-1 text-center md:text-left">
               <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h1 className="font-serif text-2xl font-semibold text-foreground md:text-3xl">{profile.businessName}</h1>
+                  <h1 className="font-serif text-lg font-semibold text-foreground md:text-lg">{profile.businessName}</h1>
                   {profile.tagline && <p className="mt-1 text-sm text-muted-foreground">{profile.tagline}</p>}
                 </div>
 
@@ -953,7 +953,7 @@ export default function BusinessProfilePage() {
         </section>
 
         <section className="border-t py-3">
-          <div className="mx-auto flex max-w-3xl justify-center gap-3 sm:gap-8">
+          <div className="mx-auto flex max-w-3xl justify-center gap-3 sm:gap-4">
             {tabs.map((tab) => {
               const Icon = tab.icon
               const active = activeTab === tab.id
@@ -982,7 +982,7 @@ export default function BusinessProfilePage() {
                   <p className="mt-1 text-sm text-muted-foreground">Upload portfolio media to showcase your work.</p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {featuredPortfolio && normalizedFeaturedMedia.length ? (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">

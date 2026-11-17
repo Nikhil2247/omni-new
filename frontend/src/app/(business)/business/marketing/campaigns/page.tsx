@@ -104,10 +104,10 @@ export default function CampaignsPage() {
         feature="marketing.campaigns"
         fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing" backText="Back to Marketing" />}
       >
-        <div className="container py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="container py-4">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold">Campaigns</h1>
+            <h1 className="text-lg font-semibold">Campaigns</h1>
             <p className="text-muted-foreground">Manage your advertising campaigns</p>
           </div>
           <Link href="/business/marketing/campaigns/new">
@@ -119,7 +119,7 @@ export default function CampaignsPage() {
         </div>
 
         <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as CampaignStatus | 'ALL')}>
-          <TabsList className="mb-6">
+          <TabsList className="mb-4">
             <TabsTrigger value="ALL">All</TabsTrigger>
             <TabsTrigger value="ACTIVE">Active</TabsTrigger>
             <TabsTrigger value="SCHEDULED">Scheduled</TabsTrigger>

@@ -48,7 +48,7 @@ export default function ToolDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Back */}
       <Button variant="ghost" asChild className="px-0">
         <Link href="/tools">
@@ -59,7 +59,7 @@ export default function ToolDetailPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold sm:text-2xl">{tool.label}</h1>
+        <h1 className="text-xl font-semibold sm:text-lg">{tool.label}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
       </div>
 

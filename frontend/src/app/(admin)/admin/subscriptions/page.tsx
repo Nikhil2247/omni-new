@@ -191,10 +191,10 @@ export default function AdminSubscriptionsPage() {
   const hasActiveFilters = search || status !== 'all' || type !== 'all'
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Subscriptions</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Subscriptions</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             View and manage all platform subscriptions
           </p>

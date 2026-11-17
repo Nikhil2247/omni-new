@@ -226,12 +226,12 @@ export default function VendorSubscriptionSettingsPage() {
   // Loading state
   if (subscriptionLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Subscription</h1>
+          <h1 className="text-lg font-semibold">Subscription</h1>
           <p className="text-muted-foreground">Manage your business subscription and billing.</p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
               <Skeleton className="h-6 w-32" />
@@ -264,9 +264,9 @@ export default function VendorSubscriptionSettingsPage() {
   // Error state
   if (subscriptionError) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Subscription</h1>
+          <h1 className="text-lg font-semibold">Subscription</h1>
           <p className="text-muted-foreground">Manage your business subscription and billing.</p>
         </div>
         <Alert variant="destructive">
@@ -290,9 +290,9 @@ export default function VendorSubscriptionSettingsPage() {
   const isCancelled = subscription?.status === 'CANCELLED' || subscription?.cancelAtPeriodEnd
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Subscription</h1>
+        <h1 className="text-lg font-semibold">Subscription</h1>
         <p className="text-muted-foreground">Manage your business subscription and billing.</p>
       </div>
 
@@ -339,7 +339,7 @@ export default function VendorSubscriptionSettingsPage() {
         </Alert>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Current Plan Card */}
         <Card>
           <CardHeader>
@@ -371,7 +371,7 @@ export default function VendorSubscriptionSettingsPage() {
             {hasSubscription && subscription.plan && subscription.price ? (
               <>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">
+                  <span className="text-2xl font-semibold">
                     {formatCurrency(subscription.price.amount, subscription.price.currency)}
                   </span>
                   <span className="text-muted-foreground">
@@ -424,7 +424,7 @@ export default function VendorSubscriptionSettingsPage() {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">Free</span>
+                  <span className="text-2xl font-semibold">Free</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Upgrade to get more portfolio images, featured listings, and grow your business.
@@ -521,7 +521,7 @@ export default function VendorSubscriptionSettingsPage() {
                     <Coins className="h-6 w-6 text-amber-600" />
                   </div>
                   <div>
-                    <p className="text-3xl font-bold">{adCredits.balance.toLocaleString()}</p>
+                    <p className="text-2xl font-semibold">{adCredits.balance.toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">Available credits</p>
                   </div>
                 </div>
@@ -535,7 +535,7 @@ export default function VendorSubscriptionSettingsPage() {
                   <Coins className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold">0</p>
+                  <p className="text-2xl font-semibold">0</p>
                   <p className="text-sm text-muted-foreground">No credits available</p>
                 </div>
               </div>
@@ -688,7 +688,7 @@ export default function VendorSubscriptionSettingsPage() {
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="flex flex-col items-center justify-center py-4 text-center">
               <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No usage data available</p>
             </div>
@@ -751,7 +751,7 @@ export default function VendorSubscriptionSettingsPage() {
           ) : (
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-3xl font-bold">{(adCredits?.balance || 0).toLocaleString()}</p>
+                <p className="text-2xl font-semibold">{(adCredits?.balance || 0).toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">credits available</p>
               </div>
               <Link href="/business/marketing/credits">
@@ -814,7 +814,7 @@ export default function VendorSubscriptionSettingsPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="flex flex-col items-center justify-center py-4 text-center">
               <History className="h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No billing history available</p>
               <p className="text-sm text-muted-foreground">Your payments will appear here.</p>

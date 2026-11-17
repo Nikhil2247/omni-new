@@ -33,9 +33,9 @@ export default function SystemStaffUsersPage() {
   const staffUsers = useMemo(() => filterStaff(data?.data ?? []), [data])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Staff</h1>
+        <h1 className="text-lg font-semibold">Staff</h1>
         <p className="text-muted-foreground">Internal team accounts across departments.</p>
       </div>
 

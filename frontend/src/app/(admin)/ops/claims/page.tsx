@@ -177,11 +177,11 @@ export default function AdminClaimsPage() {
   const totalPages = Math.ceil(totalClaims / limit)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Vendor Claims</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Vendor Claims</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {pendingCount > 0
               ? `${pendingCount} claim${pendingCount === 1 ? '' : 's'} pending review`

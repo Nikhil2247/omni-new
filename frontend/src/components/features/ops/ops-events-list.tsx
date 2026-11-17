@@ -89,7 +89,7 @@ export function OpsEventsList() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -100,7 +100,7 @@ export function OpsEventsList() {
   if (error) {
     return (
       <Card className="border-destructive">
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-4 text-center">
           <AlertTriangle className="mx-auto h-8 w-8 text-destructive mb-2" />
           <p className="text-destructive font-medium">Failed to load events</p>
           <p className="text-sm text-muted-foreground mt-1">Please try again later.</p>
@@ -113,7 +113,7 @@ export function OpsEventsList() {
   const activeEvents = data?.filter(e => !['COMPLETED', 'CANCELLED'].includes(e.status)).length || 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Stats Header */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>

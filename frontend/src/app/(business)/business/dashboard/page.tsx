@@ -113,9 +113,9 @@ export default function BusinessDashboardPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Welcome, {user?.name || 'Vendor'}!</h1>
+          <h1 className="text-lg font-semibold">Welcome, {user?.name || 'Vendor'}!</h1>
           <p className="text-muted-foreground">
             Get started by setting up your business profile
           </p>
@@ -137,11 +137,11 @@ export default function BusinessDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Welcome back, {user?.name || profile.businessName}!</h1>
+          <h1 className="text-lg font-semibold">Welcome back, {user?.name || profile.businessName}!</h1>
           <p className="text-muted-foreground">
             Here&apos;s what&apos;s happening with your business today
           </p>
@@ -250,7 +250,7 @@ export default function BusinessDashboardPage() {
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-4">
               <CampaignMetric
                 label="Impressions"
                 value={campaignStats.impressions}
@@ -306,7 +306,7 @@ export default function BusinessDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{formatNumber(creditBalance?.balance || 0)}</p>
+            <p className="text-2xl font-semibold">{formatNumber(creditBalance?.balance || 0)}</p>
             <p className="text-sm text-muted-foreground mt-1">Available credits</p>
             {!hasActiveCampaigns && (creditBalance?.balance || 0) > 0 && (
               <Link href="/business/marketing/campaigns/new">
@@ -387,7 +387,7 @@ export default function BusinessDashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* Recent Agreements */}
         <div className="lg:col-span-2">
           <Card>
@@ -404,7 +404,7 @@ export default function BusinessDashboardPage() {
             </CardHeader>
             <CardContent>
               {recentAgreements.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-4 text-muted-foreground">
                   <Briefcase className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <p>No agreements yet</p>
                 </div>
@@ -484,7 +484,7 @@ export default function BusinessDashboardPage() {
         </CardHeader>
         <CardContent>
           {!reviews || reviews.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-4 text-muted-foreground">
               <Star className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>No reviews yet</p>
               <p className="text-sm mt-1">Reviews will appear here once clients rate your services</p>

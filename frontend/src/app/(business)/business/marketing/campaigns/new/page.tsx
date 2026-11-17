@@ -233,7 +233,7 @@ export default function NewCampaignPage() {
           </div>
         </div>
 
-      <div className="container py-8">
+      <div className="container py-4">
         {/* Progress Steps */}
         <div className="max-w-3xl mx-auto mb-10">
           <div className="flex items-center justify-between">
@@ -278,8 +278,8 @@ export default function NewCampaignPage() {
             {/* Step 1: Campaign Type */}
             {currentStep === 1 && (
               <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold mb-2">What type of campaign?</h2>
+                <div className="text-center mb-4">
+                  <h2 className="text-base font-bold mb-2">What type of campaign?</h2>
                   <p className="text-muted-foreground">Choose how you want to promote your business</p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -291,7 +291,7 @@ export default function NewCampaignPage() {
                         key={type.id}
                         onClick={() => form.setValue('type', type.id as any)}
                         className={cn(
-                          'relative p-6 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md',
+                          'relative p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md',
                           isSelected
                             ? `${type.borderColor} ${type.bgColor}/30 shadow-md`
                             : 'border-border bg-background hover:border-muted-foreground/30'
@@ -323,12 +323,12 @@ export default function NewCampaignPage() {
             {/* Step 2: Details */}
             {currentStep === 2 && (
               <div className="max-w-2xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold mb-2">Campaign Details</h2>
+                <div className="text-center mb-4">
+                  <h2 className="text-base font-bold mb-2">Campaign Details</h2>
                   <p className="text-muted-foreground">Give your campaign a name and description</p>
                 </div>
-                <div className="bg-background rounded-xl border p-6 space-y-6">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 mb-6">
+                <div className="bg-background rounded-xl border p-4 space-y-4">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 mb-4">
                     {selectedTypeConfig && (
                       <>
                         <div className={cn('p-2 rounded-lg', selectedTypeConfig.bgColor)}>
@@ -384,14 +384,14 @@ export default function NewCampaignPage() {
             {/* Step 3: Budget & Schedule */}
             {currentStep === 3 && (
               <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold mb-2">Budget & Schedule</h2>
+                <div className="text-center mb-4">
+                  <h2 className="text-base font-bold mb-2">Budget & Schedule</h2>
                   <p className="text-muted-foreground">Set your spending limits and campaign duration</p>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-5">
+                <div className="grid gap-4 lg:grid-cols-5">
                   {/* Main Form */}
-                  <div className="lg:col-span-3 bg-background rounded-xl border p-6 space-y-6">
+                  <div className="lg:col-span-3 bg-background rounded-xl border p-4 space-y-4">
                     <div>
                       <h3 className="font-semibold mb-4">Budget</h3>
                       <div className="grid gap-4 sm:grid-cols-2">
@@ -534,7 +534,7 @@ export default function NewCampaignPage() {
 
                   {/* Summary Sidebar */}
                   <div className="lg:col-span-2">
-                    <div className="bg-background rounded-xl border p-6 sticky top-24">
+                    <div className="bg-background rounded-xl border p-4 sticky top-24">
                       <h3 className="font-semibold mb-4">Campaign Summary</h3>
 
                       <div className="space-y-3 text-sm">

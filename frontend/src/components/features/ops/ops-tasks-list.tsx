@@ -269,7 +269,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-destructive">
+      <div className="flex flex-col items-center justify-center py-4 text-destructive">
         <AlertCircle className="h-8 w-8 mb-2" />
         <p className="font-medium">Failed to load tasks</p>
       </div>
@@ -286,7 +286,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
   const inProgressTasks = data?.filter(t => t.status === 'IN_PROGRESS').length || 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header Stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -326,7 +326,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
       {/* Tasks List */}
       {!data?.length ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <ListTodo className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground font-medium">No tasks found</p>
             <p className="text-sm text-muted-foreground mt-1">

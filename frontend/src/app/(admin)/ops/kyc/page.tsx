@@ -157,9 +157,9 @@ export default function OpsKycPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">KYC Verification</h1>
+          <h1 className="text-lg font-semibold">KYC Verification</h1>
           <p className="text-muted-foreground">Review and verify vendor KYC documents.</p>
         </div>
         <div className="space-y-2">
@@ -178,12 +178,12 @@ export default function OpsKycPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">KYC Verification</h1>
+          <h1 className="text-lg font-semibold">KYC Verification</h1>
         </div>
         <Card className="border-destructive">
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <AlertCircle className="mx-auto h-10 w-10 text-destructive mb-3" />
             <p className="text-destructive font-medium">Failed to load KYC records</p>
             <p className="text-sm text-muted-foreground mt-1">Please try refreshing the page.</p>
@@ -194,11 +194,11 @@ export default function OpsKycPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">KYC Verification</h1>
+          <h1 className="text-lg font-semibold">KYC Verification</h1>
           <p className="text-muted-foreground">Review and verify vendor KYC documents.</p>
         </div>
         {isConnected && (
@@ -573,7 +573,7 @@ export default function OpsKycPage() {
                   title={selectedDocument.fileName}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full p-8">
+                <div className="flex flex-col items-center justify-center h-full p-4">
                   <FileText className="h-16 w-16 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Preview not available for this file type</p>
                   <Button variant="outline" className="mt-4" asChild>

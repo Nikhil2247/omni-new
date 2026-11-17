@@ -163,7 +163,7 @@ export default function TaskDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <Link href="/ops/tasks">
             <Button variant="ghost" size="sm">
@@ -172,7 +172,7 @@ export default function TaskDetailPage() {
             </Button>
           </Link>
         </div>
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Card className="animate-pulse">
               <CardHeader>
@@ -185,7 +185,7 @@ export default function TaskDetailPage() {
             </Card>
           </div>
           <Card className="animate-pulse">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="h-40 bg-muted rounded" />
             </CardContent>
           </Card>
@@ -196,7 +196,7 @@ export default function TaskDetailPage() {
 
   if (!isValidUUID || error || !task) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center gap-4">
           <Link href="/ops/tasks">
             <Button variant="ghost" size="sm">
@@ -231,7 +231,7 @@ export default function TaskDetailPage() {
   const isOverdue = dueDate && dueDate < new Date() && task.status !== 'COMPLETED' && task.status !== 'CANCELLED'
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <Link href="/ops/tasks">
@@ -241,7 +241,7 @@ export default function TaskDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">{task.title}</h1>
+            <h1 className="text-lg font-semibold">{task.title}</h1>
             <p className="text-muted-foreground">Task ID: {task.id.substring(0, 12)}...</p>
           </div>
         </div>
@@ -260,8 +260,8 @@ export default function TaskDetailPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4">
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -275,7 +275,7 @@ export default function TaskDetailPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {task.description && (
                 <div>
                   <h4 className="font-medium mb-2">Description</h4>
@@ -377,7 +377,7 @@ export default function TaskDetailPage() {
           )}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card>
             <CardHeader><CardTitle className="text-base">Actions</CardTitle></CardHeader>
             <CardContent className="space-y-3">

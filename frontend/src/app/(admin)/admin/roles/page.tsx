@@ -33,9 +33,9 @@ export default function AdminRolesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Roles</h1>
+        <h1 className="text-lg font-semibold tracking-tight">Roles</h1>
         <p className="mt-1 text-sm text-muted-foreground">Define platform roles — each user holds exactly one role</p>
       </div>
 

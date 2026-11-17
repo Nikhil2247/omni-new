@@ -27,7 +27,7 @@ export default function GuestlistPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
         <div className="grid gap-4 md:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -77,12 +77,12 @@ export default function GuestlistPage() {
   const confirmationRate = totalGuests > 0 ? Math.round((totalConfirmed / totalGuests) * 100) : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 dark:from-teal-950/30 dark:via-cyan-950/30 dark:to-blue-950/30 p-6">
+      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 dark:from-teal-950/30 dark:via-cyan-950/30 dark:to-blue-950/30 p-4">
         <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold md:text-3xl">Guest Management</h1>
+            <h1 className="text-lg font-semibold md:text-lg">Guest Management</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Track RSVPs and celebrate with everyone
             </p>
@@ -206,7 +206,7 @@ export default function GuestlistPage() {
                     <div className="flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
                       <Users className="h-8 w-8 text-blue-600" />
                       <div>
-                        <p className="text-3xl font-bold text-blue-700">{eventTotal}</p>
+                        <p className="text-2xl font-semibold text-blue-700">{eventTotal}</p>
                         <p className="text-xs text-muted-foreground">Total Guests</p>
                       </div>
                     </div>

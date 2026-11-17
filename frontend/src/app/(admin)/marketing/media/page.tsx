@@ -18,9 +18,9 @@ export default function MarketingMediaPage() {
 
   return (
     <RoleGuard allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]} redirectOnFail={true}>
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Media library</h1>
+        <h1 className="text-lg font-semibold">Media library</h1>
         <p className="text-muted-foreground">Manage uploaded images and media assets.</p>
       </div>
 

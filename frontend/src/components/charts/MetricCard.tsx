@@ -38,16 +38,16 @@ export function MetricCard({
   return (
     <Card
       className={cn(
-        'relative overflow-hidden transition-all hover:shadow-md',
+        'relative overflow-hidden transition-all hover:shadow-sm',
         variant === 'gradient' && 'bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5',
         className
       )}
     >
-      <CardContent className="p-6">
+      <CardContent className="p-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="mt-2 text-3xl font-bold tracking-tight">
+            <p className="mt-1 text-2xl font-semibold tracking-tight">
               {typeof value === 'number' ? valueFormatter(value) : value}
             </p>
 

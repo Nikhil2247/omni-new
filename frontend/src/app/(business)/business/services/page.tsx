@@ -321,9 +321,9 @@ export default function BusinessServicesPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Services</h1>
+          <h1 className="text-lg font-semibold">Services</h1>
           <p className="text-muted-foreground">Manage your service offerings</p>
         </div>
         <Card>
@@ -343,11 +343,11 @@ export default function BusinessServicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Services</h1>
+          <h1 className="text-lg font-semibold">Services</h1>
           <p className="text-muted-foreground">Manage your service offerings and packages</p>
         </div>
         <Button

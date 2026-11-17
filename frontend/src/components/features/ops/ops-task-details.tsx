@@ -32,7 +32,7 @@ export function OpsTaskDetails({ taskId }: { taskId: string }) {
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="py-8 text-center">
+        <CardContent className="py-4 text-center">
           <p className="text-sm text-destructive">Failed to load task details.</p>
         </CardContent>
       </Card>

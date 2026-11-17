@@ -166,12 +166,12 @@ export default function UserSubscriptionSettingsPage() {
   // Loading state
   if (subscriptionLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Subscription</h1>
+          <h1 className="text-lg font-semibold">Subscription</h1>
           <p className="text-muted-foreground">Manage your subscription and billing.</p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
               <Skeleton className="h-6 w-32" />
@@ -204,9 +204,9 @@ export default function UserSubscriptionSettingsPage() {
   // Error state
   if (subscriptionError) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Subscription</h1>
+          <h1 className="text-lg font-semibold">Subscription</h1>
           <p className="text-muted-foreground">Manage your subscription and billing.</p>
         </div>
         <Alert variant="destructive">
@@ -221,9 +221,9 @@ export default function UserSubscriptionSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Subscription</h1>
+        <h1 className="text-lg font-semibold">Subscription</h1>
         <p className="text-muted-foreground">Manage your subscription and billing.</p>
       </div>
 
@@ -251,7 +251,7 @@ export default function UserSubscriptionSettingsPage() {
         </Alert>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Current Plan Card */}
         <Card>
           <CardHeader>
@@ -283,7 +283,7 @@ export default function UserSubscriptionSettingsPage() {
             {subscription?.plan && subscription.price ? (
               <>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">
+                  <span className="text-2xl font-semibold">
                     {formatCurrency(subscription.price.amount, subscription.price.currency)}
                   </span>
                   <span className="text-muted-foreground">
@@ -308,7 +308,7 @@ export default function UserSubscriptionSettingsPage() {
             ) : (
               <div className="space-y-4">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">Free</span>
+                  <span className="text-2xl font-semibold">Free</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Upgrade to unlock more events, guests, and premium features.
@@ -488,7 +488,7 @@ export default function UserSubscriptionSettingsPage() {
           <CardDescription>View your past invoices and payments</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="flex flex-col items-center justify-center py-4 text-center">
             <History className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground">No billing history available</p>
             <p className="text-sm text-muted-foreground">Your invoices will appear here once you subscribe to a paid plan.</p>

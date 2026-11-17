@@ -36,7 +36,7 @@ export default function InquiriesPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
@@ -59,11 +59,11 @@ export default function InquiriesPage() {
   const acceptedCount = leads.filter(l => l.status.toLowerCase() === 'accepted').length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-xl border bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30 p-6">
+      <div className="relative overflow-hidden rounded-xl border bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/30 dark:via-indigo-950/30 dark:to-purple-950/30 p-4">
         <div className="relative z-10">
-          <h1 className="text-2xl font-bold md:text-3xl">Quote Requests</h1>
+          <h1 className="text-lg font-semibold md:text-lg">Quote Requests</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Track your vendor inquiries and quote responses
           </p>

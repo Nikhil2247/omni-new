@@ -195,11 +195,11 @@ export default function SystemHealthPage() {
   const avgLatency = latencies.length > 0 ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">System Health</h1>
+          <h1 className="text-lg font-semibold tracking-tight">System Health</h1>
           <p className="text-muted-foreground">Real-time infrastructure monitoring and service status</p>
         </div>
         <div className="flex items-center gap-3">
@@ -227,7 +227,7 @@ export default function SystemHealthPage() {
         overallStatus === 'error' && 'border-red-500/50 bg-red-500/5',
         overallStatus === 'unknown' && 'border-gray-400/50 bg-gray-400/5'
       )}>
-        <CardContent className="flex flex-col items-center justify-between gap-6 py-6 md:flex-row">
+        <CardContent className="flex flex-col items-center justify-between gap-4 py-6 md:flex-row">
           <div className="flex items-center gap-4">
             <div className={cn(
               'flex h-14 w-14 items-center justify-center rounded-full',
@@ -246,7 +246,7 @@ export default function SystemHealthPage() {
               <p className="text-muted-foreground">{healthyCount} of {totalServices} services operational</p>
             </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <div className="text-center">
               <p className={cn(
                 'text-2xl font-bold',
@@ -536,7 +536,7 @@ function MemoryCard({ label, value, percent, description, icon }: {
 
 function HealthSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />

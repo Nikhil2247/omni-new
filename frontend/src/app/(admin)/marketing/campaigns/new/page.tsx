@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function MarketingCampaignNewPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Create campaign</h1>
+        <h1 className="text-lg font-semibold">Create campaign</h1>
         <p className="text-muted-foreground">Campaign creation is coming next in the marketing gateway.</p>
       </div>
 

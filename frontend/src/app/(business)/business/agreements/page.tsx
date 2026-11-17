@@ -152,9 +152,9 @@ export default function BusinessAgreementsPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Vendor Agreements</h1>
+          <h1 className="text-lg font-semibold">Vendor Agreements</h1>
           <p className="text-muted-foreground">View your agreements with event organizers</p>
         </div>
         <Card>
@@ -174,10 +174,10 @@ export default function BusinessAgreementsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Vendor Agreements</h1>
+        <h1 className="text-lg font-semibold">Vendor Agreements</h1>
         <p className="text-muted-foreground">View and respond to agreements from event organizers</p>
       </div>
 
@@ -287,7 +287,7 @@ export default function BusinessAgreementsPage() {
 
             return (
               <Card key={agreement.id} className={showActions ? 'border-yellow-300 bg-yellow-50/30' : ''}>
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">

@@ -56,9 +56,9 @@ export default function OpsVendorsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Vendors</h1>
+          <h1 className="text-lg font-semibold">Vendors</h1>
           <p className="text-muted-foreground">Manage vendor profiles and verifications.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -77,9 +77,9 @@ export default function OpsVendorsPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Vendors</h1>
+          <h1 className="text-lg font-semibold">Vendors</h1>
         </div>
         <Card className="border-destructive">
           <CardHeader>
@@ -95,10 +95,10 @@ export default function OpsVendorsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Vendors</h1>
+        <h1 className="text-lg font-semibold">Vendors</h1>
         <p className="text-muted-foreground">Manage vendor profiles and verifications.</p>
       </div>
 
@@ -186,7 +186,7 @@ export default function OpsVendorsPage() {
       {/* Vendors Grid */}
       {filteredVendors.length === 0 ? (
         <Card>
-          <CardContent className="py-8 text-center">
+          <CardContent className="py-4 text-center">
             <Building2 className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-muted-foreground">No vendors found.</p>
           </CardContent>
