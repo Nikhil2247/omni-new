@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { WishlistDetail } from '@/components/features/events/wishlist-detail'
+import { WishlistBoardDetail } from '@/components/wishlists/wishlist-board-detail'
+import { SkContainer } from '@/components/sketch'
 import { trackWishlist } from '@/lib/analytics/umami'
 
 export default function WishlistDetailPage() {
@@ -18,8 +19,8 @@ export default function WishlistDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-6 py-12 lg:py-16">
-      <WishlistDetail wishlistId={boardId} />
-    </div>
+    <SkContainer className="pb-16 pt-6">
+      <WishlistBoardDetail wishlistId={boardId} />
+    </SkContainer>
   )
 }

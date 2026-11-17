@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { useRegister } from '@/hooks/use-auth'
-import { Button } from '@/components/ui/button'
+import { SketchButton } from '@/components/sketch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, Lock, User, CheckCircle2, Eye, EyeOff } from 'lucide-react'
+import { CheckCircle2, Eye, EyeOff } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
 import { trackAuth } from '@/lib/analytics/umami'
@@ -64,9 +64,9 @@ export function RegisterForm({ accountType = 'USER' }: RegisterFormProps) {
 
   if (registerMutation.isSuccess) {
     return (
-      <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
-        <CheckCircle2 className="h-5 w-5 text-green-600" />
-        <AlertDescription className="text-green-900 dark:text-green-100">
+      <Alert className="border-leaf-deep bg-card">
+        <CheckCircle2 className="h-5 w-5 text-leaf-deep" />
+        <AlertDescription className="text-ink">
           <p className="font-medium mb-1">Account created successfully!</p>
           <p className="text-sm">
             Please check your email <strong>{email}</strong> to verify your account.
@@ -79,32 +79,28 @@ export function RegisterForm({ accountType = 'USER' }: RegisterFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
+        <div className="sk-field">
           <Label htmlFor="firstName">First name</Label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="firstName"
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="pl-10"
               placeholder="John"
               autoComplete="given-name"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="sk-field">
           <Label htmlFor="lastName">Last name</Label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="lastName"
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="pl-10"
               placeholder="Doe"
               autoComplete="family-name"
             />
@@ -112,16 +108,14 @@ export function RegisterForm({ accountType = 'USER' }: RegisterFormProps) {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="sk-field">
         <Label htmlFor="email">Email address</Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="pl-10"
             placeholder="you@example.com"
             required
             autoComplete="email"
@@ -129,16 +123,15 @@ export function RegisterForm({ accountType = 'USER' }: RegisterFormProps) {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="sk-field">
         <Label htmlFor="password">Password</Label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="px-10"
+            style={{ paddingRight: 36 }}
             placeholder="••••••••"
             required
             autoComplete="new-password"
@@ -179,10 +172,9 @@ export function RegisterForm({ accountType = 'USER' }: RegisterFormProps) {
         )}
       </div>
 
-      <Button
+      <SketchButton
         type="submit"
-        className="w-full"
-        size="lg"
+        className="w-full justify-center"
         disabled={registerMutation.isPending || passwordStrength.score < 40}
       >
         {registerMutation.isPending ? (
@@ -193,7 +185,7 @@ export function RegisterForm({ accountType = 'USER' }: RegisterFormProps) {
         ) : (
           'Create account'
         )}
-      </Button>
+      </SketchButton>
 
       <p className="text-xs text-center text-muted-foreground">
         By creating an account, you agree to our Terms of Service and Privacy Policy.

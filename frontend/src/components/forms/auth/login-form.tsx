@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { useEffect, useRef } from 'react'
 import { useGoogleLogin, useLogin } from '@/hooks/use-auth'
 import { TwoFactorForm } from '@/components/forms/auth/two-factor-form'
-import { Button } from '@/components/ui/button'
+import { SketchButton } from '@/components/sketch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { trackAuth } from '@/lib/analytics/umami'
 
@@ -171,16 +171,16 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
     return (
       <div className="space-y-4">
         <TwoFactorForm tempToken={tempToken} returnUrl={returnUrl} />
-        <Button
+        <SketchButton
           type="button"
-          variant="outline"
-          className="w-full"
+          variant="line"
+          className="w-full justify-center"
           onClick={() => {
             setTempToken(null)
           }}
         >
           Back to login
-        </Button>
+        </SketchButton>
       </div>
     )
   }
@@ -207,16 +207,14 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
         </div>
       ) : null}
 
-      <div className="space-y-2">
+      <div className="sk-field">
         <Label htmlFor="email">Email address</Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="pl-10"
             placeholder="you@example.com"
             required
             autoComplete="email"
@@ -224,16 +222,15 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="sk-field">
         <Label htmlFor="password">Password</Label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="px-10"
+            style={{ paddingRight: 36 }}
             placeholder="••••••••"
             required
             autoComplete="current-password"
@@ -249,10 +246,9 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
         </div>
       </div>
 
-      <Button
+      <SketchButton
         type="submit"
-        className="w-full"
-        size="lg"
+        className="w-full justify-center"
         disabled={loginMutation.isPending}
       >
         {loginMutation.isPending ? (
@@ -263,7 +259,7 @@ export function LoginForm({ returnUrl }: LoginFormProps) {
         ) : (
           'Sign in'
         )}
-      </Button>
+      </SketchButton>
     </form>
   )
 }

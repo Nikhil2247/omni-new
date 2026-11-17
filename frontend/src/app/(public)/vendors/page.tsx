@@ -28,6 +28,7 @@ import {
 import type { VendorSearchParams } from "@/lib/api/types/vendor.types";
 import { Search, Users, ArrowRight, SlidersHorizontal } from "lucide-react";
 import { BannerAdsCarousel } from "@/components/ads";
+import { Brush, Eyebrow, Ico, ICONS, Paper, SketchButton, Vine, skPaper } from "@/components/sketch";
 
 // ─── Lenis Smooth Scroll ─────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ function AnimatedCard({ children, index }: { children: React.ReactNode; index: n
   return (
     <motion.div
       ref={ref}
+      className="sk-tilt-host"
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.95 }}
       transition={{
@@ -105,12 +107,14 @@ function AnimatedCard({ children, index }: { children: React.ReactNode; index: n
 function VendorResults({
   query,
   categoryId,
+  cityId,
   sortBy,
   sortOrder,
   onTotalChange,
 }: {
   query?: string;
   categoryId?: string;
+  cityId?: string;
   sortBy?: VendorSearchParams["sortBy"];
   sortOrder?: VendorSearchParams["sortOrder"];
   onTotalChange: (total: number) => void;
@@ -123,12 +127,13 @@ function VendorResults({
     () => ({
       query,
       categoryId: categoryId || undefined,
+      cityId: cityId || undefined,
       sortBy,
       sortOrder,
       page,
       limit: 24,
     }),
-    [query, categoryId, sortBy, sortOrder, page]
+    [query, categoryId, cityId, sortBy, sortOrder, page]
   );
 
   const { data: vendorsData, isLoading: vendorsLoading, isFetching } = usePublicVendors(filters);
@@ -143,7 +148,7 @@ function VendorResults({
   useEffect(() => {
     setPage(1);
     setAllVendors([]);
-  }, [query, categoryId, sortBy, sortOrder]);
+  }, [query, categoryId, cityId, sortBy, sortOrder]);
 
   useEffect(() => {
     if (vendorsData?.data) {
@@ -158,7 +163,7 @@ function VendorResults({
         });
       }
     }
-  }, [vendorsData, page, query, categoryId, sortBy, sortOrder]);
+  }, [vendorsData, page, query, categoryId, cityId, sortBy, sortOrder]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -202,14 +207,14 @@ function VendorResults({
 
   if (displayVendors.length === 0) {
     return (
-      <FadeIn className="py-20 text-center">
-        <div className="bg-muted/50 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full">
-          <Users className="text-muted-foreground/60 h-9 w-9" />
-        </div>
-        <h3 className="mb-2 font-serif text-xl font-semibold">No vendors found</h3>
-        <p className="text-muted-foreground mx-auto max-w-sm">
-          Try adjusting your search or browse a different category.
-        </p>
+      <FadeIn className="py-16">
+        <Paper className="mx-auto max-w-md px-6 py-10 text-center">
+          <Ico d={ICONS.search} className="mx-auto mb-2 !size-[70px]" />
+          <h3 className="font-display mb-2 text-2xl font-semibold">No vendors found</h3>
+          <p className="text-ink-soft mx-auto max-w-sm">
+            Try adjusting your search, a different city or another category.
+          </p>
+        </Paper>
       </FadeIn>
     );
   }
@@ -279,21 +284,11 @@ function VendorFilters({
   }, [selectedCategoryId, sortBy, sortOrder, autoApply, onApply]);
 
   return (
-    <div
-      className="h-full rounded-2xl border border-[#165EA6]/20 p-4 sm:p-5"
-      style={{
-        background: "linear-gradient(160deg, #165EA6/5 0%, rgba(22,94,166,0.06) 100%)",
-        backgroundColor: "rgba(22,94,166,0.05)",
-      }}
-    >
+    <div className="sk-paper sk-paper--alt h-full p-4 sm:p-5">
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-serif text-lg font-semibold" style={{ color: "#165EA6" }}>
-          Filters
-        </h2>
+        <h2 className="font-display text-xl font-semibold">Filters</h2>
         {activeFiltersCount > 0 && (
-          <span className="bg-primary/10 text-primary rounded-full px-2.5 py-1 text-xs font-semibold">
-            {activeFiltersCount} active
-          </span>
+          <span className="sk-stamp">{activeFiltersCount} active</span>
         )}
       </div>
 
@@ -352,10 +347,12 @@ function VendorFilters({
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-2">
-        <Button variant="outline" onClick={onClear}>
+        <SketchButton variant="line" size="sm" onClick={onClear}>
           Clear
-        </Button>
-        <Button onClick={onApply}>Apply</Button>
+        </SketchButton>
+        <SketchButton size="sm" onClick={onApply}>
+          Apply
+        </SketchButton>
       </div>
     </div>
   );
@@ -376,6 +373,11 @@ function VendorsPageContent() {
   const categoryParam = searchParams.get("categoryId") ?? "";
   const sortByParam = (searchParams.get("sortBy") as SortByValue | null) ?? "viewCount";
   const sortOrderParam = (searchParams.get("sortOrder") as SortOrderValue | null) ?? "desc";
+  // Passed from the home page quick planner
+  const cityIdParam = searchParams.get("cityId") ?? "";
+  const cityNameParam = searchParams.get("cityName") ?? "";
+  const eventParam = searchParams.get("event") ?? "";
+  const dateParam = searchParams.get("date") ?? "";
 
   const [searchQuery, setSearchQuery] = useState(queryParam);
   const [selectedCategoryId, setSelectedCategoryId] = useState(categoryParam);
@@ -428,10 +430,33 @@ function VendorsPageContent() {
     if (selectedCategoryId) params.set("categoryId", selectedCategoryId);
     if (sortBy !== "viewCount") params.set("sortBy", sortBy);
     if (sortOrder !== "desc") params.set("sortOrder", sortOrder);
+    if (cityIdParam) {
+      params.set("cityId", cityIdParam);
+      if (cityNameParam) params.set("cityName", cityNameParam);
+    }
+    if (eventParam) params.set("event", eventParam);
+    if (dateParam) params.set("date", dateParam);
 
     router.push(params.toString() ? `/vendors?${params.toString()}` : "/vendors");
     setMobileFiltersOpen(false);
-  }, [searchQuery, selectedCategoryId, sortBy, sortOrder, router]);
+  }, [searchQuery, selectedCategoryId, sortBy, sortOrder, cityIdParam, cityNameParam, eventParam, dateParam, router]);
+
+  // Drop only the planner choices (city, event, date) and keep the rest of the search
+  const clearPlan = useCallback(() => {
+    const params = new URLSearchParams();
+    if (queryParam) params.set("query", queryParam);
+    if (categoryParam) params.set("categoryId", categoryParam);
+    if (sortByParam !== "viewCount") params.set("sortBy", sortByParam);
+    if (sortOrderParam !== "desc") params.set("sortOrder", sortOrderParam);
+    router.push(params.toString() ? `/vendors?${params.toString()}` : "/vendors");
+  }, [queryParam, categoryParam, sortByParam, sortOrderParam, router]);
+
+  const planDate = useMemo(() => {
+    if (!dateParam) return "";
+    const d = new Date(`${dateParam}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? dateParam : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  }, [dateParam]);
+  const hasPlan = Boolean(cityIdParam || eventParam || dateParam);
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
@@ -443,32 +468,46 @@ function VendorsPageContent() {
   }, [router]);
 
   return (
-    <main className="bg-background min-h-screen">
-      {/* Compact Header — mirrors Discover page */}
-      <section className="bg-muted/20 border-b py-3 lg:py-4">
-        <div className="max-w-8xl mx-auto px-6">
-          <FadeIn delay={0.05} className="max-w-6xl">
-            <div className="bg-background border-border focus-within:ring-primary/20 focus-within:border-primary/30 relative flex items-center rounded-full border p-1.5 shadow-sm transition-shadow focus-within:ring-2 hover:shadow-md">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && applyFilters()}
-                placeholder="Search vendors, services..."
-                className="h-9 border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
-              />
-              <Button
-                onClick={applyFilters}
-                className="h-9 w-9 shrink-0 rounded-full p-0"
-                aria-label="Search"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </FadeIn>
+    <main className="min-h-screen">
+      <section className="mx-auto w-full max-w-[1440px] px-4 pt-6 pb-2 md:pt-7">
+        <Eyebrow>Vendors</Eyebrow>
+        <h1 className="font-display mt-2.5 max-w-[20ch] text-[clamp(2.2rem,5vw,3.8rem)] leading-[1.05] font-semibold tracking-tight text-balance">
+          Find the people who make the <Brush>day</Brush>.
+        </h1>
+        <p className="text-ink-soft mt-3 max-w-xl">
+          Search by name or service, narrow by category, and save favourites to a wishlist.
+        </p>
+        <div className="sk-pill mt-6">
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+            placeholder="Search vendors, services..."
+            aria-label="Search vendors"
+          />
+          <button type="button" onClick={applyFilters} aria-label="Search">
+            <Search className="h-[18px] w-[18px]" />
+          </button>
         </div>
+        {hasPlan ? (
+          <div className="border-blue-wash bg-blue-wash/25 mt-4 flex flex-wrap items-center gap-x-3.5 gap-y-2.5 rounded-[18px_240px_20px_220px/230px_18px_250px_16px] border-2 border-dashed px-3.5 py-2.5 text-[0.95rem]">
+            <span>
+              Planning {eventParam ? <>a <b>{eventParam}</b></> : "an event"}
+              {cityNameParam ? <> in <b>{cityNameParam}</b></> : null}
+              {planDate ? <> on <b>{planDate}</b></> : null}
+            </span>
+            <SketchButton asChild variant="ghost" size="sm">
+              <Link href="/">Change</Link>
+            </SketchButton>
+            <SketchButton variant="ghost" size="sm" onClick={clearPlan}>
+              Clear
+            </SketchButton>
+            <small className="text-ink-soft">Vendors confirm availability when you request a quote.</small>
+          </div>
+        ) : null}
       </section>
 
-      <div className="max-w-8xl mx-auto px-6 py-8 lg:py-10">
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-8 lg:py-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start lg:gap-8">
           <aside className="sticky top-6 hidden self-start lg:block">
             <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40 max-h-[calc(100vh-4rem)] overflow-y-auto overscroll-contain pr-1 space-y-6">
@@ -531,9 +570,10 @@ function VendorsPageContent() {
             </FadeIn>
 
             <VendorResults
-              key={`${queryParam}-${categoryParam}-${sortByParam}-${sortOrderParam}`}
+              key={`${queryParam}-${categoryParam}-${cityIdParam}-${sortByParam}-${sortOrderParam}`}
               query={queryParam}
               categoryId={categoryParam}
+              cityId={cityIdParam}
               sortBy={sortByParam}
               sortOrder={sortOrderParam}
               onTotalChange={setTotalVendors}
@@ -543,26 +583,25 @@ function VendorsPageContent() {
       </div>
 
       {/* CTA Section */}
-      <section className="relative overflow-hidden bg-linear-to-br from-slate-900 via-indigo-950 to-purple-950 py-16 lg:py-20">
-        <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-sky-500/10 blur-[100px]" />
-        <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-rose-500/10 blur-[100px]" />
-
-        <FadeIn className="relative z-10 mx-auto max-w-3xl px-6 text-center">
-          <h2 className="font-serif text-2xl font-bold text-white sm:text-3xl lg:text-4xl">
-            Are you a vendor?
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/60">
-            Join thousands of professionals on Omnicassion and grow your business.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Button asChild size="lg" className="rounded-full px-8 shadow-lg">
-              <Link href="/register/vendor">
-                Join as Professional
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </FadeIn>
+      <section className="mx-auto w-full max-w-[1440px] px-4 pt-4 pb-12">
+        <div className={`${skPaper({ tape: true })} px-6 py-14 text-center`}>
+          <Vine d="M0 190C60 170 110 130 150 80C180 40 230 20 290 12" seed={31} n={11} s={1.05} className="pointer-events-none absolute -bottom-6 -left-10 w-[260px] max-[700px]:w-32" />
+          <Vine d="M0 190C60 170 110 130 150 80C180 40 230 20 290 12" seed={41} n={11} s={1.05} className="pointer-events-none absolute -right-10 -bottom-6 w-[260px] -scale-x-100 max-[700px]:w-32" />
+          <FadeIn className="relative z-10 mx-auto max-w-3xl">
+            <h2 className="font-display text-[clamp(1.9rem,4vw,3rem)] leading-[1.05] font-semibold text-balance">Are you a vendor?</h2>
+            <p className="text-ink-soft mx-auto mt-3 max-w-xl">
+              Join thousands of professionals on Omnicassion and grow your business.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
+              <SketchButton asChild>
+                <Link href="/register/vendor">
+                  Join as Professional
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </SketchButton>
+            </div>
+          </FadeIn>
+        </div>
       </section>
     </main>
   );

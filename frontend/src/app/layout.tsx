@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Fraunces, Caveat, Karla } from "next/font/google";
 import "./globals.css";
+import { SketchFilters } from "@/components/sketch/filters";
 import { Providers } from "@/providers";
 import { generateMetadata } from "@/lib/seo/metadata";
 import { JsonLd } from "@/components/common/JsonLd";
@@ -8,15 +9,27 @@ import { createOrganizationSchema, createWebsiteSchema } from "@/lib/seo/structu
 import { ErrorBoundaryWrapper } from "@/components/common/error-boundary";
 import { EmailVerificationWrapper } from "@/components/common/email-verification-wrapper";
 
-const inter = Inter({
+// Brand typography for the hand-painted theme: Karla for text, Fraunces for headings, Caveat for handwritten accents.
+const body = Karla({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--nf-body",
+  weight: ["400", "500", "700"],
+  display: "swap",
 });
 
-const playfair = Playfair_Display({
+const display = Fraunces({
   subsets: ["latin"],
-  variable: "--font-serif",
-  weight: ["400", "500", "600", "700"],
+  variable: "--nf-display",
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+  display: "swap",
+});
+
+const hand = Caveat({
+  subsets: ["latin"],
+  variable: "--nf-hand",
+  weight: ["500", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = generateMetadata({
@@ -104,8 +117,8 @@ export const metadata: Metadata = generateMetadata({
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ec4899" },
-    { media: "(prefers-color-scheme: dark)", color: "#1f2937" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f6f1" },
+    { media: "(prefers-color-scheme: dark)", color: "#10173a" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -134,7 +147,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         )}
       </head>
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
+      <body className={`${body.variable} ${display.variable} ${hand.variable} font-sans antialiased`}>
+        <SketchFilters />
         <ErrorBoundaryWrapper>
           <Providers>
             <EmailVerificationWrapper />

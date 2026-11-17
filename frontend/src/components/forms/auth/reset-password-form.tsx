@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useResetPassword } from '@/hooks/use-auth'
-import { Button } from '@/components/ui/button'
+import { SketchButton } from '@/components/sketch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Lock, CheckCircle2, Eye, EyeOff } from 'lucide-react'
+import { CheckCircle2, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { trackAuth } from '@/lib/analytics/umami'
 
@@ -65,9 +65,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   if (resetMutation.isSuccess) {
     return (
-      <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
-        <CheckCircle2 className="h-5 w-5 text-green-600" />
-        <AlertDescription className="text-green-900 dark:text-green-100">
+      <Alert className="border-leaf-deep bg-card">
+        <CheckCircle2 className="h-5 w-5 text-leaf-deep" />
+        <AlertDescription className="text-ink">
           <p className="font-medium mb-1">Password updated successfully!</p>
           <p className="text-sm">Redirecting you to login...</p>
         </AlertDescription>
@@ -77,16 +77,15 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-2">
+      <div className="sk-field">
         <Label htmlFor="password">New password</Label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="px-10"
+            style={{ paddingRight: 36 }}
             placeholder="••••••••"
             required
             autoComplete="new-password"
@@ -124,16 +123,15 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="sk-field">
         <Label htmlFor="confirmPassword">Confirm password</Label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="confirmPassword"
             type={showConfirmPassword ? 'text' : 'password'}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="px-10"
+            style={{ paddingRight: 36 }}
             placeholder="••••••••"
             required
             autoComplete="new-password"
@@ -152,10 +150,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         )}
       </div>
 
-      <Button
+      <SketchButton
         type="submit"
-        className="w-full"
-        size="lg"
+        className="w-full justify-center"
         disabled={resetMutation.isPending || passwordStrength.score < 40 || !passwordsMatch}
       >
         {resetMutation.isPending ? (
@@ -166,7 +163,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         ) : (
           'Update password'
         )}
-      </Button>
+      </SketchButton>
     </form>
   )
 }

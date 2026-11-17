@@ -28,7 +28,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { skPaper, Chip, Hand, PaintedScene, skBtn } from '@/components/sketch'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +54,7 @@ function TypingIndicator() {
       {[0, 0.15, 0.3].map((delay, i) => (
         <motion.div
           key={i}
-          className="h-2 w-2 rounded-full bg-primary/50"
+          className="h-2 w-2 rounded-full bg-blue/60"
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 0.5, repeat: Infinity, delay }}
         />
@@ -75,12 +75,12 @@ function VendorCard({ vendor }: { vendor: ChatbotVendorSuggestion }) {
 
   return (
     <Link href={vendor.profileUrl || `/vendors/${vendor.slug}`} className="group block">
-      <div className="rounded-xl border border-border/50 bg-card p-3 transition-all hover:border-primary/30 hover:shadow-sm">
+      <div className="rounded-[var(--hand2)] border-2 border-ink bg-card p-3 transition-colors hover:border-blue">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <span className="truncate text-sm font-medium">{vendor.businessName}</span>
-              {vendor.isVerified && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />}
+              {vendor.isVerified && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-leaf-deep" />}
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {vendor.categoryName}
@@ -91,7 +91,7 @@ function VendorCard({ vendor }: { vendor: ChatbotVendorSuggestion }) {
                 </>
               )}
             </p>
-            {priceRange && <p className="mt-1 text-xs font-medium text-primary">{priceRange}</p>}
+            {priceRange && <p className="mt-1 text-xs font-bold text-blue">{priceRange}</p>}
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 transition-colors group-hover:text-primary" />
         </div>
@@ -122,7 +122,7 @@ function ActionButton({ action }: { action: ChatbotAction }) {
     return (
       <Link
         href={action.url}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        className="inline-flex items-center gap-1.5 rounded-[var(--hand2)] border-2 border-blue bg-blue-wash px-3 py-1.5 text-xs font-bold text-blue transition-colors hover:bg-blue hover:text-on-blue"
       >
         {action.label}
         <ExternalLink className="h-3 w-3" />
@@ -132,7 +132,7 @@ function ActionButton({ action }: { action: ChatbotAction }) {
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+      className="inline-flex items-center gap-1.5 rounded-[var(--hand2)] border-2 border-ink bg-card px-3 py-1.5 text-xs font-bold text-ink transition-colors hover:border-blue"
     >
       {action.label}
     </button>
@@ -146,10 +146,10 @@ function PlanningToolsGrid({ tools }: { tools: PlanningToolLink[] }) {
         <Link
           key={tool.id}
           href={tool.url}
-          className="group flex flex-col gap-1.5 rounded-xl border border-border/50 bg-card p-3 transition-all hover:border-primary/30 hover:shadow-sm"
+          className="group flex flex-col gap-1.5 rounded-[var(--hand2)] border-2 border-ink bg-card p-3 transition-colors hover:border-blue"
         >
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-wash text-blue transition-colors group-hover:bg-blue group-hover:text-on-blue">
               <PlanningToolIcon icon={tool.icon} />
             </div>
             <span className="text-sm font-medium">{tool.label}</span>
@@ -179,16 +179,16 @@ function MessageBubble({
       className={cn('flex gap-3', isBot ? 'justify-start' : 'justify-end')}
     >
       {isBot && (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <Bot className="h-4 w-4 text-primary" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-blue-wash">
+          <Bot className="h-4 w-4 text-blue" />
         </div>
       )}
 
       <div className={cn('max-w-[85%] space-y-3', !isBot && 'order-first')}>
         <div
           className={cn(
-            'rounded-2xl px-4 py-2.5 text-sm',
-            isBot ? 'bg-muted' : 'bg-primary text-primary-foreground'
+            'rounded-[var(--hand2)] border-2 px-4 py-2.5 text-sm',
+            isBot ? 'border-ink bg-card text-ink' : 'border-blue bg-blue text-on-blue'
           )}
         >
           <ChatbotMarkdown content={message.text} variant={isBot ? 'bot' : 'user'} />
@@ -209,7 +209,7 @@ function MessageBubble({
                 key={q.id}
                 type="button"
                 onClick={() => onFollowUp(q)}
-                className="flex items-center gap-1 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                className="flex items-center gap-1 rounded-[var(--hand2)] border-2 border-ink bg-card px-2.5 py-1.5 text-xs font-medium text-ink transition-colors hover:border-blue hover:text-blue"
               >
                 <Lightbulb className="h-3 w-3" />
                 {q.text}
@@ -225,7 +225,7 @@ function MessageBubble({
                 key={s}
                 type="button"
                 onClick={() => onSuggestion(s)}
-                className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs text-primary transition-colors hover:bg-primary/10"
+                className="flex items-center gap-1 rounded-full border-2 border-blue bg-blue-wash px-2.5 py-1 text-xs font-bold text-blue transition-colors hover:bg-blue hover:text-on-blue"
               >
                 <Sparkles className="h-3 w-3" />
                 {s}
@@ -275,7 +275,7 @@ function ThreadItem({
     <div
       className={cn(
         'group flex items-center gap-2 rounded-lg px-3 py-2 transition-colors cursor-pointer',
-        isActive ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+        isActive ? 'bg-blue-wash font-bold text-blue' : 'hover:bg-blue-wash/50'
       )}
       onClick={onSelect}
     >
@@ -296,7 +296,7 @@ function ThreadItem({
             }
           }}
           onClick={(e) => e.stopPropagation()}
-          className="flex-1 min-w-0 bg-transparent text-sm outline-none border-b border-primary"
+          className="flex-1 min-w-0 bg-transparent text-sm outline-none border-b-2 border-blue"
         />
       ) : (
         <span className="flex-1 truncate text-sm">{thread.title}</span>
@@ -449,7 +449,8 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="flex h-[100dvh] bg-background">
+    <div className="mx-auto w-full max-w-[1440px] px-4 pb-4 pt-2">
+    <div className={skPaper({ className: 'flex h-[calc(100dvh-96px)] min-h-[480px] overflow-hidden !p-0 max-md:h-[calc(100dvh-150px)]' })}>
       {/* Sidebar Overlay for mobile */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -466,17 +467,17 @@ export default function AssistantPage() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-72 flex-col border-r bg-background transition-transform md:relative md:translate-x-0 md:flex',
+          'fixed inset-y-0 left-0 z-50 w-72 flex-col border-r-2 border-line bg-card transition-transform md:relative md:translate-x-0 md:flex',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between border-b p-4">
+        <div className="flex items-center justify-between border-b-2 border-line p-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-              <Bot className="h-4 w-4 text-primary" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-blue-wash">
+              <Bot className="h-4 w-4 text-blue" />
             </div>
-            <span className="font-semibold">Chats</span>
+            <span className="font-display text-lg font-bold">Chats</span>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -527,7 +528,7 @@ export default function AssistantPage() {
         </div>
 
         {/* Sidebar Footer */}
-        <div className="border-t p-3">
+        <div className="border-t-2 border-line p-3">
           <p className="text-xs text-center text-muted-foreground">
             {isAuthenticated ? 'Conversations synced' : 'Sign in to save chats'}
           </p>
@@ -537,7 +538,7 @@ export default function AssistantPage() {
       {/* Main Chat Area */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Header */}
-        <header className="flex items-center justify-between border-b px-4 py-3">
+        <header className="flex items-center justify-between border-b-2 border-line px-4 py-3">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -553,7 +554,7 @@ export default function AssistantPage() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-sm font-semibold truncate max-w-[200px]">
+              <h1 className="font-display text-lg font-bold truncate max-w-[200px] sm:max-w-[360px]">
                 {activeThread?.title || 'AI Assistant'}
               </h1>
               <p className="text-xs text-muted-foreground">
@@ -581,14 +582,12 @@ export default function AssistantPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="border-b px-4 py-2"
+              className="border-b-2 border-line px-4 py-2"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted-foreground">Filters:</span>
                 {activeFilters.map((filter) => (
-                  <Badge key={filter} variant="secondary" className="text-xs">
-                    {filter}
-                  </Badge>
+                  <Chip key={filter}>{filter}</Chip>
                 ))}
               </div>
             </motion.div>
@@ -597,7 +596,40 @@ export default function AssistantPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
+          <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+            {messages.length <= 1 && !isLoading ? (
+              <div className="grid items-center gap-5 pb-2 sm:grid-cols-[1fr_190px]">
+                <div>
+                  <Hand className="inline-block -rotate-2 text-[1.5rem]">your planning buddy</Hand>
+                  <h2 className="font-display mt-1.5 text-[clamp(1.7rem,4vw,2.4rem)] leading-[1.05] font-semibold text-balance">
+                    Ask anything about your event
+                  </h2>
+                  <p className="text-ink-soft mt-2 max-w-md text-sm">
+                    Budgets, venues, vendors, checklists and timelines. Pick a question to start, or type your own below.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {[
+                      'How should I split my budget?',
+                      'Help me pick a venue',
+                      'What should I ask a photographer?',
+                      'Build me a checklist',
+                    ].map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => handleSend(q)}
+                        className="border-ink bg-card text-ink hover:bg-blue-wash/40 rounded-full border-2 px-3.5 py-1.5 text-sm font-bold transition-colors"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="border-ink bg-sky1 hidden aspect-[4/3] overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px] border-2 sm:block">
+                  <PaintedScene seed={21} motif={3} />
+                </div>
+              </div>
+            ) : null}
             <AnimatePresence mode="popLayout">
               {messages.map((m) => (
                 <MessageBubble
@@ -611,10 +643,10 @@ export default function AssistantPage() {
 
             {isLoading && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Bot className="h-4 w-4 text-primary" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink bg-blue-wash">
+                  <Bot className="h-4 w-4 text-blue" />
                 </div>
-                <div className="rounded-2xl bg-muted">
+                <div className="rounded-[var(--hand2)] border-2 border-ink bg-card">
                   <TypingIndicator />
                 </div>
               </motion.div>
@@ -625,12 +657,12 @@ export default function AssistantPage() {
         </div>
 
         {/* Input */}
-        <div className="border-t bg-background p-4">
-          <div className="mx-auto flex max-w-2xl items-end gap-3">
+        <div className="border-t-2 border-line p-4">
+          <div className="sk-pill mx-auto flex max-w-3xl items-end gap-3">
             <textarea
               ref={inputRef}
               placeholder="Ask about vendors, budgets, or event planning..."
-              className="min-h-[44px] max-h-32 flex-1 resize-none rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50 focus:bg-background"
+              className="min-h-[44px] max-h-32 flex-1 resize-none border-0 bg-transparent px-2 py-3 text-sm text-ink outline-none placeholder:text-ink-soft"
               rows={1}
               onKeyDown={handleKeyDown}
               onInput={(e) => {
@@ -639,17 +671,13 @@ export default function AssistantPage() {
                 target.style.height = Math.min(target.scrollHeight, 128) + 'px'
               }}
             />
-            <Button
-              size="icon"
-              className="h-11 w-11 shrink-0 rounded-xl"
-              onClick={() => handleSend()}
-              disabled={isLoading}
-            >
+            <button type="button" className={skBtn('solid', 'icon', 'shrink-0')} onClick={() => handleSend()} disabled={isLoading} aria-label="Send message">
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
+    </div>
     </div>
   )
 }

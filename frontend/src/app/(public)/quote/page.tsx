@@ -12,17 +12,7 @@ import * as z from 'zod'
 import { useAuthStore } from '@/store/auth-store'
 import { usePublicVendor } from '@/hooks/queries/use-public-vendors'
 import { useCreateLead } from '@/hooks/queries/use-leads'
-import { Button } from '@/components/ui/button'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Brush, Eyebrow, Paper, SketchButton, SkContainer } from '@/components/sketch'
 
 const quoteSchema = z.object({
   eventDate: z.string().min(1, 'Event date is required'),
@@ -44,6 +34,21 @@ const quoteSchema = z.object({
 
 type QuoteFormValues = z.infer<typeof quoteSchema>
 
+const NEXT_STEPS = [
+  { title: '1. Ops admin reviews your request.', text: 'The ops team looks at your date, guests and budget.' },
+  { title: '2. We confirm availability.', text: 'We check availability and requirements with vendors.' },
+  { title: '3. You receive curated options.', text: 'Review the vendor options we shortlist for you.' },
+]
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null
+  return (
+    <p role="alert" className="text-xs font-bold text-destructive">
+      {message}
+    </p>
+  )
+}
+
 export default function QuotePage() {
   const searchParams = useSearchParams()
   const mediaId = searchParams.get('mediaId') || undefined
@@ -51,6 +56,8 @@ export default function QuotePage() {
   const vendorIdParam = searchParams.get('vendorId') || undefined
   const vendorSlug = searchParams.get('vendorSlug') || undefined
   const vendorNameParam = searchParams.get('vendorName') || undefined
+  const eventParam = searchParams.get('event') || ''
+  const dateParam = searchParams.get('date') || ''
 
   const { user, isAuthenticated, hasHydrated } = useAuthStore()
   const createLead = useCreateLead()
@@ -68,13 +75,17 @@ export default function QuotePage() {
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
     defaultValues: {
-      eventDate: '',
-      eventType: '',
+      eventDate: dateParam,
+      eventType: eventParam,
       guestCount: '',
       budget: '',
       message: '',
     },
   })
+  const {
+    register,
+    formState: { errors },
+  } = form
 
   const onSubmit = async (values: QuoteFormValues) => {
     setStatus(null)
@@ -132,128 +143,116 @@ export default function QuotePage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8 p-6">
-      <div className="space-y-2">
-        <p className="text-sm uppercase tracking-wide text-muted-foreground">Quote request</p>
-        <h1 className="text-3xl font-semibold">Tell us about your event</h1>
-        <p className="text-muted-foreground">
+    <SkContainer className="pb-16">
+      <div className="pb-2 pt-6">
+        <Eyebrow>Get a quote</Eyebrow>
+        <h1 className="mt-2.5 max-w-[20ch] font-display text-[clamp(2.2rem,5vw,3.8rem)] font-bold leading-[1.05] text-ink">
+          Tell us about your <Brush gold>event</Brush>
+        </h1>
+        <p className="mt-3 max-w-xl text-ink-soft">
           Share your details and our ops team will curate the right vendor options for you.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[1fr_280px]">
-        <div className="space-y-6">
+      <div className="mt-6 grid items-start gap-[34px] min-[900px]:grid-cols-[1fr_340px]">
+        <div className="space-y-5">
           {hasHydrated && !isAuthenticated && (
-            <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm">
-              <p className="font-medium">Log in to send a quote request.</p>
+            <Paper alt className="p-5 text-sm">
+              <p className="font-bold">Log in to send a quote request.</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button asChild size="sm">
+                <SketchButton asChild size="sm">
                   <Link href="/login">Log in</Link>
-                </Button>
-                <Button asChild size="sm" variant="outline">
+                </SketchButton>
+                <SketchButton asChild size="sm" variant="line">
                   <Link href="/register">Create account</Link>
-                </Button>
+                </SketchButton>
               </div>
-            </div>
+            </Paper>
           )}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="rounded-lg border bg-card p-4">
-                <p className="text-sm text-muted-foreground">Selected vendor</p>
-                <p className="text-lg font-semibold">{vendorName}</p>
+          <Paper tape className="p-7 max-sm:p-5">
+            <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+              <div className="mb-5 rounded-[var(--hand2)] border-2 border-dashed border-line p-3">
+                <p className="text-sm text-ink-soft">Selected vendor</p>
+                <p className="font-display text-lg font-bold">{vendorName}</p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="eventDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Event date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="eventType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Event type</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Wedding, Gala, Birthday" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="grid gap-x-4 sm:grid-cols-2">
+                <div className="sk-field">
+                  <label htmlFor="q-date">Event date</label>
+                  <input id="q-date" type="date" aria-invalid={!!errors.eventDate} {...register('eventDate')} />
+                  <FieldError message={errors.eventDate?.message} />
+                </div>
+                <div className="sk-field">
+                  <label htmlFor="q-type">Event type</label>
+                  <input
+                    id="q-type"
+                    placeholder="Wedding, Gala, Birthday"
+                    aria-invalid={!!errors.eventType}
+                    {...register('eventType')}
+                  />
+                  <FieldError message={errors.eventType?.message} />
+                </div>
+                <div className="sk-field">
+                  <label htmlFor="q-guests">Guest count</label>
+                  <input
+                    id="q-guests"
+                    type="number"
+                    min={1}
+                    placeholder="150"
+                    aria-invalid={!!errors.guestCount}
+                    {...register('guestCount')}
+                  />
+                  <FieldError message={errors.guestCount?.message} />
+                </div>
+                <div className="sk-field">
+                  <label htmlFor="q-budget">Budget (INR)</label>
+                  <input
+                    id="q-budget"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="10000"
+                    aria-invalid={!!errors.budget}
+                    {...register('budget')}
+                  />
+                  <FieldError message={errors.budget?.message} />
+                </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="guestCount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Guest count</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={1} placeholder="150" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="budget"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Budget (INR)</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} step="0.01" placeholder="10000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              <div className="sk-field">
+                <label htmlFor="q-notes">Notes for the ops team</label>
+                <textarea
+                  id="q-notes"
+                  rows={4}
+                  placeholder="Share preferences, venue ideas, or timing."
+                  {...register('message')}
                 />
               </div>
-
-              <FormField
-                control={form.control}
-                name="message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes for the ops team</FormLabel>
-                    <FormControl>
-                      <Textarea rows={4} placeholder="Share preferences, venue ideas, or timing." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {status && (
-                <p className={status.type === 'success' ? 'text-sm text-green-600' : 'text-sm text-destructive'}>
+                <p
+                  role={status.type === 'error' ? 'alert' : 'status'}
+                  className={
+                    status.type === 'success'
+                      ? 'mb-3 font-hand text-xl font-bold text-leaf-deep'
+                      : 'mb-3 text-sm font-bold text-destructive'
+                  }
+                >
                   {status.text}
                 </p>
               )}
 
-              <Button type="submit" disabled={createLead.isPending}>
+              <SketchButton type="submit" disabled={createLead.isPending}>
                 {createLead.isPending ? 'Sending request...' : 'Send quote request'}
-              </Button>
+              </SketchButton>
             </form>
-          </Form>
+          </Paper>
         </div>
 
-        <aside className="space-y-4">
+        <aside className="space-y-5">
           {imageUrl && (
-            <div className="overflow-hidden rounded-xl border">
+            <Paper className="overflow-hidden p-3">
               <NextImage
                 src={imageUrl}
                 alt="Reference"
@@ -261,21 +260,25 @@ export default function QuotePage() {
                 height={900}
                 unoptimized={true}
                 priority={true}
-                className="h-auto w-full object-cover"
+                className="h-auto w-full rounded-[var(--hand2)] object-cover"
               />
-              <div className="p-3 text-xs text-muted-foreground">Reference image</div>
-            </div>
+              <div className="pt-2 text-xs text-ink-soft">Reference image</div>
+            </Paper>
           )}
-          <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">What happens next?</p>
-            <ul className="mt-2 list-disc space-y-1 pl-4">
-              <li>Ops admin reviews your request.</li>
-              <li>We confirm availability and requirements.</li>
-              <li>You receive curated vendor options.</li>
+          <Paper alt className="p-[22px]">
+            <h2 className="mb-2.5 font-display text-[1.3rem] font-bold">What happens next</h2>
+            <ul className="m-0 grid list-none gap-3 p-0 text-ink-soft">
+              {NEXT_STEPS.map((step) => (
+                <li key={step.title}>
+                  <b className="text-ink">{step.title}</b>
+                  <br />
+                  {step.text}
+                </li>
+              ))}
             </ul>
-          </div>
+          </Paper>
         </aside>
       </div>
-    </main>
+    </SkContainer>
   )
 }

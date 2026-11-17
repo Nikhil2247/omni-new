@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/store/auth-store";
 import { API_ENDPOINTS } from "./endpoints";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.omnicassion.com/api";
 
 export const apiClient = axios.create({
   baseURL: API_URL,

@@ -1,5 +1,6 @@
 'use client'
 
+import { PaintedScene, SketchButton, Vine } from '@/components/sketch'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -529,7 +530,7 @@ export default function VendorPageClient({
 
   if (error || !vendor) {
     return (
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen">
         <div className="mx-auto flex min-h-[60vh] max-w-5xl flex-col items-center justify-center px-4 py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -598,6 +599,9 @@ export default function VendorPageClient({
     ? (vendorReviews.reduce((acc, r) => acc + r.rating, 0) / vendorReviews.length).toFixed(1)
     : null
 
+  // A stable number so a vendor without a banner always gets the same painted scene
+  const bannerSeed = Math.abs(Array.from(String(vendor.id ?? '')).reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 997
+
   const tabs = [
     { id: 'portfolio' as const, label: 'Portfolio', icon: Grid3X3 },
     { id: 'events' as const, label: 'Events', icon: CalendarDays },
@@ -606,11 +610,11 @@ export default function VendorPageClient({
   ]
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen">
       {/* Banner + Avatar Header — LinkedIn-style */}
-      <div className="mx-auto lg:max-w-5xl">
+      <div className="mx-auto w-full max-w-[1440px] px-4 pt-2">
         {/* Banner */}
-        <div className="relative h-40 w-full overflow-hidden rounded-b-lg bg-muted md:h-60">
+        <div className="border-ink bg-sky1 relative h-40 w-full overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px] border-2 md:h-60">
           {vendor.bannerImageUrl ? (
             <Image
               src={vendor.bannerImageUrl}
@@ -621,7 +625,11 @@ export default function VendorPageClient({
               className="object-cover"
             />
           ) : (
-            <div className="h-full w-full bg-linear-to-br from-primary/30 via-primary/10 to-muted" />
+            <>
+              <PaintedScene seed={bannerSeed} motif={bannerSeed % 5} className="absolute inset-0 h-full w-full" />
+              <Vine d="M0 190C60 170 110 130 150 80C180 40 230 20 290 12" seed={bannerSeed + 60} n={7} s={0.85} className="pointer-events-none absolute top-0 -right-2.5 h-[170px] w-60 -scale-x-100" />
+              <Vine d="M0 190C60 170 110 130 150 80C180 40 230 20 290 12" seed={bannerSeed + 70} n={6} s={0.75} className="pointer-events-none absolute -bottom-5 -left-2.5 h-[140px] w-[200px]" />
+            </>
           )}
         </div>
 
@@ -631,7 +639,7 @@ export default function VendorPageClient({
             {/* Avatar — overlaps banner */}
             <div className="-mt-13 md:-mt-18 self-start sm:self-auto">
               <div className="relative">
-                <div className="relative h-26 w-26 overflow-hidden rounded-full border-4 border-background bg-background ring-2 ring-border md:h-36 md:w-36">
+                <div className="relative h-26 w-26 overflow-hidden border-paper bg-card ring-ink rounded-full border-4 ring-2 md:h-36 md:w-36">
                   {vendor.profilePhotoUrl ? (
                     <Image
                       src={vendor.profilePhotoUrl}
@@ -642,14 +650,14 @@ export default function VendorPageClient({
                       className="object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-muted text-4xl font-bold text-muted-foreground">
+                    <div className="flex h-full w-full items-center justify-center bg-gold font-display text-ink text-4xl font-bold">
                       {vendor.businessName?.charAt(0) || 'V'}
                     </div>
                   )}
                 </div>
                 {/* Verified Badge */}
                 {isVerified && (
-                  <div className="absolute -bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-md ring-2 ring-background md:h-8 md:w-8">
+                  <div className="absolute -bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-md ring-2 ring-paper md:h-8 md:w-8">
                     <Star className="h-3.5 w-3.5 fill-primary-foreground text-primary-foreground" />
                   </div>
                 )}
@@ -661,14 +669,10 @@ export default function VendorPageClient({
               {vendorHasMessaging && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleMessageVendor}
-                      disabled={isCreatingConversation}
-                      className="h-9 gap-1.5 px-3"
-                    >
+                    <SketchButton size="sm" onClick={handleMessageVendor} disabled={isCreatingConversation}>
                       <MessageSquare className="h-4 w-4" />
                       Message
-                    </Button>
+                    </SketchButton>
                   </TooltipTrigger>
                   <TooltipContent>Start chat with vendor</TooltipContent>
                 </Tooltip>
@@ -676,33 +680,23 @@ export default function VendorPageClient({
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-9 gap-1.5 px-3"
-                    onClick={() => setQuoteDialogOpen(true)}
-                  >
+                  <SketchButton variant="line" size="sm" onClick={() => setQuoteDialogOpen(true)}>
                     <FileText className="h-4 w-4" />
                     Get Quote
-                  </Button>
+                  </SketchButton>
                 </TooltipTrigger>
                 <TooltipContent>Request pricing and availability</TooltipContent>
               </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleFollow}
-                    className="h-9 w-9"
-                    aria-label={followStatus.data?.following ? 'Following' : 'Follow'}
-                  >
+                  <SketchButton variant="line" size="icon" onClick={handleFollow} aria-label={followStatus.data?.following ? 'Following' : 'Follow'}>
                     {followStatus.data?.following ? (
                       <UserCheck className="h-4 w-4" />
                     ) : (
                       <UserPlus className="h-4 w-4" />
                     )}
-                  </Button>
+                  </SketchButton>
                 </TooltipTrigger>
                 <TooltipContent>{followStatus.data?.following ? 'Following vendor' : 'Follow vendor'}</TooltipContent>
               </Tooltip>
@@ -710,11 +704,7 @@ export default function VendorPageClient({
               {vendor.website && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9"
-                      onClick={() => {
+                    <SketchButton variant="line" size="icon" onClick={() => {
                         if (vendor.website) {
                           window.open(
                             vendor.website.startsWith('http')
@@ -723,11 +713,9 @@ export default function VendorPageClient({
                             '_blank'
                           )
                         }
-                      }}
-                      aria-label="Website"
-                    >
+                      }} aria-label="Website">
                       <ExternalLink className="h-4 w-4" />
-                    </Button>
+                    </SketchButton>
                   </TooltipTrigger>
                   <TooltipContent>Open website</TooltipContent>
                 </Tooltip>
@@ -753,18 +741,12 @@ export default function VendorPageClient({
           >
             {/* Name + Verified + Unclaimed */}
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground">{vendor.businessName}</h1>
+              <h1 className="font-display text-[clamp(1.9rem,4vw,2.8rem)] leading-tight font-semibold">{vendor.businessName}</h1>
               {isVerified && (
-                <Badge className="gap-1 bg-primary/10 text-primary hover:bg-primary/20">
-                  <Star className="h-3 w-3 fill-primary" />
-                  Verified
-                </Badge>
+                <span className="sk-stamp"><Star className="-mt-0.5 mr-0.5 inline h-3 w-3 fill-current" />Verified</span>
               )}
               {isVendorUnclaimed && (
-                <Badge variant="outline" className="gap-1 border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                  <Shield className="h-3 w-3" />
-                  Public Listing
-                </Badge>
+                <span className="sk-stamp sk-stamp--wait"><Shield className="-mt-0.5 mr-0.5 inline h-3 w-3" />Public Listing</span>
               )}
             </div>
 
@@ -794,7 +776,7 @@ export default function VendorPageClient({
             {/* Stats row */}
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
               {(vendor.followersCount ?? 0) > 0 && (
-                <span className="font-semibold text-primary">
+                <span className="text-blue font-semibold">
                   {formatFollowers(vendor.followersCount ?? 0)}{' '}
                   <span className="font-normal text-muted-foreground">followers</span>
                 </span>
@@ -827,7 +809,7 @@ export default function VendorPageClient({
               )}
               {avgRating && (
                 <span className="flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                  <Star className="text-gold h-3.5 w-3.5 fill-current" />
                   <span className="font-semibold text-foreground">{avgRating}</span>
                   <span className="text-muted-foreground">({vendorReviews.length})</span>
                 </span>
@@ -838,31 +820,33 @@ export default function VendorPageClient({
       </div>
 
       {/* Main Content */}
-      <div className="mx-auto lg:max-w-5xl px-2">
+      <div className="mx-auto w-full max-w-[1440px] px-4">
 
         {/* Claim Status Banner - show if user has a claim on this vendor */}
         {isAuthenticated && canShowClaimUI && (
           <ClaimStatusBanner vendorProfileId={vendor.id} />
         )}
 
-        <div className="border-t">
-          <div className="flex justify-center">
+        <div className="border-line border-b-2 border-dashed">
+          <div role="tablist" aria-label="Vendor sections" className="flex flex-wrap">
             {tabs.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
               return (
                 <button
                   key={tab.id}
+                  role="tab"
+                  aria-selected={isActive}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'flex items-center gap-1.5 border-t px-4 py-3 text-xs font-medium uppercase tracking-wider transition-colors -mt-px',
+                    'relative inline-flex items-center gap-2 px-4 py-3 text-[0.95rem] font-bold transition-colors',
                     isActive
-                      ? 'border-foreground text-foreground'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                      ? 'text-ink after:bg-blue after:absolute after:inset-x-2 after:-bottom-1 after:h-1.5 after:rounded-full after:[filter:url(#sk-dry)]'
+                      : 'text-ink-soft hover:text-ink'
                   )}
                 >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{tab.label}</span>
+                  <Icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
                 </button>
               )
             })}
@@ -913,7 +897,7 @@ export default function VendorPageClient({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
                                     onClick={() => setSelectedAlbum(portfolio)}
-                                    className="group relative w-full overflow-hidden rounded-lg sm:rounded-xl border bg-card text-left transition-all hover:border-primary/50 hover:shadow-lg"
+                                    className="group border-ink bg-card relative w-full overflow-hidden rounded-md border-2 text-left transition-all hover:-translate-y-1"
                                   >
                                     {/* Album Cover Image */}
                                     <div className="relative aspect-[4/3] overflow-hidden bg-muted">
@@ -990,7 +974,7 @@ export default function VendorPageClient({
                                   setLightboxIndex(idx)
                                   setLightboxOpen(true)
                                 }}
-                                className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
+                                className="group border-ink bg-sky1 relative aspect-square overflow-hidden rounded-md border-2"
                               >
                                 <Image
                                   src={media.cdnUrl || media.url}
@@ -1054,7 +1038,7 @@ export default function VendorPageClient({
                         >
                           <span className={cn('absolute -left-5.25 top-3 h-3 w-3 rounded-full ring-4 ring-background', statusTone.dot)} />
 
-                          <div className={cn('rounded-lg border bg-card p-4', statusTone.card)}>
+                          <div className={cn('sk-paper px-5 py-4')}>
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <h3 className="font-semibold text-foreground">
                                 {entry.event?.name || 'Event'}
@@ -1130,7 +1114,7 @@ export default function VendorPageClient({
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.1 }}
-                        className="group rounded-xl border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-md"
+                        className="sk-paper group px-6 py-5"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
@@ -1435,10 +1419,10 @@ export default function VendorPageClient({
 
         {/* Reviews Section */}
         {showReviews && (
-        <section className="border-t py-8">
+        <section className="border-line border-t-2 border-dashed py-8">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Reviews</h2>
+              <h2 className="font-display text-[1.8rem] font-semibold">Reviews</h2>
               {vendorReviews.length > 0 && (
                 <p className="text-sm text-muted-foreground">
                   {vendorReviews.length} review{vendorReviews.length !== 1 ? 's' : ''}
@@ -1447,10 +1431,10 @@ export default function VendorPageClient({
             </div>
             <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <SketchButton variant="line" size="sm">
                   <PenLine className="h-4 w-4" />
                   Write a Review
-                </Button>
+                </SketchButton>
               </DialogTrigger>
               <DialogContent className="sm:max-w-120">
                 <DialogHeader className="text-center sm:text-center">
@@ -1562,7 +1546,7 @@ export default function VendorPageClient({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="rounded-lg border bg-card p-4"
+                    className="sk-paper px-5 py-4"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
@@ -1604,11 +1588,11 @@ export default function VendorPageClient({
 
       {/* Similar Vendors Section */}
       {showSimilarVendors && similarVendors && similarVendors.length > 0 && (
-        <section className="border-t bg-muted/30">
-          <div className="mx-auto max-w-5xl px-4 py-10">
+        <section className="border-line border-t-2 border-dashed">
+          <div className="mx-auto w-full max-w-[1440px] px-4 py-10">
             <div className="mb-6 flex items-end justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Similar Vendors</h2>
+                <h2 className="font-display text-[1.8rem] font-semibold">Similar Vendors</h2>
                 <p className="mt-1 text-sm text-muted-foreground">More vendors you might like</p>
               </div>
               <Button variant="ghost" size="sm" asChild>
@@ -1619,7 +1603,7 @@ export default function VendorPageClient({
               </Button>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {similarVendors.map((similarVendor) => (
                 <VendorCard key={similarVendor.id} vendor={similarVendor} />
               ))}
@@ -1660,7 +1644,7 @@ export default function VendorPageClient({
                     setLightboxIndex(mediaIndex)
                     setLightboxOpen(true)
                   }}
-                  className="group relative aspect-square overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 transition-all hover:ring-2 hover:ring-primary/50 hover:shadow-lg"
+                  className="group border-ink bg-sky1 relative aspect-square overflow-hidden rounded-md border-2 transition-all hover:outline-2 hover:outline-offset-2 hover:outline-gold hover:outline-dashed"
                 >
                   <Image
                     src={media.cdnUrl || media.url}
@@ -1735,7 +1719,7 @@ export default function VendorPageClient({
                       setLightboxIndex(mediaIndex >= 0 ? mediaIndex : 0)
                       setLightboxOpen(true)
                     }}
-                    className="group relative aspect-square overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 transition-all hover:ring-2 hover:ring-primary/50 hover:shadow-lg"
+                    className="group border-ink bg-sky1 relative aspect-square overflow-hidden rounded-md border-2 transition-all hover:outline-2 hover:outline-offset-2 hover:outline-gold hover:outline-dashed"
                   >
                     <Image
                       src={media.cdnUrl || media.url}
@@ -1876,7 +1860,7 @@ export default function VendorPageClient({
 
 function VendorDetailSkeleton() {
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen">
       <div className="mx-auto max-w-5xl">
         {/* Banner Skeleton */}
         <Skeleton className="h-40 w-full rounded-b-lg md:h-60" />

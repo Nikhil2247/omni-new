@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bot,
-  MessageCircle,
   Send,
   Sparkles,
   Trash2,
@@ -20,6 +19,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { skBtn } from '@/components/sketch'
 import { useAuthStore } from '@/store/auth-store'
 import { useChatStore, type ChatMessage } from '@/store/chat-store'
 import type { ChatbotVendorSuggestion, FollowUpQuestion } from '@/lib/api/types/chatbot.types'
@@ -38,7 +38,7 @@ function TypingIndicator() {
       {[0, 0.15, 0.3].map((delay, i) => (
         <motion.div
           key={i}
-          className="h-1.5 w-1.5 rounded-full bg-primary/50"
+          className="bg-blue/60 h-1.5 w-1.5 rounded-full"
           animate={{ scale: [1, 1.3, 1] }}
           transition={{ duration: 0.5, repeat: Infinity, delay }}
         />
@@ -59,7 +59,7 @@ function CompactVendorCard({ vendor }: { vendor: ChatbotVendorSuggestion }) {
   return (
     <Link
       href={vendor.profileUrl || `/vendors/${vendor.slug}`}
-      className="group block rounded-lg border border-border/50 bg-background p-2.5 transition-all hover:border-primary/30"
+      className="group border-ink bg-card block rounded-lg border-2 p-2.5 transition-all hover:-translate-y-0.5"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -102,16 +102,18 @@ function WidgetMessage({
       className={cn('flex gap-2', isBot ? 'justify-start' : 'justify-end')}
     >
       {isBot && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <Bot className="h-3.5 w-3.5 text-primary" />
+        <div className="border-ink bg-gold flex size-7 shrink-0 items-center justify-center rounded-full border-2">
+          <Bot className="text-ink h-3.5 w-3.5" />
         </div>
       )}
 
       <div className={cn('max-w-[85%] space-y-1.5', !isBot && 'order-first')}>
         <div
           className={cn(
-            'rounded-2xl px-3 py-2 text-sm',
-            isBot ? 'bg-muted' : 'bg-primary text-primary-foreground'
+            'px-3.5 py-2.5 text-sm',
+            isBot
+              ? 'border-ink bg-card rounded-[18px_18px_18px_4px] border-2'
+              : 'bg-blue text-on-blue rounded-[18px_18px_4px_18px]'
           )}
         >
           <ChatbotMarkdown content={message.text} variant={isBot ? 'bot' : 'user'} />
@@ -132,7 +134,7 @@ function WidgetMessage({
                 key={q.id}
                 type="button"
                 onClick={() => onFollowUp(q)}
-                className="flex items-center gap-1 rounded-md border border-border/50 bg-background px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                className="border-blue-wash bg-card text-ink-soft hover:border-blue hover:text-ink flex items-center gap-1 rounded-[12px_40px_14px_36px/36px_12px_40px_14px] border-2 border-dashed px-2.5 py-1 text-xs transition-colors"
               >
                 <Lightbulb className="h-2.5 w-2.5" />
                 {q.text.length > 28 ? q.text.slice(0, 28) + '...' : q.text}
@@ -148,7 +150,7 @@ function WidgetMessage({
                 key={s}
                 type="button"
                 onClick={() => onSuggestion(s)}
-                className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs text-primary transition-colors hover:bg-primary/10"
+                className="border-ink bg-card text-ink hover:bg-blue-wash/40 flex items-center gap-1 rounded-full border-2 px-2.5 py-0.5 text-xs font-bold transition-colors"
               >
                 <Sparkles className="h-2.5 w-2.5" />
                 {s.length > 22 ? s.slice(0, 22) + '...' : s}
@@ -238,13 +240,16 @@ export function ChatbotWidget() {
             exit={{ scale: 0.8, opacity: 0 }}
             className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6"
           >
-            <Button
-              onClick={() => setOpen(true)}
-              className="h-12 gap-2 rounded-full bg-primary px-5 shadow-lg shadow-primary/20 hover:shadow-xl"
-            >
-              <MessageCircle className="h-5 w-5" />
-              <span className="text-sm font-medium">AI Assistant</span>
-            </Button>
+            <button type="button" onClick={() => setOpen(true)} className="sk-btn !px-5 !py-3.5" aria-label="Open AI assistant">
+              <Sparkles className="size-5" />
+              <span>AI Assistant</span>
+              <span
+                className="border-ink bg-gold absolute -top-1.5 -right-1 flex size-5 items-center justify-center rounded-full border-2 text-[10px] text-[#2a1c00]"
+                aria-hidden
+              >
+                ✦
+              </span>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -257,19 +262,19 @@ export function ChatbotWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-4 right-4 z-50 flex h-[min(600px,calc(100dvh-2rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl md:bottom-6 md:right-6"
+            className="sk-paper [--hand:26px_70px_28px_60px/60px_26px_70px_24px] fixed bottom-4 right-4 z-50 flex h-[min(620px,calc(100dvh-2rem))] w-[min(390px,calc(100vw-2rem))] flex-col md:bottom-6 md:right-6"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b px-4 py-3">
+            <div className="border-line flex items-center justify-between border-b-2 border-dashed px-4 py-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Bot className="h-4 w-4 text-primary" />
+                <div className="border-ink bg-gold flex size-9 items-center justify-center rounded-full border-2">
+                  <Bot className="text-ink h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold truncate max-w-[140px]">
+                  <p className="font-display max-w-[150px] truncate text-base font-semibold">
                     {activeThread?.title || 'AI Assistant'}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="text-ink-soft truncate text-xs">
                     {isAuthenticated ? 'Synced' : 'Sign in to save'}
                   </p>
                 </div>
@@ -320,10 +325,10 @@ export function ChatbotWidget() {
 
                 {isLoading && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-                      <Bot className="h-3.5 w-3.5 text-primary" />
+                    <div className="border-ink bg-gold flex size-7 items-center justify-center rounded-full border-2">
+                      <Bot className="text-ink h-3.5 w-3.5" />
                     </div>
-                    <div className="rounded-2xl bg-muted">
+                    <div className="border-ink bg-card rounded-[18px_18px_18px_4px] border-2">
                       <TypingIndicator />
                     </div>
                   </motion.div>
@@ -334,12 +339,12 @@ export function ChatbotWidget() {
             </div>
 
             {/* Input */}
-            <div className="border-t p-3">
+            <div className="border-line border-t-2 border-dashed p-3">
               <div className="flex items-end gap-2">
                 <textarea
                   ref={inputRef}
-                  placeholder="Ask about vendors..."
-                  className="min-h-[40px] max-h-24 flex-1 resize-none rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50 focus:bg-background"
+                  placeholder="Ask about vendors, budgets, venues..."
+                  className="border-blue-wash bg-card focus:border-blue placeholder:text-ink-soft max-h-24 min-h-[40px] flex-1 resize-none rounded-[14px_40px_16px_36px/36px_14px_40px_16px] border-2 px-3.5 py-2.5 text-sm outline-none transition-colors"
                   rows={1}
                   onKeyDown={handleKeyDown}
                   onInput={(e) => {
@@ -348,14 +353,9 @@ export function ChatbotWidget() {
                     target.style.height = Math.min(target.scrollHeight, 96) + 'px'
                   }}
                 />
-                <Button
-                  size="icon"
-                  className="h-10 w-10 shrink-0 rounded-xl"
-                  onClick={() => handleSend()}
-                  disabled={isLoading}
-                >
+                <button type="button" className={skBtn('solid', 'icon', 'shrink-0')} onClick={() => handleSend()} disabled={isLoading} aria-label="Send message">
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
+                </button>
               </div>
             </div>
           </motion.div>

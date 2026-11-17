@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { useRequestPasswordReset } from '@/hooks/use-auth'
-import { Button } from '@/components/ui/button'
+import { SketchButton } from '@/components/sketch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Mail, CheckCircle2, Send } from 'lucide-react'
+import { CheckCircle2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { trackAuth } from '@/lib/analytics/umami'
 
@@ -30,9 +30,9 @@ export function ForgotPasswordForm() {
 
   if (resetMutation.isSuccess) {
     return (
-      <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
-        <CheckCircle2 className="h-5 w-5 text-green-600" />
-        <AlertDescription className="text-green-900 dark:text-green-100">
+      <Alert className="border-leaf-deep bg-card">
+        <CheckCircle2 className="h-5 w-5 text-leaf-deep" />
+        <AlertDescription className="text-ink">
           <p className="font-medium mb-1">Check your email</p>
           <p className="text-sm">
             If an account exists for <strong>{email}</strong>, we&apos;ve sent a password reset link.
@@ -44,16 +44,14 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="space-y-2">
+      <div className="sk-field">
         <Label htmlFor="email">Email address</Label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="pl-10"
             placeholder="you@example.com"
             required
             autoComplete="email"
@@ -64,10 +62,9 @@ export function ForgotPasswordForm() {
         </p>
       </div>
 
-      <Button
+      <SketchButton
         type="submit"
-        className="w-full"
-        size="lg"
+        className="w-full justify-center"
         disabled={resetMutation.isPending}
       >
         {resetMutation.isPending ? (
@@ -81,7 +78,7 @@ export function ForgotPasswordForm() {
             Send reset link
           </>
         )}
-      </Button>
+      </SketchButton>
     </form>
   )
 }

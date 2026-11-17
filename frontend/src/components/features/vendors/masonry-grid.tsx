@@ -48,7 +48,7 @@ function LoadingSkeleton() {
   const heights = [280, 320, 240, 360, 300, 260, 340, 280, 320, 380, 260, 300]
 
   return (
-    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-1.5 sm:gap-2">
+    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 gap-2 sm:gap-3">
       {heights.map((height, i) => (
         <motion.div
           key={i}
@@ -85,7 +85,7 @@ export function MasonryGrid({
   }
 
   return (
-    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-1.5 sm:gap-2">
+    <div className="columns-2 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 gap-2 sm:gap-3">
       {items.map((item, index) => (
         <AnimatedMasonryItem key={item.id} index={index}>
           <PortfolioMediaCard

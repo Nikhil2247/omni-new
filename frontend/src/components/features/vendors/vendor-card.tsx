@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Heart, MapPin, Star, ArrowRight, CheckCircle2, Sparkles, UserPlus, UserCheck, Crown, Award } from 'lucide-react'
+import { Heart, MapPin, ArrowRight, CheckCircle2, Sparkles, UserPlus, UserCheck, Crown, Award } from 'lucide-react'
 import { toast } from 'sonner'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
 import { useAuthStore } from '@/store/auth-store'
@@ -18,27 +18,19 @@ import {
 import { useToggleVendorFollow } from '@/hooks/queries/use-vendor-follows'
 import { useBoostedVendors, useRecordBoostClick } from '@/hooks/queries/use-ads'
 import { cn } from '@/lib/utils'
+import { PaintedScene } from '@/components/sketch'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+/** A stable number from a string, so a vendor without a photo always gets the same painted scene. */
+function hashSeed(value: string): number {
+  let h = 0
+  for (let i = 0; i < value.length; i++) h = (h * 31 + value.charCodeAt(i)) | 0
+  return Math.abs(h) % 997
+}
 
 interface VendorCardProps {
   vendor: VendorProfile
   className?: string
-}
-
-// Category colors mapping
-const categoryColors: Record<string, string> = {
-  venues: 'bg-blue-100 text-blue-800',
-  photography: 'bg-pink-100 text-pink-800',
-  videography: 'bg-purple-100 text-purple-800',
-  catering: 'bg-orange-100 text-orange-800',
-  florists: 'bg-emerald-100 text-emerald-800',
-  'wedding-planning': 'bg-indigo-100 text-indigo-800',
-  'dj-music': 'bg-green-100 text-green-800',
-  'makeup-hair': 'bg-rose-100 text-rose-800',
-  decor: 'bg-violet-100 text-violet-800',
-  cakes: 'bg-amber-100 text-amber-800',
-  invitations: 'bg-cyan-100 text-cyan-800',
-  rentals: 'bg-teal-100 text-teal-800',
 }
 
 // Format address from vendor data
@@ -182,63 +174,42 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
     }
   }
 
-  const categoryColor = categoryColors[vendor.category?.slug || ''] || 'bg-gray-100 text-gray-800'
   const categoryLabel = vendor.category?.name?.trim()
+  const seed = hashSeed(vendor.id || vendor.slug || vendor.businessName || 'vendor')
 
   return (
     <>
       <div
+        role="link"
+        tabIndex={0}
         onClick={handleCardClick}
+        onKeyDown={handleCardKeyDown}
+        aria-label={`Open ${vendor.businessName || 'vendor'} profile`}
         className={cn(
-          'group relative bg-card rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 border border-border hover:border-primary/20 cursor-pointer focus:outline-none focus-visible:ring-3 focus-visible:ring-primary/40',
-          isBoosted && 'border-amber-300/55 shadow-amber-100/45 hover:border-amber-400/70',
+          'sk-vcard sk-paper group flex cursor-pointer flex-col gap-3 p-2.5 pb-4',
+          isBoosted && 'outline-gold outline-2 outline-offset-4 outline-dashed',
           className
         )}
       >
-        {/* Image Section */}
-        <div className="relative overflow-hidden">
-          {/* Profile Photo or Placeholder */}
+        {/* Cover: photo, or a painted scene when the vendor has no photo */}
+        <div className="bg-sky1 relative aspect-[4/3] overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px]">
           {vendor.profilePhotoUrl ? (
-            <div className="w-full aspect-3/2 relative">
-              <Image
-                src={vendor.profilePhotoUrl}
-                alt={vendor.businessName || 'Vendor'}
-                fill
-                unoptimized={true}
-                priority={true}
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              />
-            </div>
+            <Image
+              src={vendor.profilePhotoUrl}
+              alt={vendor.businessName || 'Vendor'}
+              fill
+              unoptimized={true}
+              priority={true}
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            />
           ) : (
-            <div className="w-full aspect-3/2 bg-linear-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary/60 text-2xl font-semibold text-primary-foreground shadow-lg">
-                {vendor.businessName?.charAt(0) || 'V'}
-              </div>
-            </div>
+            <PaintedScene seed={seed} motif={seed % 5} />
           )}
 
-          {/* Gradient Overlay on Hover */}
-          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block" />
-
-          {/* Category Badge */}
-          {categoryLabel && (
-            <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
-              <span
-                className={cn(
-                  'text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold backdrop-blur-sm bg-white/90',
-                  categoryColor
-                )}
-              >
-                {categoryLabel}
-              </span>
-            </div>
-          )}
-
-          {/* Action Buttons - Wishlist & Follow */}
-          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 flex items-center gap-1.5">
+          {/* Follow and wishlist */}
+          <div className="absolute top-2 right-2 flex items-center gap-1.5">
             <TooltipProvider delayDuration={300}>
-              {/* Follow Button */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -246,18 +217,12 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
                     onClick={handleFollow}
                     disabled={toggleFollow.isPending}
                     className={cn(
-                      'h-8 w-8 rounded-full shadow-sm backdrop-blur flex items-center justify-center transition hover:scale-110',
-                      isFollowing
-                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        : 'bg-white/90 hover:bg-white text-muted-foreground hover:text-foreground'
+                      'border-ink flex size-9 items-center justify-center rounded-full border-2 transition hover:scale-110',
+                      isFollowing ? 'bg-blue text-on-blue' : 'bg-card text-ink'
                     )}
                     aria-label={isFollowing ? 'Unfollow vendor' : 'Follow vendor'}
                   >
-                    {isFollowing ? (
-                      <UserCheck className="h-4 w-4" />
-                    ) : (
-                      <UserPlus className="h-4 w-4" />
-                    )}
+                    {isFollowing ? <UserCheck className="size-4" /> : <UserPlus className="size-4" />}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs">
@@ -265,22 +230,16 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
                 </TooltipContent>
               </Tooltip>
 
-              {/* Wishlist Button */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     onClick={handleSave}
                     disabled={isSaved || isSaving || createWishlist.isPending}
-                    className="h-8 w-8 rounded-full bg-white/90 shadow-sm backdrop-blur flex items-center justify-center transition hover:bg-white hover:scale-110"
+                    className="border-ink bg-card flex size-9 items-center justify-center rounded-full border-2 transition hover:scale-110"
                     aria-label={isSaved ? 'Saved to wishlist' : 'Save to wishlist'}
                   >
-                    <Heart
-                      className={cn(
-                        'h-4 w-4 transition',
-                        isSaved ? 'fill-red-500 text-red-500' : 'text-muted-foreground hover:text-red-500'
-                      )}
-                    />
+                    <Heart className={cn('size-[18px] transition', isSaved ? 'text-rose fill-current' : 'text-ink')} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs">
@@ -290,80 +249,61 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
             </TooltipProvider>
           </div>
 
-          {/* Plan/Featured Badges */}
+          {/* Plan and featured stamps */}
           {(isPremium || isPro || isFeatured) && (
-            <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 flex flex-col gap-1 items-end">
+            <div className="absolute bottom-2 left-2 flex flex-wrap gap-1.5">
               {isPremium && (
-                <span className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold shadow-lg flex items-center gap-1">
-                  <Crown className="w-3 h-3" />
+                <span className="sk-stamp bg-card flex items-center gap-1">
+                  <Crown className="size-3" />
                   Premium
                 </span>
               )}
               {isPro && !isPremium && (
-                <span className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold shadow-lg flex items-center gap-1">
-                  <Award className="w-3 h-3" />
+                <span className="sk-stamp sk-stamp--wait bg-card flex items-center gap-1">
+                  <Award className="size-3" />
                   Pro
                 </span>
               )}
               {isFeatured && (
-                <span className="bg-primary text-white text-[10px] sm:text-xs px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-semibold shadow-lg flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
+                <span className="sk-stamp bg-card !text-blue flex items-center gap-1">
+                  <Sparkles className="size-3" />
                   Featured
                 </span>
               )}
             </div>
           )}
-
-          {/* Hover Action - Hidden on mobile */}
-          <div className="absolute inset-0 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex pointer-events-none">
-            <div className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-4 py-2 rounded-full font-semibold flex items-center gap-2">
-              View Details
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </div>
         </div>
 
-        {/* Content Section */}
-        <div className="p-3 sm:p-4">
-          {/* Header with Rating */}
-          <div className="flex items-start justify-between mb-1 gap-3">
-            {/* Vendor Name */}
-            <h3 className="text-xs sm:text-sm font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-300 flex-1 min-w-0 line-clamp-1">
+        {/* Details */}
+        <div className="grid gap-1.5 px-2">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-display group-hover:text-blue line-clamp-1 min-w-0 flex-1 text-[1.3rem] leading-tight font-semibold transition-colors">
               {vendor.businessName || 'Unnamed Vendor'}
             </h3>
-
-            {/* Rating Section */}
-            <div className="flex items-center gap-1 shrink-0">
-              <Star className="w-3 h-3 sm:w-4 sm:h-4 fill-primary text-primary" />
-              <span className="text-foreground font-semibold text-xs">
-                {averageRating ?? '-'}
+            {isVerified && (
+              <span className="sk-stamp shrink-0">
+                <CheckCircle2 className="mr-0.5 -mt-0.5 inline size-3" />
+                Verified
               </span>
-              <span className="text-muted-foreground text-xs hidden sm:inline">
-                ({reviewCount})
-              </span>
-            </div>
+            )}
           </div>
-
-          {/* Tagline/Description */}
-          <p className="text-muted-foreground text-[11px] sm:text-xs mb-2 line-clamp-1 sm:line-clamp-2 leading-relaxed">
+          <p className="text-ink-soft flex items-center gap-1 text-[0.9rem]">
+            {categoryLabel ? <span>{categoryLabel}</span> : null}
+            {categoryLabel ? <span aria-hidden>·</span> : null}
+            <MapPin className="size-3 shrink-0" />
+            <span className="truncate">{formatAddress(vendor)}</span>
+          </p>
+          <p className="line-clamp-2 text-[0.94rem]">
             {vendor.tagline || vendor.description || 'Professional service provider committed to making your event exceptional.'}
           </p>
-
-          {/* Verified Badge & Location Row */}
-          <div className="flex items-center justify-between gap-2">
-            {/* Location */}
-            <div className="flex items-center text-muted-foreground text-xs min-w-0 flex-1">
-              <MapPin className="w-3 h-3 mr-1 text-muted-foreground/60 shrink-0" />
-              <span className="truncate">{formatAddress(vendor)}</span>
-            </div>
-
-            {/* Verified Badge */}
-            {isVerified && (
-              <div className="flex items-center text-green-600 text-xs shrink-0">
-                <CheckCircle2 className="w-3 h-3 mr-0.5" />
-                <span className="font-medium hidden sm:inline">Verified</span>
-              </div>
-            )}
+          <div className="border-line mt-1 flex items-baseline justify-between gap-2 border-t-2 border-dashed pt-2.5">
+            <span className="font-bold">
+              <b className="text-gold mr-0.5 font-normal">★</b>
+              {averageRating ?? '-'} <small className="text-ink-soft font-normal">({reviewCount})</small>
+            </span>
+            <span className="text-blue flex items-center gap-1 text-sm font-bold">
+              View profile <ArrowRight className="size-3.5" />
+            </span>
           </div>
         </div>
       </div>

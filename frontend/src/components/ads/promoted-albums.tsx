@@ -3,10 +3,10 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Sparkles, Images, Play } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 import { usePromotedAlbums, useRecordBoostImpression, useRecordBoostClick } from '@/hooks/queries/use-ads'
 import { cn } from '@/lib/utils'
-import { Skeleton } from '@/components/ui/skeleton'
+import { ListSectionHead, PaintedScene, skPaper } from '@/components/sketch'
 import type { PromotedAlbum } from '@/lib/api/types/ads.types'
 
 interface PromotedAlbumsProps {
@@ -39,75 +39,45 @@ function AlbumCard({ album }: AlbumCardProps) {
     }
   }
 
+  const seed = Math.abs(Array.from(album.portfolioId ?? album.campaignId ?? 'a').reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 997
+
   return (
     <Link
       href={`/vendors/${album.vendorSlug}?album=${album.portfolioId}`}
       onClick={handleClick}
-      className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-primary/15 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl"
+      className={`${skPaper()} sk-vcard group flex flex-col gap-3 p-2.5 pb-4`}
     >
-      {/* Promoted Badge */}
-      <div className="absolute top-3 left-3 z-10">
-        <span className="flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-md backdrop-blur-sm">
-          <Sparkles className="w-3 h-3" />
+      {/* Cover */}
+      <div className="bg-sky1 relative aspect-[4/3] overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px]">
+        {album.coverImageUrl ? (
+          <Image
+            src={album.coverImageUrl}
+            alt={album.title || 'Album'}
+            fill
+            unoptimized
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          />
+        ) : (
+          <PaintedScene seed={seed} motif={seed % 5} />
+        )}
+        <span className="sk-stamp bg-card absolute top-2 left-2 flex items-center gap-1 !text-blue">
+          <Sparkles className="size-3" />
           Promoted
         </span>
       </div>
 
-      {/* Image Section */}
-      <div className="relative overflow-hidden">
-        {album.coverImageUrl ? (
-          <div className="w-full aspect-square relative">
-            <Image
-              src={album.coverImageUrl}
-              alt={album.title || 'Album'}
-              fill
-              unoptimized
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            />
-          </div>
-        ) : (
-          <div className="w-full aspect-square bg-linear-to-br from-primary/20 via-primary/10 to-primary/5 flex items-center justify-center">
-            <Images className="w-16 h-16 text-primary/40" />
-          </div>
-        )}
-
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-linear-to-t from-black/72 via-black/22 to-transparent" />
-
-        {/* Media Count */}
-        <div className="absolute bottom-3 right-3">
-          <span className="bg-black/50 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 backdrop-blur-sm">
-            <Images className="w-3 h-3" />
-            Portfolio
+      {/* Details */}
+      <div className="grid gap-1.5 px-2">
+        <h3 className="font-display group-hover:text-blue line-clamp-1 text-[1.3rem] leading-tight font-semibold transition-colors">
+          {album.title || 'Untitled Album'}
+        </h3>
+        <p className="text-ink-soft truncate text-[0.9rem]">{album.businessName || 'Vendor'}</p>
+        <div className="border-line mt-1 flex items-baseline justify-between gap-2 border-t-2 border-dashed pt-2.5">
+          <span className="text-ink-soft text-sm">Portfolio</span>
+          <span className="text-blue flex items-center gap-1 text-sm font-bold">
+            View portfolio <ArrowRight className="size-3.5" />
           </span>
-        </div>
-
-        {/* Album Title Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h4 className="font-bold text-white text-lg line-clamp-1 drop-shadow-lg">
-            {album.title || 'Untitled Album'}
-          </h4>
-          <p className="text-white/80 text-sm line-clamp-1 mt-0.5 drop-shadow">
-            {album.businessName}
-          </p>
-        </div>
-
-        {/* Hover Play Icon */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="rounded-full bg-white/18 p-3.5 backdrop-blur-sm">
-            <Play className="h-7 w-7 fill-white text-white" />
-          </div>
-        </div>
-      </div>
-
-      {/* Vendor Info */}
-      <div className="p-3 flex items-center gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">
-            {album.businessName || 'Vendor'}
-          </p>
-          <p className="text-xs text-muted-foreground">View Portfolio</p>
         </div>
       </div>
     </Link>
@@ -116,15 +86,10 @@ function AlbumCard({ album }: AlbumCardProps) {
 
 function AlbumSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm ring-1 ring-primary/10">
-      <Skeleton className="w-full aspect-square" />
-      <div className="p-3 flex items-center gap-3">
-        <Skeleton className="w-10 h-10 rounded-full" />
-        <div className="flex-1 space-y-1">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-3 w-1/2" />
-        </div>
-      </div>
+    <div className={`${skPaper()} animate-pulse p-2.5`}>
+      <div className="bg-muted aspect-[4/3] rounded-md" />
+      <div className="bg-muted mt-3 h-3 w-2/3 rounded" />
+      <div className="bg-muted mt-2 h-3 w-1/2 rounded" />
     </div>
   )
 }
@@ -143,43 +108,18 @@ export function PromotedAlbums({
   }
 
   return (
-    <section className={cn('py-12', className)}>
-      <div className="container">
-        {/* Header */}
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              Promoted
-            </div>
-            <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground md:text-3xl">
-              <Images className="h-6 w-6 text-primary" />
-              {title}
-            </h2>
-            <p className="mt-1 text-muted-foreground">{subtitle}</p>
-          </div>
-
-          {showViewAll && (
-            <Link
-              href="/discover"
-              className="text-primary hover:text-primary/80 font-medium flex items-center gap-1 text-sm"
-            >
-              Explore More
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          )}
-        </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-5">
-          {isLoading
-            ? Array.from({ length: limit }).map((_, i) => (
-                <AlbumSkeleton key={i} />
-              ))
-            : albums?.map((album) => (
-                <AlbumCard key={album.campaignId} album={album} />
-              ))}
-        </div>
+    <section className={cn('mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16', className)}>
+      <ListSectionHead
+        eyebrow="Promoted"
+        title={title}
+        subtitle={subtitle}
+        href={showViewAll ? '/discover' : undefined}
+        cta={showViewAll ? 'Explore Discover →' : undefined}
+      />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {isLoading
+          ? Array.from({ length: limit }).map((_, i) => <AlbumSkeleton key={i} />)
+          : albums?.map((album) => <AlbumCard key={album.campaignId} album={album} />)}
       </div>
     </section>
   )

@@ -1,5 +1,4 @@
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { LegalLayout } from '@/components/marketing/legal-layout'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -166,37 +165,18 @@ const sections = [
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 py-16">
-      <section className="space-y-3">
-        <Badge variant="secondary">Legal</Badge>
-        <h1 className="text-4xl font-semibold">Privacy Policy</h1>
-        <p className="text-muted-foreground">
-          Last updated: January 2025
-        </p>
-        <p className="text-muted-foreground leading-relaxed">
+    <LegalLayout
+      title="Privacy"
+      highlight="Policy"
+      updated="Last updated: January 2025"
+      intro={
+        <>
           At Omnicassion, your privacy is important to us. This policy explains how we collect, use, store, and
           protect your personal information when you use our platform — India&apos;s premier event planning and social
           platform.
-        </p>
-      </section>
-
-      <Separator />
-
-      {sections.map((section) => (
-        <section key={section.id} id={section.id} className="space-y-4 scroll-mt-20">
-          <h2 className="text-xl font-semibold">{section.title}</h2>
-          <div className="space-y-4">
-            {section.content.map((item, i) => (
-              <div key={i} className="space-y-1">
-                {item.subtitle && (
-                  <h3 className="text-sm font-medium text-foreground">{item.subtitle}</h3>
-                )}
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
-    </main>
+        </>
+      }
+      sections={sections}
+    />
   )
 }

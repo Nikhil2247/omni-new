@@ -1,49 +1,17 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { useVendorPlans, useEventCreditPricing } from '@/hooks/queries/use-subscription'
 import { useAuth } from '@/hooks/use-auth'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Check, X, Sparkles, Users, Building2, Gift } from 'lucide-react'
-import Link from 'next/link'
+import { Brush, SketchButton, SkContainer, Stamp, skBtn, skPaper } from '@/components/sketch'
+import { PageHead } from '@/components/marketing/page-head'
+import { cn } from '@/lib/utils'
 import type { PlanDisplay, FeatureDisplay, BillingCycle, EventTier } from '@/lib/api/types/subscription.types'
 
 // ============================================================================
 // Constants
 // ============================================================================
-
-const TIER_INFO = {
-  BASIC: {
-    name: 'Basic',
-    description: 'Perfect for intimate celebrations and smaller events',
-    color: 'bg-blue-50 dark:bg-blue-950',
-    borderColor: 'border-blue-200 dark:border-blue-800',
-    badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-    isPopular: false,
-    price: 'From Rs. 499',
-    priceSubtext: 'Per event',
-  },
-  PREMIUM: {
-    name: 'Premium',
-    description: 'Full-featured for grand celebrations and large events',
-    color: 'bg-purple-50 dark:bg-purple-950',
-    borderColor: 'border-purple-200 dark:border-purple-800',
-    badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-    isPopular: true,
-    price: 'From Rs. 1299',
-    priceSubtext: 'Per event',
-  },
-}
 
 const BASIC_FEATURES = [
   { key: 'unlimited', name: 'Unlimited events', included: true, highlighted: true },
@@ -72,33 +40,37 @@ const PREMIUM_FEATURES = [
 ]
 
 // ============================================================================
-// Loading Skeleton
+// Shared presentation helpers
 // ============================================================================
 
-function EventPricingCardSkeleton() {
+function Tick({ included }: { included: boolean }) {
   return (
-    <Card className="relative flex flex-col animate-pulse">
-      <CardHeader className="text-center pb-4">
-        <div className="h-6 bg-muted rounded w-24 mx-auto mb-2" />
-        <div className="h-4 bg-muted rounded w-48 mx-auto" />
-      </CardHeader>
-      <CardContent className="flex-1 space-y-4">
-        <div className="text-center py-4">
-          <div className="h-10 bg-muted rounded w-20 mx-auto mb-2" />
-          <div className="h-4 bg-muted rounded w-32 mx-auto" />
-        </div>
-        <div className="space-y-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className="h-4 w-4 bg-muted rounded" />
-              <div className="h-4 bg-muted rounded flex-1" />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <span
+      className={cn('font-hand shrink-0 text-[1.3rem] leading-none', included ? 'text-leaf-deep' : 'text-rose')}
+      aria-hidden="true"
+    >
+      {included ? '✓' : '✕'}
+    </span>
   )
 }
+
+function PlanSkeleton() {
+  return (
+    <div className={skPaper({ className: 'animate-pulse p-8' })} aria-hidden="true">
+      <div className="bg-line mb-3 h-7 w-28 rounded" />
+      <div className="bg-line mb-6 h-4 w-48 rounded" />
+      <div className="bg-line mb-6 h-10 w-32 rounded" />
+      <div className="space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="bg-line h-4 rounded" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const PLAN_GRID = 'mx-auto mt-2 grid max-w-[880px] grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] gap-9'
+const PLAN_GRID_WIDE = 'mx-auto mt-2 grid max-w-[1100px] grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] gap-9'
 
 // ============================================================================
 // Unlimited Events Banner
@@ -106,26 +78,24 @@ function EventPricingCardSkeleton() {
 
 function UnlimitedEventsBanner({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
-    <Card className="bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 border-emerald-200 dark:border-emerald-800 mb-8">
-      <CardContent className="flex flex-col md:flex-row items-center justify-between gap-4 py-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900">
-            <Gift className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg">Create Unlimited Events</h3>
-            <p className="text-muted-foreground">
-              Plan as many events as you want. Choose a tier based on the features and pricing that fit your event.
-            </p>
-          </div>
-        </div>
-        <Button asChild variant="outline" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950">
-          <Link href={isAuthenticated ? '/dashboard/events/new' : '/register'}>
-            {isAuthenticated ? 'Create Event' : 'Get Started'}
-          </Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <div
+      className={skPaper({
+        alt: true,
+        className: 'mx-auto mb-9 flex max-w-[880px] flex-wrap items-center justify-between gap-4 p-6',
+      })}
+    >
+      <div className="min-w-0 flex-1 basis-72">
+        <h3 className="font-display text-[1.3rem] font-semibold">Create Unlimited Events</h3>
+        <p className="text-ink-soft mt-1">
+          Plan as many events as you want. Choose a tier based on the features and pricing that fit your event.
+        </p>
+      </div>
+      <SketchButton asChild variant="line">
+        <Link href={isAuthenticated ? '/dashboard/events/new' : '/register'}>
+          {isAuthenticated ? 'Create Event' : 'Get Started'}
+        </Link>
+      </SketchButton>
+    </div>
   )
 }
 
@@ -180,9 +150,9 @@ const createFallbackTier = (tier: EventTier): TierData => {
 function EventTiersSection({ isAuthenticated, tiers, isLoading }: EventTiersSectionProps) {
   if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
-        <EventPricingCardSkeleton />
-        <EventPricingCardSkeleton />
+      <div className={PLAN_GRID}>
+        <PlanSkeleton />
+        <PlanSkeleton />
       </div>
     )
   }
@@ -196,7 +166,7 @@ function EventTiersSection({ isAuthenticated, tiers, isLoading }: EventTiersSect
     : [createFallbackTier('BASIC'), createFallbackTier('PREMIUM')]
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
+    <div className={PLAN_GRID}>
       {displayTiers.map((tierData) => (
         <EventTierCardFromBackend
           key={tierData.tier}
@@ -221,70 +191,39 @@ function EventTierCardFromBackend({ tierData, isAuthenticated }: EventTierCardFr
   const ctaLink = isAuthenticated ? `/dashboard/events/new?tier=${tierData.tier}` : '/register'
 
   return (
-    <Card
-      className={`relative flex flex-col transition-all duration-300 hover:shadow-lg ${
-        tierData.isPopular
-          ? 'border-primary shadow-md ring-2 ring-primary/20 scale-[1.02]'
-          : 'hover:border-muted-foreground/30'
-      }`}
+    <div
+      className={skPaper({
+        alt: tierData.isPopular,
+        tape: tierData.isPopular,
+        className: 'flex flex-col px-[30px] py-8',
+      })}
     >
-      {/* Popular Badge */}
-      {tierData.isPopular && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-lg">
-            <Sparkles className="h-3 w-3 mr-1" />
-            Best Value
-          </Badge>
-        </div>
-      )}
+      {tierData.isPopular && <Stamp className="bg-card absolute -top-3 right-5 rotate-[4deg]">Best Value</Stamp>}
+      <h2 className="font-display text-[2rem] font-semibold">{tierData.name}</h2>
+      <p className="text-ink-soft">{tierData.description}</p>
+      <div className="font-display text-blue mt-[18px] mb-1 text-[2.6rem] leading-none font-bold">{tierData.price}</div>
+      <small className="text-ink-soft">{tierData.priceSubtext}</small>
 
-      <CardHeader className={`text-center pb-4 rounded-t-lg ${
-        tierData.tier === 'PREMIUM' ? 'bg-purple-50 dark:bg-purple-950' : 'bg-blue-50 dark:bg-blue-950'
-      }`}>
-        <CardTitle className="text-xl">{tierData.name}</CardTitle>
-        <CardDescription className="mt-1.5">{tierData.description}</CardDescription>
-      </CardHeader>
+      <ul className="my-[22px] grid flex-1 content-start gap-[9px]">
+        {(tierData.features || []).map((feature) => (
+          <li
+            key={feature.key}
+            className={cn(
+              'flex items-start gap-[9px]',
+              feature.isHighlighted && 'font-semibold',
+              !feature.included && 'text-ink-soft decoration-rose line-through',
+            )}
+          >
+            <Tick included={feature.included} />
+            <span>{feature.name}</span>
+          </li>
+        ))}
+      </ul>
 
-      <CardContent className="flex-1 space-y-6 pt-6">
-        {/* Price Display */}
-        <div className="text-center py-4">
-          <div className="text-4xl font-bold text-emerald-600">{tierData.price}</div>
-          <p className="text-sm text-muted-foreground mt-1">{tierData.priceSubtext}</p>
-        </div>
-
-        {/* Features List */}
-        <div className="pt-4 border-t">
-          <p className="text-sm font-medium text-muted-foreground mb-3">Features per event:</p>
-          <ul className="space-y-2">
-            {(tierData.features || []).map((feature) => (
-              <li key={feature.key} className={`flex items-center gap-2 text-sm ${feature.isHighlighted ? 'font-semibold' : ''}`}>
-                {feature.included ? (
-                  <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                ) : (
-                  <X className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-                )}
-                <span className={feature.included ? (feature.isHighlighted ? 'text-emerald-600' : '') : 'text-muted-foreground/70'}>
-                  {feature.name}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </CardContent>
-
-      <CardFooter className="pt-4">
-        <Button
-          asChild
-          className="w-full"
-          variant={tierData.isPopular ? 'default' : 'outline'}
-          size="lg"
-        >
-          <Link href={ctaLink}>
-            {isAuthenticated ? 'Create Event' : 'Get Started'}
-          </Link>
-        </Button>
-      </CardFooter>
-    </Card>
+      <SketchButton asChild variant={tierData.isPopular ? 'solid' : 'line'}>
+        <Link href={ctaLink}>{isAuthenticated ? 'Create Event' : `Choose ${tierData.name}`}</Link>
+      </SketchButton>
+    </div>
   )
 }
 
@@ -310,23 +249,15 @@ function getPriceForCycle(plan: PlanDisplay, cycle: BillingCycle) {
 function renderFeatureValue(feature: FeatureDisplay): React.ReactNode {
   switch (feature.limitType) {
     case 'BOOLEAN':
-      return feature.limitValue === 1 || feature.displayValue === 'Yes' ? (
-        <Check className="h-5 w-5 text-emerald-600" />
-      ) : (
-        <X className="h-5 w-5 text-muted-foreground/50" />
-      )
+      return <Tick included={feature.limitValue === 1 || feature.displayValue === 'Yes'} />
     case 'UNLIMITED':
-      return <span className="font-medium text-emerald-600">Unlimited</span>
+      return <span className="text-leaf-deep font-bold">Unlimited</span>
     case 'COUNT':
     case 'COUNT_PER_MONTH':
     case 'COUNT_PER_YEAR':
-      return (
-        <span className="font-medium">
-          {feature.displayValue || feature.limitValue?.toLocaleString()}
-        </span>
-      )
+      return <span className="font-bold">{feature.displayValue || feature.limitValue?.toLocaleString()}</span>
     default:
-      return <span className="font-medium">{feature.displayValue}</span>
+      return <span className="font-bold">{feature.displayValue}</span>
   }
 }
 
@@ -352,64 +283,46 @@ function VendorPricingCard({ plan, billingCycle, isAuthenticated, userRole }: { 
   })
 
   return (
-    <Card
-      className={`relative flex flex-col transition-all duration-300 hover:shadow-lg ${
-        plan.isPopular
-          ? 'border-primary shadow-md ring-2 ring-primary/20 scale-[1.02]'
-          : 'hover:border-muted-foreground/30'
-      }`}
+    <div
+      className={skPaper({
+        alt: plan.isPopular,
+        tape: plan.isPopular,
+        className: 'flex flex-col px-[30px] py-8',
+      })}
     >
-      {plan.isPopular && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-lg">
-            <Sparkles className="h-3 w-3 mr-1" />
-            Most Popular
-          </Badge>
-        </div>
-      )}
+      {plan.isPopular && <Stamp className="bg-card absolute -top-3 right-5 rotate-[4deg]">Most Popular</Stamp>}
+      <h2 className="font-display text-[2rem] font-semibold">{plan.name}</h2>
+      {plan.description && <p className="text-ink-soft">{plan.description}</p>}
 
-      <CardHeader className="text-center pb-4">
-        <CardTitle className="text-xl">{plan.name}</CardTitle>
-        {plan.description && <CardDescription className="mt-1.5">{plan.description}</CardDescription>}
-      </CardHeader>
+      <div className="mt-[18px] mb-1">
+        {isFree ? (
+          <>
+            <div className="font-display text-blue text-[2.6rem] leading-none font-bold">Free</div>
+            <small className="text-ink-soft">Forever</small>
+          </>
+        ) : (
+          <div className="flex items-baseline gap-1">
+            <span className="font-display text-blue text-[2.6rem] leading-none font-bold">
+              {formatVendorPrice(price?.amount ?? 0, price?.currency)}
+            </span>
+            <span className="text-ink-soft">/{billingCycle === 'MONTHLY' ? 'mo' : 'yr'}</span>
+          </div>
+        )}
+      </div>
 
-      <CardContent className="flex-1 space-y-6">
-        <div className="text-center py-2">
-          {isFree ? (
-            <>
-              <div className="text-4xl font-bold">Free</div>
-              <p className="text-sm text-muted-foreground mt-1">Forever</p>
-            </>
-          ) : (
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="text-4xl font-bold">
-                {formatVendorPrice(price?.amount ?? 0, price?.currency)}
-              </span>
-              <span className="text-muted-foreground">
-                /{billingCycle === 'MONTHLY' ? 'mo' : 'yr'}
-              </span>
-            </div>
-          )}
-        </div>
+      <ul className="my-[22px] grid flex-1 content-start gap-[9px]">
+        {sortedFeatures.map((feature) => (
+          <li key={feature.key} className={cn('flex items-start gap-[9px]', feature.isHighlighted && 'font-semibold')}>
+            <span className="shrink-0">{renderFeatureValue(feature)}</span>
+            <span className={feature.isHighlighted ? 'text-ink' : 'text-ink-soft'}>{feature.name}</span>
+          </li>
+        ))}
+      </ul>
 
-        <ul className="space-y-3">
-          {sortedFeatures.map((feature) => (
-            <li key={feature.key} className={`flex items-start gap-3 text-sm ${feature.isHighlighted ? 'font-medium' : ''}`}>
-              <div className="shrink-0 mt-0.5">{renderFeatureValue(feature)}</div>
-              <span className={feature.isHighlighted ? 'text-foreground' : 'text-muted-foreground'}>
-                {feature.name}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-
-      <CardFooter className="pt-4">
-        <Button asChild className="w-full" variant={plan.isPopular ? 'default' : 'outline'} size="lg">
-          <Link href={ctaLink}>{isFree ? 'Get Started Free' : 'Subscribe Now'}</Link>
-        </Button>
-      </CardFooter>
-    </Card>
+      <SketchButton asChild variant={plan.isPopular ? 'solid' : 'line'}>
+        <Link href={ctaLink}>{isFree ? 'Get Started Free' : 'Subscribe Now'}</Link>
+      </SketchButton>
+    </div>
   )
 }
 
@@ -424,9 +337,9 @@ interface VendorPlansSectionProps {
 function VendorPlansSection({ plans, isLoading, billingCycle, isAuthenticated, userRole }: VendorPlansSectionProps) {
   if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+      <div className={PLAN_GRID_WIDE}>
         {Array.from({ length: 3 }).map((_, i) => (
-          <EventPricingCardSkeleton key={i} />
+          <PlanSkeleton key={i} />
         ))}
       </div>
     )
@@ -434,8 +347,8 @@ function VendorPlansSection({ plans, isLoading, billingCycle, isAuthenticated, u
 
   if (!plans || plans.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No plans available at the moment.</p>
+      <div className="py-12 text-center">
+        <p className="text-ink-soft">No plans available at the moment.</p>
       </div>
     )
   }
@@ -443,7 +356,7 @@ function VendorPlansSection({ plans, isLoading, billingCycle, isAuthenticated, u
   const sortedPlans = [...plans].sort((a, b) => a.displayOrder - b.displayOrder)
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+    <div className={PLAN_GRID_WIDE}>
       {sortedPlans.map((plan) => (
         <VendorPricingCard
           key={plan.id}
@@ -496,14 +409,22 @@ const faqs = [
 
 function FAQSection() {
   return (
-    <section className="mt-20 border-t pt-16">
-      <h2 className="text-2xl font-semibold text-center mb-8">Frequently Asked Questions</h2>
-      <div className="max-w-3xl mx-auto space-y-6">
-        {faqs.map((faq) => (
-          <div key={faq.question} className="border-b pb-6">
-            <h3 className="font-medium text-lg mb-2">{faq.question}</h3>
-            <p className="text-muted-foreground">{faq.answer}</p>
-          </div>
+    <section className="mt-16 pt-4">
+      <h2 className="font-display mb-6 text-center text-[1.8rem] font-semibold">Frequently Asked Questions</h2>
+      <div className="mx-auto max-w-[780px]">
+        {faqs.map((faq, i) => (
+          <details key={faq.question} open={i === 0} className="border-line group border-b-2 border-dashed px-1 py-3.5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-bold [&::-webkit-details-marker]:hidden">
+              {faq.question}
+              <span className="sk-hand text-[1.7rem] group-open:hidden" aria-hidden>
+                +
+              </span>
+              <span className="sk-hand hidden text-[1.7rem] group-open:inline" aria-hidden>
+                –
+              </span>
+            </summary>
+            <p className="text-ink-soft mt-2 max-w-[62ch]">{faq.answer}</p>
+          </details>
         ))}
       </div>
     </section>
@@ -514,9 +435,11 @@ function FAQSection() {
 // Main Page Component
 // ============================================================================
 
+type PricingTab = 'users' | 'vendors'
+
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('MONTHLY')
-  const [activeTab, setActiveTab] = useState<'users' | 'vendors'>('users')
+  const [activeTab, setActiveTab] = useState<PricingTab>('users')
 
   const { isAuthenticated, user } = useAuth()
   const { data: vendorPlans, isLoading: vendorLoading } = useVendorPlans()
@@ -528,95 +451,86 @@ export default function PricingPage() {
     return eventPricing.tiers as TierData[]
   }, [eventPricing])
 
+  const tabs: Array<{ id: PricingTab; label: string }> = [
+    { id: 'users', label: 'For Users' },
+    { id: 'vendors', label: 'For Vendors & Businesses' },
+  ]
+
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-16">
-      {/* Header */}
-      <section className="text-center space-y-4 max-w-3xl mx-auto">
-        <Badge variant="secondary" className="mb-2">
-          Flexible Event Tiers
-        </Badge>
-        <h1 className="text-4xl font-semibold sm:text-5xl">
-          Plan unlimited events with tier-based pricing
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          Create as many events as you want. Choose between Basic and Premium tiers
-          based on the features you need for each event.
-        </p>
-      </section>
+    <SkContainer className="pb-16">
+      <PageHead
+        center
+        eyebrow="Pricing"
+        title={
+          <>
+            Plans for every <Brush gold>celebration</Brush>.
+          </>
+        }
+        sub="Create as many events as you want. Choose between Basic and Premium tiers based on the features you need for each event."
+      />
 
-      {/* Tabs for User vs Vendor Plans */}
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as 'users' | 'vendors')}
-        className="mt-8"
-      >
-        <TabsList className="mx-auto w-fit">
-          <TabsTrigger value="users" className="gap-2 px-6">
-            <Users className="h-4 w-4" />
-            For Users
-          </TabsTrigger>
-          <TabsTrigger value="vendors" className="gap-2 px-6">
-            <Building2 className="h-4 w-4" />
-            For Vendors & Businesses
-          </TabsTrigger>
-        </TabsList>
+      <div className="mt-6 flex flex-wrap justify-center gap-3" role="tablist" aria-label="Pricing for">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            id={`pricing-tab-${t.id}`}
+            aria-selected={activeTab === t.id}
+            aria-controls={`pricing-panel-${t.id}`}
+            onClick={() => setActiveTab(t.id)}
+            className={skBtn(activeTab === t.id ? 'solid' : 'line', 'sm')}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="users" className="mt-10">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold">Event Tiers for Users</h2>
-            <p className="text-muted-foreground mt-2">
-              Plan your wedding, party, or any celebration with powerful tools
-            </p>
+      {activeTab === 'users' ? (
+        <div role="tabpanel" id="pricing-panel-users" aria-labelledby="pricing-tab-users" className="mt-10">
+          <div className="mb-8 text-center">
+            <h2 className="font-display text-[1.8rem] font-semibold">Event Tiers for Users</h2>
+            <p className="text-ink-soft mt-2">Plan your wedding, party, or any celebration with powerful tools</p>
           </div>
 
-          {/* Unlimited Events Banner */}
           <UnlimitedEventsBanner isAuthenticated={isAuthenticated} />
 
-          {/* Event Tiers */}
           <EventTiersSection
             isAuthenticated={isAuthenticated}
             tiers={eventTiers}
             isLoading={eventPricingLoading}
           />
 
-          {/* Info */}
-          <div className="mt-12 text-center text-sm text-muted-foreground">
-            <p>Create unlimited events. Feature limits apply per event based on the tier you choose.</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="vendors" className="mt-10">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold">Plans for Vendors & Businesses</h2>
-            <p className="text-muted-foreground mt-2">
+          <p className="text-ink-soft mt-12 text-center text-sm">
+            Create unlimited events. Feature limits apply per event based on the tier you choose.
+          </p>
+        </div>
+      ) : (
+        <div role="tabpanel" id="pricing-panel-vendors" aria-labelledby="pricing-tab-vendors" className="mt-10">
+          <div className="mb-8 text-center">
+            <h2 className="font-display text-[1.8rem] font-semibold">Plans for Vendors &amp; Businesses</h2>
+            <p className="text-ink-soft mt-2">
               Grow your event business with leads, bookings, and powerful management tools
             </p>
           </div>
 
-          {/* Billing Toggle for Vendor Plans */}
-          <div className="flex items-center justify-center gap-4 mb-8">
+          <div className="mb-9 flex flex-wrap items-center justify-center gap-3" role="group" aria-label="Billing cycle">
             <button
+              type="button"
+              aria-pressed={billingCycle === 'MONTHLY'}
               onClick={() => setBillingCycle('MONTHLY')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                billingCycle === 'MONTHLY'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted hover:bg-muted/80'
-              }`}
+              className={skBtn(billingCycle === 'MONTHLY' ? 'solid' : 'line', 'sm')}
             >
               Monthly
             </button>
             <button
+              type="button"
+              aria-pressed={billingCycle === 'YEARLY'}
               onClick={() => setBillingCycle('YEARLY')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                billingCycle === 'YEARLY'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted hover:bg-muted/80'
-              }`}
+              className={skBtn(billingCycle === 'YEARLY' ? 'solid' : 'line', 'sm')}
             >
               Yearly
-              <Badge variant="secondary" className="ml-2 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                Save 33%
-              </Badge>
+              <Stamp className="ml-2">Save 33%</Stamp>
             </button>
           </div>
 
@@ -627,43 +541,46 @@ export default function PricingPage() {
             isAuthenticated={isAuthenticated}
             userRole={user?.role}
           />
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
 
       {/* Enterprise CTA */}
-      <section className="mt-16 rounded-2xl border bg-muted/40 p-8 text-center">
-        <h2 className="text-2xl font-semibold">Need a custom solution?</h2>
-        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-          For large teams, enterprise features, or custom integrations, contact our sales team.
-          We will create a plan tailored to your specific needs.
-        </p>
-        <div className="flex flex-wrap gap-4 justify-center mt-6">
-          <Button asChild size="lg">
-            <Link href="/support">Contact Sales</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link href="/for-vendors">Learn More</Link>
-          </Button>
+      <section className="mt-16">
+        <div className={skPaper({ alt: true, className: 'mx-auto max-w-[720px] p-7 text-center' })}>
+          <h2 className="font-display text-[1.6rem] font-semibold">Need a custom solution?</h2>
+          <p className="text-ink-soft mx-auto mt-2 max-w-xl">
+            For large teams, enterprise features, or custom integrations, contact our sales team.
+            We will create a plan tailored to your specific needs.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <SketchButton asChild>
+              <Link href="/support">Contact Sales</Link>
+            </SketchButton>
+            <SketchButton asChild variant="line">
+              <Link href="/for-vendors">Learn More</Link>
+            </SketchButton>
+          </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
       <FAQSection />
 
       {/* Final CTA */}
-      <section className="mt-12 text-center py-12 rounded-2xl bg-linear-to-br from-primary/5 via-primary/10 to-primary/5">
-        <h2 className="text-2xl font-semibold">Ready to plan your event?</h2>
-        <p className="text-muted-foreground mt-2">
+      <section className="mt-14 text-center">
+        <h2 className="font-display text-[1.8rem] font-semibold">Ready to plan your event?</h2>
+        <p className="text-ink-soft mx-auto mt-2 max-w-xl">
           {isAuthenticated
             ? 'Create your next event and start planning'
             : 'Join thousands of happy users planning unforgettable events with the right tier for every celebration'}
         </p>
-        <Button asChild size="lg" className="mt-6">
-          <Link href={isAuthenticated ? '/dashboard/events/new' : '/register'}>
-            {isAuthenticated ? 'Create Event' : 'Get Started'}
-          </Link>
-        </Button>
+        <div className="mt-6">
+          <SketchButton asChild>
+            <Link href={isAuthenticated ? '/dashboard/events/new' : '/register'}>
+              {isAuthenticated ? 'Create Event' : 'Get Started'}
+            </Link>
+          </SketchButton>
+        </div>
       </section>
-    </main>
+    </SkContainer>
   )
 }

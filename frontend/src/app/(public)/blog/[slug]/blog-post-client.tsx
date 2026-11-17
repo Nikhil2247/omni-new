@@ -5,6 +5,7 @@ import { Clock, Eye, Calendar, ArrowLeft, Share2, BookOpen, User } from 'lucide-
 import { usePublicBlogPost } from '@/hooks/queries/use-public-blog'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Badge } from '@/components/ui/badge'
+import { Stamp } from '@/components/sketch'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -238,11 +239,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
     <div className="overflow-x-hidden">
     <>
       {/* Hero Section */}
-      <div className="relative border-b bg-linear-to-b from-muted/40 via-muted/20 to-background overflow-hidden">
-        {/* Decorative gradient orbs */}
-        <div className="absolute top-0 right-0 h-96 w-96 bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 h-96 w-96 bg-sky-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
-        
+      <div className="border-line relative overflow-hidden border-b-2 border-dashed">
         <div className="relative mx-auto w-full max-w-8xl px-6 py-12 lg:py-16">
           <div className="mb-8">
             <Button asChild variant="ghost" size="sm" className="-ml-3 hover:bg-muted/50">
@@ -256,9 +253,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
           <div className="space-y-5">
             {/* Category Badge */}
             <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-xs font-semibold px-3 py-1">
-                {post.category?.name ?? 'Uncategorized'}
-              </Badge>
+              <Stamp className="!text-blue">{post.category?.name ?? 'Uncategorized'}</Stamp>
               <Separator orientation="vertical" className="h-4" />
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
@@ -267,7 +262,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
             </div>
 
             {/* Title */}
-            <h1 className="font-serif text-2xl sm:text-3xl md:text-5xl font-bold leading-[1.15] tracking-tight lg:text-6xl max-w-4xl">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-5xl font-semibold leading-[1.15] tracking-tight lg:text-6xl max-w-4xl">
               {post.title}
             </h1>
 

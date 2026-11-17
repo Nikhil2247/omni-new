@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useVerifyTwoFactor } from '@/hooks/use-auth'
-import { Button } from '@/components/ui/button'
+import { SketchButton } from '@/components/sketch'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Shield } from 'lucide-react'
@@ -33,8 +33,8 @@ export function TwoFactorForm({ tempToken, returnUrl }: TwoFactorFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="flex flex-col items-center justify-center py-4 space-y-3">
-        <div className="rounded-full bg-primary/10 p-3">
-          <Shield className="h-6 w-6 text-primary" />
+        <div className="rounded-full bg-blue-wash p-3">
+          <Shield className="h-6 w-6 text-blue" />
         </div>
         <div className="text-center space-y-1">
           <p className="font-medium">Two-Factor Authentication</p>
@@ -44,7 +44,7 @@ export function TwoFactorForm({ tempToken, returnUrl }: TwoFactorFormProps) {
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="sk-field">
         <Label htmlFor="code" className="sr-only">Verification code</Label>
         <Input
           id="code"
@@ -68,10 +68,9 @@ export function TwoFactorForm({ tempToken, returnUrl }: TwoFactorFormProps) {
         </p>
       </div>
 
-      <Button
+      <SketchButton
         type="submit"
-        className="w-full"
-        size="lg"
+        className="w-full justify-center"
         disabled={verifyMutation.isPending || code.length !== 6}
       >
         {verifyMutation.isPending ? (
@@ -82,7 +81,7 @@ export function TwoFactorForm({ tempToken, returnUrl }: TwoFactorFormProps) {
         ) : (
           'Verify and continue'
         )}
-      </Button>
+      </SketchButton>
     </form>
   )
 }

@@ -1,3 +1,3 @@
 export { PublicLayout } from './public-layout';
-export { PublicHeader } from './public-header';
-export { PublicFooter } from './public-footer';
+export { SketchHeader } from './sketch-header';
+export { SketchFooter } from './sketch-footer';

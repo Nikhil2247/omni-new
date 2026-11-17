@@ -11,10 +11,8 @@ import { MasonryGrid } from '@/components/features/vendors/masonry-grid'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Search,
-  ImageIcon,
-} from 'lucide-react'
+import { Search } from 'lucide-react'
+import { Brush, Eyebrow, Ico, ICONS, Paper } from '@/components/sketch'
 
 // ─── Lenis Smooth Scroll ─────────────────────────────────────────────────────
 
@@ -167,14 +165,14 @@ function InspirationGrid({
 
   if (allMedia.length === 0) {
     return (
-      <FadeIn className="flex flex-col items-center justify-center py-24 text-center">
-        <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
-          <ImageIcon className="h-9 w-9 text-muted-foreground/60" />
-        </div>
-        <h3 className="font-serif text-xl font-semibold mb-2">No inspiration found</h3>
-        <p className="text-muted-foreground max-w-md">
-          Try searching for something else or browse another category.
-        </p>
+      <FadeIn className="py-16">
+        <Paper className="mx-auto max-w-md px-6 py-10 text-center">
+          <Ico d={ICONS.gallery} className="mx-auto mb-2 !size-[70px]" />
+          <h3 className="font-display mb-2 text-2xl font-semibold">No inspiration found</h3>
+          <p className="text-ink-soft mx-auto max-w-md">
+            Try searching for something else or browse another category.
+          </p>
+        </Paper>
       </FadeIn>
     )
   }
@@ -230,32 +228,44 @@ function InspirePageContent() {
   }, [searchQuery, router])
 
   return (
-    <main className="min-h-screen bg-background">
-      {/* Compact Header */}
-      <section className="border-b bg-muted/20 py-3 lg:py-4">
-        <div className="mx-auto max-w-8xl px-2">
-          {/* Search Bar */}
-          <FadeIn delay={0.05} className="max-w-6xl">
-            <div className="relative flex items-center bg-background border border-border rounded-full shadow-sm p-1.5 transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30">
-              <Input
-                type="text"
-                placeholder="Search inspiration, styles, themes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="h-9 border-0 bg-transparent px-3 text-sm shadow-none focus-visible:ring-0"
-              />
-              <Button onClick={handleSearch} className="h-9 w-9 shrink-0 rounded-full p-0" aria-label="Search">
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
-          </FadeIn>
-
-        </div>
+    <main className="min-h-screen">
+      <section className="mx-auto w-full max-w-[1440px] px-4 pt-6 pb-1 md:pt-7">
+        <FadeIn delay={0.05}>
+          <Eyebrow>Discover</Eyebrow>
+          <h1 className="font-display mt-2.5 max-w-[22ch] text-[clamp(2rem,4.4vw,3.2rem)] leading-[1.05] font-semibold tracking-tight text-balance">
+            Inspiration, <Brush>pinned</Brush> by the people who made it.
+          </h1>
+          <div className="sk-pill mt-[22px]">
+            <input
+              type="text"
+              placeholder="Search inspiration, styles, themes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              aria-label="Search inspiration"
+            />
+            <button type="button" onClick={handleSearch} aria-label="Search">
+              <Search className="h-[18px] w-[18px]" />
+            </button>
+          </div>
+          <div className="text-ink-soft mt-3.5 flex flex-wrap items-center gap-2 text-[0.9rem]">
+            Try:
+            {['marigold', 'mandap', 'candid', 'lanterns', 'bridal', 'mehendi'].map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => router.push(`/discover?query=${encodeURIComponent(t)}`)}
+                className="text-blue decoration-blue-wash px-1 py-0.5 font-bold underline decoration-[3px] underline-offset-[3px]"
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </FadeIn>
       </section>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-8xl px-2 py-4 lg:py-10">
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-4 lg:py-8">
         <InspirationGrid
           key={queryParam}
           query={queryParam}

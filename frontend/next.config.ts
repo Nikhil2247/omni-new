@@ -1,7 +1,19 @@
 import type { NextConfig } from "next";
 
+const BACKEND_URL = process.env.BACKEND_URL || "https://api.omnicassion.com";
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
+
+  // Proxy all /api/proxy/* requests to the backend (bypasses browser CORS)
+  async rewrites() {
+    return [
+      {
+        source: "/api/proxy/:path*",
+        destination: `${BACKEND_URL}/api/:path*`,
+      },
+    ];
+  },
 
   // Image optimization
   images: {

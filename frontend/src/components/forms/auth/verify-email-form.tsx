@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useVerifyEmail } from '@/hooks/use-auth'
-import { Button } from '@/components/ui/button'
+import { SketchButton } from '@/components/sketch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle2, AlertCircle, Loader2, Mail } from 'lucide-react'
 import { toast } from 'sonner'
@@ -39,7 +39,7 @@ export function VerifyEmailForm({ token }: VerifyEmailFormProps) {
   if (verifyMutation.isPending) {
     return (
       <div className="flex flex-col items-center justify-center py-8 space-y-4">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <Loader2 className="h-12 w-12 animate-spin text-blue" />
         <div className="text-center space-y-2">
           <p className="font-medium">Verifying your email...</p>
           <p className="text-sm text-muted-foreground">
@@ -53,22 +53,21 @@ export function VerifyEmailForm({ token }: VerifyEmailFormProps) {
   if (verifyMutation.isSuccess) {
     return (
       <div className="space-y-4">
-        <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
-          <CheckCircle2 className="h-5 w-5 text-green-600" />
-          <AlertDescription className="text-green-900 dark:text-green-100">
+        <Alert className="border-leaf-deep bg-card">
+          <CheckCircle2 className="h-5 w-5 text-leaf-deep" />
+          <AlertDescription className="text-ink">
             <p className="font-medium mb-1">Email verified successfully!</p>
             <p className="text-sm">
               Your account is now active. Redirecting you to login...
             </p>
           </AlertDescription>
         </Alert>
-        <Button
+        <SketchButton
           onClick={() => router.push('/login')}
-          className="w-full"
-          size="lg"
+          className="w-full justify-center"
         >
           Go to login
-        </Button>
+        </SketchButton>
       </div>
     )
   }
@@ -83,22 +82,21 @@ export function VerifyEmailForm({ token }: VerifyEmailFormProps) {
              'Verification failed. The link may have expired or is invalid.'}
           </AlertDescription>
         </Alert>
-        <Button
+        <SketchButton
           onClick={handleVerify}
-          variant="outline"
-          className="w-full"
-          size="lg"
+          variant="line"
+          className="w-full justify-center"
         >
           Try again
-        </Button>
+        </SketchButton>
       </div>
     )
   }
 
   return (
     <div className="flex flex-col items-center justify-center py-8 space-y-4">
-      <div className="rounded-full bg-primary/10 p-4">
-        <Mail className="h-8 w-8 text-primary" />
+      <div className="rounded-full bg-blue-wash p-4">
+        <Mail className="h-8 w-8 text-blue" />
       </div>
       <div className="text-center space-y-2">
         <p className="font-medium">Ready to verify</p>
@@ -106,13 +104,12 @@ export function VerifyEmailForm({ token }: VerifyEmailFormProps) {
           Click below to verify your email address.
         </p>
       </div>
-      <Button
+      <SketchButton
         onClick={handleVerify}
-        className="w-full"
-        size="lg"
+        className="w-full justify-center"
       >
         Verify email
-      </Button>
+      </SketchButton>
     </div>
   )
 }

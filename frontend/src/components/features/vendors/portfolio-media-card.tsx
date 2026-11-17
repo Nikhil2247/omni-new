@@ -94,13 +94,13 @@ export function PortfolioMediaCard({ item, priority = false, isBoosted = false }
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-xl sm:rounded-2xl border bg-card shadow-sm transition-all duration-300 hover:shadow-lg',
-        isBoosted && 'border-amber-300/60 ring-1 ring-amber-200/70 hover:border-amber-400/70',
+        'group border-ink bg-sky1 relative overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px] border-2 transition-all duration-300',
+        isBoosted && 'outline-gold outline-2 outline-offset-2 outline-dashed',
       )}
     >
       {isBoosted && (
         <div className="absolute left-2 top-2 z-10 sm:left-3 sm:top-3">
-          <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white shadow-md sm:text-[10px]">
+          <span className="border-ink bg-gold inline-flex items-center gap-1 rounded-[18px_240px_20px_220px/230px_18px_250px_16px] border-2 px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#2a1c00] uppercase">
             <Sparkles className="h-2.5 w-2.5" />
             Promoted
           </span>
@@ -129,10 +129,10 @@ export function PortfolioMediaCard({ item, priority = false, isBoosted = false }
         type="button"
         onClick={(e) => { e.stopPropagation(); handleSave() }}
         disabled={isSaved || isSaving}
-        className="absolute top-2 right-2 z-10 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/90 shadow-sm backdrop-blur-sm flex items-center justify-center transition hover:bg-white hover:scale-110"
+        className="border-ink bg-card absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded-full border-2 transition hover:scale-110"
         aria-label={isSaved ? 'Saved to wishlist' : 'Save to wishlist'}
       >
-        <Heart className={isSaved ? 'h-3.5 w-3.5 sm:h-4 sm:w-4 fill-primary text-primary' : 'h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground'} />
+        <Heart className={isSaved ? 'size-4 fill-current text-rose' : 'size-4 text-ink'} />
       </button>
 
       {/* Overlay - Always visible on mobile, fade in on hover for desktop */}
