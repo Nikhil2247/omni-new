@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/auth-store';
+import { PageHeader, StatCard as KpiCard } from '@/components/dashboard';
 import {
   CheckSquare,
   Clock,
@@ -16,6 +17,7 @@ import {
   FileText,
   TrendingUp,
   Loader2,
+  type LucideIcon,
 } from 'lucide-react';
 import { useOpsDashboardMetrics } from '@/hooks/queries/use-ops-dashboard';
 import { useOpsOperationalTasks, useOpsKycList, useOpsDisputes, useOpsSupportTickets } from '@/hooks/queries/use-ops';
@@ -121,24 +123,18 @@ export function OpsAssistantDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-6">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-lg font-semibold">My Tasks</h1>
-        <p className="text-muted-foreground">
-          Welcome, {user?.name || 'Ops Assistant'} - Your assigned work for today
-        </p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="My Tasks" />
 
       {/* Primary Stats Grid */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Pending Tasks"
           value={String(pendingTasks)}
@@ -166,16 +162,16 @@ export function OpsAssistantDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Today's Tasks */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-3">
           {/* Urgent Tasks */}
-          <div className="rounded-lg border border-orange-500 bg-card p-4">
-            <div className="mb-4 flex items-center gap-2">
+          <div className="rounded-lg border border-orange-500 bg-card p-3">
+            <div className="mb-2 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
-              <h2 className="text-lg font-semibold">Urgent Tasks</h2>
+              <h2 className="text-sm font-semibold">Urgent Tasks</h2>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {myTasks.urgent.length > 0 ? (
                 myTasks.urgent.map((task) => (
                   <TaskCard
@@ -190,7 +186,7 @@ export function OpsAssistantDashboard() {
                   />
                 ))
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-3 text-muted-foreground">
                   <CheckCircle2 className="mx-auto h-12 w-12 mb-2 opacity-50" />
                   <p>No urgent tasks - Great job!</p>
                 </div>
@@ -199,14 +195,14 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* Other Tasks */}
-          <div className="rounded-lg border bg-card p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Other Tasks</h2>
+          <div className="rounded-lg border bg-card p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Other Tasks</h2>
               <a href="/ops/tasks" className="text-sm text-primary hover:underline">
                 View all
               </a>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {myTasks.other.length > 0 ? (
                 myTasks.other.map((task) => (
                   <TaskCard
@@ -221,7 +217,7 @@ export function OpsAssistantDashboard() {
                   />
                 ))
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-3 text-muted-foreground">
                   <Clock className="mx-auto h-12 w-12 mb-2 opacity-50" />
                   <p>No upcoming tasks</p>
                 </div>
@@ -230,8 +226,8 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* Tasks Awaiting Review */}
-          <div className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-lg font-semibold">Submitted - Awaiting Review</h2>
+          <div className="rounded-lg border bg-card p-3">
+            <h2 className="mb-2 text-sm font-semibold">Submitted - Awaiting Review</h2>
             <div className="space-y-3">
               {myTasks.submitted.length > 0 ? (
                 myTasks.submitted.map((task) => (
@@ -244,18 +240,18 @@ export function OpsAssistantDashboard() {
                   />
                 ))
               ) : (
-                <p className="text-center py-4 text-sm text-muted-foreground">No submitted tasks</p>
+                <p className="text-center py-3 text-sm text-muted-foreground">No submitted tasks</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Quick Upload */}
-          <div className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-lg font-semibold">Quick Upload</h2>
-            <div className="rounded-lg border-2 border-dashed p-4 text-center">
+          <div className="rounded-lg border bg-card p-3">
+            <h2 className="mb-2 text-sm font-semibold">Quick Upload</h2>
+            <div className="rounded-lg border-2 border-dashed p-3 text-center">
               <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
               <p className="mt-2 text-sm text-muted-foreground">
                 Drag & drop files or click to upload
@@ -263,15 +259,15 @@ export function OpsAssistantDashboard() {
               <p className="mt-1 text-xs text-muted-foreground">
                 Photos, PDFs, receipts
               </p>
-              <button className="mt-4 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90">
+              <button className="mt-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90">
                 Select Files
               </button>
             </div>
           </div>
 
           {/* Processing Queue */}
-          <div className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-lg font-semibold">Processing Queue</h2>
+          <div className="rounded-lg border bg-card p-3">
+            <h2 className="mb-2 text-sm font-semibold">Processing Queue</h2>
             <div className="space-y-3">
               <ProcessingItem
                 icon={FileCheck}
@@ -301,9 +297,9 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* Today's Schedule */}
-          <div className="rounded-lg border bg-card p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Today&apos;s Schedule</h2>
+          <div className="rounded-lg border bg-card p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Today&apos;s Schedule</h2>
               <a href="/ops/calendar" className="text-sm text-primary hover:underline">
                 Calendar
               </a>
@@ -328,8 +324,8 @@ export function OpsAssistantDashboard() {
           </div>
 
           {/* My Stats */}
-          <div className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-lg font-semibold">This Week</h2>
+          <div className="rounded-lg border bg-card p-3">
+            <h2 className="mb-2 text-sm font-semibold">This Week</h2>
             <div className="space-y-3">
               <WeekStatItem label="Tasks Completed" value={String(weeklyStats.completed)} />
               <WeekStatItem label="On-Time Rate" value={`${weeklyStats.onTime}%`} />
@@ -346,12 +342,12 @@ export function OpsAssistantDashboard() {
 function StatCard({
   title,
   value,
-  icon: Icon,
+  icon,
   color,
 }: {
   title: string;
   value: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   color: 'yellow' | 'blue' | 'green' | 'purple';
 }) {
   const colorClasses = {
@@ -361,15 +357,7 @@ function StatCard({
     purple: 'text-purple-600',
   };
 
-  return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{title}</p>
-        <Icon className={`h-5 w-5 ${colorClasses[color]}`} />
-      </div>
-      <p className="mt-2 text-2xl font-bold">{value}</p>
-    </div>
-  );
+  return <KpiCard label={title} value={value} icon={icon} accent={colorClasses[color]} />;
 }
 
 // Helper functions
@@ -440,7 +428,7 @@ function TaskCard({
   const TypeIcon = typeIcons[type];
 
   return (
-    <div className={`rounded-md border bg-background p-4 ${priorityColors[priority]}`}>
+    <div className={`rounded-md border bg-background p-3 ${priorityColors[priority]}`}>
       <div className="mb-2 flex items-start justify-between">
         <div className="flex items-start gap-3">
           <TypeIcon className="mt-0.5 h-5 w-5 text-muted-foreground" />
@@ -455,7 +443,7 @@ function TaskCard({
           </span>
         )}
       </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <MapPin className="h-3 w-3" />
           {location}

@@ -1,5 +1,6 @@
 'use client'
 
+import { PageHeader } from '@/components/dashboard'
 import { useParams } from 'next/navigation'
 import { OpsRequirementsPanel } from '@/components/features/ops'
 
@@ -9,21 +10,15 @@ export default function OpsEventRequirementsPage() {
 
   if (!eventId) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Requirement Sheet</h1>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Requirement Sheet" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Requirement Sheet</h1>
-        <p className="text-muted-foreground">Manage vendor requirements for this event</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Requirement Sheet" />
       <OpsRequirementsPanel activeEventId={eventId} />
     </div>
   )

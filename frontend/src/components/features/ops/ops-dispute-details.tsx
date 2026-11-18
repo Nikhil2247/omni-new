@@ -22,7 +22,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
         <CardHeader>
           <div className="h-6 bg-muted rounded w-2/3" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <div className="h-4 bg-muted rounded" />
           <div className="h-4 bg-muted rounded w-3/4" />
         </CardContent>
@@ -33,7 +33,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="py-4 text-center">
+        <CardContent className="py-3 text-center">
           <p className="text-sm text-destructive">Failed to load dispute details.</p>
         </CardContent>
       </Card>
@@ -45,7 +45,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-2xl">Dispute Details</CardTitle>
+            <CardTitle className="text-lg">Dispute Details</CardTitle>
             {data.type && (
               <p className="text-sm text-muted-foreground">{data.type.replace(/_/g, ' ')}</p>
             )}
@@ -55,7 +55,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {data.description && (
           <div>
             <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
@@ -76,7 +76,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
           </div>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {data.createdAt && (
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 text-muted-foreground" />

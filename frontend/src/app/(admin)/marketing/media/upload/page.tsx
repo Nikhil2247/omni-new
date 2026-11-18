@@ -1,20 +1,18 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageHeader } from '@/components/dashboard'
 
 export default function MarketingMediaUploadPage() {
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Upload media</h1>
-        <p className="text-muted-foreground">Media upload will be enabled once the backend upload endpoint is ready.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Upload media" />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Upload status</CardTitle>
+        <CardHeader className="p-3 pb-0">
+          <CardTitle className="text-sm">Upload status</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+        <CardContent className="p-3 text-sm text-muted-foreground">
           The marketing gateway currently exposes read-only media endpoints.
         </CardContent>
       </Card>

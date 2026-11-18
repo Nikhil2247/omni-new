@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuthStore } from '@/store/auth-store';
 import {
   Calendar,
   Users,
@@ -17,8 +16,10 @@ import {
   Store,
   CheckSquare,
   Loader2,
+  type LucideIcon,
 } from 'lucide-react';
 import { useOpsDashboardMetrics } from '@/hooks/queries/use-ops-dashboard';
+import { PageHeader, StatCard as KpiCard } from '@/components/dashboard';
 import {
   useOpsActiveEvents,
   useOpsOperationalTasks,
@@ -42,7 +43,6 @@ import { useMemo } from 'react';
  * - Add/manage Ops Assistants
  */
 export function OpsManagerDashboard() {
-  const { user } = useAuthStore();
   const { data: metrics, isLoading: metricsLoading } = useOpsDashboardMetrics();
   const { data: events, isLoading: eventsLoading } = useOpsActiveEvents();
   const { data: allTasks, isLoading: tasksLoading } = useOpsOperationalTasks();
@@ -96,24 +96,18 @@ export function OpsManagerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-6">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-lg font-semibold">Event Execution Hub</h1>
-        <p className="text-muted-foreground">
-          Welcome, {user?.name || 'Ops Manager'} - Manage your assigned events
-        </p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Event Execution Hub" />
 
       {/* Primary Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-5">
         <StatCard
           title="My Events"
           value={String(activeEventsTotal)}
@@ -149,16 +143,16 @@ export function OpsManagerDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* My Assigned Events */}
-        <div className="lg:col-span-2 rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">My Assigned Events</h2>
+        <div className="lg:col-span-2 rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">My Assigned Events</h2>
             <a href="/ops/events" className="text-sm text-primary hover:underline">
               View all
             </a>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {myEvents.length > 0 ? (
               myEvents.map((event) => {
                 const budget = Number(event.totalBudget) || 0;
@@ -185,7 +179,7 @@ export function OpsManagerDashboard() {
                 );
               })
             ) : (
-              <div className="text-center py-4 text-muted-foreground">
+              <div className="text-center py-3 text-muted-foreground">
                 <Calendar className="mx-auto h-12 w-12 mb-2 opacity-50" />
                 <p>No events assigned yet</p>
               </div>
@@ -194,10 +188,10 @@ export function OpsManagerDashboard() {
         </div>
 
         {/* Quick Actions & Team */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Quick Actions */}
-          <div className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
+          <div className="rounded-lg border bg-card p-3">
+            <h2 className="mb-2 text-sm font-semibold">Quick Actions</h2>
             <div className="space-y-2">
               <QuickAction
                 icon={ClipboardList}
@@ -228,9 +222,9 @@ export function OpsManagerDashboard() {
           </div>
 
           {/* My Team */}
-          <div className="rounded-lg border bg-card p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">My Assistants</h2>
+          <div className="rounded-lg border bg-card p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">My Assistants</h2>
               <a href="/ops/team/assistants/new" className="text-sm text-primary hover:underline">
                 + Add
               </a>
@@ -255,14 +249,14 @@ export function OpsManagerDashboard() {
                   );
                 })
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
+                <p className="text-sm text-muted-foreground text-center py-3">
                   No assistants assigned
                 </p>
               )}
             </div>
             <a
               href="/ops/team/assistants"
-              className="mt-4 block w-full rounded-md border py-2 text-center text-sm hover:bg-accent"
+              className="mt-2 block w-full rounded-md border py-2 text-center text-sm hover:bg-accent"
             >
               Manage Team
             </a>
@@ -271,16 +265,16 @@ export function OpsManagerDashboard() {
       </div>
 
       {/* Vendor Agreements & Task Review */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {/* Pending Vendor Agreements */}
-        <div className="rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Vendor Agreements</h2>
+        <div className="rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Vendor Agreements</h2>
             <a href="/ops/agreements" className="text-sm text-primary hover:underline">
               View all
             </a>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <AgreementItem
               vendor="Elegant Photography"
               event="Beach Wedding - Martinez"
@@ -313,14 +307,14 @@ export function OpsManagerDashboard() {
         </div>
 
         {/* Tasks Pending Review */}
-        <div className="rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Tasks Pending Review</h2>
+        <div className="rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Tasks Pending Review</h2>
             <a href="/ops/tasks/review" className="text-sm text-primary hover:underline">
               View all
             </a>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {tasksForReview.length > 0 ? (
               tasksForReview.map((task) => {
                 const submittedAt = task.proofSubmittedAt 
@@ -342,7 +336,7 @@ export function OpsManagerDashboard() {
                 );
               })
             ) : (
-              <div className="text-center py-4 text-muted-foreground">
+              <div className="text-center py-3 text-muted-foreground">
                 <CheckCircle2 className="mx-auto h-12 w-12 mb-2 opacity-50" />
                 <p>No tasks pending review</p>
               </div>
@@ -352,14 +346,14 @@ export function OpsManagerDashboard() {
       </div>
 
       {/* Cost vs Budget Overview */}
-      <div className="rounded-lg border bg-card p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Cost vs Budget - My Events</h2>
+      <div className="rounded-lg border bg-card p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Cost vs Budget - My Events</h2>
           <a href="/ops/reports/budget" className="text-sm text-primary hover:underline">
             Detailed Report
           </a>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3">
           {myEvents.slice(0, 3).length > 0 ? (
             myEvents.slice(0, 3).map((event) => {
               const budget = Number(event.totalBudget) || 0;
@@ -377,7 +371,7 @@ export function OpsManagerDashboard() {
               );
             })
           ) : (
-            <div className="col-span-3 text-center py-4 text-muted-foreground">
+            <div className="col-span-3 text-center py-3 text-muted-foreground">
               <DollarSign className="mx-auto h-12 w-12 mb-2 opacity-50" />
               <p>No budget data available</p>
             </div>
@@ -391,27 +385,25 @@ export function OpsManagerDashboard() {
 function StatCard({
   title,
   value,
-  icon: Icon,
+  icon,
   subtitle,
   urgent,
 }: {
   title: string;
   value: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   subtitle: string;
   urgent?: boolean;
 }) {
   return (
-    <div className={`rounded-lg border bg-card p-4 ${urgent ? 'border-orange-500' : ''}`}>
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{title}</p>
-        <Icon className={`h-4 w-4 ${urgent ? 'text-orange-500' : 'text-muted-foreground'}`} />
-      </div>
-      <p className="mt-2 text-xl font-bold">{value}</p>
-      <p className={`mt-1 text-xs ${urgent ? 'text-orange-500' : 'text-muted-foreground'}`}>
-        {subtitle}
-      </p>
-    </div>
+    <KpiCard
+      label={title}
+      value={value}
+      icon={icon}
+      accent={urgent ? 'text-orange-500' : undefined}
+      hint={subtitle}
+      className={urgent ? 'border-orange-500' : undefined}
+    />
   );
 }
 
@@ -455,7 +447,7 @@ function EventItem({
   const progress = requirements > 0 ? (requirementsFilled / requirements) * 100 : 0;
 
   return (
-    <div className="rounded-md border p-4">
+    <div className="rounded-md border p-3">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <p className="font-medium">{name}</p>
@@ -642,7 +634,7 @@ function BudgetCard({
   const committedPercent = (committed / budget) * 100;
 
   return (
-    <div className="rounded-md border p-4">
+    <div className="rounded-md border p-3">
       <p className="mb-2 font-medium">{event}</p>
       <div className="mb-2 flex h-3 overflow-hidden rounded-full bg-muted">
         <div className="bg-green-500" style={{ width: `${spentPercent}%` }} />

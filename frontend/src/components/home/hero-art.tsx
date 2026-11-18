@@ -26,7 +26,7 @@ export function HeroArt() {
         className="relative z-[1] block h-auto w-full"
         viewBox="0 0 480 580"
         role="img"
-        aria-label="A hand-painted arch showing hills, a marigold sun, bunting and a marigold garland"
+        aria-label="A couple celebrating in a hand-painted arch with bunting and a marigold garland"
       >
         <defs>
           <clipPath id="hero-archclip">
@@ -36,21 +36,22 @@ export function HeroArt() {
             <stop offset="0" style={{ stopColor: 'var(--sky1)' }} />
             <stop offset="1" style={{ stopColor: 'var(--sky2)' }} />
           </linearGradient>
+          <linearGradient id="hero-fade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#0a0e23" stopOpacity="0" />
+            <stop offset="1" stopColor="#0a0e23" stopOpacity="0.45" />
+          </linearGradient>
         </defs>
         <g clipPath="url(#hero-archclip)">
           <rect width="480" height="580" fill="url(#hero-sky)" />
-          <circle cx="300" cy="200" r="86" style={{ fill: 'var(--gold)', opacity: 0.25, filter: 'url(#sk-wash)' }} />
-          <circle cx="300" cy="200" r="52" style={{ fill: 'var(--gold)', filter: 'url(#sk-dry)' }} />
-          <path d="M0 400C80 335 170 350 250 392S420 400 480 345V580H0Z" style={{ fill: 'var(--hill1)', filter: 'url(#sk-rough)' }} opacity=".92" />
-          <path d="M0 455C100 400 200 435 280 455S430 440 480 418V580H0Z" style={{ fill: 'var(--hill2)', filter: 'url(#sk-rough)' }} />
-          <g style={{ filter: 'url(#sk-rough)' }}>
-            <rect x="118" y="408" width="5" height="26" style={{ fill: 'var(--hill3)' }} />
-            <circle cx="120" cy="398" r="20" style={{ fill: 'var(--leaf)' }} />
-            <circle cx="108" cy="410" r="13" style={{ fill: 'var(--leaf-deep)' }} />
-            <rect x="372" y="420" width="5" height="22" style={{ fill: 'var(--hill3)' }} />
-            <circle cx="374" cy="410" r="16" style={{ fill: 'var(--leaf)' }} />
-          </g>
-          <path d="M0 515C120 482 240 506 480 488V580H0Z" style={{ fill: 'var(--hill3)', filter: 'url(#sk-rough)' }} />
+          <image
+            href="/images/home/hero.webp"
+            x="40"
+            y="30"
+            width="400"
+            height="530"
+            preserveAspectRatio="xMidYMid slice"
+          />
+          <rect x="40" y="440" width="400" height="120" fill="url(#hero-fade)" />
           <g style={{ filter: 'url(#sk-rough)' }}>
             {LANTERNS.map(([x, y, size], i) => (
               <g key={x}>

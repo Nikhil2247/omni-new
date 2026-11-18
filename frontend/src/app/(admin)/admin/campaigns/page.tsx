@@ -3,14 +3,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import {
-  AlertCircle,
-  ArrowUpDown,
   CheckCircle,
   Clock,
   Eye,
   Megaphone,
   RefreshCcw,
-  Search,
   X,
   XCircle,
 } from 'lucide-react'
@@ -21,9 +18,18 @@ import {
   useRejectCampaign,
 } from '@/hooks/queries/use-admin-campaign'
 import { trackDashboard } from '@/lib/analytics/umami'
+import {
+  DataTable,
+  FilterSelect,
+  PageHeader,
+  StatCard,
+  StatGrid,
+  StatusBadge,
+  TwoLineCell,
+  type DataColumn,
+} from '@/components/dashboard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -34,30 +40,12 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import type {
   AdminCampaign,
   CampaignStatus,
   CampaignType,
-  CAMPAIGN_STATUS_LABELS,
-  CAMPAIGN_TYPE_LABELS,
 } from '@/lib/api/types/admin-campaign.types'
 
 // Status labels and colors
@@ -186,64 +174,81 @@ export default function AdminCampaignsPage() {
 
   const hasActiveFilters = search || status !== 'all' || type !== 'all' || fromDate || toDate
 
+  const showStatus = activeTab === 'all'
+  const columns: DataColumn<AdminCampaign>[] = [
+    {
+      id: 'campaign',
+      header: 'Campaign',
+      label: 'Campaign',
+      cell: (c) => <TwoLineCell title={c.name} subtitle={c.description ? <span className="line-clamp-1">{c.description}</span> : undefined} />,
+      exportValue: (c) => c.name,
+    },
+    {
+      id: 'vendor',
+      header: 'Vendor',
+      label: 'Vendor',
+      cell: (c) => <span className="text-sm">{c.vendorProfile?.businessName || 'Unknown'}</span>,
+      exportValue: (c) => c.vendorProfile?.businessName || 'Unknown',
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      label: 'Type',
+      cell: (c) => <StatusBadge tone="neutral">{TYPE_LABELS[c.type]}</StatusBadge>,
+      exportValue: (c) => TYPE_LABELS[c.type],
+    },
+    {
+      id: 'budget',
+      header: 'Budget',
+      label: 'Budget',
+      cell: (c) => (
+        <TwoLineCell title={`${c.totalBudget} credits`} subtitle={`${c.dailyBudget}/day`} />
+      ),
+      exportValue: (c) => c.totalBudget,
+    },
+    ...(showStatus
+      ? [
+          {
+            id: 'status',
+            header: 'Status',
+            label: 'Status',
+            cell: (c: AdminCampaign) => <StatusBadge status={c.status}>{STATUS_LABELS[c.status]}</StatusBadge>,
+            exportValue: (c: AdminCampaign) => STATUS_LABELS[c.status],
+          },
+        ]
+      : []),
+    {
+      id: 'submitted',
+      header: 'Submitted',
+      label: 'Submitted',
+      cell: (c) => (
+        <span className="text-sm text-muted-foreground">
+          {c.submittedAt ? formatDate(c.submittedAt) : formatDate(c.createdAt)}
+        </span>
+      ),
+      exportValue: (c) => (c.submittedAt ? formatDate(c.submittedAt) : formatDate(c.createdAt)),
+    },
+  ]
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">Campaign Approval</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Review and moderate vendor ad campaigns
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCcw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="Campaign Approval"
+        actions={
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        }
+      />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Pending Approval</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {counts?.PENDING_APPROVAL ?? 0}
-              </p>
-            </div>
-            <Clock className="h-8 w-8 text-yellow-600" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Active Campaigns</p>
-              <p className="text-2xl font-bold text-green-600">{counts?.ACTIVE ?? 0}</p>
-            </div>
-            <CheckCircle className="h-8 w-8 text-green-600" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Rejected</p>
-              <p className="text-2xl font-bold text-red-600">{counts?.REJECTED ?? 0}</p>
-            </div>
-            <XCircle className="h-8 w-8 text-red-600" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Campaigns</p>
-              <p className="text-2xl font-bold">{counts?.TOTAL ?? 0}</p>
-            </div>
-            <Megaphone className="h-8 w-8 text-muted-foreground" />
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid>
+        <StatCard label="Pending Approval" value={counts?.PENDING_APPROVAL ?? 0} icon={Clock} accent="text-yellow-600" />
+        <StatCard label="Active Campaigns" value={counts?.ACTIVE ?? 0} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="Rejected" value={counts?.REJECTED ?? 0} icon={XCircle} accent="text-red-600" />
+        <StatCard label="Total Campaigns" value={counts?.TOTAL ?? 0} icon={Megaphone} />
+      </StatGrid>
 
-      {/* Campaign Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'pending')}>
         <TabsList>
           <TabsTrigger value="pending" className="relative">
@@ -256,98 +261,83 @@ export default function AdminCampaignsPage() {
           </TabsTrigger>
           <TabsTrigger value="all">All Campaigns</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="pending" className="mt-4">
-          <CampaignTable
-            campaigns={data?.data ?? []}
-            isLoading={isLoading}
-            onViewDetails={handleViewDetails}
-            onApprove={handleApprove}
-            onReject={handleOpenReject}
-            isPending={approveMutation.isPending}
-            showVendor
-          />
-          <Pagination data={data} currentPage={currentPage} setCurrentPage={setCurrentPage} isLoading={isLoading} />
-        </TabsContent>
-
-        <TabsContent value="all" className="mt-4">
-          <Card>
-            <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <CardTitle>All Campaigns</CardTitle>
-              <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto">
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search campaigns..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={type} onValueChange={setType}>
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All types</SelectItem>
-                    {Object.entries(TYPE_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="date"
-                  placeholder="From date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="w-full sm:w-36"
-                />
-                <Input
-                  type="date"
-                  placeholder="To date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="w-full sm:w-36"
-                />
-                {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters}>
-                    <X className="mr-1 h-4 w-4" />
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CampaignTable
-                campaigns={data?.data ?? []}
-                isLoading={isLoading}
-                onViewDetails={handleViewDetails}
-                onApprove={handleApprove}
-                onReject={handleOpenReject}
-                isPending={approveMutation.isPending}
-                showVendor
-                showStatus
-              />
-              <Pagination data={data} currentPage={currentPage} setCurrentPage={setCurrentPage} isLoading={isLoading} />
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+
+      <DataTable
+        data={data?.data ?? []}
+        columns={columns}
+        rowKey={(c) => c.id}
+        isLoading={isLoading}
+        search={
+          showStatus
+            ? { value: search, onChange: setSearch, placeholder: 'Search campaigns...' }
+            : undefined
+        }
+        filters={
+          showStatus ? (
+            <>
+              <FilterSelect
+                label="Status"
+                value={status}
+                onChange={setStatus}
+                options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
+              />
+              <FilterSelect
+                label="Type"
+                value={type}
+                onChange={setType}
+                options={Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+              />
+              <Input
+                type="date"
+                aria-label="From date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="h-8 w-36"
+              />
+              <Input
+                type="date"
+                aria-label="To date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="h-8 w-36"
+              />
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="mr-1 h-4 w-4" />
+                  Clear
+                </Button>
+              )}
+            </>
+          ) : undefined
+        }
+        rowActions={(c) => [
+          { label: 'View details', icon: Eye, onClick: () => handleViewDetails(c) },
+          {
+            label: 'Approve',
+            icon: CheckCircle,
+            visible: c.status === 'PENDING_APPROVAL',
+            disabled: approveMutation.isPending,
+            onClick: () => handleApprove(c),
+          },
+          {
+            label: 'Reject',
+            icon: XCircle,
+            danger: true,
+            visible: c.status === 'PENDING_APPROVAL',
+            onClick: () => handleOpenReject(c),
+          },
+        ]}
+        serverPagination={{
+          page: data?.meta?.page ?? currentPage,
+          pageSize: 20,
+          total: data?.meta?.total ?? data?.data?.length ?? 0,
+          onPageChange: setCurrentPage,
+        }}
+        emptyTitle="No campaigns found"
+        emptyIcon={Megaphone}
+        exportFilename="admin-campaigns"
+      />
 
       {/* Campaign Details Modal */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -359,8 +349,8 @@ export default function AdminCampaignsPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedCampaign && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-muted-foreground">Campaign Name</Label>
                   <p className="font-semibold">{selectedCampaign.name}</p>
@@ -392,7 +382,7 @@ export default function AdminCampaignsPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-3 gap-4 rounded-lg border bg-muted/50 p-4">
+              <div className="grid grid-cols-3 gap-3 rounded-lg border bg-muted/50 p-3">
                 <div>
                   <Label className="text-muted-foreground">Daily Budget</Label>
                   <p className="text-lg font-semibold">{selectedCampaign.dailyBudget} credits</p>
@@ -407,7 +397,7 @@ export default function AdminCampaignsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-muted-foreground">Start Date</Label>
                   <p className="text-sm">{formatDate(selectedCampaign.startDate)}</p>
@@ -428,7 +418,7 @@ export default function AdminCampaignsPage() {
               )}
 
               {selectedCampaign.status === 'REJECTED' && selectedCampaign.rejectionReason && (
-                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3">
                   <Label className="text-destructive">Rejection Reason</Label>
                   <p className="text-sm">{selectedCampaign.rejectionReason}</p>
                   {selectedCampaign.rejectedBy && (
@@ -441,7 +431,7 @@ export default function AdminCampaignsPage() {
               )}
 
               {selectedCampaign.status === 'APPROVED' && selectedCampaign.approvedBy && (
-                <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-4">
+                <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
                   <Label className="text-green-700">Approved</Label>
                   <p className="text-sm text-muted-foreground">
                     Approved by {selectedCampaign.approvedBy.firstName || selectedCampaign.approvedBy.email}{' '}
@@ -450,7 +440,7 @@ export default function AdminCampaignsPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <Label className="text-muted-foreground">Impressions</Label>
                   <p className="font-medium">{selectedCampaign.impressions.toLocaleString()}</p>
@@ -505,8 +495,8 @@ export default function AdminCampaignsPage() {
             </DialogDescription>
           </DialogHeader>
           {rejectCampaign && (
-            <div className="space-y-4">
-              <div className="rounded-lg border bg-muted/50 p-4">
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/50 p-3">
                 <p className="font-medium">{rejectCampaign.name}</p>
                 <p className="text-sm text-muted-foreground">
                   {rejectCampaign.vendorProfile?.businessName || 'Unknown Vendor'}
@@ -550,185 +540,6 @@ export default function AdminCampaignsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-// ============================================================================
-// Campaign Table Component
-// ============================================================================
-
-function CampaignTable({
-  campaigns,
-  isLoading,
-  onViewDetails,
-  onApprove,
-  onReject,
-  isPending,
-  showVendor = false,
-  showStatus = false,
-}: {
-  campaigns: AdminCampaign[]
-  isLoading: boolean
-  onViewDetails: (campaign: AdminCampaign) => void
-  onApprove: (campaign: AdminCampaign) => void
-  onReject: (campaign: AdminCampaign) => void
-  isPending: boolean
-  showVendor?: boolean
-  showStatus?: boolean
-}) {
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-md" />
-        ))}
-      </div>
-    )
-  }
-
-  if (!campaigns.length) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-          <Megaphone className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <p className="mt-4 text-sm font-medium">No campaigns found</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {showStatus ? 'Try adjusting your search or filters.' : 'No campaigns awaiting approval.'}
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Campaign</TableHead>
-          {showVendor && <TableHead>Vendor</TableHead>}
-          <TableHead>Type</TableHead>
-          <TableHead>Budget</TableHead>
-          {showStatus && <TableHead>Status</TableHead>}
-          <TableHead>Submitted</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {campaigns.map((campaign) => (
-          <TableRow key={campaign.id}>
-            <TableCell>
-              <div className="font-medium">{campaign.name}</div>
-              {campaign.description && (
-                <div className="text-xs text-muted-foreground line-clamp-1">
-                  {campaign.description}
-                </div>
-              )}
-            </TableCell>
-            {showVendor && (
-              <TableCell>
-                <div className="text-sm">
-                  {campaign.vendorProfile?.businessName || 'Unknown'}
-                </div>
-              </TableCell>
-            )}
-            <TableCell>
-              <Badge variant="outline">{TYPE_LABELS[campaign.type]}</Badge>
-            </TableCell>
-            <TableCell>
-              <div className="text-sm">
-                <span className="font-medium">{campaign.totalBudget}</span>
-                <span className="text-muted-foreground"> credits</span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {campaign.dailyBudget}/day
-              </div>
-            </TableCell>
-            {showStatus && (
-              <TableCell>
-                <Badge variant={getStatusVariant(campaign.status)}>
-                  {STATUS_LABELS[campaign.status]}
-                </Badge>
-              </TableCell>
-            )}
-            <TableCell className="text-sm text-muted-foreground">
-              {campaign.submittedAt ? formatDate(campaign.submittedAt) : formatDate(campaign.createdAt)}
-            </TableCell>
-            <TableCell className="text-right">
-              <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="sm" onClick={() => onViewDetails(campaign)}>
-                  <Eye className="h-4 w-4" />
-                </Button>
-                {campaign.status === 'PENDING_APPROVAL' && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onApprove(campaign)}
-                      disabled={isPending}
-                      className="text-green-600 hover:text-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onReject(campaign)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  )
-}
-
-// ============================================================================
-// Pagination Component
-// ============================================================================
-
-function Pagination({
-  data,
-  currentPage,
-  setCurrentPage,
-  isLoading,
-}: {
-  data: { meta?: { totalPages: number; page: number; total: number; hasPreviousPage: boolean; hasNextPage: boolean } } | undefined
-  currentPage: number
-  setCurrentPage: (page: number | ((prev: number) => number)) => void
-  isLoading: boolean
-}) {
-  if (!data?.meta?.totalPages || data.meta.totalPages <= 1) return null
-
-  return (
-    <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
-      <p className="text-sm text-muted-foreground">
-        Page {data.meta.page} of {data.meta.totalPages} - {data.meta.total} campaigns
-      </p>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!data.meta.hasPreviousPage || isLoading}
-          onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!data.meta.hasNextPage || isLoading}
-          onClick={() => setCurrentPage((prev) => prev + 1)}
-        >
-          Next
-        </Button>
-      </div>
     </div>
   )
 }

@@ -44,7 +44,9 @@ import type {
   FeatureLimitStatus,
 } from '@/lib/api/types/subscription.types'
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import type { PaymentRecord } from '@/lib/api/types/payment.types'
+import { PageHeader, DataTable, StatusBadge, TwoLineCell } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -226,28 +228,25 @@ export default function VendorSubscriptionSettingsPage() {
   // Loading state
   if (subscriptionLoading) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Subscription</h1>
-          <p className="text-muted-foreground">Manage your business subscription and billing.</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-3">
+        <PageHeader title="Subscription" />
+        <div className="grid gap-3 md:grid-cols-2">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-2">
               <Skeleton className="h-6 w-32" />
               <Skeleton className="h-4 w-48" />
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-3/4" />
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-2">
               <Skeleton className="h-6 w-32" />
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="space-y-2">
                   <Skeleton className="h-4 w-32" />
@@ -264,11 +263,8 @@ export default function VendorSubscriptionSettingsPage() {
   // Error state
   if (subscriptionError) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Subscription</h1>
-          <p className="text-muted-foreground">Manage your business subscription and billing.</p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Subscription" />
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error loading subscription</AlertTitle>
@@ -290,11 +286,8 @@ export default function VendorSubscriptionSettingsPage() {
   const isCancelled = subscription?.status === 'CANCELLED' || subscription?.cancelAtPeriodEnd
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Subscription</h1>
-        <p className="text-muted-foreground">Manage your business subscription and billing.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Subscription" />
 
       {/* Status Alerts */}
       {subscription?.cancelAtPeriodEnd && (
@@ -339,10 +332,10 @@ export default function VendorSubscriptionSettingsPage() {
         </Alert>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         {/* Current Plan Card */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
@@ -361,13 +354,8 @@ export default function VendorSubscriptionSettingsPage() {
                 <Badge variant="secondary">Free Plan</Badge>
               )}
             </div>
-            <CardDescription>
-              {hasSubscription
-                ? `You're on the ${getTierDisplayName(planTier)} plan`
-                : 'You are currently on the free plan'}
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {hasSubscription && subscription.plan && subscription.price ? (
               <>
                 <div className="flex items-baseline gap-2">
@@ -422,7 +410,7 @@ export default function VendorSubscriptionSettingsPage() {
                 )}
               </>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-semibold">Free</span>
                 </div>
@@ -501,16 +489,15 @@ export default function VendorSubscriptionSettingsPage() {
 
         {/* Ad Credits Card */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
               <Coins className="h-5 w-5" />
               Ad Credits
             </CardTitle>
-            <CardDescription>Use credits to promote your business</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {adCreditsLoading ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <Skeleton className="h-10 w-32" />
                 <Skeleton className="h-4 w-48" />
               </div>
@@ -555,12 +542,11 @@ export default function VendorSubscriptionSettingsPage() {
 
       {/* Quick Actions Card */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle>Subscription Actions</CardTitle>
-          <CardDescription>Manage your subscription status and plan</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Button
               variant="outline"
               className="h-auto py-4 flex flex-col items-center gap-2"
@@ -624,16 +610,15 @@ export default function VendorSubscriptionSettingsPage() {
 
       {/* Usage Card */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
             Feature Usage
           </CardTitle>
-          <CardDescription>Your current feature usage and limits</CardDescription>
         </CardHeader>
         <CardContent>
           {usageLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="space-y-2 p-4 rounded-lg border">
                   <Skeleton className="h-4 w-32" />
@@ -643,7 +628,7 @@ export default function VendorSubscriptionSettingsPage() {
               ))}
             </div>
           ) : usageData && usageData.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {usageData.map((feature: FeatureLimitStatus) => {
                 const percentage = feature.isUnlimited ? 0 : Math.min((feature.used / feature.limit) * 100, 100)
                 const isNearLimit = !feature.isUnlimited && percentage >= 80
@@ -706,16 +691,15 @@ export default function VendorSubscriptionSettingsPage() {
 
       {/* Payment Method Card */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
             Payment Method
           </CardTitle>
-          <CardDescription>Payment is handled securely via Razorpay</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="flex h-10 w-16 items-center justify-center rounded bg-muted">
                 <CreditCard className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -735,16 +719,15 @@ export default function VendorSubscriptionSettingsPage() {
 
       {/* Ad Credits Card */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <Coins className="h-5 w-5" />
             Ad Credits
           </CardTitle>
-          <CardDescription>Your advertising credit balance</CardDescription>
         </CardHeader>
         <CardContent>
           {adCreditsLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Skeleton className="h-12 w-32" />
               <Skeleton className="h-4 w-48" />
             </div>
@@ -765,63 +748,64 @@ export default function VendorSubscriptionSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Billing History Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            Billing History
-          </CardTitle>
-          <CardDescription>View your past invoices and payments</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {paymentsLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : paymentHistory && paymentHistory.length > 0 ? (
-            <div className="space-y-3">
-              {paymentHistory.map((payment: any) => (
-                <div key={payment.id} className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-2 w-2 rounded-full ${
-                      payment.status === 'SUCCEEDED' ? 'bg-green-500' :
-                      payment.status === 'FAILED' ? 'bg-red-500' :
-                      payment.status === 'PENDING' ? 'bg-yellow-500' : 'bg-gray-500'
-                    }`} />
-                    <div>
-                      <p className="font-medium">
-                        {payment.purpose === 'SUBSCRIPTION' ? 'Subscription Payment' :
-                         payment.purpose === 'AD_CREDITS' ? 'Ad Credits Purchase' :
-                         payment.purpose}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(payment.createdAt), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      {formatCurrency(payment.amount, payment.currency || 'INR')}
-                    </p>
-                    <Badge variant={payment.status === 'SUCCEEDED' ? 'default' : 'secondary'} className="text-xs">
-                      {payment.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-4 text-center">
-              <History className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No billing history available</p>
-              <p className="text-sm text-muted-foreground">Your payments will appear here.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Billing History */}
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold">Billing History</h2>
+        <DataTable<PaymentRecord & { purpose?: string }>
+          data={paymentHistory}
+          isLoading={paymentsLoading}
+          rowKey={(p) => p.id}
+          exportFilename="billing-history"
+          emptyTitle="No billing history available"
+          emptyIcon={History}
+          columns={[
+            {
+              id: 'purpose',
+              header: 'Description',
+              label: 'Description',
+              exportValue: (p) => p.purpose,
+              cell: (p) => (
+                <TwoLineCell
+                  title={
+                    p.purpose === 'SUBSCRIPTION'
+                      ? 'Subscription Payment'
+                      : p.purpose === 'AD_CREDITS'
+                        ? 'Ad Credits Purchase'
+                        : p.purpose
+                  }
+                  subtitle={format(new Date(p.createdAt), 'MMM d, yyyy')}
+                />
+              ),
+            },
+            {
+              id: 'date',
+              header: 'Date',
+              label: 'Date',
+              hideBelow: 'sm',
+              sortValue: (p) => new Date(p.createdAt),
+              exportValue: (p) => p.createdAt,
+              cell: (p) => <span className="text-sm">{format(new Date(p.createdAt), 'MMM d, yyyy')}</span>,
+            },
+            {
+              id: 'amount',
+              header: 'Amount',
+              label: 'Amount',
+              align: 'right',
+              sortValue: (p) => p.amount,
+              exportValue: (p) => p.amount,
+              cell: (p) => <span className="text-sm font-medium">{formatCurrency(p.amount, p.currency || 'INR')}</span>,
+            },
+            {
+              id: 'status',
+              header: 'Status',
+              label: 'Status',
+              sortValue: (p) => p.status,
+              exportValue: (p) => p.status,
+              cell: (p) => <StatusBadge status={p.status} />,
+            },
+          ]}
+        />
+      </div>
 
       {/* Modals */}
       <UpgradeModal

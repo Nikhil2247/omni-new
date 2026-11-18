@@ -37,21 +37,6 @@ const GUEST_TOOLS = [
   { href: '/digital-invite-generator', label: 'Digital Invites' },
 ]
 
-const COMPANY_LINKS = [
-  { href: '/for-vendors', label: 'For Vendors' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/about', label: 'About' },
-]
-
-const MORE_LINKS = [
-  { href: '/support', label: 'Support' },
-  { href: '/contact', label: 'Contact' },
-  { href: '/quote', label: 'Get a quote' },
-  { href: '/assistant', label: 'AI assistant' },
-  { href: '/terms', label: 'Terms' },
-  { href: '/privacy', label: 'Privacy' },
-]
-
 const navLink =
   'whitespace-nowrap font-medium transition-colors hover:text-blue focus-visible:outline-2 focus-visible:outline-dashed focus-visible:outline-gold focus-visible:outline-offset-4'
 const navActive =
@@ -127,7 +112,6 @@ export function SketchHeader() {
     { href: '/discover', label: 'Discover' },
     { href: '/blog', label: 'Blog' },
   ]
-  const moreLinks = authed ? [...COMPANY_LINKS, ...MORE_LINKS] : MORE_LINKS
 
   return (
     <header className="flex items-center justify-between gap-3 py-3 md:py-4">
@@ -179,26 +163,6 @@ export function SketchHeader() {
           </Link>
         ) : null}
 
-        {!authed
-          ? COMPANY_LINKS.map((l) => (
-              <Link key={l.href} href={l.href} className={cn(navLink, isActive(pathname, l.href) && navActive)}>
-                {l.label}
-              </Link>
-            ))
-          : null}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger className={cn(navLink, 'inline-flex items-center gap-1')}>
-            More <ChevronDown className="size-3.5" aria-hidden />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="border-ink bg-card min-w-48 border-2">
-            {moreLinks.map((m) => (
-              <DropdownMenuItem key={m.href} asChild>
-                <Link href={m.href}>{m.label}</Link>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </nav>
 
       {/* ---------- desktop actions ---------- */}
@@ -333,13 +297,6 @@ export function SketchHeader() {
                   <MessageSquare className="size-4" /> Messages
                 </Link>
               ) : null}
-
-              <p className="sk-eyebrow mt-3 px-3">Company</p>
-              {[...COMPANY_LINKS, ...MORE_LINKS].map((l) => (
-                <Link key={l.href} href={l.href} onClick={closeMenu} className={cn('rounded-md px-3 py-2.5 text-[0.95rem]', isActive(pathname, l.href) ? 'bg-accent text-blue font-bold' : 'hover:bg-accent')}>
-                  {l.label}
-                </Link>
-              ))}
             </nav>
 
             <div className="border-line mt-auto grid gap-2 border-t-2 border-dashed p-4">

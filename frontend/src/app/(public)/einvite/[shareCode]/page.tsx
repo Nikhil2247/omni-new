@@ -8,6 +8,7 @@ import { useRsvpDetails, useSubmitRsvp } from '@/hooks/queries/use-public-rsvp'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Calendar, Clock, MapPin, Share2, Download, MessageCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { loadCanvasJson } from '@/lib/einvite-fonts'
 import { Brush, Eyebrow, Ico, ICONS, Paper, SketchButton, SkContainer, Stamp } from '@/components/sketch'
 import { RsvpResponseFields } from '@/components/features/events/rsvp-response-fields'
 
@@ -90,7 +91,7 @@ function EInviteContent() {
     fabricRef.current = canvas
 
     // Load canvas JSON
-    canvas.loadFromJSON(invite.canvasJson, () => {
+    const cancel = loadCanvasJson(canvas, invite.canvasJson, () => {
       // Make all objects non-interactive
       canvas.getObjects().forEach((obj) => {
         obj.set({
@@ -103,6 +104,7 @@ function EInviteContent() {
     })
 
     return () => {
+      cancel()
       canvas.dispose()
     }
   }, [invite?.canvasJson])

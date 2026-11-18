@@ -1,90 +1,50 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuthStore } from '@/store/auth-store';
-import { Role, ROLE_LABELS } from '@/config/roles';
 import { trackDashboard } from '@/lib/analytics/umami';
 import {
   Users,
   DollarSign,
-  TrendingUp,
   Target,
   Phone,
   Mail,
   Calendar,
   CheckCircle2,
-  Clock,
   ArrowUpRight,
   ArrowDownRight,
   Briefcase,
   UserPlus,
 } from 'lucide-react';
+import { PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dashboard';
 
 export default function SalesDashboardPage() {
-  const { user } = useAuthStore();
-  const roleLabel = user?.role ? ROLE_LABELS[user.role as Role] : '';
-
   useEffect(() => {
     trackDashboard.view('sales')
   }, [])
 
   return (
-    <div className="space-y-4">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-lg font-semibold">Sales Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome, {user?.name || 'Team Member'} ({roleLabel})
-        </p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Sales Dashboard" />
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Monthly Revenue"
-          value="₹128,450"
-          icon={DollarSign}
-          trend="+23%"
-          trendUp={true}
-          comparison="vs last month"
-        />
-        <StatCard
-          title="New Leads"
-          value="342"
-          icon={UserPlus}
-          trend="+18%"
-          trendUp={true}
-          comparison="vs last month"
-        />
-        <StatCard
-          title="Conversion Rate"
-          value="24.8%"
-          icon={Target}
-          trend="+2.4%"
-          trendUp={true}
-          comparison="vs last month"
-        />
-        <StatCard
-          title="Active Deals"
-          value="67"
-          icon={Briefcase}
-          trend="-5"
-          trendUp={false}
-          comparison="from last week"
-        />
-      </div>
+      <StatGrid>
+        <StatCard label="Monthly Revenue" value="₹128,450" icon={DollarSign} hint={<TrendHint trend="+23%" up comparison="vs last month" />} />
+        <StatCard label="New Leads" value="342" icon={UserPlus} hint={<TrendHint trend="+18%" up comparison="vs last month" />} />
+        <StatCard label="Conversion Rate" value="24.8%" icon={Target} hint={<TrendHint trend="+2.4%" up comparison="vs last month" />} />
+        <StatCard label="Active Deals" value="67" icon={Briefcase} hint={<TrendHint trend="-5" up={false} comparison="from last week" />} />
+      </StatGrid>
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Sales Pipeline */}
-        <div className="lg:col-span-2 rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Sales Pipeline</h2>
+        <div className="lg:col-span-2 rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Sales Pipeline</h2>
             <a href="/sales/pipeline" className="text-sm text-primary hover:underline">
               View full pipeline
             </a>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2">
             <PipelineStage
               name="New Leads"
               count={45}
@@ -125,11 +85,11 @@ export default function SalesDashboardPage() {
         </div>
 
         {/* Quick Stats & Actions */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* Today's Tasks */}
-          <div className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-lg font-semibold">Today&apos;s Tasks</h2>
-            <div className="space-y-3">
+          <div className="rounded-lg border bg-card p-3">
+            <h2 className="mb-2 text-sm font-semibold">Today&apos;s Tasks</h2>
+            <div className="space-y-2">
               <TaskItem
                 title="Follow-up calls"
                 count={8}
@@ -154,9 +114,9 @@ export default function SalesDashboardPage() {
           </div>
 
           {/* Target Progress */}
-          <div className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-lg font-semibold">Monthly Target</h2>
-            <div className="space-y-4">
+          <div className="rounded-lg border bg-card p-3">
+            <h2 className="mb-2 text-sm font-semibold">Monthly Target</h2>
+            <div className="space-y-2">
               <div>
                 <div className="mb-2 flex justify-between text-sm">
                   <span>Revenue</span>
@@ -183,16 +143,16 @@ export default function SalesDashboardPage() {
       </div>
 
       {/* Leads & Deals */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {/* Recent Leads */}
-        <div className="rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Recent Leads</h2>
+        <div className="rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Recent Leads</h2>
             <a href="/sales/leads" className="text-sm text-primary hover:underline">
               View all
             </a>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2">
             <LeadItem
               name="Sarah Johnson"
               email="sarah@example.com"
@@ -218,14 +178,14 @@ export default function SalesDashboardPage() {
         </div>
 
         {/* Hot Deals */}
-        <div className="rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Hot Deals</h2>
+        <div className="rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Hot Deals</h2>
             <a href="/sales/deals" className="text-sm text-primary hover:underline">
               View all
             </a>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2">
             <DealItem
               name="Corporate Event Package"
               company="Tech Corp"
@@ -252,9 +212,9 @@ export default function SalesDashboardPage() {
       </div>
 
       {/* Activity Feed */}
-      <div className="rounded-lg border bg-card p-4">
-        <h2 className="mb-4 text-lg font-semibold">Recent Activity</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="rounded-lg border bg-card p-3">
+        <h2 className="mb-2 text-sm font-semibold">Recent Activity</h2>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <ActivityCard
             type="deal_won"
             title="Deal Closed"
@@ -289,33 +249,12 @@ export default function SalesDashboardPage() {
   );
 }
 
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  trend,
-  trendUp,
-  comparison,
-}: {
-  title: string;
-  value: string;
-  icon: React.ElementType;
-  trend: string;
-  trendUp: boolean;
-  comparison: string;
-}) {
+function TrendHint({ trend, up, comparison }: { trend: string; up: boolean; comparison: string }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{title}</p>
-        <Icon className="h-5 w-5 text-muted-foreground" />
-      </div>
-      <p className="mt-2 text-2xl font-bold">{value}</p>
-      <p className={`mt-1 flex items-center gap-1 text-xs ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
-        {trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-        {trend} {comparison}
-      </p>
-    </div>
+    <span className={`flex items-center gap-1 ${up ? 'text-green-600' : 'text-red-600'}`}>
+      {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+      {trend} {comparison}
+    </span>
   );
 }
 
@@ -340,7 +279,7 @@ function PipelineStage({
   };
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-3">
       <div className={`h-3 w-3 rounded-full ${colorClasses[color]}`} />
       <div className="flex-1">
         <div className="flex items-center justify-between">
@@ -388,17 +327,11 @@ function LeadItem({
   value: string;
   status: 'new' | 'contacted' | 'qualified';
 }) {
-  const statusColors = {
-    new: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    contacted: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    qualified: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  };
-
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-          <Users className="h-5 w-5 text-primary" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+          <Users className="h-4 w-4 text-primary" />
         </div>
         <div>
           <p className="text-sm font-medium">{name}</p>
@@ -408,9 +341,7 @@ function LeadItem({
       </div>
       <div className="text-right">
         <p className="text-sm font-medium">{value}</p>
-        <span className={`rounded-full px-2 py-0.5 text-xs ${statusColors[status]}`}>
-          {status}
-        </span>
+        <StatusBadge status={status} />
       </div>
     </div>
   );
@@ -430,7 +361,7 @@ function DealItem({
   probability: number;
 }) {
   return (
-    <div className="py-2">
+    <div className="py-1">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium">{name}</p>
@@ -476,7 +407,7 @@ function ActivityCard({
   const Icon = typeConfig[type].icon;
 
   return (
-    <div className="rounded-md border p-4">
+    <div className="rounded-md border p-3">
       <div className="mb-2 flex items-center gap-2">
         <Icon className={`h-4 w-4 ${typeConfig[type].color}`} />
         <span className="text-sm font-medium">{title}</span>

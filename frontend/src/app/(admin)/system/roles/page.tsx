@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Trash2 } from 'lucide-react'
+import { ShieldOff, Trash2 } from 'lucide-react'
 import { useAdminRoles, useCreateRole, useDeleteRole } from '@/hooks/queries/use-admin'
 import { useUmami } from '@/hooks/use-umami'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
 
 export default function SystemRolesPage() {
   const { data, isLoading } = useAdminRoles()
@@ -32,18 +31,48 @@ export default function SystemRolesPage() {
     setDescription('')
   }
 
+  const columns: DataColumn<NonNullable<typeof data>[number]>[] = [
+    {
+      id: 'name',
+      header: 'Name',
+      label: 'Name',
+      cell: (role) => <span className="font-medium">{role.name}</span>,
+      sortValue: (role) => role.name,
+    },
+    {
+      id: 'display',
+      header: 'Display',
+      label: 'Display',
+      cell: (role) => role.displayName,
+      sortValue: (role) => role.displayName,
+    },
+    {
+      id: 'level',
+      header: 'Level',
+      label: 'Level',
+      cell: (role) => role.level,
+      sortValue: (role) => role.level,
+    },
+    {
+      id: 'system',
+      header: 'System',
+      label: 'System',
+      cell: (role) => (
+        <StatusBadge tone={role.isSystem ? 'info' : 'neutral'}>{role.isSystem ? 'Yes' : 'No'}</StatusBadge>
+      ),
+      exportValue: (role) => (role.isSystem ? 'Yes' : 'No'),
+    },
+  ]
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Roles</h1>
-        <p className="text-muted-foreground">Manage system roles and hierarchy.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Roles" />
 
       <Card>
         <CardHeader>
           <CardTitle>Create role</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
+        <CardContent className="grid gap-2 md:grid-cols-3">
           <Input placeholder="Role name" value={name} onChange={(e) => setName(e.target.value)} />
           <Input
             placeholder="Display name"
@@ -63,51 +92,27 @@ export default function SystemRolesPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Role list</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-32" />
-          ) : data?.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Display</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>System</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((role) => (
-                  <TableRow key={role.id}>
-                    <TableCell className="font-medium">{role.name}</TableCell>
-                    <TableCell>{role.displayName}</TableCell>
-                    <TableCell>{role.level}</TableCell>
-                    <TableCell>{role.isSystem ? 'Yes' : 'No'}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteRole.mutate(role.id)}
-                        disabled={deleteRole.isPending || role.isSystem}
-                      >
-                        <Trash2 className="mr-1 h-4 w-4" />
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-sm text-muted-foreground">No roles found.</p>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable
+        data={data}
+        columns={columns}
+        rowKey={(role) => role.id}
+        isLoading={isLoading}
+        rowActions={(role) => [
+          {
+            label: 'Delete role',
+            icon: Trash2,
+            danger: true,
+            disabled: deleteRole.isPending || role.isSystem,
+            onClick: () => deleteRole.mutate(role.id),
+            confirm: {
+              title: 'Delete role?',
+              description: `"${role.displayName}" will be permanently removed. This cannot be undone.`,
+            },
+          },
+        ]}
+        emptyTitle="No roles found"
+        emptyIcon={ShieldOff}
+      />
     </div>
   )
 }

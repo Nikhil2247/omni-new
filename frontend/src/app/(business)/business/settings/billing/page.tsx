@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { PageHeader, DataTable, StatusBadge, TwoLineCell, StatCard, StatGrid } from '@/components/dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -92,6 +92,8 @@ export default function BusinessBillingPage() {
   const { data: adCredits, isLoading: adCreditsLoading } = useAdCreditBalance();
   const downloadInvoice = useDownloadBusinessInvoice();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [invoiceSearch, setInvoiceSearch] = useState('');
   const [refundModalOpen, setRefundModalOpen] = useState(false);
   const [selectedPaymentForRefund, setSelectedPaymentForRefund] = useState<PaymentRecord | null>(null);
 
@@ -174,6 +176,14 @@ export default function BusinessBillingPage() {
   };
 
   const invoices = invoicesData?.invoices || [];
+  const filteredInvoices = invoices.filter((i) => {
+    const q = invoiceSearch.trim().toLowerCase();
+    return !q || i.invoiceNumber.toLowerCase().includes(q) || i.status.toLowerCase().includes(q);
+  });
+  const filteredPayments = payments?.filter((p) => {
+    const q = paymentSearch.trim().toLowerCase();
+    return !q || getPurposeDisplay(p.metadata).toLowerCase().includes(q) || p.status.toLowerCase().includes(q) || (p.gatewayPaymentId ?? '').toLowerCase().includes(q);
+  });
 
   // Calculate statistics
   const totalSpent = payments?.reduce(
@@ -190,122 +200,58 @@ export default function BusinessBillingPage() {
   ).length || 0;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Billing & Invoices</h1>
-        <p className="text-muted-foreground">
-          Manage your business billing, view payment history, and download invoices
-        </p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Billing & Invoices" />
 
-      {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Payments</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">{payments?.length || 0}</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">{formatCurrency(totalSpent, 'INR')}</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Subscriptions</CardTitle>
-            <History className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">{subscriptionPayments}</div>
-            )}
-            <p className="text-xs text-muted-foreground">payments</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ad Credits</CardTitle>
-            <Coins className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {adCreditsLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div className="text-2xl font-bold">
-                {adCredits?.balance?.toLocaleString() || 0}
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground">available</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid>
+        <StatCard
+          label="Total Payments"
+          icon={CreditCard}
+          value={isLoading ? <Skeleton className="h-6 w-16" /> : payments?.length || 0}
+        />
+        <StatCard
+          label="Total Spent"
+          icon={TrendingUp}
+          value={isLoading ? <Skeleton className="h-6 w-16" /> : formatCurrency(totalSpent, 'INR')}
+        />
+        <StatCard
+          label="Subscriptions"
+          icon={History}
+          value={isLoading ? <Skeleton className="h-6 w-16" /> : subscriptionPayments}
+          hint="payments"
+        />
+        <StatCard
+          label="Ad Credits"
+          icon={Coins}
+          value={adCreditsLoading ? <Skeleton className="h-6 w-16" /> : adCredits?.balance?.toLocaleString() || 0}
+          hint="available"
+        />
+      </StatGrid>
 
       {/* Ad Credits Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Coins className="h-5 w-5" />
-            Ad Credits Balance
-          </CardTitle>
-          <CardDescription>
-            Use credits to promote your business and get more visibility
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                <Coins className="h-6 w-6 text-amber-600" />
-              </div>
-              <div>
-                {adCreditsLoading ? (
-                  <>
-                    <Skeleton className="h-6 w-24" />
-                    <Skeleton className="h-4 w-32 mt-1" />
-                  </>
-                ) : (
-                  <>
-                    <p className="text-2xl font-bold">
-                      {adCredits?.balance?.toLocaleString() || 0} credits
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Use for campaigns, boosts, and featured listings
-                    </p>
-                  </>
-                )}
-              </div>
+        <CardContent className="flex items-center justify-between gap-3 p-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+              <Coins className="h-4 w-4 text-amber-600" />
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => router.push('/business/advertising')}
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                Create Campaign
-              </Button>
-              <Button disabled>Buy Credits</Button>
+            <div>
+              {adCreditsLoading ? (
+                <Skeleton className="h-6 w-24" />
+              ) : (
+                <p className="text-base font-semibold">
+                  {adCredits?.balance?.toLocaleString() || 0} credits
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">Ad credits balance</p>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => router.push('/business/advertising')}>
+              <Sparkles className="mr-1.5 h-4 w-4" />
+              Create Campaign
+            </Button>
+            <Button size="sm" disabled>Buy Credits</Button>
           </div>
         </CardContent>
       </Card>
@@ -325,218 +271,146 @@ export default function BusinessBillingPage() {
       />
 
       {/* Payment History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Payment History
-          </CardTitle>
-          <CardDescription>Your recent transactions and invoices</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-8 w-20" />
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-4 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Failed to load payment history</p>
-              <p className="text-sm">Please try again later</p>
-            </div>
-          ) : !payments || payments.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No payment history yet</p>
-              <p className="text-sm">
-                Your transactions will appear here once you make a payment
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Invoice</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium">
-                        {format(new Date(payment.createdAt), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>{getPurposeDisplay(payment.metadata)}</span>
-                          {payment.gatewayPaymentId && (
-                            <span className="text-xs text-muted-foreground">
-                              ID: {payment.gatewayPaymentId.slice(0, 12)}...
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(payment.amount, payment.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            statusColors[payment.status] || 'bg-gray-100 text-gray-800'
-                          }
-                        >
-                          {payment.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {payment.status === 'SUCCEEDED' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDownloadInvoice(payment.id)}
-                            disabled={downloadingId === payment.id}
-                          >
-                            {downloadingId === payment.id ? (
-                              <span className="animate-pulse">...</span>
-                            ) : (
-                              <Download className="h-4 w-4" />
-                            )}
-                          </Button>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {isEligibleForRefund(payment) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRequestRefund(payment)}
-                            title="Request Refund"
-                          >
-                            <RotateCcw className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold">Payment History</h2>
+        <DataTable<PaymentRecord>
+          data={filteredPayments}
+          isLoading={isLoading}
+          rowKey={(p) => p.id}
+          search={{ value: paymentSearch, onChange: setPaymentSearch, placeholder: 'Search payments...' }}
+          exportFilename="payments"
+          emptyTitle={error ? 'Failed to load payment history' : 'No payment history yet'}
+          emptyIcon={FileText}
+          columns={[
+            {
+              id: 'date',
+              header: 'Date',
+              label: 'Date',
+              sortValue: (p) => new Date(p.createdAt),
+              exportValue: (p) => p.createdAt,
+              cell: (p) => <span className="text-sm">{format(new Date(p.createdAt), 'MMM dd, yyyy')}</span>,
+            },
+            {
+              id: 'description',
+              header: 'Description',
+              label: 'Description',
+              exportValue: (p) => getPurposeDisplay(p.metadata),
+              cell: (p) => (
+                <TwoLineCell
+                  title={getPurposeDisplay(p.metadata)}
+                  subtitle={p.gatewayPaymentId ? `ID: ${p.gatewayPaymentId.slice(0, 12)}...` : undefined}
+                />
+              ),
+            },
+            {
+              id: 'amount',
+              header: 'Amount',
+              label: 'Amount',
+              align: 'right',
+              sortValue: (p) => p.amount,
+              exportValue: (p) => p.amount,
+              cell: (p) => <span className="text-sm font-medium">{formatCurrency(p.amount, p.currency)}</span>,
+            },
+            {
+              id: 'status',
+              header: 'Status',
+              label: 'Status',
+              sortValue: (p) => p.status,
+              exportValue: (p) => p.status,
+              cell: (p) => <StatusBadge status={p.status} />,
+            },
+          ]}
+          rowActions={(p) => [
+            {
+              label: 'Download invoice',
+              icon: Download,
+              visible: p.status === 'SUCCEEDED',
+              disabled: downloadingId === p.id,
+              onClick: () => handleDownloadInvoice(p.id),
+            },
+            {
+              label: 'Request refund',
+              icon: RotateCcw,
+              visible: isEligibleForRefund(p),
+              onClick: () => handleRequestRefund(p),
+            },
+          ]}
+        />
+      </div>
 
       {/* Invoice List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
-            Invoices
-          </CardTitle>
-          <CardDescription>
-            Download and view your business invoices
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {invoicesLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-8 w-20" />
-                </div>
-              ))}
-            </div>
-          ) : invoicesError ? (
-            <div className="text-center py-4 text-muted-foreground">
-              <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Failed to load invoices</p>
-              <p className="text-sm">Please try again later</p>
-            </div>
-          ) : invoices.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No invoices yet</p>
-              <p className="text-sm">Your invoices will appear here after successful payments</p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Issued</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Download</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {invoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">
-                        {invoice.invoiceNumber}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(invoice.issuedAt), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(invoice.dueDate), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(invoice.totalAmount, invoice.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={invoiceStatusColors[invoice.status] || 'bg-gray-100 text-gray-800'}>
-                          {invoice.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleInvoiceDownload(invoice.id, invoice.invoiceNumber)}
-                          disabled={downloadInvoice.isPending}
-                        >
-                          {downloadInvoice.isPending && downloadInvoice.variables?.invoiceId === invoice.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Download className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold">Invoices</h2>
+        <DataTable
+          data={filteredInvoices}
+          isLoading={invoicesLoading}
+          rowKey={(i) => i.id}
+          search={{ value: invoiceSearch, onChange: setInvoiceSearch, placeholder: 'Search invoices...' }}
+          exportFilename="invoices"
+          emptyTitle={invoicesError ? 'Failed to load invoices' : 'No invoices yet'}
+          emptyIcon={Receipt}
+          columns={[
+            {
+              id: 'number',
+              header: 'Invoice #',
+              label: 'Invoice #',
+              sortValue: (i) => i.invoiceNumber,
+              exportValue: (i) => i.invoiceNumber,
+              cell: (i) => <span className="text-sm font-medium">{i.invoiceNumber}</span>,
+            },
+            {
+              id: 'issued',
+              header: 'Issued',
+              label: 'Issued',
+              sortValue: (i) => new Date(i.issuedAt),
+              exportValue: (i) => i.issuedAt,
+              cell: (i) => <span className="text-sm">{format(new Date(i.issuedAt), 'MMM dd, yyyy')}</span>,
+            },
+            {
+              id: 'due',
+              header: 'Due date',
+              label: 'Due date',
+              hideBelow: 'md',
+              sortValue: (i) => new Date(i.dueDate),
+              exportValue: (i) => i.dueDate,
+              cell: (i) => <span className="text-sm">{format(new Date(i.dueDate), 'MMM dd, yyyy')}</span>,
+            },
+            {
+              id: 'amount',
+              header: 'Amount',
+              label: 'Amount',
+              align: 'right',
+              sortValue: (i) => i.totalAmount,
+              exportValue: (i) => i.totalAmount,
+              cell: (i) => <span className="text-sm font-medium">{formatCurrency(i.totalAmount, i.currency)}</span>,
+            },
+            {
+              id: 'status',
+              header: 'Status',
+              label: 'Status',
+              sortValue: (i) => i.status,
+              exportValue: (i) => i.status,
+              cell: (i) => <StatusBadge status={i.status} />,
+            },
+          ]}
+          rowActions={(i) => [
+            {
+              label: 'Download',
+              icon: Download,
+              disabled: downloadInvoice.isPending,
+              onClick: () => handleInvoiceDownload(i.id, i.invoiceNumber),
+            },
+          ]}
+        />
+      </div>
 
       {/* Refund Requests */}
       <RefundHistory isBusinessView={true} />
 
       {/* Help Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Need help with billing?</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Need help with billing?</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <p className="text-sm text-muted-foreground">

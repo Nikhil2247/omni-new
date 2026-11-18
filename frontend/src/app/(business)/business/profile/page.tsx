@@ -17,6 +17,7 @@ import {
 } from '@/hooks/queries/use-business'
 import { useCategories, useCities } from '@/hooks/queries/use-lookups'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/dashboard'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -402,6 +403,8 @@ export default function BusinessProfilePage() {
     if (bannerInputRef.current) bannerInputRef.current.value = ''
   }
 
+  const [confirmMediaDelete, setConfirmMediaDelete] = useState<'photo' | 'banner' | null>(null)
+
   const handleDeletePhoto = () => {
     deletePhoto.mutate(undefined, {
       onSuccess: () => toast.success('Profile photo deleted'),
@@ -558,15 +561,12 @@ export default function BusinessProfilePage() {
         }
       >
         <main className="mx-auto max-w-5xl px-4 py-4">
-          <div className="rounded-3xl border bg-card p-4 text-center sm:p-10">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Store className="h-8 w-8 text-primary" />
+          <div className="rounded-xl border bg-card p-4 text-center sm:p-6">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Store className="h-6 w-6 text-primary" />
             </div>
             <h1 className="font-serif text-lg font-semibold">Create your business profile</h1>
-            <p className="text-muted-foreground mx-auto mt-2 max-w-xl">
-              Set up your profile and publish your business identity.
-            </p>
-            <Button className="mt-6" size="lg" onClick={() => setShowCreateDialog(true)}>
+            <Button className="mt-4" onClick={() => setShowCreateDialog(true)}>
               <Store className="mr-2 h-4 w-4" />
               Create Profile
             </Button>
@@ -579,8 +579,8 @@ export default function BusinessProfilePage() {
               <DialogDescription>Fill in your details to create your profile.</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
-              <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-3 py-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Business Name *</Label>
                   <Input value={formData.businessName} onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))} placeholder="Your Business Name" />
@@ -714,7 +714,7 @@ export default function BusinessProfilePage() {
 
               <Separator />
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Contact Email</Label>
                   <Input type="email" value={formData.contactEmail} onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))} />
@@ -725,7 +725,7 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Website</Label>
                   <Input value={formData.website} onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))} />
@@ -828,7 +828,7 @@ export default function BusinessProfilePage() {
             </div>
           )}
 
-          <div className="flex flex-col items-center gap-4 md:flex-row md:items-start">
+          <div className="flex flex-col items-center gap-3 md:flex-row md:items-start">
             <div className="relative shrink-0">
               <div className="relative h-37.5 w-37.5 rounded-full p-0.75 md:h-42 md:w-42">
                 <div className="absolute inset-0 rounded-full bg-linear-to-tr from-primary via-primary/80 to-primary/60" />
@@ -858,7 +858,7 @@ export default function BusinessProfilePage() {
             </div>
 
             <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col items-center gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h1 className="font-serif text-lg font-semibold text-foreground md:text-lg">{profile.businessName}</h1>
                   {profile.tagline && <p className="mt-1 text-sm text-muted-foreground">{profile.tagline}</p>}
@@ -891,7 +891,7 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div className="rounded-xl border bg-card p-3 text-center">
                   <p className="text-xs text-muted-foreground">Views</p>
                   <p className="mt-1 text-lg font-semibold">{profile.viewCount || 0}</p>
@@ -914,7 +914,7 @@ export default function BusinessProfilePage() {
                 <p className="mt-5 whitespace-pre-wrap text-sm text-foreground/90">{profile.description}</p>
               )}
 
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground md:justify-start">
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground md:justify-start">
                 {profile.contactEmail && (
                   <a href={`mailto:${profile.contactEmail}`} className="inline-flex items-center gap-1 hover:text-foreground">
                     <Mail className="h-4 w-4" />
@@ -953,7 +953,7 @@ export default function BusinessProfilePage() {
         </section>
 
         <section className="border-t py-3">
-          <div className="mx-auto flex max-w-3xl justify-center gap-3 sm:gap-4">
+          <div className="mx-auto flex max-w-3xl justify-center gap-3 sm:gap-3">
             {tabs.map((tab) => {
               const Icon = tab.icon
               const active = activeTab === tab.id
@@ -972,7 +972,7 @@ export default function BusinessProfilePage() {
           </div>
         </section>
 
-        <section className="py-6">
+        <section className="py-3">
           {activeTab === 'portfolio' && (
             <>
               {normalizedMedia.length === 0 ? (
@@ -982,7 +982,7 @@ export default function BusinessProfilePage() {
                   <p className="mt-1 text-sm text-muted-foreground">Upload portfolio media to showcase your work.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {featuredPortfolio && normalizedFeaturedMedia.length ? (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
@@ -1142,7 +1142,7 @@ export default function BusinessProfilePage() {
                   <p className="mt-1 text-sm text-muted-foreground">Add services to highlight your offerings.</p>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   {services.map((service) => (
                     <div key={service.id} className="rounded-xl border bg-card p-5">
                       <div className="flex items-start justify-between gap-2">
@@ -1171,7 +1171,7 @@ export default function BusinessProfilePage() {
                   <p className="mt-1 text-sm text-muted-foreground">Achievement badges and certifications will show here.</p>
                 </div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {badges.map((badge) => (
                     <div key={badge.id} className="rounded-xl border bg-card p-4">
                       <h3 className="font-semibold text-foreground">{badge.definition?.name || 'Achievement'}</h3>
@@ -1216,7 +1216,7 @@ export default function BusinessProfilePage() {
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} className="hidden" />
           <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBannerUpload} className="hidden" />
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-3 py-2">
             <div className="rounded-xl border bg-muted/20 p-4">
               <div className="mb-3">
                 <p className="text-sm font-semibold">Branding</p>
@@ -1253,7 +1253,7 @@ export default function BusinessProfilePage() {
               </Button>
               {managePhotoFile ? <span className="text-xs text-muted-foreground">{managePhotoFile.name}</span> : null}
               {profile.profilePhotoUrl && (
-                <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={handleDeletePhoto} disabled={deletePhoto.isPending}>
+                <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setConfirmMediaDelete('photo')} disabled={deletePhoto.isPending}>
                   {deletePhoto.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
               )}
@@ -1266,20 +1266,20 @@ export default function BusinessProfilePage() {
               </Button>
               {manageBannerFile ? <span className="text-xs text-muted-foreground">{manageBannerFile.name}</span> : null}
               {profile.bannerImageUrl && (
-                <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={handleDeleteBanner} disabled={deleteBanner.isPending}>
+                <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setConfirmMediaDelete('banner')} disabled={deleteBanner.isPending}>
                   {deleteBanner.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
               )}
             </div>
             </div>
 
-            <div className="rounded-xl border p-4">
-              <div className="mb-3">
+            <div className="rounded-xl border p-3">
+              <div className="mb-2">
                 <p className="text-sm font-semibold">Business Identity</p>
                 <p className="text-xs text-muted-foreground">Manage your public business details and category.</p>
               </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Business Name</Label>
                 <Input value={formData.businessName} onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))} />
@@ -1352,13 +1352,13 @@ export default function BusinessProfilePage() {
 
             <Separator />
 
-            <div className="rounded-xl border p-4">
-              <div className="mb-3">
+            <div className="rounded-xl border p-3">
+              <div className="mb-2">
                 <p className="text-sm font-semibold">Contact & Coverage</p>
                 <p className="text-xs text-muted-foreground">Set customer contact info and service area details.</p>
               </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Contact Email</Label>
                 <Input type="email" value={formData.contactEmail} onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))} />
@@ -1369,7 +1369,7 @@ export default function BusinessProfilePage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Website</Label>
                 <Input value={formData.website} onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))} />
@@ -1439,6 +1439,16 @@ export default function BusinessProfilePage() {
         cropShape={cropTarget ? cropConfigByTarget[cropTarget].cropShape : 'rect'}
         onOpenChange={handleCropOpenChange}
         onConfirm={handleCropConfirm}
+      />
+      <ConfirmDialog
+        open={confirmMediaDelete !== null}
+        onOpenChange={(o) => !o && setConfirmMediaDelete(null)}
+        title={confirmMediaDelete === 'photo' ? 'Delete profile photo?' : 'Delete profile banner?'}
+        description="This will remove the image from your profile. This cannot be undone."
+        onConfirm={() => {
+          if (confirmMediaDelete === 'photo') handleDeletePhoto()
+          else handleDeleteBanner()
+        }}
       />
     </main>
   )

@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, Trash2, GripVertical, Loader2, FileText, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConfirmDialog, useConfirmAction } from '@/components/dashboard'
 
 interface VisualRequirementsBuilderProps {
   activeEventId: string
@@ -82,6 +83,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
   const addItem = useAddRequirementItem()
   const deleteItem = useDeleteRequirementItem()
   
+  const deleteAsk = useConfirmAction<{ id: string; description: string }>()
   const [isAddingItem, setIsAddingItem] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [newItem, setNewItem] = useState({
@@ -148,7 +150,6 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
   }
 
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm('Delete this requirement?')) return
     try {
       await deleteItem.mutateAsync(itemId)
       toast.success('Requirement deleted')
@@ -192,7 +193,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-6">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
@@ -201,7 +202,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
   if (error) {
     return (
       <Card>
-        <CardContent className="py-12 text-center text-destructive">
+        <CardContent className="py-6 text-center text-destructive">
           Failed to load requirements
         </CardContent>
       </Card>
@@ -211,12 +212,9 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
   if (!data) {
     return (
       <Card>
-        <CardContent className="py-12 text-center">
-          <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium mb-2">No Requirement Sheet</p>
-          <p className="text-sm text-muted-foreground mb-4">
-            Create a requirement sheet to start building your event requirements visually.
-          </p>
+        <CardContent className="py-6 text-center">
+          <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+          <p className="font-medium mb-2">No Requirement Sheet</p>
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Create Requirement Sheet
@@ -230,8 +228,8 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                   Start organizing vendor requirements for this event.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
+              <div className="space-y-3">
+                <div className="space-y-1.5">
                   <Label htmlFor="notes">Notes (Optional)</Label>
                   <Textarea
                     id="notes"
@@ -259,16 +257,13 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header with Quick Templates */}
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Visual Requirements Builder
-          </h3>
-          <p className="text-sm text-muted-foreground">Drag to reorder, click to add items</p>
-        </div>
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          Visual Requirements Builder
+        </h3>
         <div className="flex items-center gap-2">
           {QUICK_TEMPLATES.map((template) => (
             <Button
@@ -285,7 +280,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
       </div>
 
       {/* Requirements List */}
-      <div className="space-y-3">
+      <div className="space-y-1.5">
         {data.items && data.items.length > 0 ? (
           data.items.map((item, index) => {
             const cat = CATEGORIES.find(c => c.value === item.category)
@@ -301,7 +296,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                   ${draggedIndex === index ? 'opacity-50' : ''}
                 `}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <div className="flex items-start gap-3">
                     <GripVertical className="h-5 w-5 text-muted-foreground mt-1 cursor-grab active:cursor-grabbing" />
                     <div className="flex-1">
@@ -315,7 +310,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                         )}
                       </div>
                       <p className="font-medium">{item.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
                         <span>Qty: {item.quantity}</span>
                         {item.estimatedBudget && (
                           <span>Budget: ${Number(item.estimatedBudget).toLocaleString()}</span>
@@ -325,7 +320,8 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteItem(item.id)}
+                      onClick={() => deleteAsk.ask({ id: item.id, description: item.description })}
+                      title="Delete requirement"
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -338,12 +334,20 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
         ) : (
           <Card>
             <CardContent className="py-4 text-center">
-              <p className="text-muted-foreground mb-4">No requirements added yet</p>
-              <p className="text-sm text-muted-foreground">Try using a quick template or add items manually</p>
+              <p className="text-muted-foreground">No requirements added yet</p>
             </CardContent>
           </Card>
         )}
       </div>
+
+      <ConfirmDialog
+        {...deleteAsk.dialogProps}
+        title="Delete requirement?"
+        description={deleteAsk.target ? `"${deleteAsk.target.description}" will be permanently deleted. This action cannot be undone.` : undefined}
+        onConfirm={async () => {
+          if (deleteAsk.target) await handleDeleteItem(deleteAsk.target.id)
+        }}
+      />
 
       {/* Add Item Button/Form */}
       {!isAddingItem ? (
@@ -353,8 +357,8 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
         </Button>
       ) : (
         <Card className="border-primary">
-          <CardContent className="p-4 space-y-4">
-            <div className="space-y-2">
+          <CardContent className="p-3 space-y-3">
+            <div className="space-y-1.5">
               <Label>Category *</Label>
               <Select
                 value={newItem.category}
@@ -372,7 +376,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Description *</Label>
               <Textarea
                 placeholder="Describe the requirement..."
@@ -381,8 +385,8 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                 rows={2}
               />
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
                 <Label>Quantity</Label>
                 <Input
                   type="number"
@@ -391,7 +395,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                   onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Budget</Label>
                 <Input
                   type="number"
@@ -401,7 +405,7 @@ export function VisualRequirementsBuilder({ activeEventId }: VisualRequirementsB
                   onChange={(e) => setNewItem({ ...newItem, estimatedBudget: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Priority</Label>
                 <Select
                   value={newItem.priority}

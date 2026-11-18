@@ -9,19 +9,13 @@ import {
   useAcceptAgreement,
   useDeclineAgreement,
 } from '@/hooks/queries/use-business'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, StatCard, StatGrid } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -42,18 +36,14 @@ import {
 } from '@/components/ui/alert-dialog'
 import {
   Handshake,
-  Calendar,
   DollarSign,
   CheckCircle,
   Clock,
   XCircle,
   FileText,
-  Search,
-  Filter,
   Eye,
   Loader2,
   AlertTriangle,
-  MapPin,
   ThumbsUp,
   ThumbsDown,
   Send,
@@ -152,19 +142,16 @@ export default function BusinessAgreementsPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Vendor Agreements</h1>
-          <p className="text-muted-foreground">View your agreements with event organizers</p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Vendor Agreements" />
         <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-            <h3 className="text-lg font-semibold">Profile Required</h3>
-            <p className="text-muted-foreground mt-2">
+          <CardContent className="py-6 text-center">
+            <AlertTriangle className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+            <h3 className="text-sm font-semibold">Profile Required</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first.
             </p>
-            <Button className="mt-4" onClick={() => window.location.href = '/business/profile'}>
+            <Button size="sm" className="mt-3" onClick={() => window.location.href = '/business/profile'}>
               Create Profile
             </Button>
           </CardContent>
@@ -174,221 +161,126 @@ export default function BusinessAgreementsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-lg font-semibold">Vendor Agreements</h1>
-        <p className="text-muted-foreground">View and respond to agreements from event organizers</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Vendor Agreements" />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Agreements</p>
-                <p className="text-2xl font-bold">{totalAgreements}</p>
-              </div>
-              <Handshake className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold text-green-600">{activeAgreements}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Awaiting Response</p>
-                <p className="text-2xl font-bold text-yellow-600">{pendingAgreements}</p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
-              </div>
-              <DollarSign className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid>
+        <StatCard label="Total Agreements" value={totalAgreements} icon={Handshake} />
+        <StatCard label="Active" value={activeAgreements} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="Awaiting Response" value={pendingAgreements} icon={Clock} accent="text-yellow-600" />
+        <StatCard label="Total Value" value={formatCurrency(totalValue)} icon={DollarSign} />
+      </StatGrid>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by client name, event type..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="SENT">Awaiting Response</SelectItem>
-                <SelectItem value="ACCEPTED">Accepted</SelectItem>
-                <SelectItem value="DECLINED">Declined</SelectItem>
-                <SelectItem value="CONTRACT_LOCKED">Contract Locked</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Agreements List */}
-      {agreementsLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : filteredAgreements.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Handshake className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold">No Agreements Found</h3>
-            <p className="text-muted-foreground mt-2">
-              {agreements?.length === 0
-                ? 'You don\'t have any agreements yet. They will appear here when event organizers send agreements to you.'
-                : 'No agreements match your search criteria.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredAgreements.map((agreement) => {
-            const status = statusConfig[agreement.status] || statusConfig.DRAFT
-            const StatusIcon = status.icon
-            const showActions = canAcceptOrDecline(agreement.status)
-
-            return (
-              <Card key={agreement.id} className={showActions ? 'border-yellow-300 bg-yellow-50/30' : ''}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">
-                          {agreement.activeEvent?.clientName || 'Event'}
-                        </h3>
-                        <Badge className={status.color}>
-                          <StatusIcon className="mr-1 h-3 w-3" />
-                          {status.label}
-                        </Badge>
-                        {showActions && (
-                          <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                            Action Required
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-3">
-                        <div>
-                          <p className="text-muted-foreground">Event Type</p>
-                          <p className="font-medium">{agreement.activeEvent?.eventType || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Event Date</p>
-                          <p className="font-medium flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {agreement.activeEvent?.eventDate
-                              ? format(new Date(agreement.activeEvent.eventDate), 'MMM d, yyyy')
-                              : 'TBD'}
-                          </p>
-                        </div>
-                        {agreement.activeEvent?.venueName && (
-                          <div>
-                            <p className="text-muted-foreground">Venue</p>
-                            <p className="font-medium flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {agreement.activeEvent.venueName}
-                            </p>
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-muted-foreground">Agreed Amount</p>
-                          <p className="font-medium text-green-600">{formatCurrency(agreement.agreedAmount)}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
-                        <span>Received: {format(new Date(agreement.createdAt), 'MMM d, yyyy')}</span>
-                        {agreement.sentAt && (
-                          <span>Sent: {format(new Date(agreement.sentAt), 'MMM d, yyyy')}</span>
-                        )}
-                        {agreement.acceptedAt && (
-                          <Badge variant="outline" className="text-xs text-green-600">
-                            <CheckCircle className="mr-1 h-3 w-3" />
-                            Accepted: {format(new Date(agreement.acceptedAt), 'MMM d')}
-                          </Badge>
-                        )}
-                        {agreement.declinedAt && (
-                          <Badge variant="outline" className="text-xs text-red-600">
-                            <XCircle className="mr-1 h-3 w-3" />
-                            Declined: {format(new Date(agreement.declinedAt), 'MMM d')}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      {showActions && (
-                        <>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => { setSelectedAgreement(agreement); setShowAcceptConfirm(true) }}
-                          >
-                            <ThumbsUp className="mr-1 h-4 w-4" />
-                            Accept
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 border-red-600 hover:bg-red-50"
-                            onClick={() => { setSelectedAgreement(agreement); setShowDeclineDialog(true) }}
-                          >
-                            <ThumbsDown className="mr-1 h-4 w-4" />
-                            Decline
-                          </Button>
-                        </>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => openDetails(agreement)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        Details
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+      <DataTable<BusinessAgreement>
+        data={filteredAgreements}
+        isLoading={agreementsLoading}
+        rowKey={(a) => a.id}
+        search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'Search by client name, event type...' }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'SENT', label: 'Awaiting Response' },
+              { value: 'ACCEPTED', label: 'Accepted' },
+              { value: 'DECLINED', label: 'Declined' },
+              { value: 'CONTRACT_LOCKED', label: 'Contract Locked' },
+              { value: 'COMPLETED', label: 'Completed' },
+              { value: 'CANCELLED', label: 'Cancelled' },
+            ]}
+          />
+        }
+        exportFilename="agreements"
+        columnToggle
+        emptyTitle={
+          agreements?.length === 0
+            ? "You don't have any agreements yet."
+            : 'No agreements match your search criteria.'
+        }
+        emptyIcon={Handshake}
+        columns={[
+          {
+            id: 'client',
+            header: 'Client',
+            label: 'Client',
+            sortValue: (a) => a.activeEvent?.clientName ?? '',
+            exportValue: (a) => a.activeEvent?.clientName ?? '',
+            cell: (a) => (
+              <UserCell name={a.activeEvent?.clientName || 'Event'} subtitle={a.activeEvent?.eventType || undefined} />
+            ),
+          },
+          {
+            id: 'date',
+            header: 'Event date',
+            label: 'Event date',
+            hideBelow: 'md',
+            sortValue: (a) => (a.activeEvent?.eventDate ? new Date(a.activeEvent.eventDate) : null),
+            exportValue: (a) => a.activeEvent?.eventDate ?? '',
+            cell: (a) => (
+              <span className="text-sm">
+                {a.activeEvent?.eventDate ? format(new Date(a.activeEvent.eventDate), 'MMM d, yyyy') : 'TBD'}
+              </span>
+            ),
+          },
+          {
+            id: 'venue',
+            header: 'Venue',
+            label: 'Venue',
+            hideBelow: 'lg',
+            exportValue: (a) => a.activeEvent?.venueName ?? '',
+            cell: (a) => <span className="text-sm">{a.activeEvent?.venueName || '-'}</span>,
+          },
+          {
+            id: 'amount',
+            header: 'Agreed amount',
+            label: 'Agreed amount',
+            align: 'right',
+            sortValue: (a) => Number(a.agreedAmount) || 0,
+            exportValue: (a) => Number(a.agreedAmount) || 0,
+            cell: (a) => <span className="text-sm font-medium">{formatCurrency(a.agreedAmount)}</span>,
+          },
+          {
+            id: 'received',
+            header: 'Received',
+            label: 'Received',
+            hideBelow: 'lg',
+            sortValue: (a) => new Date(a.createdAt),
+            exportValue: (a) => a.createdAt,
+            cell: (a) => <span className="text-muted-foreground text-sm">{format(new Date(a.createdAt), 'MMM d, yyyy')}</span>,
+          },
+          {
+            id: 'status',
+            header: 'Status',
+            label: 'Status',
+            sortValue: (a) => a.status,
+            exportValue: (a) => statusConfig[a.status]?.label ?? a.status,
+            cell: (a) => <StatusBadge status={a.status}>{statusConfig[a.status]?.label}</StatusBadge>,
+          },
+        ]}
+        rowActions={(a) => [
+          {
+            label: 'Accept',
+            icon: ThumbsUp,
+            visible: canAcceptOrDecline(a.status),
+            onClick: () => {
+              setSelectedAgreement(a)
+              setShowAcceptConfirm(true)
+            },
+          },
+          {
+            label: 'Decline',
+            icon: ThumbsDown,
+            danger: true,
+            visible: canAcceptOrDecline(a.status),
+            onClick: () => {
+              setSelectedAgreement(a)
+              setShowDeclineDialog(true)
+            },
+          },
+          { label: 'Details', icon: Eye, onClick: () => openDetails(a) },
+        ]}
+      />
 
       {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
@@ -407,7 +299,7 @@ export default function BusinessAgreementsPage() {
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 border-t pt-4">
+              <div className="grid grid-cols-2 gap-3 border-t pt-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Event Date</p>
                   <p className="font-medium">
@@ -426,7 +318,7 @@ export default function BusinessAgreementsPage() {
 
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-2">Financial Details</h4>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-3 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground">Agreed Amount</p>
                     <p className="font-semibold text-lg">{formatCurrency(selectedAgreement.agreedAmount)}</p>
@@ -544,7 +436,7 @@ export default function BusinessAgreementsPage() {
               Please provide a reason for declining this agreement (optional).
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             <div className="space-y-2">
               <Label htmlFor="declineReason">Reason for Declining</Label>
               <Textarea

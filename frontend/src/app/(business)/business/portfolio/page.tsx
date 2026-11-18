@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { PageHeader, StatCard, StatGrid } from '@/components/dashboard'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -371,16 +372,13 @@ export default function BusinessPortfolioPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Portfolio</h1>
-          <p className="text-muted-foreground">Showcase your work</p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Portfolio" />
         <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-            <h3 className="text-lg font-semibold">Profile Required</h3>
-            <p className="text-muted-foreground mt-2">
+          <CardContent className="py-6 text-center">
+            <AlertTriangle className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+            <h3 className="text-sm font-semibold">Profile Required</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first before adding portfolio items.
             </p>
             <Button className="mt-4" onClick={() => (window.location.href = '/business/profile')}>
@@ -405,16 +403,11 @@ export default function BusinessPortfolioPage() {
       : deleteTarget?.media.altText || 'this media item'
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold">Portfolio</h1>
-          <p className="text-muted-foreground">
-            Organize your media into albums ({totalAlbums} albums)
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      <PageHeader
+        title="Portfolio"
+        actions={
+        <>
           {/* View Mode Toggle */}
           <div className="flex items-center border rounded-lg p-1">
             <Button
@@ -434,67 +427,37 @@ export default function BusinessPortfolioPage() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" onClick={openCreateDialog}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={openCreateDialog}>
+            <Plus className="mr-1.5 h-4 w-4" />
             New Album
           </Button>
-          <Button onClick={() => setShowUploadDialog(true)} disabled={!selectedAlbumId}>
-            <Upload className="mr-2 h-4 w-4" />
+          <Button size="sm" onClick={() => setShowUploadDialog(true)} disabled={!selectedAlbumId}>
+            <Upload className="mr-1.5 h-4 w-4" />
             Upload Media
           </Button>
-        </div>
-      </div>
+        </>
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Albums</p>
-                <p className="text-2xl font-bold">{totalAlbums}</p>
-              </div>
-              <ImageIcon className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Featured Albums</p>
-                <p className="text-2xl font-bold">{featuredAlbums.length}</p>
-              </div>
-              <Star className="h-8 w-8 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Media Items</p>
-                <p className="text-2xl font-bold">{totalMedia}</p>
-              </div>
-              <Video className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid className="lg:grid-cols-3">
+        <StatCard label="Albums" value={totalAlbums} icon={ImageIcon} />
+        <StatCard label="Featured Albums" value={featuredAlbums.length} icon={Star} accent="text-yellow-500" />
+        <StatCard label="Media Items" value={totalMedia} icon={Video} />
+      </StatGrid>
 
       {/* Portfolio Content */}
       {portfolioLoading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-6">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : !albums || albums.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <ImageIcon className="h-8 w-8 text-primary" />
+          <CardContent className="py-6 text-center">
+            <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+              <ImageIcon className="h-5 w-5 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold">No Albums Yet</h3>
-            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+            <h3 className="text-sm font-semibold">No Albums Yet</h3>
+            <p className="text-muted-foreground mt-1 text-sm max-w-md mx-auto">
               Create your first album to start showcasing your work.
             </p>
             <Button className="mt-4" onClick={openCreateDialog}>
@@ -504,11 +467,10 @@ export default function BusinessPortfolioPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle>Albums</CardTitle>
-              <CardDescription>Organize your media into albums for clients to browse.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
@@ -560,11 +522,11 @@ export default function BusinessPortfolioPage() {
             </CardHeader>
             <CardContent>
               {!activeAlbum ? (
-                <div className="text-center py-10 text-muted-foreground">
+                <div className="text-center py-6 text-muted-foreground">
                   Select an album to see its media items.
                 </div>
               ) : (
-                <Tabs defaultValue="all" className="space-y-4">
+                <Tabs defaultValue="all" className="space-y-3">
                   <TabsList>
                     <TabsTrigger value="all">All ({selectedMedia.length})</TabsTrigger>
                     <TabsTrigger value="images">
@@ -726,7 +688,7 @@ export default function BusinessPortfolioPage() {
             <DialogDescription>Create a new portfolio album to organize your media.</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             <div className="space-y-2">
               <Label htmlFor="create-title">Title *</Label>
               <Input
@@ -784,7 +746,7 @@ export default function BusinessPortfolioPage() {
             <DialogDescription>Update album details.</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             <div className="space-y-2">
               <Label htmlFor="edit-title">Title *</Label>
               <Input
@@ -868,7 +830,7 @@ export default function BusinessPortfolioPage() {
             <DialogTitle>Manage Tags</DialogTitle>
             <DialogDescription>Add or remove hashtags for this media item.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="mediaTags">Add tags (comma separated)</Label>
               <div className="flex items-center gap-2">
@@ -981,7 +943,7 @@ function MediaGrid({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {items.map((item) => (
         <MediaCard
           key={item.id}
@@ -1082,7 +1044,7 @@ function MediaListItem({
 
   return (
     <Card className="p-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted shrink-0">
           {item.type === 'IMAGE' ? (
             <NextImage

@@ -1,6 +1,7 @@
 'use client'
 
 import { useOpsDashboardMetrics } from '@/hooks/queries/use-ops-dashboard'
+import { StatCard, StatGrid } from '@/components/dashboard'
 
 export function OpsReportsOverview() {
   const { data, isLoading, error } = useOpsDashboardMetrics()
@@ -18,20 +19,11 @@ export function OpsReportsOverview() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <ReportCard label="Active Events" value={data.activeEvents.total} />
-      <ReportCard label="Pending KYC" value={data.kyc.pending} />
-      <ReportCard label="Open Disputes" value={data.disputes.open} />
-      <ReportCard label="Overdue Tasks" value={data.tasks.overdue} />
-    </div>
-  )
-}
-
-function ReportCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-2 text-2xl font-semibold">{value}</p>
-    </div>
+    <StatGrid>
+      <StatCard label="Active Events" value={data.activeEvents.total} />
+      <StatCard label="Pending KYC" value={data.kyc.pending} />
+      <StatCard label="Open Disputes" value={data.disputes.open} />
+      <StatCard label="Overdue Tasks" value={data.tasks.overdue} />
+    </StatGrid>
   )
 }

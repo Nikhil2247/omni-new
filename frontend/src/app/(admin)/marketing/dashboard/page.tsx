@@ -3,18 +3,15 @@
 import Link from 'next/link'
 import { useEffect, useMemo } from 'react'
 import { RoleGuard } from '@/components/auth'
-import { useAuthStore } from '@/store/auth-store'
-import { Role, ROLE_LABELS, ROLES } from '@/config/roles'
+import { ROLES } from '@/config/roles'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useBlogPosts, useMarketingCampaigns, useMarketingMedia, useMarketingPromotions } from '@/hooks/queries/use-marketing'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FileText, Image, Eye, Megaphone, PenLine, BarChart3 } from 'lucide-react'
+import { PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dashboard'
 
 export default function MarketingDashboardPage() {
-  const { user } = useAuthStore()
-  const roleLabel = user?.role ? ROLE_LABELS[user.role as Role] : ''
 
   useEffect(() => {
     trackDashboard.view('marketing')
@@ -39,32 +36,27 @@ export default function MarketingDashboardPage() {
       allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]}
       redirectOnFail={true}
     >
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Marketing dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome, {user?.name || 'Team Member'} {roleLabel ? `(${roleLabel})` : ''}
-        </p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Marketing dashboard" />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Published articles" value={publishedCount} icon={FileText} />
-        <StatCard title="Drafts" value={draftCount} icon={Eye} />
-        <StatCard title="Media assets" value={media?.length ?? 0} icon={Image} loading={mediaLoading} />
-        <StatCard title="Active campaigns" value={campaigns?.length ?? 0} icon={Megaphone} loading={campaignsLoading} />
-      </div>
+      <StatGrid>
+        <StatCard label="Published articles" value={publishedCount} icon={FileText} />
+        <StatCard label="Drafts" value={draftCount} icon={Eye} />
+        <StatCard label="Media assets" value={mediaLoading ? '…' : (media?.length ?? 0)} icon={Image} />
+        <StatCard label="Active campaigns" value={campaignsLoading ? '…' : (campaigns?.length ?? 0)} icon={Megaphone} />
+      </StatGrid>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent content</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
+            <CardTitle className="text-sm">Recent content</CardTitle>
             <Link href="/marketing/content" className="text-sm text-primary hover:underline">
               View all
             </Link>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2 p-3">
             {postsLoading ? (
-              <Skeleton className="h-32" />
+              <Skeleton className="h-20" />
             ) : posts?.data?.length ? (
               posts.data.map((post) => (
                 <ContentItem key={post.id} title={post.title} status={post.status} updatedAt={post.updatedAt} />
@@ -75,12 +67,12 @@ export default function MarketingDashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Card>
-            <CardHeader>
-              <CardTitle>Quick actions</CardTitle>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Quick actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-1.5 p-3">
               <QuickAction icon={PenLine} label="Create new post" href="/marketing/content/new" />
               <QuickAction icon={Image} label="Media library" href="/marketing/media" />
               <QuickAction icon={Megaphone} label="Campaigns" href="/marketing/campaigns" />
@@ -89,10 +81,10 @@ export default function MarketingDashboardPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Content status</CardTitle>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Content status</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 p-3">
               <StatusItem label="Published" count={publishedCount} />
               <StatusItem label="Drafts" count={draftCount} />
               <StatusItem label="Promotions" count={promotions?.length ?? 0} loading={promotionsLoading} />
@@ -101,14 +93,14 @@ export default function MarketingDashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Campaigns snapshot</CardTitle>
+          <CardHeader className="p-3 pb-0">
+            <CardTitle className="text-sm">Campaigns snapshot</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2 p-3">
             {campaignsLoading ? (
-              <Skeleton className="h-24" />
+              <Skeleton className="h-16" />
             ) : campaigns?.length ? (
               campaigns.map((campaign) => (
                 <CampaignItem key={campaign.id} name={campaign.name} status={campaign.status} endsAt={campaign.endDate} />
@@ -119,12 +111,12 @@ export default function MarketingDashboardPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Promotion pipeline</CardTitle>
+          <CardHeader className="p-3 pb-0">
+            <CardTitle className="text-sm">Promotion pipeline</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2 p-3">
             {promotionsLoading ? (
-              <Skeleton className="h-24" />
+              <Skeleton className="h-16" />
             ) : promotions?.length ? (
               promotions.map((promotion) => (
                 <CampaignItem key={promotion.id} name={promotion.name} status={promotion.status} endsAt={promotion.endsAt} />
@@ -140,30 +132,6 @@ export default function MarketingDashboardPage() {
   )
 }
 
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  loading,
-}: {
-  title: string
-  value: number
-  icon: React.ElementType
-  loading?: boolean
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-5 w-5 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        {loading ? <Skeleton className="h-6 w-16" /> : <p className="text-2xl font-semibold">{value}</p>}
-      </CardContent>
-    </Card>
-  )
-}
-
 function ContentItem({
   title,
   status,
@@ -174,14 +142,12 @@ function ContentItem({
   updatedAt: string
 }) {
   return (
-    <div className="flex items-center justify-between rounded-md border p-4">
+    <div className="flex items-center justify-between rounded-md border px-3 py-2">
       <div>
         <h3 className="font-medium">{title}</h3>
         <p className="text-xs text-muted-foreground">Updated {formatDate(updatedAt)}</p>
       </div>
-      <Badge variant={status === 'PUBLISHED' ? 'default' : status === 'DRAFT' ? 'secondary' : 'outline'}>
-        {status}
-      </Badge>
+      <StatusBadge status={status} />
     </div>
   )
 }
@@ -196,7 +162,7 @@ function QuickAction({
   href: string
 }) {
   return (
-    <Link href={href} className="flex items-center gap-3 rounded-md border p-3 text-sm">
+    <Link href={href} className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm">
       <Icon className="h-4 w-4 text-muted-foreground" />
       <span>{label}</span>
     </Link>
@@ -230,12 +196,12 @@ function CampaignItem({
   endsAt?: string | null
 }) {
   return (
-    <div className="flex items-center justify-between rounded-md border p-4">
+    <div className="flex items-center justify-between rounded-md border px-3 py-2">
       <div>
         <h3 className="font-medium">{name}</h3>
         <p className="text-xs text-muted-foreground">Ends {endsAt ? formatDate(endsAt) : '—'}</p>
       </div>
-      <Badge variant={status === 'ACTIVE' ? 'default' : 'secondary'}>{status || 'UNKNOWN'}</Badge>
+      <StatusBadge status={status || "UNKNOWN"} />
     </div>
   )
 }

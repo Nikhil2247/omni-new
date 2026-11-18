@@ -137,7 +137,7 @@ export function OnboardingWizard({
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4">
       {/* Compact Header with Progress */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-2 border-b">
         <div className="flex items-center gap-3">
@@ -146,7 +146,6 @@ export function OnboardingWizard({
           </div>
           <div>
             <h1 className="text-xl font-semibold">Vendor Onboarding</h1>
-            <p className="text-sm text-muted-foreground">Complete setup to start receiving bookings</p>
           </div>
         </div>
 

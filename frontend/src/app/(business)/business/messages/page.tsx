@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { MessagingWorkspace } from '@/components/features/messaging/messaging-workspace'
+import { PageHeader } from '@/components/dashboard'
 import { trackDashboard } from '@/lib/analytics/umami'
 
 export default function BusinessMessagesPage() {
@@ -10,11 +11,8 @@ export default function BusinessMessagesPage() {
   }, [])
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Messages</h1>
-        <p className="text-sm text-muted-foreground">Chat with planners and manage inquiries in real time.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Messages" />
       <MessagingWorkspace scope="business" />
     </div>
   )

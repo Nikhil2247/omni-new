@@ -1,21 +1,10 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useOpsDisputes, useInvestigateDispute, useResolveDispute } from '@/hooks/queries/use-ops'
 import { useAuthStore } from '@/store/auth-store'
 import { useUmami } from '@/hooks/use-umami'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -25,14 +14,24 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { AlertTriangle, Calendar, Search, Eye, PlayCircle, CheckCircle } from 'lucide-react'
+import { AlertTriangle, Eye, PlayCircle, CheckCircle } from 'lucide-react'
+import {
+  PageHeader,
+  DataTable,
+  FilterSelect,
+  StatusBadge,
+  TwoLineCell,
+  StatCard,
+  StatGrid,
+  type DataColumn,
+} from '@/components/dashboard'
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  OPEN: { label: 'Open', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
-  INVESTIGATING: { label: 'Investigating', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  RESOLVED: { label: 'Resolved', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  ESCALATED: { label: 'Escalated', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  CLOSED: { label: 'Closed', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
+const statusConfig: Record<string, { label: string }> = {
+  OPEN: { label: 'Open' },
+  INVESTIGATING: { label: 'Investigating' },
+  RESOLVED: { label: 'Resolved' },
+  ESCALATED: { label: 'Escalated' },
+  CLOSED: { label: 'Closed' },
 }
 
 const typeLabels: Record<string, string> = {
@@ -97,191 +96,111 @@ export default function OpsDisputesPage() {
   const investigatingCount = disputes?.filter(d => d.status === 'INVESTIGATING').length || 0
   const resolvedCount = disputes?.filter(d => d.status === 'RESOLVED').length || 0
 
+  type Dispute = NonNullable<typeof disputes>[number]
+
+  const columns: DataColumn<Dispute>[] = [
+    {
+      id: 'type',
+      header: 'Dispute',
+      label: 'Dispute',
+      cell: (d) => (
+        <TwoLineCell
+          title={typeLabels[d.type || ''] || d.type || 'Unknown'}
+          subtitle={<span className="line-clamp-1">{d.description || 'No description provided'}</span>}
+        />
+      ),
+      sortValue: (d) => d.type,
+      exportValue: (d) => `${typeLabels[d.type || ''] || d.type || ''}: ${d.description || ''}`,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (d) => <StatusBadge status={d.status} />,
+      sortValue: (d) => d.status,
+      exportValue: (d) => d.status,
+    },
+    {
+      id: 'created',
+      header: 'Created',
+      label: 'Created',
+      cell: (d) => (d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A'),
+      sortValue: (d) => (d.createdAt ? new Date(d.createdAt) : null),
+    },
+    {
+      id: 'resolved',
+      header: 'Resolved',
+      label: 'Resolved',
+      hideBelow: 'md',
+      cell: (d) => (d.resolvedAt ? new Date(d.resolvedAt).toLocaleDateString() : '-'),
+      sortValue: (d) => (d.resolvedAt ? new Date(d.resolvedAt) : null),
+    },
+  ]
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Disputes</h1>
-          <p className="text-muted-foreground">Manage vendor disputes and complaints.</p>
-        </div>
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Disputes" />
+        <DataTable data={[]} columns={columns} rowKey={(d) => d.id} isLoading />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Disputes</h1>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Disputes" />
         <div className="text-sm text-destructive">Failed to load disputes. Please try again.</div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-lg font-semibold">Disputes</h1>
-        <p className="text-muted-foreground">Manage vendor disputes and complaints.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Disputes" />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Open</p>
-                <p className="text-2xl font-bold text-red-600">{openCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-red-500/10">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Investigating</p>
-                <p className="text-2xl font-bold text-yellow-600">{investigatingCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-yellow-500/10">
-                <Eye className="h-5 w-5 text-yellow-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Resolved</p>
-                <p className="text-2xl font-bold text-green-600">{resolvedCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid className="lg:grid-cols-3">
+        <StatCard label="Open" value={openCount} icon={AlertTriangle} accent="text-red-600" />
+        <StatCard label="Investigating" value={investigatingCount} icon={Eye} accent="text-yellow-600" />
+        <StatCard label="Resolved" value={resolvedCount} icon={CheckCircle} accent="text-green-600" />
+      </StatGrid>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search disputes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+      <DataTable
+        data={filteredDisputes}
+        columns={columns}
+        rowKey={(d) => d.id}
+        search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'Search disputes...' }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={['OPEN', 'INVESTIGATING', 'RESOLVED', 'CLOSED'].map((v) => ({
+              value: v,
+              label: statusConfig[v].label,
+            }))}
           />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="OPEN">Open</SelectItem>
-            <SelectItem value="INVESTIGATING">Investigating</SelectItem>
-            <SelectItem value="RESOLVED">Resolved</SelectItem>
-            <SelectItem value="CLOSED">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Disputes List */}
-      {filteredDisputes.length === 0 ? (
-        <Card>
-          <CardContent className="py-4 text-center">
-            <p className="text-muted-foreground">No disputes found.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filteredDisputes.map((dispute) => {
-            const status = statusConfig[dispute.status] || { label: dispute.status, color: 'bg-gray-500/10 text-gray-700' }
-            const typeLabel = typeLabels[dispute.type || ''] || dispute.type || 'Unknown'
-
-            return (
-              <Card key={dispute.id} className="hover:border-primary/50 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded bg-red-500/10">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                        </div>
-                        <p className="font-medium">{typeLabel}</p>
-                        <Badge variant="outline" className={status.color}>
-                          {status.label}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {dispute.description || 'No description provided'}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {dispute.createdAt ? new Date(dispute.createdAt).toLocaleDateString() : 'N/A'}
-                        </span>
-                        {dispute.resolvedAt && (
-                          <span className="text-green-600">
-                            Resolved {new Date(dispute.resolvedAt).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Link href={`/ops/disputes/${dispute.id}`}>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      {dispute.status === 'OPEN' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleInvestigate(dispute.id)}
-                          disabled={investigateDispute.isPending}
-                        >
-                          <PlayCircle className="h-4 w-4 mr-1" />
-                          Investigate
-                        </Button>
-                      )}
-                      {dispute.status === 'INVESTIGATING' && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => openResolveDialog(dispute.id)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Resolve
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+        }
+        exportFilename="disputes"
+        emptyTitle="No disputes found"
+        emptyIcon={AlertTriangle}
+        rowActions={(d) => [
+          { label: 'View dispute', icon: Eye, href: `/ops/disputes/${d.id}` },
+          {
+            label: 'Investigate',
+            icon: PlayCircle,
+            onClick: () => handleInvestigate(d.id),
+            disabled: investigateDispute.isPending,
+            visible: d.status === 'OPEN',
+          },
+          {
+            label: 'Resolve',
+            icon: CheckCircle,
+            onClick: () => openResolveDialog(d.id),
+            visible: d.status === 'INVESTIGATING',
+          },
+        ]}
+      />
 
       {/* Resolve Dialog */}
       <Dialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
@@ -292,7 +211,7 @@ export default function OpsDisputesPage() {
               Provide a resolution summary for this dispute.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Textarea
               placeholder="Enter resolution details..."
               value={resolution}

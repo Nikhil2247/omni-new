@@ -1,17 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader, DataTable, FilterSelect, StatCard, StatGrid } from '@/components/dashboard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   Coins,
   Plus,
@@ -26,7 +18,7 @@ import { useAdCreditBalance, useAdCreditHistory, useSpendingSummary, useVendorSu
 import { toast } from 'sonner';
 import { format, subDays } from 'date-fns';
 import { PurchaseCreditsModal } from '@/components/credits/purchase-credits-modal';
-import type { CreditTransactionType } from '@/lib/api/types/subscription.types';
+import type { CreditTransactionType, AdCreditTransaction } from '@/lib/api/types/subscription.types';
 
 // Format number with K/M suffix
 function formatNumber(num: number): string {
@@ -60,9 +52,16 @@ const transactionTypeConfig: Record<CreditTransactionType, { icon: typeof Gift; 
 
 export default function AdCreditsPage() {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   const { data: balance, isLoading: isLoadingBalance } = useAdCreditBalance();
-  const { data: history, isLoading: isLoadingHistory } = useAdCreditHistory(50);
+  const { data: rawHistory, isLoading: isLoadingHistory } = useAdCreditHistory(50);
+  const history = rawHistory?.filter((t) => {
+    if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+    const q = search.trim().toLowerCase();
+    return !q || (t.description ?? '').toLowerCase().includes(q);
+  });
   const { data: spending } = useSpendingSummary(
     subDays(new Date(), 30).toISOString(),
     new Date().toISOString()
@@ -100,171 +99,141 @@ export default function AdCreditsPage() {
   )?.limitValue || 0;
 
   return (
-    <div className="container py-4">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-lg font-semibold">Ad Credits</h1>
-          <p className="text-muted-foreground">Manage your advertising credits</p>
+    <div className="space-y-3">
+      <PageHeader
+        title="Ad Credits"
+        actions={
+          <Button size="sm" onClick={() => setIsPurchaseModalOpen(true)}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            Buy Credits
+          </Button>
+        }
+      />
+
+      <StatGrid className="lg:grid-cols-3">
+        <StatCard
+          label="Total Balance"
+          icon={Coins}
+          accent="text-primary"
+          value={isLoadingBalance ? <Skeleton className="h-6 w-16" /> : formatNumber(balance?.balance || 0)}
+          hint="Purchased credits + monthly plan grants, pooled for campaigns"
+        />
+        <StatCard
+          label="30-Day Spending"
+          icon={TrendingDown}
+          value={formatNumber(spending?.totalSpent || 0)}
+        />
+        <div className="bg-card flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
+          <div className="min-w-0">
+            <p className="text-muted-foreground truncate text-xs">Monthly from Plan</p>
+            <p className="text-lg leading-tight font-semibold tabular-nums">+{formatNumber(monthlyCredits)}</p>
+            <p className="text-muted-foreground truncate text-[11px]">
+              {hasActiveSubscription ? `${planName} plan` : 'Upgrade to get monthly credits'}
+              {!canClaimMonthlyCredits && nextClaimDate ? ` · Next claim: ${format(nextClaimDate, 'MMM d, yyyy')}` : ''}
+            </p>
+          </div>
+          {canClaimMonthlyCredits && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClaimMonthlyCredits}
+              disabled={claimMonthlyCredits.isPending}
+            >
+              <Gift className="mr-1.5 h-3 w-3" />
+              {claimMonthlyCredits.isPending ? 'Claiming...' : 'Claim'}
+            </Button>
+          )}
         </div>
-        <Button onClick={() => setIsPurchaseModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Buy Credits
-        </Button>
-      </div>
+      </StatGrid>
 
-      {/* Balance Overview */}
-      <Card className="mb-4">
-        <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Total Balance - Main */}
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Coins className="h-5 w-5 text-primary" />
-                <span className="text-sm font-medium text-muted-foreground">Total Balance</span>
-              </div>
-              {isLoadingBalance ? (
-                <Skeleton className="h-10 w-32" />
-              ) : (
-                <div className="text-4xl font-bold">{formatNumber(balance?.balance || 0)}</div>
-              )}
-              <p className="text-sm text-muted-foreground mt-1">
-                Available for campaigns
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className="md:col-span-2 grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">30-Day Spending</span>
-                </div>
-                <div className="text-2xl font-bold">{formatNumber(spending?.totalSpent || 0)}</div>
-              </div>
-
-              <div className="p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2 mb-1">
-                  <Gift className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Monthly from Plan</span>
-                </div>
-                <div className="text-2xl font-bold">+{formatNumber(monthlyCredits)}</div>
-                <p className="text-xs text-muted-foreground">
-                  {hasActiveSubscription ? `${planName} plan` : 'Upgrade to get monthly credits'}
-                </p>
-                {canClaimMonthlyCredits ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 w-full"
-                    onClick={handleClaimMonthlyCredits}
-                    disabled={claimMonthlyCredits.isPending}
-                  >
-                    <Gift className="mr-2 h-3 w-3" />
-                    {claimMonthlyCredits.isPending ? 'Claiming...' : 'Claim Monthly Credits'}
-                  </Button>
-                ) : nextClaimDate && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Next claim: {format(nextClaimDate, 'MMM d, yyyy')}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Explanation */}
-          <div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
-            Your total balance includes purchased credits + monthly plan grants. All credits are pooled together for campaign use.
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Spending by Campaign Type */}
       {spending?.byCampaignType && Object.keys(spending.byCampaignType).length > 0 && (
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Spending by Campaign Type</CardTitle>
-            <CardDescription>Last 30 days breakdown</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              {Object.entries(spending.byCampaignType).map(([type, amount]) => (
-                <div key={type} className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                  <span className="text-sm">{type.replace('_', ' ')}</span>
-                  <span className="font-semibold">{formatNumber(amount as number)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <StatGrid>
+          {Object.entries(spending.byCampaignType).map(([type, amount]) => (
+            <StatCard key={type} label={type.replace('_', ' ')} value={formatNumber(amount as number)} />
+          ))}
+        </StatGrid>
       )}
 
-      {/* Transaction History */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>Recent credit transactions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingHistory ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : history?.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              <Coins className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No transactions yet</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Balance</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {history?.map((transaction) => {
-                  const config = transactionTypeConfig[transaction.type] || {
-                    icon: Receipt,
-                    color: 'text-gray-600',
-                    label: transaction.type,
-                  };
-                  const Icon = config.icon;
-                  const isCredit = ['SUBSCRIPTION_GRANT', 'PURCHASE', 'REFUND'].includes(transaction.type);
-
-                  return (
-                    <TableRow key={transaction.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Icon className={`h-4 w-4 ${config.color}`} />
-                          <span>{config.label}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {transaction.description || '-'}
-                      </TableCell>
-                      <TableCell>
-                        <span className={isCredit ? 'text-green-600' : 'text-red-600'}>
-                          {isCredit ? '+' : '-'}{formatNumber(Math.abs(transaction.amount))}
-                        </span>
-                      </TableCell>
-                      <TableCell>{formatNumber(transaction.balance)}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {format(new Date(transaction.createdAt), 'MMM d, yyyy HH:mm')}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable<AdCreditTransaction>
+        data={history}
+        isLoading={isLoadingHistory}
+        rowKey={(t) => t.id}
+        search={{ value: search, onChange: setSearch, placeholder: 'Search transactions...' }}
+        filters={
+          <FilterSelect
+            label="Type"
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={Object.entries(transactionTypeConfig).map(([value, c]) => ({ value, label: c.label }))}
+          />
+        }
+        exportFilename="credit-transactions"
+        emptyTitle="No transactions yet"
+        emptyIcon={Coins}
+        columns={[
+          {
+            id: 'type',
+            header: 'Type',
+            label: 'Type',
+            sortValue: (t) => t.type,
+            exportValue: (t) => transactionTypeConfig[t.type]?.label ?? t.type,
+            cell: (t) => {
+              const config = transactionTypeConfig[t.type] || { icon: Receipt, color: 'text-gray-600', label: t.type };
+              const Icon = config.icon;
+              return (
+                <div className="flex items-center gap-2 text-sm">
+                  <Icon className={`h-4 w-4 ${config.color}`} />
+                  <span>{config.label}</span>
+                </div>
+              );
+            },
+          },
+          {
+            id: 'description',
+            header: 'Description',
+            label: 'Description',
+            hideBelow: 'md',
+            exportValue: (t) => t.description ?? '',
+            cell: (t) => <span className="text-muted-foreground text-sm">{t.description || '-'}</span>,
+          },
+          {
+            id: 'amount',
+            header: 'Amount',
+            label: 'Amount',
+            align: 'right',
+            sortValue: (t) => t.amount,
+            exportValue: (t) => t.amount,
+            cell: (t) => {
+              const isCredit = ['SUBSCRIPTION_GRANT', 'PURCHASE', 'REFUND'].includes(t.type);
+              return (
+                <span className={`text-sm font-medium ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
+                  {isCredit ? '+' : '-'}
+                  {formatNumber(Math.abs(t.amount))}
+                </span>
+              );
+            },
+          },
+          {
+            id: 'balance',
+            header: 'Balance',
+            label: 'Balance',
+            align: 'right',
+            sortValue: (t) => t.balance,
+            exportValue: (t) => t.balance,
+            cell: (t) => <span className="text-sm">{formatNumber(t.balance)}</span>,
+          },
+          {
+            id: 'date',
+            header: 'Date',
+            label: 'Date',
+            sortValue: (t) => new Date(t.createdAt),
+            exportValue: (t) => t.createdAt,
+            cell: (t) => (
+              <span className="text-muted-foreground text-sm">{format(new Date(t.createdAt), 'MMM d, yyyy HH:mm')}</span>
+            ),
+          },
+        ]}
+      />
 
       {/* Purchase Credits Modal */}
       <PurchaseCreditsModal

@@ -17,7 +17,8 @@ import {
   useSendRequirementToClient,
 } from '@/hooks/queries/use-ops'
 import { useOpsQuotations } from '@/hooks/queries/use-quotations'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DataTable, PageHeader, StatCard, StatGrid, StatusBadge, type DataColumn } from '@/components/dashboard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -89,15 +90,15 @@ import { OpsInvoicesList } from '@/components/features/ops/ops-invoices-list'
 import { QuotationPreviewDialog } from '@/components/features/ops/quotation-preview-dialog'
 import type { QuotationTemplateData } from '@/components/features/ops/quotation-template'
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; step: number }> = {
-  NEW: { label: 'New', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20', step: 1 },
-  ASSIGNED: { label: 'Assigned', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20', step: 2 },
-  REQUIREMENTS_SET: { label: 'Requirements Set', color: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20', step: 3 },
-  VENDOR_SOURCING: { label: 'Vendor Sourcing', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', step: 4 },
-  CONTRACTS_LOCKED: { label: 'Contracts Locked', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20', step: 5 },
-  EXECUTION: { label: 'Execution', color: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20', step: 6 },
-  COMPLETED: { label: 'Completed', color: 'bg-green-500/10 text-green-700 border-green-500/20', step: 7 },
-  CANCELLED: { label: 'Cancelled', color: 'bg-red-500/10 text-red-700 border-red-500/20', step: -1 },
+const STATUS_CONFIG: Record<string, { label: string; step: number }> = {
+  NEW: { label: 'New', step: 1 },
+  ASSIGNED: { label: 'Assigned', step: 2 },
+  REQUIREMENTS_SET: { label: 'Requirements Set', step: 3 },
+  VENDOR_SOURCING: { label: 'Vendor Sourcing', step: 4 },
+  CONTRACTS_LOCKED: { label: 'Contracts Locked', step: 5 },
+  EXECUTION: { label: 'Execution', step: 6 },
+  COMPLETED: { label: 'Completed', step: 7 },
+  CANCELLED: { label: 'Cancelled', step: -1 },
 }
 
 const STATUS_FLOW = ['NEW', 'ASSIGNED', 'REQUIREMENTS_SET', 'VENDOR_SOURCING', 'CONTRACTS_LOCKED', 'EXECUTION', 'COMPLETED']
@@ -305,6 +306,14 @@ export default function OpsEventDetailPage() {
     return null
   }
 
+  const backButton = (
+    <Button variant="ghost" size="icon" className="size-7" asChild>
+      <Link href="/ops/events" aria-label="Back to events">
+        <ArrowLeft className="h-4 w-4" />
+      </Link>
+    </Button>
+  )
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -322,22 +331,18 @@ export default function OpsEventDetailPage() {
   if (error || !event) {
     return (
       <div className="space-y-4">
-        <Link href="/ops/events" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Events
-        </Link>
+        <PageHeader title="Event" leading={backButton} />
         <Card>
           <CardContent className="py-4 text-center">
             <AlertCircle className="mx-auto h-8 w-8 text-destructive mb-2" />
             <p className="text-destructive font-medium">Failed to load event details</p>
-            <p className="text-sm text-muted-foreground mt-1">The event may not exist or there was a server error.</p>
           </CardContent>
         </Card>
       </div>
     )
   }
 
-  const status = STATUS_CONFIG[event.status] || { label: event.status, color: 'bg-gray-500/10 text-gray-700', step: 0 }
+  const status = STATUS_CONFIG[event.status] || { label: event.status, step: 0 }
   const tasksCount = tasks?.length || 0
   const completedTasksCount = tasks?.filter(t => t.status === 'COMPLETED').length || 0
   const agreementsCount = agreements?.length || 0
@@ -352,16 +357,51 @@ export default function OpsEventDetailPage() {
 
   const nextStatus = getNextStatus()
 
-  return (
-    <div className="space-y-4">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between">
-        <Link href="/ops/events" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Events
-        </Link>
+  type EventQuotation = NonNullable<typeof quotationsData>['items'][number]
+  const quotationColumns: DataColumn<EventQuotation>[] = [
+    {
+      id: 'number',
+      header: 'Quotation #',
+      label: 'Quotation #',
+      cell: (q) => <span className="font-medium">{q.quotationNumber}</span>,
+      sortValue: (q) => q.quotationNumber,
+      exportValue: (q) => q.quotationNumber,
+    },
+    {
+      id: 'vendor',
+      header: 'Vendor',
+      label: 'Vendor',
+      cell: (q) => q.vendorAgreement?.vendorName || 'Unknown Vendor',
+      sortValue: (q) => q.vendorAgreement?.vendorName,
+      exportValue: (q) => q.vendorAgreement?.vendorName,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (q) => <StatusBadge status={q.status} />,
+      sortValue: (q) => q.status,
+      exportValue: (q) => q.status,
+    },
+    {
+      id: 'amount',
+      header: 'Amount',
+      label: 'Amount',
+      align: 'right',
+      cell: (q) => <span className="font-semibold">₹{Number(q.totalAmount).toLocaleString()}</span>,
+      sortValue: (q) => Number(q.totalAmount),
+      exportValue: (q) => Number(q.totalAmount),
+    },
+  ]
 
-        <div className="flex items-center gap-2">
+  return (
+    <div className="space-y-3">
+      <PageHeader
+        title={event.clientName}
+        leading={backButton}
+        actions={
+          <>
+            <StatusBadge status={event.status}>{status.label}</StatusBadge>
           {/* Show manual advance hint for later stages */}
           {suggestedStatus && !['ASSIGNED', 'REQUIREMENTS_SET', 'VENDOR_SOURCING'].includes(suggestedStatus) && (
             <Button
@@ -432,41 +472,28 @@ export default function OpsEventDetailPage() {
               </AlertDialog>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      {/* Event Header Card with Workflow */}
+      {/* Event summary with workflow */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-4">
-          {/* Title and Status */}
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-xl font-semibold tracking-tight">{event.clientName}</h1>
-                <Badge variant="outline" className={`${status.color} font-medium`}>
-                  {status.label}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">{event.eventType}</p>
-            </div>
-
-            {/* Quick Info */}
-            <div className="text-right text-sm">
-              <p className="font-medium">
-                {event.eventDate ? new Date(event.eventDate).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                }) : 'Date TBD'}
-              </p>
-              <p className="text-muted-foreground">₹{budget.toLocaleString()} budget</p>
-            </div>
+        <CardContent className="space-y-2 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="font-medium">{event.eventType}</span>
+            <span className="text-muted-foreground">
+              {event.eventDate ? new Date(event.eventDate).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              }) : 'Date TBD'}
+              {' · '}₹{budget.toLocaleString()} budget
+            </span>
           </div>
 
-          {/* Minimal Workflow Progress */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+          <div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
               <span>Progress</span>
               <span>{STATUS_CONFIG[event.status]?.step || 1} of {STATUS_FLOW.length}</span>
             </div>
@@ -476,7 +503,7 @@ export default function OpsEventDetailPage() {
                 style={{ width: `${((STATUS_CONFIG[event.status]?.step || 1) / STATUS_FLOW.length) * 100}%` }}
               />
             </div>
-            <div className="flex justify-between mt-2">
+            <div className="flex justify-between mt-1.5">
               {STATUS_FLOW.map((s) => {
                 const config = STATUS_CONFIG[s]
                 const isActive = event.status === s
@@ -498,33 +525,23 @@ export default function OpsEventDetailPage() {
               })}
             </div>
           </div>
-
-          {/* Quick Stats Bar */}
-          <div className="grid grid-cols-4 gap-4 pt-4 border-t">
-            <div>
-              <p className="text-xl font-semibold">{requirementsCount}</p>
-              <p className="text-xs text-muted-foreground">Requirements</p>
-            </div>
-            <div>
-              <p className="text-xl font-semibold">{agreementsCount}</p>
-              <p className="text-xs text-muted-foreground">Agreements</p>
-            </div>
-            <div>
-              <p className="text-xl font-semibold">{completedTasksCount}<span className="text-muted-foreground">/{tasksCount}</span></p>
-              <p className="text-xs text-muted-foreground">Tasks Done</p>
-            </div>
-            <div>
-              <p className={`text-xl font-semibold ${remaining < 0 ? 'text-red-600' : ''}`}>
-                ₹{remaining.toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground">Remaining</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
+      <StatGrid>
+        <StatCard label="Requirements" value={requirementsCount} icon={ListTodo} />
+        <StatCard label="Agreements" value={agreementsCount} icon={Users} />
+        <StatCard label="Tasks Done" value={`${completedTasksCount}/${tasksCount}`} icon={CheckCircle} />
+        <StatCard
+          label="Remaining"
+          value={`₹${remaining.toLocaleString()}`}
+          icon={Receipt}
+          accent={remaining < 0 ? 'text-red-600' : undefined}
+        />
+      </StatGrid>
+
       {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-3">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="overview" className="flex-1 sm:flex-none">
             <FileText className="h-4 w-4 mr-2" />
@@ -558,14 +575,14 @@ export default function OpsEventDetailPage() {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-3">
+        <TabsContent value="overview" className="space-y-3">
+          <div className="grid gap-3 lg:grid-cols-3">
             {/* Client Info */}
             <Card className="lg:col-span-2 border-0 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium">Client & Event Details</CardTitle>
+              <CardHeader className="p-3 pb-0">
+                <CardTitle className="text-sm font-medium">Client & Event Details</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
+              <CardContent className="grid gap-3 p-3 md:grid-cols-2">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">Client</p>
                   <p className="font-medium">{event.clientName}</p>
@@ -612,10 +629,10 @@ export default function OpsEventDetailPage() {
 
             {/* Budget Overview */}
             <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-medium">Budget</CardTitle>
+              <CardHeader className="p-3 pb-0">
+                <CardTitle className="text-sm font-medium">Budget</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 p-3">
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Spent</span>
@@ -631,7 +648,7 @@ export default function OpsEventDetailPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-2">
+                <div className="space-y-2 pt-1">
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Budget</span>
                     <span className="font-semibold">₹{budget.toLocaleString()}</span>
@@ -655,10 +672,10 @@ export default function OpsEventDetailPage() {
         {/* Requirements Tab */}
         <TabsContent value="requirements">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">Requirements Sheet</CardTitle>
+                  <CardTitle className="text-sm">Requirements Sheet</CardTitle>
                   {requirements?.approvalStatus && (
                     <Badge variant="outline" className={
                       requirements.approvalStatus === 'APPROVED' ? 'bg-green-100 text-green-700' :
@@ -673,7 +690,6 @@ export default function OpsEventDetailPage() {
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Manage vendor requirements for this event</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 {requirements && requirements.approvalStatus !== 'APPROVED' && (
@@ -699,10 +715,10 @@ export default function OpsEventDetailPage() {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               {/* Approval Link Info */}
               {requirements?.approvalStatus === 'PENDING' && requirements?.approvalToken && (
-                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="mb-2 p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-amber-600" />
@@ -724,7 +740,7 @@ export default function OpsEventDetailPage() {
                 </div>
               )}
               {requirements?.approvalStatus === 'APPROVED' && (
-                <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="mb-2 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <span className="text-sm font-medium text-green-800 dark:text-green-200">
@@ -734,7 +750,7 @@ export default function OpsEventDetailPage() {
                 </div>
               )}
               {requirements?.approvalStatus === 'REJECTED' && (
-                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="mb-2 p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-red-600" />
@@ -758,10 +774,9 @@ export default function OpsEventDetailPage() {
         {/* Agreements Tab */}
         <TabsContent value="agreements">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
               <div>
-                <CardTitle className="text-lg">Vendor Agreements</CardTitle>
-                <CardDescription>Contracts and agreements with vendors</CardDescription>
+                <CardTitle className="text-sm">Vendor Agreements</CardTitle>
               </div>
               <Link href={`/ops/events/${eventId}/agreements`}>
                 <Button variant="outline" size="sm">
@@ -770,7 +785,7 @@ export default function OpsEventDetailPage() {
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               <OpsAgreementsList activeEventId={eventId} />
             </CardContent>
           </Card>
@@ -779,10 +794,9 @@ export default function OpsEventDetailPage() {
         {/* Tasks Tab */}
         <TabsContent value="tasks">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
               <div>
-                <CardTitle className="text-lg">Operational Tasks</CardTitle>
-                <CardDescription>Tasks for event execution</CardDescription>
+                <CardTitle className="text-sm">Operational Tasks</CardTitle>
               </div>
               <Link href={`/ops/events/${eventId}/tasks`}>
                 <Button variant="outline" size="sm">
@@ -791,7 +805,7 @@ export default function OpsEventDetailPage() {
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               <OpsTasksList activeEventId={eventId} />
             </CardContent>
           </Card>
@@ -800,10 +814,9 @@ export default function OpsEventDetailPage() {
         {/* Quotations Tab */}
         <TabsContent value="quotations">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
               <div>
-                <CardTitle className="text-lg">Quotations</CardTitle>
-                <CardDescription>Vendor quotations for this event</CardDescription>
+                <CardTitle className="text-sm">Quotations</CardTitle>
               </div>
               <Link href="/ops/quotations">
                 <Button variant="outline" size="sm">
@@ -812,49 +825,20 @@ export default function OpsEventDetailPage() {
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent>
-              {quotationsCount === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  No quotations yet
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {quotationsData?.items?.slice(0, 5).map((quotation) => (
-                    <div key={quotation.id} className="flex items-center justify-between py-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{quotation.quotationNumber}</span>
-                          <Badge variant="outline" className={
-                            quotation.status === 'ACCEPTED' ? 'bg-green-100 text-green-700' :
-                            quotation.status === 'SENT' ? 'bg-blue-100 text-blue-700' :
-                            quotation.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-700'
-                          }>
-                            {quotation.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {quotation.vendorAgreement?.vendorName || 'Unknown Vendor'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-semibold">
-                          ₹{Number(quotation.totalAmount).toLocaleString()}
-                        </span>
-                        <Button variant="outline" size="sm" onClick={() => openQuotationPreview(quotation)}>
-                          <Printer className="mr-2 h-4 w-4" />
-                          Print
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {quotationsCount > 5 && (
-                    <Link href="/ops/quotations" className="block pt-3 text-sm text-primary hover:underline">
-                      View all {quotationsCount} quotations
-                    </Link>
-                  )}
-                </div>
-              )}
+            <CardContent className="p-3">
+              <DataTable
+                data={quotationsData?.items}
+                rowKey={(q) => q.id}
+                defaultPageSize={10}
+                pageSizeOptions={[10, 20]}
+                exportFilename="event-quotations"
+                emptyTitle="No quotations yet"
+                emptyIcon={FileCheck}
+                columns={quotationColumns}
+                rowActions={(q) => [
+                  { label: 'Print', icon: Printer, onClick: () => openQuotationPreview(q) },
+                ]}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -862,10 +846,9 @@ export default function OpsEventDetailPage() {
         {/* Invoices Tab */}
         <TabsContent value="invoices">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
               <div>
-                <CardTitle className="text-lg">Invoices & Billing</CardTitle>
-                <CardDescription>Financial records and payment tracking</CardDescription>
+                <CardTitle className="text-sm">Invoices & Billing</CardTitle>
               </div>
               <Link href={`/ops/events/${eventId}/invoices`}>
                 <Button variant="outline" size="sm">
@@ -874,7 +857,7 @@ export default function OpsEventDetailPage() {
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               <OpsInvoicesList activeEventId={eventId} />
             </CardContent>
           </Card>
@@ -888,9 +871,9 @@ export default function OpsEventDetailPage() {
             <DialogTitle>Edit Event</DialogTitle>
             <DialogDescription>Update event details and information.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+          <div className="grid gap-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="clientName">Client Name</Label>
                 <Input
                   id="clientName"
@@ -898,7 +881,7 @@ export default function OpsEventDetailPage() {
                   onChange={(e) => setEditForm({ ...editForm, clientName: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="eventType">Event Type</Label>
                 <Input
                   id="eventType"
@@ -907,8 +890,8 @@ export default function OpsEventDetailPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="clientEmail">Email</Label>
                 <Input
                   id="clientEmail"
@@ -917,7 +900,7 @@ export default function OpsEventDetailPage() {
                   onChange={(e) => setEditForm({ ...editForm, clientEmail: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="clientPhone">Phone</Label>
                 <Input
                   id="clientPhone"
@@ -926,8 +909,8 @@ export default function OpsEventDetailPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="eventDate">Event Date</Label>
                 <Input
                   id="eventDate"
@@ -936,7 +919,7 @@ export default function OpsEventDetailPage() {
                   onChange={(e) => setEditForm({ ...editForm, eventDate: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="eventEndDate">Event End Date</Label>
                 <Input
                   id="eventEndDate"
@@ -946,8 +929,8 @@ export default function OpsEventDetailPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="venueName">Venue Name</Label>
                 <Input
                   id="venueName"
@@ -955,7 +938,7 @@ export default function OpsEventDetailPage() {
                   onChange={(e) => setEditForm({ ...editForm, venueName: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="totalBudget">Total Budget</Label>
                 <Input
                   id="totalBudget"
@@ -987,8 +970,8 @@ export default function OpsEventDetailPage() {
               Assign an operations manager to handle this event.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
+          <div className="py-2 space-y-3">
+            <div className="space-y-1.5">
               <Label htmlFor="managerId">Manager</Label>
               <Select value={managerIdInput} onValueChange={setManagerIdInput}>
                 <SelectTrigger id="managerId">

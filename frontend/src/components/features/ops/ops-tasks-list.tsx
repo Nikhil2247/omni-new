@@ -13,8 +13,6 @@ import {
   useOpsAssistants,
 } from '@/hooks/queries/use-ops'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -34,56 +32,42 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Plus,
-  MoreVertical,
-  Edit,
+  Pencil,
+  Eye,
   Trash2,
   Loader2,
   ListTodo,
   AlertCircle,
   CheckCircle2,
-  Clock,
   Play,
   Upload,
   ThumbsUp,
   ThumbsDown,
-  Calendar,
-  User,
-  ExternalLink,
 } from 'lucide-react'
+import {
+  DataTable,
+  StatCard,
+  StatGrid,
+  StatusBadge,
+  TwoLineCell,
+  type DataColumn,
+} from '@/components/dashboard'
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: { label: 'Pending', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20', icon: <Clock className="h-3 w-3" /> },
-  ASSIGNED: { label: 'Assigned', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20', icon: <User className="h-3 w-3" /> },
-  IN_PROGRESS: { label: 'In Progress', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: <Play className="h-3 w-3" /> },
-  PROOF_SUBMITTED: { label: 'Proof Submitted', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20', icon: <Upload className="h-3 w-3" /> },
-  COMPLETED: { label: 'Completed', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: <CheckCircle2 className="h-3 w-3" /> },
-  REJECTED: { label: 'Rejected', color: 'bg-red-500/10 text-red-700 border-red-500/20', icon: <ThumbsDown className="h-3 w-3" /> },
+const STATUS_CONFIG: Record<string, { label: string }> = {
+  PENDING: { label: 'Pending' },
+  ASSIGNED: { label: 'Assigned' },
+  IN_PROGRESS: { label: 'In Progress' },
+  PROOF_SUBMITTED: { label: 'Proof Submitted' },
+  COMPLETED: { label: 'Completed' },
+  REJECTED: { label: 'Rejected' },
 }
 
-const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
-  LOW: { label: 'Low', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
-  NORMAL: { label: 'Normal', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
-  HIGH: { label: 'High', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  URGENT: { label: 'Urgent', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
+const PRIORITY_CONFIG: Record<string, { label: string }> = {
+  LOW: { label: 'Low' },
+  NORMAL: { label: 'Normal' },
+  HIGH: { label: 'High' },
+  URGENT: { label: 'Urgent' },
 }
 
 const CATEGORIES = [
@@ -252,31 +236,98 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
     await deleteTask.mutateAsync(id)
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
-              <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-              <div className="h-3 bg-muted rounded w-1/2" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    )
-  }
+  const now = new Date()
+  type OpsTask = NonNullable<typeof data>[number]
+
+  const columns: DataColumn<OpsTask>[] = [
+    {
+      id: 'title',
+      header: 'Task',
+      label: 'Task',
+      cell: (task) => {
+        const due = task.dueDate ? new Date(task.dueDate) : null
+        const overdue = !!due && due < now && task.status !== 'COMPLETED'
+        return (
+          <TwoLineCell
+            title={
+              <span className="flex items-center gap-1.5">
+                {task.title}
+                {overdue && <StatusBadge tone="danger">Overdue</StatusBadge>}
+              </span>
+            }
+            subtitle={task.description ? <span className="line-clamp-1">{task.description}</span> : task.category}
+          />
+        )
+      },
+      sortValue: (task) => task.title,
+      exportValue: (task) => task.title,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (task) => (
+        <StatusBadge status={task.status}>
+          {(STATUS_CONFIG[task.status] || STATUS_CONFIG.PENDING).label}
+        </StatusBadge>
+      ),
+      sortValue: (task) => task.status,
+      exportValue: (task) => task.status,
+    },
+    {
+      id: 'priority',
+      header: 'Priority',
+      label: 'Priority',
+      cell: (task) => (
+        <StatusBadge status={task.priority}>
+          {(PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.NORMAL).label}
+        </StatusBadge>
+      ),
+      sortValue: (task) => task.priority,
+      exportValue: (task) => task.priority,
+    },
+    {
+      id: 'category',
+      header: 'Category',
+      label: 'Category',
+      hideBelow: 'lg',
+      cell: (task) => task.category || '-',
+      sortValue: (task) => task.category,
+    },
+    {
+      id: 'due',
+      header: 'Due',
+      label: 'Due',
+      cell: (task) => (task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'TBD'),
+      sortValue: (task) => (task.dueDate ? new Date(task.dueDate) : null),
+    },
+    {
+      id: 'event',
+      header: 'Event',
+      label: 'Event',
+      hideBelow: 'md',
+      cell: (task) =>
+        task.activeEvent ? (
+          <Link href={`/ops/events/${task.activeEventId}`} className="text-primary hover:underline">
+            {task.activeEvent.clientName}
+          </Link>
+        ) : (
+          '-'
+        ),
+      sortValue: (task) => task.activeEvent?.clientName,
+      exportValue: (task) => task.activeEvent?.clientName,
+    },
+  ]
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-4 text-destructive">
-        <AlertCircle className="h-8 w-8 mb-2" />
+      <div className="flex items-center gap-2 py-3 text-sm text-destructive">
+        <AlertCircle className="h-4 w-4" />
         <p className="font-medium">Failed to load tasks</p>
       </div>
     )
   }
 
-  const now = new Date()
   const totalTasks = data?.length || 0
   const completedTasks = data?.filter(t => t.status === 'COMPLETED').length || 0
   const overdueTasks = data?.filter(t => {
@@ -286,230 +337,69 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
   const inProgressTasks = data?.filter(t => t.status === 'IN_PROGRESS').length || 0
 
   return (
-    <div className="space-y-4">
-      {/* Header Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Total Tasks</p>
-            <p className="text-2xl font-bold">{totalTasks}</p>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div>
-            <p className="text-sm text-muted-foreground">Completed</p>
-            <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div>
-            <p className="text-sm text-muted-foreground">In Progress</p>
-            <p className="text-2xl font-bold text-yellow-600">{inProgressTasks}</p>
-          </div>
-          {overdueTasks > 0 && (
-            <>
-              <div className="h-8 w-px bg-border" />
-              <div>
-                <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-red-600">{overdueTasks}</p>
-              </div>
-            </>
-          )}
-        </div>
+    <div className="space-y-3">
+      <StatGrid>
+        <StatCard label="Total Tasks" value={totalTasks} icon={ListTodo} />
+        <StatCard label="Completed" value={completedTasks} icon={CheckCircle2} accent="text-green-600" />
+        <StatCard label="In Progress" value={inProgressTasks} icon={Play} accent="text-yellow-600" />
+        <StatCard label="Overdue" value={overdueTasks} icon={AlertCircle} accent="text-red-600" />
+      </StatGrid>
 
-        {showCreateButton && activeEventId && (
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Task
-          </Button>
-        )}
-      </div>
-
-      {/* Tasks List */}
-      {!data?.length ? (
-        <Card>
-          <CardContent className="py-4 text-center">
-            <ListTodo className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground font-medium">No tasks found</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {activeEventId ? 'Create tasks for this event.' : 'No tasks available.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-2">
-          {data.map((task) => {
-            const status = STATUS_CONFIG[task.status] || STATUS_CONFIG.PENDING
-            const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.NORMAL
-            const dueDate = task.dueDate ? new Date(task.dueDate) : null
-            const isOverdue = dueDate && dueDate < now && task.status !== 'COMPLETED'
-
-            const canStart = task.status === 'PENDING' || task.status === 'ASSIGNED'
-            const canSubmitProof = task.status === 'IN_PROGRESS'
-            const canReview = task.status === 'PROOF_SUBMITTED'
-            const canEdit = task.status !== 'COMPLETED'
-
-            return (
-              <Card key={task.id} className={`transition-all hover:shadow-sm ${isOverdue ? 'border-red-500/50' : ''}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium">{task.title}</span>
-                        {isOverdue && (
-                          <Badge variant="destructive" className="text-xs">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Overdue
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <Badge variant="outline" className={status.color}>
-                          {status.icon}
-                          <span className="ml-1">{status.label}</span>
-                        </Badge>
-                        <Badge variant="outline" className={priority.color}>
-                          {priority.label}
-                        </Badge>
-                        {task.category && (
-                          <Badge variant="secondary">{task.category}</Badge>
-                        )}
-                      </div>
-
-                      {task.description && (
-                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{task.description}</p>
-                      )}
-
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>Due: {dueDate ? dueDate.toLocaleDateString() : 'TBD'}</span>
-                        </div>
-                        {task.activeEvent && (
-                          <div className="flex items-center gap-1">
-                            <span className="text-muted-foreground">Event:</span>
-                            <Link
-                              href={`/ops/events/${task.activeEventId}`}
-                              className="text-primary hover:underline"
-                            >
-                              {task.activeEvent.clientName}
-                            </Link>
-                          </div>
-                        )}
-                      </div>
-
-                      {task.proofUrl && (
-                        <div className="mt-2 flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">Proof:</span>
-                          <a
-                            href={task.proofUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline inline-flex items-center gap-1"
-                          >
-                            View Submission
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {canStart && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleStart(task.id)}
-                          disabled={startTask.isPending}
-                        >
-                          {startTask.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Play className="mr-1 h-3 w-3" />
-                              Start
-                            </>
-                          )}
-                        </Button>
-                      )}
-                      {canSubmitProof && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleProofClick(task.id)}
-                        >
-                          <Upload className="mr-1 h-3 w-3" />
-                          Submit Proof
-                        </Button>
-                      )}
-                      {canReview && (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => handleReviewClick(task.id)}
-                        >
-                          <ThumbsUp className="mr-1 h-3 w-3" />
-                          Review
-                        </Button>
-                      )}
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="shrink-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {canEdit && (
-                            <DropdownMenuItem onClick={() => handleEditClick(task)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem asChild>
-                            <Link href={`/ops/tasks/${task.id}`}>
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onSelect={(e) => e.preventDefault()}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Task</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this task? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(task.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+      <DataTable
+        data={data}
+        columns={columns}
+        rowKey={(t) => t.id}
+        isLoading={isLoading}
+        exportFilename="tasks"
+        emptyTitle="No tasks found"
+        emptyIcon={ListTodo}
+        toolbarRight={
+          showCreateButton && activeEventId ? (
+            <Button size="sm" className="h-8" onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" />
+              Add Task
+            </Button>
+          ) : undefined
+        }
+        rowActions={(task) => [
+          {
+            label: 'Start',
+            icon: Play,
+            onClick: () => handleStart(task.id),
+            disabled: startTask.isPending,
+            visible: task.status === 'PENDING' || task.status === 'ASSIGNED',
+          },
+          {
+            label: 'Submit proof',
+            icon: Upload,
+            onClick: () => handleProofClick(task.id),
+            visible: task.status === 'IN_PROGRESS',
+          },
+          {
+            label: 'Review',
+            icon: ThumbsUp,
+            onClick: () => handleReviewClick(task.id),
+            visible: task.status === 'PROOF_SUBMITTED',
+          },
+          { label: 'View details', icon: Eye, href: `/ops/tasks/${task.id}` },
+          {
+            label: 'Edit',
+            icon: Pencil,
+            onClick: () => handleEditClick(task),
+            visible: task.status !== 'COMPLETED',
+          },
+          {
+            label: 'Delete task',
+            icon: Trash2,
+            danger: true,
+            onClick: () => handleDelete(task.id),
+            confirm: {
+              title: 'Delete task?',
+              description: `"${task.title}" will be permanently deleted. This action cannot be undone.`,
+            },
+          },
+        ]}
+      />
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -518,8 +408,8 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
             <DialogTitle>Create Task</DialogTitle>
             <DialogDescription>Add a new operational task for this event.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-3 py-2">
+            <div className="space-y-1.5">
               <Label htmlFor="title">Task Title</Label>
               <Input
                 id="title"
@@ -528,7 +418,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
                 id="description"
@@ -537,8 +427,8 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="category">Category</Label>
                 <Select value={taskForm.category} onValueChange={(v) => setTaskForm({ ...taskForm, category: v })}>
                   <SelectTrigger>
@@ -551,7 +441,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="priority">Priority</Label>
                 <Select value={taskForm.priority} onValueChange={(v) => setTaskForm({ ...taskForm, priority: v })}>
                   <SelectTrigger>
@@ -566,7 +456,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="dueDate">Due Date</Label>
               <Input
                 id="dueDate"
@@ -575,8 +465,8 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="assignedToUserId">Assign to Assistant</Label>
                 <Select
                   value={taskForm.assignedToUserId}
@@ -596,7 +486,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="assignedToVendorId">Assign to Vendor (ID)</Label>
                 <Input
                   id="assignedToVendorId"
@@ -629,8 +519,8 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
             <DialogTitle>Edit Task</DialogTitle>
             <DialogDescription>Update the task details.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-3 py-2">
+            <div className="space-y-1.5">
               <Label htmlFor="edit-title">Task Title</Label>
               <Input
                 id="edit-title"
@@ -639,7 +529,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="edit-description">Description (Optional)</Label>
               <Textarea
                 id="edit-description"
@@ -648,8 +538,8 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="edit-category">Category</Label>
                 <Select value={taskForm.category} onValueChange={(v) => setTaskForm({ ...taskForm, category: v })}>
                   <SelectTrigger>
@@ -662,7 +552,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="edit-priority">Priority</Label>
                 <Select value={taskForm.priority} onValueChange={(v) => setTaskForm({ ...taskForm, priority: v })}>
                   <SelectTrigger>
@@ -677,7 +567,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="edit-dueDate">Due Date</Label>
               <Input
                 id="edit-dueDate"
@@ -706,8 +596,8 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
             <DialogTitle>Submit Proof</DialogTitle>
             <DialogDescription>Upload proof of task completion for review.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-3 py-2">
+            <div className="space-y-1.5">
               <Label htmlFor="proofUrl">Proof URL</Label>
               <Input
                 id="proofUrl"
@@ -716,7 +606,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 onChange={(e) => setProofForm({ ...proofForm, proofUrl: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="proofNotes">Notes (Optional)</Label>
               <Textarea
                 id="proofNotes"
@@ -745,10 +635,10 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
             <DialogTitle>Review Task</DialogTitle>
             <DialogDescription>Approve or reject the submitted proof.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-3 py-2">
+            <div className="space-y-1.5">
               <Label>Decision</Label>
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <Button
                   type="button"
                   variant={reviewForm.approved ? 'default' : 'outline'}
@@ -768,7 +658,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="reviewNotes">Review Notes (Optional)</Label>
               <Textarea
                 id="reviewNotes"

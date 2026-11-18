@@ -14,7 +14,7 @@ export function OpsEventDetails({ eventId }: { eventId: string }) {
         <CardHeader>
           <div className="h-6 bg-muted rounded w-1/2" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <div className="h-4 bg-muted rounded" />
           <div className="h-4 bg-muted rounded w-3/4" />
           <div className="h-4 bg-muted rounded w-2/3" />
@@ -26,7 +26,7 @@ export function OpsEventDetails({ eventId }: { eventId: string }) {
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="py-4 text-center">
+        <CardContent className="py-3 text-center">
           <p className="text-sm text-destructive">Failed to load event details.</p>
         </CardContent>
       </Card>
@@ -34,12 +34,12 @@ export function OpsEventDetails({ eventId }: { eventId: string }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle className="text-2xl">{data.clientName}</CardTitle>
+              <CardTitle className="text-lg">{data.clientName}</CardTitle>
               <p className="text-lg text-muted-foreground mt-1">{data.eventType}</p>
             </div>
             <Badge variant="secondary" className="text-sm">
@@ -47,8 +47,8 @@ export function OpsEventDetails({ eventId }: { eventId: string }) {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {data.eventDate && (
               <div className="flex items-center gap-3">
                 <CalendarIcon className="h-5 w-5 text-muted-foreground" />

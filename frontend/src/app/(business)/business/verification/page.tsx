@@ -15,7 +15,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageHeader, DataTable, StatusBadge, TwoLineCell } from '@/components/dashboard'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -246,25 +247,20 @@ export default function VerificationPage() {
         />
       }
     >
-      <div className="container max-w-4xl py-4 space-y-4">
+      <div className="container max-w-4xl py-2 space-y-3">
       {/* Header */}
-      <div>
-        <h1 className="text-lg font-semibold">KYC Verification</h1>
-        <p className="text-muted-foreground mt-1">
-          Complete your business verification to unlock all features
-        </p>
-      </div>
+      <PageHeader title="KYC Verification" />
 
       {/* Status Card */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-4">
-            <div className={`p-3 rounded-full ${statusInfo.color}`}>
-              <StatusIcon className="h-6 w-6" />
+        <CardContent className="p-3">
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-full ${statusInfo.color}`}>
+              <StatusIcon className="h-5 w-5" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">Verification Status</h3>
+                <h3 className="font-semibold text-sm">Verification Status</h3>
                 <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
               </div>
               <p className="text-muted-foreground mt-1">{statusInfo.description}</p>
@@ -282,7 +278,7 @@ export default function VerificationPage() {
               )}
             </div>
             {status === 'APPROVED' && (
-              <ShieldCheck className="h-12 w-12 text-green-500" />
+              <ShieldCheck className="h-8 w-8 text-green-500" />
             )}
           </div>
         </CardContent>
@@ -290,17 +286,14 @@ export default function VerificationPage() {
 
       {/* Business Details */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
             Business Details
           </CardTitle>
-          <CardDescription>
-            Provide your legal business information
-          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="legalName">Legal Business Name *</Label>
               <Input
@@ -361,16 +354,13 @@ export default function VerificationPage() {
 
       {/* Document Upload */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Documents
           </CardTitle>
-          <CardDescription>
-            Upload required documents for verification
-          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* Required Documents Checklist */}
           <div className="space-y-2">
             <h4 className="font-medium text-sm">Required Documents</h4>
@@ -409,7 +399,7 @@ export default function VerificationPage() {
 
           {/* Upload Section */}
           {canEdit && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="space-y-2">
                 <Label>Select Document Type</Label>
                 <Select
@@ -445,7 +435,7 @@ export default function VerificationPage() {
                 }`}
               >
                 <input {...getInputProps()} />
-                <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
                 {selectedDocType ? (
                   <>
                     <p className="font-medium">
@@ -471,58 +461,68 @@ export default function VerificationPage() {
           {documents.length > 0 && (
             <div className="space-y-2">
               <h4 className="font-medium text-sm">Uploaded Documents</h4>
-              <div className="space-y-2">
-                {documents.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium text-sm">
-                          {documentTypes?.required?.find((d) => d.type === doc.type)?.name ||
-                            documentTypes?.optional?.find((d) => d.type === doc.type)?.name ||
-                            doc.type.replace('_', ' ')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {doc.fileName || 'Document'} - {new Date(doc.createdAt).toLocaleDateString()}
-                        </p>
-                        {doc.notes && doc.status === 'REJECTED' && (
-                          <p className="text-xs text-red-600 mt-1">Reason: {doc.notes}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={documentStatusConfig[doc.status].color} variant="secondary">
-                        {documentStatusConfig[doc.status].label}
-                      </Badge>
-                      {doc.url && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const viewUrl = getMinioViewUrl(doc.url!)
-                            if (viewUrl) window.open(viewUrl, '_blank')
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {canEdit && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteDocument(doc.id)}
-                          disabled={deleteDocument.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <DataTable<(typeof documents)[number]>
+                data={documents}
+                rowKey={(d) => d.id}
+                maxHeight="360px"
+                columns={[
+                  {
+                    id: 'type',
+                    header: 'Document',
+                    label: 'Document',
+                    sortValue: (d) => d.type,
+                    exportValue: (d) => d.type,
+                    cell: (d) => (
+                      <TwoLineCell
+                        title={
+                          documentTypes?.required?.find((t) => t.type === d.type)?.name ||
+                          documentTypes?.optional?.find((t) => t.type === d.type)?.name ||
+                          d.type.replace('_', ' ')
+                        }
+                        subtitle={d.notes && d.status === 'REJECTED' ? `Reason: ${d.notes}` : d.fileName || 'Document'}
+                      />
+                    ),
+                  },
+                  {
+                    id: 'uploaded',
+                    header: 'Uploaded',
+                    label: 'Uploaded',
+                    hideBelow: 'sm',
+                    sortValue: (d) => new Date(d.createdAt),
+                    cell: (d) => <span className="text-muted-foreground text-sm">{new Date(d.createdAt).toLocaleDateString()}</span>,
+                  },
+                  {
+                    id: 'status',
+                    header: 'Status',
+                    label: 'Status',
+                    sortValue: (d) => d.status,
+                    cell: (d) => <StatusBadge status={d.status}>{documentStatusConfig[d.status].label}</StatusBadge>,
+                  },
+                ]}
+                rowActions={(d) => [
+                  {
+                    label: 'View',
+                    icon: Eye,
+                    visible: !!d.url,
+                    onClick: () => {
+                      const viewUrl = getMinioViewUrl(d.url!)
+                      if (viewUrl) window.open(viewUrl, '_blank')
+                    },
+                  },
+                  {
+                    label: 'Delete',
+                    icon: Trash2,
+                    danger: true,
+                    visible: canEdit,
+                    disabled: deleteDocument.isPending,
+                    onClick: () => handleDeleteDocument(d.id),
+                    confirm: {
+                      title: 'Delete this document?',
+                      description: 'The uploaded document will be permanently removed.',
+                    },
+                  },
+                ]}
+              />
             </div>
           )}
         </CardContent>
@@ -531,7 +531,7 @@ export default function VerificationPage() {
       {/* Submit Button */}
       {canEdit && kyc && (
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold">Ready to Submit?</h3>
@@ -542,7 +542,6 @@ export default function VerificationPage() {
                 </p>
               </div>
               <Button
-                size="lg"
                 onClick={handleSubmitKyc}
                 disabled={!hasAllRequired || submitKyc.isPending}
               >

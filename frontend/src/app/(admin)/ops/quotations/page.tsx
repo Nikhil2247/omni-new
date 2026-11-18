@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import Link from 'next/link'
 import { format } from 'date-fns'
 import {
   FileText,
@@ -9,19 +8,16 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Search,
   Eye,
   Send,
   ArrowRightCircle,
   Loader2,
   Plus,
-  MoreVertical,
   Trash2,
   AlertCircle,
   Printer,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, StatCard, StatGrid, type DataColumn } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -39,22 +35,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import {
@@ -74,7 +54,6 @@ import { QuotationPreviewDialog } from '@/components/features/ops/quotation-prev
 import type { QuotationTemplateData } from '@/components/features/ops/quotation-template'
 
 const STATUS_OPTIONS = [
-  { value: 'all', label: 'All Statuses' },
   { value: 'DRAFT', label: 'Draft' },
   { value: 'SENT', label: 'Sent' },
   { value: 'ACCEPTED', label: 'Accepted' },
@@ -83,13 +62,13 @@ const STATUS_OPTIONS = [
   { value: 'CONVERTED', label: 'Converted' },
 ]
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700 border-gray-200' },
-  SENT: { label: 'Sent', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  ACCEPTED: { label: 'Accepted', color: 'bg-green-100 text-green-700 border-green-200' },
-  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-200' },
-  EXPIRED: { label: 'Expired', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-  CONVERTED: { label: 'Converted', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+const STATUS_CONFIG: Record<string, { label: string }> = {
+  DRAFT: { label: 'Draft' },
+  SENT: { label: 'Sent' },
+  ACCEPTED: { label: 'Accepted' },
+  REJECTED: { label: 'Rejected' },
+  EXPIRED: { label: 'Expired' },
+  CONVERTED: { label: 'Converted' },
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -106,13 +85,9 @@ function formatCurrency(amount: number | string | null | undefined, currency = '
   return `${symbol}${num.toLocaleString()}`
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const config = STATUS_CONFIG[status] || { label: status, color: 'bg-gray-100 text-gray-700' }
-  return (
-    <Badge variant="outline" className={config.color}>
-      {config.label}
-    </Badge>
-  )
+function QuotationStatusBadge({ status }: { status: string }) {
+  const config = STATUS_CONFIG[status] || { label: status }
+  return <StatusBadge status={status}>{config.label}</StatusBadge>
 }
 
 export default function OpsQuotationsPage() {
@@ -159,7 +134,6 @@ export default function OpsQuotationsPage() {
   const deleteQuotation = useDeleteQuotation()
 
   const quotations = quotationsData?.items || []
-  const totalPages = quotationsData?.totalPages || 1
   const totalQuotations = quotationsData?.total || 0
 
   // Filter agreements that don't already have quotations
@@ -220,9 +194,7 @@ export default function OpsQuotationsPage() {
   }
 
   const handleDelete = async (quotation: QuotationResponse) => {
-    if (confirm('Are you sure you want to delete this quotation?')) {
-      await deleteQuotation.mutateAsync(quotation.id)
-    }
+    await deleteQuotation.mutateAsync(quotation.id)
   }
 
   const openSendDialog = (quotation: QuotationResponse) => {
@@ -314,283 +286,158 @@ export default function OpsQuotationsPage() {
     termsAndConditions: quotation.termsAndConditions,
   })
 
+  const columns: DataColumn<QuotationResponse>[] = [
+    {
+      id: 'number',
+      header: 'Quotation #',
+      label: 'Quotation #',
+      cell: (q) => <span className="font-medium">{q.quotationNumber}</span>,
+      sortValue: (q) => q.quotationNumber,
+      exportValue: (q) => q.quotationNumber,
+    },
+    {
+      id: 'vendor',
+      header: 'Vendor',
+      label: 'Vendor',
+      cell: (q) => q.vendorAgreement?.vendorName || '-',
+      sortValue: (q) => q.vendorAgreement?.vendorName,
+      exportValue: (q) => q.vendorAgreement?.vendorName,
+    },
+    {
+      id: 'client',
+      header: 'Client / Event',
+      label: 'Client / Event',
+      hideBelow: 'md',
+      cell: (q) => (
+        <TwoLineCell
+          title={q.vendorAgreement?.activeEvent?.clientName || '-'}
+          subtitle={q.vendorAgreement?.activeEvent?.eventType || '-'}
+        />
+      ),
+      sortValue: (q) => q.vendorAgreement?.activeEvent?.clientName,
+      exportValue: (q) => q.vendorAgreement?.activeEvent?.clientName,
+    },
+    {
+      id: 'amount',
+      header: 'Amount',
+      label: 'Amount',
+      align: 'right',
+      cell: (q) => <span className="font-semibold">{formatCurrency(q.totalAmount, q.currency)}</span>,
+      sortValue: (q) => Number(q.totalAmount) || 0,
+      exportValue: (q) => Number(q.totalAmount) || 0,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (q) => <QuotationStatusBadge status={q.status} />,
+      sortValue: (q) => q.status,
+      exportValue: (q) => q.status,
+    },
+    {
+      id: 'date',
+      header: 'Date',
+      label: 'Date',
+      hideBelow: 'lg',
+      cell: (q) => format(new Date(q.createdAt), 'MMM d, yyyy'),
+      sortValue: (q) => new Date(q.createdAt),
+    },
+  ]
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Quotations</h1>
-          <p className="text-muted-foreground">
-            Manage quotations for vendor agreements
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Quotation
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                <FileText className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-                <Clock className="h-5 w-5 text-gray-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.draft}</p>
-                <p className="text-xs text-muted-foreground">Draft</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                <Send className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.sent}</p>
-                <p className="text-xs text-muted-foreground">Sent</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.accepted}</p>
-                <p className="text-xs text-muted-foreground">Accepted</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
-                <XCircle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.rejected}</p>
-                <p className="text-xs text-muted-foreground">Rejected</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by quotation number, vendor, or client..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quotations Table */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-4 space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="p-4 text-center">
-              <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
-              <p className="text-destructive font-medium">Failed to load quotations</p>
-            </div>
-          ) : filteredQuotations.length === 0 ? (
-            <div className="p-4 text-center">
-              <FileText className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">No quotations found</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Quotation #</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>Client / Event</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredQuotations.map((quotation) => (
-                  <TableRow key={quotation.id}>
-                    <TableCell className="font-medium">
-                      {quotation.quotationNumber}
-                    </TableCell>
-                    <TableCell>
-                      {quotation.vendorAgreement?.vendorName || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {quotation.vendorAgreement?.activeEvent?.clientName || '-'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {quotation.vendorAgreement?.activeEvent?.eventType || '-'}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-semibold">
-                      {formatCurrency(quotation.totalAmount, quotation.currency)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={quotation.status} />
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(quotation.createdAt), 'MMM d, yyyy')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openDetailsDialog(quotation)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openPreviewDialog(quotation)}>
-                            <Printer className="mr-2 h-4 w-4" />
-                            Print / Download
-                          </DropdownMenuItem>
-
-                          {quotation.status === 'DRAFT' && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => openSendDialog(quotation)}>
-                                <Send className="mr-2 h-4 w-4" />
-                                Send to Vendor
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDelete(quotation)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </>
-                          )}
-
-                          {quotation.status === 'SENT' && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleAccept(quotation)}>
-                                <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                                Mark Accepted
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => openRejectDialog(quotation)}>
-                                <XCircle className="mr-2 h-4 w-4 text-red-600" />
-                                Mark Rejected
-                              </DropdownMenuItem>
-                            </>
-                          )}
-
-                          {quotation.status === 'ACCEPTED' && !quotation.invoice && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleConvert(quotation)}>
-                                <ArrowRightCircle className="mr-2 h-4 w-4 text-purple-600" />
-                                Convert to Invoice
-                              </DropdownMenuItem>
-                            </>
-                          )}
-
-                          {quotation.invoice && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem asChild>
-                                <Link href={`/ops/invoices`}>
-                                  <DollarSign className="mr-2 h-4 w-4" />
-                                  View Invoice
-                                </Link>
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
+    <div className="space-y-3">
+      <PageHeader
+        title="Quotations"
+        actions={
+          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Create Quotation
           </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
+        }
+      />
+
+      <StatGrid className="lg:grid-cols-5">
+        <StatCard label="Total" value={stats.total} icon={FileText} accent="text-blue-600" />
+        <StatCard label="Draft" value={stats.draft} icon={Clock} accent="text-gray-600" />
+        <StatCard label="Sent" value={stats.sent} icon={Send} accent="text-blue-600" />
+        <StatCard label="Accepted" value={stats.accepted} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="Rejected" value={stats.rejected} icon={XCircle} accent="text-red-600" />
+      </StatGrid>
+
+      {error ? (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive bg-card p-3 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          Failed to load quotations
         </div>
+      ) : (
+        <DataTable
+          data={filteredQuotations}
+          columns={columns}
+          rowKey={(q) => q.id}
+          isLoading={isLoading}
+          search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search quotation number, vendor, client...' }}
+          filters={
+            <FilterSelect
+              label="Status"
+              value={statusFilter}
+              onChange={(v) => {
+                setStatusFilter(v)
+                setCurrentPage(1)
+              }}
+              options={STATUS_OPTIONS}
+            />
+          }
+          columnToggle
+          exportFilename="quotations"
+          emptyTitle="No quotations found"
+          emptyIcon={FileText}
+          serverPagination={{
+            page: currentPage,
+            pageSize: 20,
+            total: totalQuotations,
+            onPageChange: setCurrentPage,
+          }}
+          rowActions={(q) => [
+            { label: 'View details', icon: Eye, onClick: () => openDetailsDialog(q) },
+            { label: 'Print / Download', icon: Printer, onClick: () => openPreviewDialog(q) },
+            {
+              label: 'Send to vendor',
+              icon: Send,
+              onClick: () => openSendDialog(q),
+              visible: q.status === 'DRAFT',
+            },
+            {
+              label: 'Mark accepted',
+              icon: CheckCircle,
+              onClick: () => handleAccept(q),
+              visible: q.status === 'SENT',
+            },
+            {
+              label: 'Mark rejected',
+              icon: XCircle,
+              onClick: () => openRejectDialog(q),
+              visible: q.status === 'SENT',
+            },
+            {
+              label: 'Convert to invoice',
+              icon: ArrowRightCircle,
+              onClick: () => handleConvert(q),
+              visible: q.status === 'ACCEPTED' && !q.invoice,
+            },
+            { label: 'View invoice', icon: DollarSign, href: '/ops/invoices', visible: !!q.invoice },
+            {
+              label: 'Delete quotation',
+              icon: Trash2,
+              danger: true,
+              onClick: () => handleDelete(q),
+              visible: q.status === 'DRAFT',
+              confirm: {
+                title: 'Delete quotation?',
+                description: `Quotation ${q.quotationNumber} will be permanently deleted. This action cannot be undone.`,
+              },
+            },
+          ]}
+        />
       )}
 
       {/* Details Dialog */}
@@ -603,8 +450,8 @@ export default function OpsQuotationsPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedQuotation && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Vendor</p>
                   <p className="font-medium">
@@ -619,7 +466,7 @@ export default function OpsQuotationsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <StatusBadge status={selectedQuotation.status} />
+                  <QuotationStatusBadge status={selectedQuotation.status} />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Valid Until</p>
@@ -631,35 +478,35 @@ export default function OpsQuotationsPage() {
                 </div>
               </div>
 
-              <div className="border-t pt-4">
+              <div className="border-t pt-3">
                 <h4 className="font-medium mb-2">Line Items</h4>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Rate</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedQuotation.items.map((item, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.rate, selectedQuotation.currency)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(item.amount, selectedQuotation.currency)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <DataTable
+                  data={selectedQuotation.items}
+                  rowKey={(item) => `${item.description}-${item.quantity}-${item.rate}`}
+                  defaultPageSize={10}
+                  maxHeight="40dvh"
+                  columns={[
+                    { id: 'description', header: 'Description', label: 'Description', cell: (item) => item.description },
+                    { id: 'quantity', header: 'Qty', label: 'Qty', align: 'right', cell: (item) => item.quantity },
+                    {
+                      id: 'rate',
+                      header: 'Rate',
+                      label: 'Rate',
+                      align: 'right',
+                      cell: (item) => formatCurrency(item.rate, selectedQuotation.currency),
+                    },
+                    {
+                      id: 'amount',
+                      header: 'Amount',
+                      label: 'Amount',
+                      align: 'right',
+                      cell: (item) => formatCurrency(item.amount, selectedQuotation.currency),
+                    },
+                  ]}
+                />
               </div>
 
-              <div className="border-t pt-4 space-y-2">
+              <div className="border-t pt-3 space-y-1.5">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>{formatCurrency(selectedQuotation.subtotal, selectedQuotation.currency)}</span>
@@ -676,14 +523,14 @@ export default function OpsQuotationsPage() {
                     <span>-{formatCurrency(selectedQuotation.discount, selectedQuotation.currency)}</span>
                   </div>
                 )}
-                <div className="flex justify-between font-bold text-lg border-t pt-2">
+                <div className="flex justify-between font-bold border-t pt-2">
                   <span>Total</span>
                   <span>{formatCurrency(selectedQuotation.totalAmount, selectedQuotation.currency)}</span>
                 </div>
               </div>
 
               {selectedQuotation.notes && (
-                <div className="border-t pt-4">
+                <div className="border-t pt-3">
                   <p className="text-sm text-muted-foreground">Notes</p>
                   <p>{selectedQuotation.notes}</p>
                 </div>
@@ -702,8 +549,8 @@ export default function OpsQuotationsPage() {
               Send this quotation to the vendor for approval.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
               <Label>Message (optional)</Label>
               <Textarea
                 placeholder="Add a message to the vendor..."
@@ -734,8 +581,8 @@ export default function OpsQuotationsPage() {
               Mark this quotation as rejected by the vendor.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
               <Label>Reason (optional)</Label>
               <Textarea
                 placeholder="Enter rejection reason..."
@@ -781,10 +628,10 @@ export default function OpsQuotationsPage() {
               Create a new quotation for a vendor agreement.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             {/* Event Selection */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label>Event</Label>
                 <Select value={selectedEventId} onValueChange={(v) => {
                   setSelectedEventId(v)
@@ -802,7 +649,7 @@ export default function OpsQuotationsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Vendor Agreement</Label>
                 <Select
                   value={selectedAgreementId}
@@ -830,7 +677,7 @@ export default function OpsQuotationsPage() {
             </div>
 
             {/* Line Items */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label>Line Items</Label>
                 <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
@@ -838,7 +685,7 @@ export default function OpsQuotationsPage() {
                   Add Item
                 </Button>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {createFormItems.map((item, index) => (
                   <div key={index} className="grid grid-cols-12 gap-2 items-center">
                     <div className="col-span-5">
@@ -889,8 +736,8 @@ export default function OpsQuotationsPage() {
             </div>
 
             {/* Notes & Terms */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label>Notes (optional)</Label>
                 <Textarea
                   placeholder="Additional notes..."
@@ -899,7 +746,7 @@ export default function OpsQuotationsPage() {
                   rows={3}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Terms & Conditions (optional)</Label>
                 <Textarea
                   placeholder="Terms and conditions..."

@@ -7,9 +7,8 @@ import { useUmami } from '@/hooks/use-umami'
 import { useOpsLeads } from '@/hooks/queries/use-leads'
 import { useLeadConversion, useOpsManagers } from '@/hooks/queries/use-ops'
 import { useAuthStore } from '@/store/auth-store'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -28,29 +27,26 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   UserPlus,
-  Search,
-  MoreVertical,
   Eye,
   ArrowRightCircle,
-  Calendar,
-  DollarSign,
-  Users,
+  Store,
   Phone,
-  Mail,
   MessageSquare,
-  Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
 } from 'lucide-react'
+import {
+  PageHeader,
+  DataTable,
+  FilterSelect,
+  StatusBadge,
+  UserCell,
+  StatCard,
+  StatGrid,
+  type DataColumn,
+} from '@/components/dashboard'
 import type { LeadResponse } from '@/lib/api/types/lead.types'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -156,52 +152,95 @@ export default function OpsLeadsPage() {
     }).format(amount)
   }
 
+  const columns: DataColumn<LeadResponse>[] = [
+    {
+      id: 'client',
+      header: 'Client',
+      label: 'Client',
+      cell: (lead) => {
+        const name = lead.planner
+          ? `${lead.planner.firstName || ''} ${lead.planner.lastName || ''}`.trim() || lead.planner.email
+          : 'Unknown'
+        return <UserCell name={name} subtitle={lead.planner?.email} />
+      },
+      sortValue: (lead) => lead.planner?.firstName || lead.planner?.email,
+      exportValue: (lead) => lead.planner?.email,
+    },
+    {
+      id: 'eventType',
+      header: 'Event type',
+      label: 'Event type',
+      cell: (lead) => lead.eventType || '-',
+      sortValue: (lead) => lead.eventType,
+    },
+    {
+      id: 'source',
+      header: 'Source',
+      label: 'Source',
+      hideBelow: 'md',
+      cell: (lead) => (sourceConfig[lead.source] || { label: lead.source }).label,
+      sortValue: (lead) => lead.source,
+    },
+    {
+      id: 'eventDate',
+      header: 'Event date',
+      label: 'Event date',
+      hideBelow: 'md',
+      cell: (lead) => (lead.eventDate ? new Date(lead.eventDate).toLocaleDateString() : '-'),
+      sortValue: (lead) => (lead.eventDate ? new Date(lead.eventDate) : null),
+    },
+    {
+      id: 'budget',
+      header: 'Budget',
+      label: 'Budget',
+      align: 'right',
+      cell: (lead) => formatCurrency(lead.budget),
+      sortValue: (lead) => lead.budget,
+    },
+    {
+      id: 'guests',
+      header: 'Guests',
+      label: 'Guests',
+      align: 'right',
+      hideBelow: 'lg',
+      cell: (lead) => lead.guestCount ?? '-',
+      sortValue: (lead) => lead.guestCount,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (lead) => <StatusBadge status={lead.status} />,
+      sortValue: (lead) => lead.status,
+      exportValue: (lead) => lead.status,
+    },
+    {
+      id: 'received',
+      header: 'Received',
+      label: 'Received',
+      hideBelow: 'lg',
+      cell: (lead) => new Date(lead.createdAt).toLocaleDateString(),
+      sortValue: (lead) => new Date(lead.createdAt),
+    },
+  ]
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Leads</h1>
-          <p className="text-muted-foreground">Manage incoming leads and convert to events.</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-4 bg-muted rounded w-1/2 mb-2" />
-                <div className="h-8 bg-muted rounded w-1/3" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="space-y-2">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Leads" />
+        <DataTable data={[]} columns={columns} rowKey={(l) => l.id} isLoading />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Leads</h1>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Leads" />
         <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive flex items-center gap-2">
-              <XCircle className="h-5 w-5" />
-              Error Loading Leads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Failed to load leads. Please try again.</p>
+          <CardContent className="p-3 flex items-center gap-2 text-sm text-destructive">
+            <XCircle className="h-4 w-4" />
+            Failed to load leads. Please try again.
           </CardContent>
         </Card>
       </div>
@@ -209,260 +248,68 @@ export default function OpsLeadsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Leads</h1>
-          <p className="text-muted-foreground">Manage incoming leads and convert to events.</p>
-        </div>
-        <Link href="/ops/events/new">
-          <Button>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Create Direct Booking
+    <div className="space-y-3">
+      <PageHeader
+        title="Leads"
+        actions={
+          <Button size="sm" asChild>
+            <Link href="/ops/events/new">
+              <UserPlus className="h-4 w-4 mr-1" />
+              Create Direct Booking
+            </Link>
           </Button>
-        </Link>
-      </div>
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">New Leads</p>
-                <p className="text-2xl font-bold text-blue-600">{newCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <AlertCircle className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Contacted</p>
-                <p className="text-2xl font-bold text-yellow-600">{contactedCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-yellow-500/10">
-                <Phone className="h-5 w-5 text-yellow-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Qualified</p>
-                <p className="text-2xl font-bold text-purple-600">{qualifiedCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <MessageSquare className="h-5 w-5 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Won (Converted)</p>
-                <p className="text-2xl font-bold text-green-600">{wonCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid>
+        <StatCard label="New Leads" value={newCount} icon={AlertCircle} accent="text-blue-600" />
+        <StatCard label="Contacted" value={contactedCount} icon={Phone} accent="text-yellow-600" />
+        <StatCard label="Qualified" value={qualifiedCount} icon={MessageSquare} accent="text-purple-600" />
+        <StatCard label="Won (Converted)" value={wonCount} icon={CheckCircle} accent="text-green-600" />
+      </StatGrid>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, event type..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="NEW">New</SelectItem>
-            <SelectItem value="CONTACTED">Contacted</SelectItem>
-            <SelectItem value="QUALIFIED">Qualified</SelectItem>
-            <SelectItem value="PROPOSAL_SENT">Proposal Sent</SelectItem>
-            <SelectItem value="NEGOTIATING">Negotiating</SelectItem>
-            <SelectItem value="WON">Won</SelectItem>
-            <SelectItem value="LOST">Lost</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sourceFilter} onValueChange={setSourceFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Source" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Sources</SelectItem>
-            <SelectItem value="INQUIRY">Website Inquiry</SelectItem>
-            <SelectItem value="DIRECT_MESSAGE">Direct Message</SelectItem>
-            <SelectItem value="PHONE">Phone Call</SelectItem>
-            <SelectItem value="EXTERNAL">External</SelectItem>
-            <SelectItem value="REFERRAL">Referral</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Leads List */}
-      {filteredLeads.length === 0 ? (
-        <Card>
-          <CardContent className="py-4 text-center">
-            <UserPlus className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No leads found.</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Leads will appear here when customers submit inquiries.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {filteredLeads.map((lead) => {
-            const status = statusConfig[lead.status] || { label: lead.status, color: 'bg-gray-500/10 text-gray-700' }
-            const source = sourceConfig[lead.source] || { label: lead.source }
-            const plannerName = lead.planner
-              ? `${lead.planner.firstName || ''} ${lead.planner.lastName || ''}`.trim() || lead.planner.email
-              : 'Unknown'
-
-            return (
-              <Card key={lead.id} className="hover:border-primary/50 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <Link
-                          href={`/ops/leads/${lead.id}`}
-                          className="font-medium hover:text-primary hover:underline"
-                        >
-                          {plannerName}
-                        </Link>
-                        <Badge variant="outline" className={status.color}>
-                          {status.label}
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          {source.label}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          <span className="truncate">{lead.planner?.email || 'N/A'}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            {lead.eventDate
-                              ? new Date(lead.eventDate).toLocaleDateString()
-                              : 'No date set'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          <span>{formatCurrency(lead.budget)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          <span>{lead.guestCount ? `${lead.guestCount} guests` : 'N/A'}</span>
-                        </div>
-                      </div>
-
-                      {lead.eventType && (
-                        <p className="text-sm">
-                          <span className="text-muted-foreground">Event Type: </span>
-                          <span className="font-medium">{lead.eventType}</span>
-                        </p>
-                      )}
-
-                      {lead.initialMessage && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 italic">
-                          "{lead.initialMessage}"
-                        </p>
-                      )}
-
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Received: {new Date(lead.createdAt).toLocaleDateString()}
-                        </span>
-                        {lead.respondedAt && (
-                          <span className="text-green-600">
-                            Responded: {new Date(lead.respondedAt).toLocaleDateString()}
-                          </span>
-                        )}
-                        {lead.convertedAt && (
-                          <span className="text-purple-600">
-                            Converted: {new Date(lead.convertedAt).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {lead.status !== 'WON' && lead.status !== 'LOST' && (
-                        <Button
-                          size="sm"
-                          onClick={() => openConvertDialog(lead)}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <ArrowRightCircle className="h-4 w-4 mr-1" />
-                          Convert
-                        </Button>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/ops/leads/${lead.id}`}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                          {lead.vendorProfile && (
-                            <DropdownMenuItem asChild>
-                              <Link href={`/ops/vendors/${lead.vendorProfileId}`}>
-                                View Vendor
-                              </Link>
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          {lead.status !== 'WON' && lead.status !== 'LOST' && (
-                            <DropdownMenuItem onClick={() => openConvertDialog(lead)}>
-                              <ArrowRightCircle className="h-4 w-4 mr-2" />
-                              Convert to Event
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+      <DataTable
+        data={filteredLeads}
+        columns={columns}
+        rowKey={(l) => l.id}
+        search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'Search name, email, event type...' }}
+        filters={
+          <>
+            <FilterSelect
+              label="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={Object.entries(statusConfig).map(([value, c]) => ({ value, label: c.label }))}
+            />
+            <FilterSelect
+              label="Source"
+              value={sourceFilter}
+              onChange={setSourceFilter}
+              options={Object.entries(sourceConfig).map(([value, c]) => ({ value, label: c.label }))}
+            />
+          </>
+        }
+        columnToggle
+        exportFilename="leads"
+        emptyTitle="No leads found"
+        emptyIcon={UserPlus}
+        onRowClick={(lead) => router.push(`/ops/leads/${lead.id}`)}
+        rowActions={(lead) => [
+          { label: 'View details', icon: Eye, href: `/ops/leads/${lead.id}` },
+          {
+            label: 'View vendor',
+            icon: Store,
+            href: `/ops/vendors/${lead.vendorProfileId}`,
+            visible: !!lead.vendorProfile,
+          },
+          {
+            label: 'Convert to event',
+            icon: ArrowRightCircle,
+            onClick: () => openConvertDialog(lead),
+            visible: lead.status !== 'WON' && lead.status !== 'LOST',
+          },
+        ]}
+      />
 
       {/* Convert Lead Dialog */}
       <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
@@ -475,9 +322,9 @@ export default function OpsLeadsPage() {
           </DialogHeader>
 
           {selectedLead && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Lead Summary */}
-              <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+              <div className="p-3 rounded-lg bg-muted/50 space-y-2">
                 <p className="font-medium">
                   {selectedLead.planner
                     ? `${selectedLead.planner.firstName || ''} ${selectedLead.planner.lastName || ''}`.trim() ||
@@ -498,7 +345,7 @@ export default function OpsLeadsPage() {
               </div>
 
               {/* Conversion Fields */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="totalBudget">Total Budget</Label>
                   <Input

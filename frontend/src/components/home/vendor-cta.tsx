@@ -1,13 +1,7 @@
 import Link from 'next/link'
 import { Hand, SketchButton, Vine, skPaper } from '@/components/sketch'
 
-const STATS = [
-  { value: '50,000+', label: 'Active Users' },
-  { value: '5,000+', label: 'Verified Vendors' },
-  { value: '10,000+', label: 'Successful Events' },
-]
-
-/** "For Vendors": invitation for vendors to join, with the platform's headline numbers. */
+/** "For Vendors": invitation for vendors to join. */
 export function VendorCta() {
   return (
     <section className="mx-auto w-full max-w-[1440px] px-4 pt-5 pb-12">
@@ -19,15 +13,7 @@ export function VendorCta() {
           Grow Your Business With Us
         </h2>
         <p className="text-ink-soft mx-auto max-w-[34rem]">Join thousands of vendors reaching couples planning their dream events.</p>
-        <div className="my-[26px] flex flex-wrap justify-center gap-7">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-ink-soft max-w-44 text-center text-[0.92rem]">
-              <b className="font-display text-ink block text-[1.15rem] leading-tight">{s.value}</b>
-              {s.label}
-            </div>
-          ))}
-        </div>
-        <div className="relative z-[1] flex flex-wrap justify-center gap-3">
+        <div className="relative z-[1] mt-7 flex flex-wrap justify-center gap-3">
           <SketchButton asChild>
             <Link href="/register/vendor">Join as Vendor</Link>
           </SketchButton>

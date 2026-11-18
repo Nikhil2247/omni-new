@@ -68,6 +68,7 @@ import { toast } from 'sonner';
 import type { EInvite, EInviteTemplate } from '@/lib/api/types/einvite.types';
 import { einviteService } from '@/lib/api/services/einvite.service';
 import { cn } from '@/lib/utils';
+import { loadCanvasJson } from '@/lib/einvite-fonts';
 
 interface EInviteEditorProps {
   eventId: string;
@@ -86,6 +87,9 @@ interface EditableField {
 }
 
 const FONT_FAMILIES = [
+  { value: 'Fraunces', label: 'Fraunces' },
+  { value: 'Karla', label: 'Karla' },
+  { value: 'Caveat', label: 'Caveat (handwritten)' },
   { value: 'Arial', label: 'Arial' },
   { value: 'Times New Roman', label: 'Times New Roman' },
   { value: 'Georgia', label: 'Georgia' },
@@ -147,19 +151,14 @@ export function EInviteEditor({
 
     fabricRef.current = canvas;
 
-    // Load existing canvas or template
+    // Load existing canvas or template (after the template fonts are ready)
+    let cancelInitialLoad: (() => void) | undefined;
     if (einvite?.canvasJson) {
-      canvas.loadFromJSON(einvite.canvasJson, () => {
-        canvas.renderAll();
-        extractEditableFields(canvas);
-      });
+      cancelInitialLoad = loadCanvasJson(canvas, einvite.canvasJson, () => extractEditableFields(canvas));
     } else if (selectedTemplate) {
       const template = templates.find((t) => t.id === selectedTemplate);
       if (template?.canvasJson) {
-        canvas.loadFromJSON(template.canvasJson, () => {
-          canvas.renderAll();
-          extractEditableFields(canvas);
-        });
+        cancelInitialLoad = loadCanvasJson(canvas, template.canvasJson as Record<string, unknown>, () => extractEditableFields(canvas));
       }
     }
 
@@ -178,6 +177,7 @@ export function EInviteEditor({
     setTimeout(() => saveHistory(), 100);
 
     return () => {
+      cancelInitialLoad?.();
       canvas.dispose();
     };
   }, []);
@@ -188,10 +188,8 @@ export function EInviteEditor({
 
     const template = templates.find((t) => t.id === selectedTemplate);
     if (template?.canvasJson) {
-      fabricRef.current.loadFromJSON(template.canvasJson, () => {
-        fabricRef.current?.renderAll();
-        extractEditableFields(fabricRef.current!);
-      });
+      const canvas = fabricRef.current;
+      return loadCanvasJson(canvas, template.canvasJson as Record<string, unknown>, () => extractEditableFields(canvas));
     }
   }, [selectedTemplate, templates]);
 
@@ -399,9 +397,9 @@ export function EInviteEditor({
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-full bg-gray-100 dark:bg-gray-900">
+      <div className="flex flex-col h-full bg-paper">
         {/* Top Toolbar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-b gap-2">
+        <div className="flex items-center justify-between px-4 py-2 bg-card border-b-2 border-dashed border-line gap-2">
           {/* Left: Panel toggles & File actions */}
           <div className="flex items-center gap-1">
             {/* Desktop panel toggles */}
@@ -431,7 +429,7 @@ export function EInviteEditor({
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-72 p-0 flex flex-col">
-                  <SheetHeader className="p-4 border-b flex-shrink-0">
+                  <SheetHeader className="p-4 border-b-2 border-dashed border-line flex-shrink-0">
                     <SheetTitle>Templates</SheetTitle>
                   </SheetHeader>
                   <div className="flex-1 overflow-hidden">
@@ -455,7 +453,7 @@ export function EInviteEditor({
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-80 p-0 flex flex-col">
-                  <SheetHeader className="p-4 border-b flex-shrink-0">
+                  <SheetHeader className="p-4 border-b-2 border-dashed border-line flex-shrink-0">
                     <SheetTitle>Properties</SheetTitle>
                   </SheetHeader>
                   <div className="flex-1 overflow-hidden">
@@ -520,7 +518,7 @@ export function EInviteEditor({
           </div>
 
           {/* Center: Zoom controls */}
-          <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-1">
+          <div className="flex items-center gap-2 bg-blue-wash text-ink rounded-full px-2 py-1">
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleZoom(zoom - 10)}>
               <ZoomOut className="h-3.5 w-3.5" />
             </Button>
@@ -594,8 +592,8 @@ export function EInviteEditor({
         <div className="flex flex-1 overflow-hidden">
           {/* Left Panel - Templates (Desktop) */}
           {leftPanelOpen && (
-            <div className="hidden lg:flex w-64 flex-shrink-0 border-r bg-white dark:bg-gray-800 flex-col overflow-hidden">
-              <div className="p-3 border-b flex-shrink-0">
+            <div className="hidden lg:flex w-64 flex-shrink-0 border-r-2 border-dashed border-line bg-card flex-col overflow-hidden">
+              <div className="p-3 border-b-2 border-dashed border-line flex-shrink-0">
                 <h3 className="font-semibold text-sm">Templates</h3>
               </div>
               <div className="flex-1 min-h-0">
@@ -612,10 +610,10 @@ export function EInviteEditor({
           <div
             ref={canvasContainerRef}
             className="flex-1 overflow-auto flex items-center justify-center p-4 sm:p-8"
-            style={{ background: 'repeating-conic-gradient(#f5f5f5 0% 25%, #ffffff 0% 50%) 50% / 20px 20px' }}
+            style={{ background: 'radial-gradient(var(--line) 1.3px, transparent 1.5px) 0 0 / 22px 22px, var(--paper)' }}
           >
             <div
-              className="shadow-2xl rounded-lg overflow-hidden bg-white transition-transform"
+              className="border-2 border-ink shadow-[7px_7px_0_var(--blue-wash)] rounded-[4px] overflow-hidden bg-white transition-transform"
               style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'center' }}
             >
               <canvas ref={canvasRef} />
@@ -624,8 +622,8 @@ export function EInviteEditor({
 
           {/* Right Panel - Properties (Desktop) */}
           {rightPanelOpen && (
-            <div className="hidden lg:flex w-72 flex-shrink-0 border-l bg-white dark:bg-gray-800 flex-col overflow-hidden">
-              <div className="p-3 border-b flex items-center justify-between flex-shrink-0">
+            <div className="hidden lg:flex w-72 flex-shrink-0 border-l-2 border-dashed border-line bg-card flex-col overflow-hidden">
+              <div className="p-3 border-b-2 border-dashed border-line flex items-center justify-between flex-shrink-0">
                 <h3 className="font-semibold text-sm">Properties</h3>
                 {selectedObject && (
                   <Badge variant="secondary" className="text-xs">
@@ -650,7 +648,7 @@ export function EInviteEditor({
 
         {/* Bottom Action Bar */}
         {einvite && (
-          <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-t">
+          <div className="flex items-center justify-between px-4 py-2 bg-card border-t-2 border-dashed border-line">
             <div className="flex items-center gap-2">
               <Badge variant={einvite.isPublished ? 'default' : 'secondary'}>
                 {einvite.isPublished ? 'Published' : 'Draft'}
@@ -693,10 +691,10 @@ function TemplatePreview({ canvasJson, colors }: { canvasJson: Record<string, an
     const canvas = new fabric.StaticCanvas(canvasRef.current, {
       width: 90,
       height: 120,
-      backgroundColor: colors?.secondary || '#ffffff',
+      backgroundColor: colors?.secondary || '#f7f6f1',
     });
 
-    canvas.loadFromJSON(canvasJson, () => {
+    const cancel = loadCanvasJson(canvas, canvasJson, () => {
       // Scale down to fit preview
       const scale = 90 / 600; // Original width is 600
       canvas.setZoom(scale);
@@ -706,6 +704,7 @@ function TemplatePreview({ canvasJson, colors }: { canvasJson: Record<string, an
     });
 
     return () => {
+      cancel();
       canvas.dispose();
     };
   }, [canvasJson, colors]);
@@ -722,7 +721,7 @@ function TemplatePreview({ canvasJson, colors }: { canvasJson: Record<string, an
   }
 
   return (
-    <div className="w-full h-full flex items-center justify-center bg-white">
+    <div className="w-full h-full flex items-center justify-center bg-paper">
       <canvas ref={canvasRef} className={cn("transition-opacity", loaded ? "opacity-100" : "opacity-0")} />
     </div>
   );
@@ -756,10 +755,10 @@ function TemplatePanel({
                     key={template.id}
                     onClick={() => onSelectTemplate(template.id)}
                     className={cn(
-                      "relative aspect-[3/4] rounded-lg border-2 overflow-hidden transition-all hover:shadow-md group",
+                      "relative aspect-[3/4] rounded-[12px_16px_12px_16px] border-2 overflow-hidden transition-all hover:-translate-y-0.5 group",
                       selectedTemplate === template.id
-                        ? "border-primary ring-2 ring-primary/20"
-                        : "border-gray-200 hover:border-gray-300"
+                        ? "border-blue ring-2 ring-blue/30"
+                        : "border-line hover:border-ink"
                     )}
                   >
                     <TemplatePreview
@@ -767,13 +766,13 @@ function TemplatePanel({
                       colors={template.defaultColors || undefined}
                     />
                     {/* Template name overlay on hover */}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[rgb(10_14_35/.85)] to-transparent p-1.5 opacity-0 group-hover:opacity-100 max-lg:opacity-100 transition-opacity">
                       <span className="text-[9px] text-white font-medium line-clamp-2 leading-tight">
                         {template.name}
                       </span>
                     </div>
                     {template.isPremium && (
-                      <span className="absolute top-1 right-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-medium shadow-sm">
+                      <span className="absolute top-1 right-1 bg-gold text-ink border border-ink text-[8px] px-1.5 py-0.5 rounded-full font-bold">
                         PRO
                       </span>
                     )}

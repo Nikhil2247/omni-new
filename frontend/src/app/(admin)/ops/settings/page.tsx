@@ -1,17 +1,15 @@
 'use client'
 
+import { PageHeader } from '@/components/dashboard'
 import { User, Bell, Shield } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
 
 export default function OpsSettingsPage() {
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Settings</h1>
-        <p className="text-muted-foreground">Manage your operations account preferences.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Settings" />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         <SettingsCard
           title="Profile"
           description="Update your personal details and account information."

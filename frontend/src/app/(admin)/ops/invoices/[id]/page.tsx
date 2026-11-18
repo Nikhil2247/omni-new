@@ -18,8 +18,7 @@ import {
   Loader2,
   ExternalLink,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -36,6 +35,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
 import { useMarkInvoicePaid } from '@/hooks/queries/use-ops'
+import { PageHeader, DataTable, StatusBadge, type DataColumn } from '@/components/dashboard'
 import { QuotationPreviewDialog } from '@/components/features/ops/quotation-preview-dialog'
 import type { QuotationTemplateData } from '@/components/features/ops/quotation-template'
 
@@ -123,12 +123,12 @@ export default function InvoiceDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10" />
           <Skeleton className="h-8 w-48" />
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <Skeleton className="h-64" />
           <Skeleton className="h-64" />
         </div>
@@ -138,8 +138,8 @@ export default function InvoiceDetailPage() {
 
   if (error || !invoice) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+      <div className="flex flex-col items-center justify-center py-8">
+        <AlertCircle className="h-12 w-12 text-destructive mb-2" />
         <h2 className="text-xl font-semibold mb-2">Invoice Not Found</h2>
         <p className="text-muted-foreground mb-4">The invoice you're looking for doesn't exist or has been deleted.</p>
         <Button variant="outline" onClick={() => router.push('/ops/invoices')}>
@@ -154,100 +154,96 @@ export default function InvoiceDetailPage() {
   const amount = typeof invoice.amount === 'string' ? parseFloat(invoice.amount) : invoice.amount
   const canMarkPaid = invoice.status !== 'PAID' && invoice.status !== 'CANCELLED'
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-semibold">{invoice.invoiceNumber}</h1>
-              <Badge variant="outline" className={statusConfig.color}>
-                {statusConfig.icon}
-                <span className="ml-1">{statusConfig.label}</span>
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">
-              Issued {format(new Date(invoice.issuedAt), 'PPP')}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowPreviewDialog(true)}>
-            <Printer className="mr-2 h-4 w-4" />
-            Print / Download
-          </Button>
-          {canMarkPaid && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Mark as Paid
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Mark Invoice as Paid</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will mark invoice {invoice.invoiceNumber} as paid. This action can be reversed.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleMarkPaid}
-                    className="bg-green-600 hover:bg-green-700"
-                    disabled={markPaid.isPending}
-                  >
-                    {markPaid.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Confirm Payment
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
-      </div>
+  const itemColumns: DataColumn<InvoiceDetail['items'][number]>[] = [
+    { id: 'description', header: 'Description', label: 'Description', cell: (item) => item.description, sortValue: (item) => item.description },
+    { id: 'quantity', header: 'Qty', label: 'Qty', align: 'center', cell: (item) => item.quantity, sortValue: (item) => item.quantity },
+    { id: 'rate', header: 'Rate', label: 'Rate', align: 'right', cell: (item) => formatCurrency(item.rate, invoice.currency), sortValue: (item) => item.rate },
+    { id: 'amount', header: 'Amount', label: 'Amount', align: 'right', cell: (item) => <span className="font-medium">{formatCurrency(item.amount, invoice.currency)}</span>, sortValue: (item) => item.amount },
+  ]
 
-      <div className="grid gap-4 md:grid-cols-2">
+  return (
+    <div className="space-y-3">
+      <PageHeader
+        title={invoice.invoiceNumber}
+        leading={
+          <Button variant="ghost" size="icon" className="size-7" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        }
+        actions={
+          <>
+            <StatusBadge status={invoice.status}>{statusConfig.label}</StatusBadge>
+            <Button variant="outline" size="sm" onClick={() => setShowPreviewDialog(true)}>
+              <Printer className="mr-1 h-4 w-4" />
+              Print / Download
+            </Button>
+            {canMarkPaid && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    <CreditCard className="mr-1 h-4 w-4" />
+                    Mark as Paid
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Mark Invoice as Paid</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will mark invoice {invoice.invoiceNumber} as paid. This action can be reversed.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleMarkPaid}
+                      className="bg-green-600 hover:bg-green-700"
+                      disabled={markPaid.isPending}
+                    >
+                      {markPaid.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Confirm Payment
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </>
+        }
+      />
+
+      <div className="grid gap-3 md:grid-cols-2">
         {/* Invoice Details */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="p-3 pb-0">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Receipt className="h-5 w-5" />
               Invoice Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center py-3 border-b">
+          <CardContent className="space-y-1 p-3">
+            <div className="flex justify-between items-center py-2 border-b">
               <span className="text-muted-foreground">Amount</span>
-              <span className="text-2xl font-bold text-green-600">{formatCurrency(amount, invoice.currency)}</span>
+              <span className="text-lg font-bold text-green-600">{formatCurrency(amount, invoice.currency)}</span>
             </div>
-            <div className="flex justify-between items-center py-2">
+            <div className="flex justify-between items-center py-1">
               <span className="text-muted-foreground">Invoice Number</span>
               <span className="font-medium">{invoice.invoiceNumber}</span>
             </div>
-            <div className="flex justify-between items-center py-2">
+            <div className="flex justify-between items-center py-1">
               <span className="text-muted-foreground">Status</span>
-              <Badge variant="outline" className={statusConfig.color}>
-                {statusConfig.label}
-              </Badge>
+              <StatusBadge status={invoice.status}>{statusConfig.label}</StatusBadge>
             </div>
-            <div className="flex justify-between items-center py-2">
+            <div className="flex justify-between items-center py-1">
               <span className="text-muted-foreground">Issued Date</span>
               <span className="font-medium">{format(new Date(invoice.issuedAt), 'PPP')}</span>
             </div>
             {invoice.dueDate && (
-              <div className="flex justify-between items-center py-2">
+              <div className="flex justify-between items-center py-1">
                 <span className="text-muted-foreground">Due Date</span>
                 <span className="font-medium">{format(new Date(invoice.dueDate), 'PPP')}</span>
               </div>
             )}
             {invoice.paidAt && (
-              <div className="flex justify-between items-center py-2">
+              <div className="flex justify-between items-center py-1">
                 <span className="text-muted-foreground">Paid Date</span>
                 <span className="font-medium text-green-600">{format(new Date(invoice.paidAt), 'PPP')}</span>
               </div>
@@ -257,18 +253,18 @@ export default function InvoiceDetailPage() {
 
         {/* Vendor & Event Info */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="p-3 pb-0">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Building className="h-5 w-5" />
               Vendor & Event
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-1 p-3">
             {invoice.vendorAgreement && (
               <>
-                <div className="py-3 border-b">
+                <div className="py-2 border-b">
                   <p className="text-sm text-muted-foreground mb-1">Vendor</p>
-                  <p className="font-semibold text-lg">{invoice.vendorAgreement.vendorName}</p>
+                  <p className="font-semibold">{invoice.vendorAgreement.vendorName}</p>
                   <p className="text-sm text-muted-foreground">
                     Agreement: {formatCurrency(invoice.vendorAgreement.agreedAmount)}
                   </p>
@@ -280,7 +276,7 @@ export default function InvoiceDetailPage() {
                       <p className="text-sm text-muted-foreground mb-1">Event</p>
                       <Link
                         href={`/ops/events/${invoice.vendorAgreement.activeEvent.id}`}
-                        className="font-semibold text-lg hover:text-primary flex items-center gap-1"
+                        className="font-semibold hover:text-primary flex items-center gap-1"
                       >
                         {invoice.vendorAgreement.activeEvent.clientName}
                         <ExternalLink className="h-4 w-4" />
@@ -311,39 +307,19 @@ export default function InvoiceDetailPage() {
 
       {/* Line Items */}
       {invoice.items && invoice.items.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Line Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-sm text-muted-foreground">
-                  <th className="text-left py-2">Description</th>
-                  <th className="text-center py-2">Qty</th>
-                  <th className="text-right py-2">Rate</th>
-                  <th className="text-right py-2">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="py-3">{item.description}</td>
-                    <td className="text-center py-3">{item.quantity}</td>
-                    <td className="text-right py-3">{formatCurrency(item.rate, invoice.currency)}</td>
-                    <td className="text-right py-3 font-medium">{formatCurrency(item.amount, invoice.currency)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold">
-                  <td colSpan={3} className="text-right py-3">Total</td>
-                  <td className="text-right py-3">{formatCurrency(amount, invoice.currency)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </CardContent>
-        </Card>
+        <div className="space-y-1.5">
+          <DataTable
+            data={invoice.items}
+            rowKey={(item) => `${item.description}-${item.quantity}-${item.rate}`}
+            defaultPageSize={10}
+            exportFilename="invoice-items"
+            columns={itemColumns}
+          />
+          <div className="flex justify-end gap-3 px-3 text-sm font-semibold">
+            <span>Total</span>
+            <span>{formatCurrency(amount, invoice.currency)}</span>
+          </div>
+        </div>
       )}
 
       {/* Preview Dialog */}

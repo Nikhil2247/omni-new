@@ -1,56 +1,36 @@
 'use client'
 
 import { useMarketingCategories } from '@/hooks/queries/use-marketing'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
+
+type Category = NonNullable<ReturnType<typeof useMarketingCategories>['data']>[number]
+
+const columns: DataColumn<Category>[] = [
+  { id: 'name', header: 'Name', cell: (c) => <span className="font-medium">{c.name}</span>, sortValue: (c) => c.name },
+  { id: 'slug', header: 'Slug', cell: (c) => c.slug || '—', sortValue: (c) => c.slug },
+  {
+    id: 'status',
+    header: 'Status',
+    cell: (c) => <StatusBadge tone={c.isActive ? 'success' : 'neutral'}>{c.isActive ? 'Active' : 'Inactive'}</StatusBadge>,
+    sortValue: (c) => (c.isActive ? 1 : 0),
+    exportValue: (c) => (c.isActive ? 'Active' : 'Inactive'),
+  },
+]
 
 export default function MarketingCategoriesPage() {
   const { data, isLoading } = useMarketingCategories()
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Categories</h1>
-        <p className="text-muted-foreground">Marketing taxonomy and content grouping.</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Category list</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-40" />
-          ) : data?.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>{category.slug || '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant={category.isActive ? 'default' : 'secondary'}>
-                        {category.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-sm text-muted-foreground">No categories available.</p>
-          )}
-        </CardContent>
-      </Card>
+    <div className="space-y-3">
+      <PageHeader title="Categories" />
+      <DataTable
+        data={data}
+        columns={columns}
+        rowKey={(c) => c.id}
+        isLoading={isLoading}
+        exportFilename="categories"
+        emptyTitle="No categories available"
+      />
     </div>
   )
 }

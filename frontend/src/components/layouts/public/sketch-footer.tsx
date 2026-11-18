@@ -10,6 +10,8 @@ const columns = [
       { href: '/discover', label: 'Discover' },
       { href: '/planning-tools', label: 'Planning Tools' },
       { href: '/pricing', label: 'Pricing' },
+      { href: '/quote', label: 'Get a Quote' },
+      { href: '/assistant', label: 'AI Assistant' },
     ],
   },
   {

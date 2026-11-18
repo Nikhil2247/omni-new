@@ -1,5 +1,6 @@
 'use client'
 
+import { PageHeader } from '@/components/dashboard'
 import { useParams } from 'next/navigation'
 import { OpsTasksList } from '@/components/features/ops'
 
@@ -9,21 +10,15 @@ export default function OpsEventTasksPage() {
 
   if (!eventId) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Operational Tasks</h1>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Operational Tasks" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Operational Tasks</h1>
-        <p className="text-muted-foreground">Manage tasks for event execution</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Operational Tasks" />
       <OpsTasksList activeEventId={eventId} />
     </div>
   )

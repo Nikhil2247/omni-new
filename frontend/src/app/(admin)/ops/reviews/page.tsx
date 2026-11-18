@@ -1,13 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
 import { format } from 'date-fns'
 import {
   Star,
-  Search,
-  Calendar,
-  User,
   MessageSquare,
   CheckCircle,
   AlertCircle,
@@ -15,17 +11,19 @@ import {
   ThumbsUp,
   ThumbsDown,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  ConfirmDialog,
+  DataTable,
+  FilterSelect,
+  PageHeader,
+  StatCard,
+  StatGrid,
+  StatusBadge,
+  TwoLineCell,
+  UserCell,
+  type DataColumn,
+} from '@/components/dashboard'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -33,19 +31,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useOpsActiveEvents } from '@/hooks/queries/use-ops'
 
 const RATING_OPTIONS = [
-  { value: 'all', label: 'All Ratings' },
   { value: '5', label: '5 Stars' },
   { value: '4', label: '4 Stars' },
   { value: '3', label: '3 Stars' },
@@ -111,6 +99,7 @@ export default function OpsReviewsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedReview, setSelectedReview] = useState<typeof mockReviews[0] | null>(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false)
 
   // Fetch completed events
   const { data: eventsData, isLoading } = useOpsActiveEvents()
@@ -157,229 +146,125 @@ export default function OpsReviewsPage() {
     setShowDetailsDialog(true)
   }
 
+  type Review = (typeof mockReviews)[0]
+
+  const reviewColumns: DataColumn<Review>[] = [
+    {
+      id: 'event',
+      header: 'Event',
+      label: 'Event',
+      cell: (r) => <TwoLineCell title={r.eventName} subtitle={r.vendorName} />,
+      sortValue: (r) => r.eventName,
+      exportValue: (r) => r.eventName,
+    },
+    {
+      id: 'client',
+      header: 'Client',
+      label: 'Client',
+      cell: (r) => <UserCell name={r.clientName} />,
+      sortValue: (r) => r.clientName,
+      exportValue: (r) => r.clientName,
+    },
+    {
+      id: 'vendor',
+      header: 'Vendor',
+      label: 'Vendor',
+      hideBelow: 'md',
+      cell: (r) => r.vendorName,
+      sortValue: (r) => r.vendorName,
+    },
+    {
+      id: 'rating',
+      header: 'Rating',
+      label: 'Rating',
+      cell: (r) => <StarRating rating={r.rating} />,
+      sortValue: (r) => r.rating,
+      exportValue: (r) => r.rating,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (r) => <StatusBadge status={r.status} />,
+      sortValue: (r) => r.status,
+      exportValue: (r) => r.status,
+    },
+    {
+      id: 'date',
+      header: 'Date',
+      label: 'Date',
+      hideBelow: 'md',
+      cell: (r) => format(new Date(r.createdAt), 'MMM d, yyyy'),
+      sortValue: (r) => new Date(r.createdAt),
+    },
+  ]
+
+  const eventColumns: DataColumn<NonNullable<typeof eventsData>[number]>[] = [
+    {
+      id: 'client',
+      header: 'Event',
+      label: 'Event',
+      cell: (e) => <TwoLineCell title={e.clientName} subtitle={e.eventType} />,
+      sortValue: (e) => e.clientName,
+      exportValue: (e) => e.clientName,
+    },
+    {
+      id: 'date',
+      header: 'Event date',
+      label: 'Event date',
+      cell: (e) => (e.eventDate ? format(new Date(e.eventDate), 'MMM d, yyyy') : 'Date TBD'),
+      sortValue: (e) => (e.eventDate ? new Date(e.eventDate) : null),
+    },
+  ]
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Reviews & Feedback</h1>
-          <p className="text-muted-foreground">
-            Manage post-event reviews and client feedback
-          </p>
-        </div>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Reviews & Feedback" />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
-                <CheckCircle className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.completedEvents}</p>
-                <p className="text-xs text-muted-foreground">Completed Events</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                <MessageSquare className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">Total Reviews</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
-                <Star className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.avgRating.toFixed(1)}</p>
-                <p className="text-xs text-muted-foreground">Avg Rating</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                <ThumbsUp className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.positive}</p>
-                <p className="text-xs text-muted-foreground">Positive (4-5★)</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.pending}</p>
-                <p className="text-xs text-muted-foreground">Pending Review</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by event, client, or vendor..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={ratingFilter} onValueChange={setRatingFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filter by rating" />
-              </SelectTrigger>
-              <SelectContent>
-                {RATING_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <StatGrid className="lg:grid-cols-5">
+        <StatCard label="Completed Events" value={stats.completedEvents} icon={CheckCircle} accent="text-purple-600" />
+        <StatCard label="Total Reviews" value={stats.total} icon={MessageSquare} accent="text-blue-600" />
+        <StatCard label="Avg Rating" value={stats.avgRating.toFixed(1)} icon={Star} accent="text-yellow-600" />
+        <StatCard label="Positive (4-5★)" value={stats.positive} icon={ThumbsUp} accent="text-green-600" />
+        <StatCard label="Pending Review" value={stats.pending} icon={AlertCircle} accent="text-orange-600" />
+      </StatGrid>
 
       {/* Completed Events Pending Review */}
-      {completedEvents.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Completed Events Awaiting Review</CardTitle>
-            <CardDescription>Events that have been completed but need client feedback</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : completedEvents.length === 0 ? (
-              <p className="text-center py-4 text-muted-foreground">No completed events yet</p>
-            ) : (
-              <div className="space-y-3">
-                {completedEvents.slice(0, 5).map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{event.clientName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {event.eventType} • {event.eventDate ? format(new Date(event.eventDate), 'MMM d, yyyy') : 'Date TBD'}
-                        </p>
-                      </div>
-                    </div>
-                    <Link href={`/ops/events/${event.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Event
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {(completedEvents.length > 0 || isLoading) && (
+        <div className="space-y-1.5">
+          <h2 className="text-sm font-semibold">Completed Events Awaiting Review</h2>
+          <DataTable
+            data={completedEvents}
+            columns={eventColumns}
+            rowKey={(e) => e.id}
+            isLoading={isLoading}
+            defaultPageSize={10}
+            pageSizeOptions={[10, 20]}
+            maxHeight="40dvh"
+            rowActions={(e) => [{ label: 'View event', icon: Eye, href: `/ops/events/${e.id}` }]}
+          />
+        </div>
       )}
 
       {/* Reviews Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">All Reviews</CardTitle>
-          <CardDescription>Client feedback and ratings</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {filteredReviews.length === 0 ? (
-            <div className="p-4 text-center">
-              <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">No reviews found</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Event</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredReviews.map((review) => (
-                  <TableRow key={review.id}>
-                    <TableCell className="font-medium">{review.eventName}</TableCell>
-                    <TableCell>{review.clientName}</TableCell>
-                    <TableCell>{review.vendorName}</TableCell>
-                    <TableCell>
-                      <StarRating rating={review.rating} />
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          review.status === 'APPROVED'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }
-                      >
-                        {review.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(review.createdAt), 'MMM d, yyyy')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openDetailsDialog(review)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable
+        data={filteredReviews}
+        columns={reviewColumns}
+        rowKey={(r) => r.id}
+        search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search event, client, vendor...' }}
+        filters={
+          <FilterSelect
+            label="Rating"
+            value={ratingFilter}
+            onChange={setRatingFilter}
+            options={RATING_OPTIONS}
+          />
+        }
+        exportFilename="reviews"
+        emptyTitle="No reviews found"
+        emptyIcon={MessageSquare}
+        rowActions={(r) => [{ label: 'View review', icon: Eye, onClick: () => openDetailsDialog(r) }]}
+      />
 
       {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
@@ -389,8 +274,8 @@ export default function OpsReviewsPage() {
             <DialogDescription>{selectedReview?.eventName}</DialogDescription>
           </DialogHeader>
           {selectedReview && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Client</p>
                   <p className="font-medium">{selectedReview.clientName}</p>
@@ -405,32 +290,23 @@ export default function OpsReviewsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge
-                    variant="outline"
-                    className={
-                      selectedReview.status === 'APPROVED'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }
-                  >
-                    {selectedReview.status}
-                  </Badge>
+                  <StatusBadge status={selectedReview.status} />
                 </div>
               </div>
 
-              <div className="border-t pt-4">
+              <div className="border-t pt-3">
                 <p className="text-sm text-muted-foreground mb-2">Review</p>
                 <p className="text-sm">{selectedReview.review}</p>
               </div>
 
-              <div className="border-t pt-4 flex gap-2">
+              <div className="border-t pt-3 flex gap-2">
                 {selectedReview.status === 'PENDING' && (
                   <>
                     <Button className="flex-1" variant="default">
                       <ThumbsUp className="mr-2 h-4 w-4" />
                       Approve
                     </Button>
-                    <Button className="flex-1" variant="outline">
+                    <Button className="flex-1" variant="outline" onClick={() => setShowRejectConfirm(true)}>
                       <ThumbsDown className="mr-2 h-4 w-4" />
                       Reject
                     </Button>
@@ -447,6 +323,15 @@ export default function OpsReviewsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={showRejectConfirm}
+        onOpenChange={setShowRejectConfirm}
+        title="Reject this review?"
+        description="The review will not be shown to users."
+        confirmLabel="Reject"
+        onConfirm={() => setShowDetailsDialog(false)}
+      />
     </div>
   )
 }

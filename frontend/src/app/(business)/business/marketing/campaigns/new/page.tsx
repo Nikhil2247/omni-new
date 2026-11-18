@@ -208,18 +208,17 @@ export default function NewCampaignPage() {
       <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
         {/* Header */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container py-4">
+          <div className="container py-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Link
                   href="/business/marketing/campaigns"
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-lg border bg-background hover:bg-muted transition-colors"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg border bg-background hover:bg-muted transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
                 <div>
-                  <h1 className="text-xl font-semibold">Create Campaign</h1>
-                  <p className="text-sm text-muted-foreground">Set up a new advertising campaign</p>
+                  <h1 className="text-base font-semibold">Create Campaign</h1>
                 </div>
               </div>
               <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-muted/50">
@@ -233,16 +232,16 @@ export default function NewCampaignPage() {
           </div>
         </div>
 
-      <div className="container py-4">
+      <div className="container py-2">
         {/* Progress Steps */}
-        <div className="max-w-3xl mx-auto mb-10">
+        <div className="max-w-3xl mx-auto mb-4">
           <div className="flex items-center justify-between">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center flex-1">
                 <div className="flex items-center gap-3">
                   <div
                     className={cn(
-                      'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all',
+                      'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all',
                       currentStep > step.id
                         ? 'bg-primary text-primary-foreground'
                         : currentStep === step.id
@@ -278,11 +277,10 @@ export default function NewCampaignPage() {
             {/* Step 1: Campaign Type */}
             {currentStep === 1 && (
               <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-4">
-                  <h2 className="text-base font-bold mb-2">What type of campaign?</h2>
-                  <p className="text-muted-foreground">Choose how you want to promote your business</p>
+                <div className="text-center mb-3">
+                  <h2 className="text-base font-bold mb-1">What type of campaign?</h2>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   {campaignTypes.map((type) => {
                     const Icon = type.icon;
                     const isSelected = selectedType === type.id;
@@ -323,11 +321,10 @@ export default function NewCampaignPage() {
             {/* Step 2: Details */}
             {currentStep === 2 && (
               <div className="max-w-2xl mx-auto">
-                <div className="text-center mb-4">
+                <div className="text-center mb-3">
                   <h2 className="text-base font-bold mb-2">Campaign Details</h2>
-                  <p className="text-muted-foreground">Give your campaign a name and description</p>
                 </div>
-                <div className="bg-background rounded-xl border p-4 space-y-4">
+                <div className="bg-background rounded-xl border p-4 space-y-3">
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 mb-4">
                     {selectedTypeConfig && (
                       <>
@@ -384,17 +381,16 @@ export default function NewCampaignPage() {
             {/* Step 3: Budget & Schedule */}
             {currentStep === 3 && (
               <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-4">
+                <div className="text-center mb-3">
                   <h2 className="text-base font-bold mb-2">Budget & Schedule</h2>
-                  <p className="text-muted-foreground">Set your spending limits and campaign duration</p>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-5">
+                <div className="grid gap-3 lg:grid-cols-5">
                   {/* Main Form */}
-                  <div className="lg:col-span-3 bg-background rounded-xl border p-4 space-y-4">
+                  <div className="lg:col-span-3 bg-background rounded-xl border p-4 space-y-3">
                     <div>
                       <h3 className="font-semibold mb-4">Budget</h3>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <FormField
                           control={form.control}
                           name="dailyBudget"
@@ -453,7 +449,7 @@ export default function NewCampaignPage() {
 
                     <div>
                       <h3 className="font-semibold mb-4">Schedule</h3>
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <FormField
                           control={form.control}
                           name="startDate"
@@ -590,7 +586,7 @@ export default function NewCampaignPage() {
             )}
 
             {/* Navigation */}
-            <div className="max-w-4xl mx-auto mt-8">
+            <div className="max-w-4xl mx-auto mt-4">
               <div className="flex items-center justify-between p-4 rounded-xl bg-background border">
                 <Button
                   type="button"

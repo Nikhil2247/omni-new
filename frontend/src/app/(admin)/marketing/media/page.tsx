@@ -5,8 +5,20 @@ import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
 import { useMarketingMedia } from '@/hooks/queries/use-marketing'
 import { useUmami } from '@/hooks/use-umami'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { DataTable, PageHeader, TwoLineCell, type DataColumn } from '@/components/dashboard'
+
+type Asset = NonNullable<ReturnType<typeof useMarketingMedia>['data']>[number]
+
+const columns: DataColumn<Asset>[] = [
+  {
+    id: 'name',
+    header: 'Name',
+    cell: (a) => <TwoLineCell title={a.name || 'Untitled asset'} subtitle={a.url || 'No URL provided'} />,
+    sortValue: (a) => a.name,
+    exportValue: (a) => a.name,
+  },
+  { id: 'type', header: 'Type', cell: (a) => a.type || 'Unknown type', sortValue: (a) => a.type },
+]
 
 export default function MarketingMediaPage() {
   const { data, isLoading } = useMarketingMedia()
@@ -18,34 +30,16 @@ export default function MarketingMediaPage() {
 
   return (
     <RoleGuard allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]} redirectOnFail={true}>
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Media library</h1>
-        <p className="text-muted-foreground">Manage uploaded images and media assets.</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Assets</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-40" />
-          ) : data?.length ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {data.map((asset) => (
-                <div key={asset.id} className="rounded-md border p-4 text-sm">
-                  <p className="font-medium">{asset.name || 'Untitled asset'}</p>
-                  <p className="text-xs text-muted-foreground">{asset.type || 'Unknown type'}</p>
-                  <p className="text-xs text-muted-foreground">{asset.url || 'No URL provided'}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No media assets available.</p>
-          )}
-        </CardContent>
-      </Card>
+    <div className="space-y-3">
+      <PageHeader title="Media library" />
+      <DataTable
+        data={data}
+        columns={columns}
+        rowKey={(a) => a.id}
+        isLoading={isLoading}
+        exportFilename="media"
+        emptyTitle="No media assets available"
+      />
     </div>
     </RoleGuard>
   )

@@ -1,24 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { useOpsKycList, useStartKycReview, useApproveKyc, useRejectKyc } from '@/hooks/queries/use-ops'
 import { useOpsKycRealtime } from '@/hooks/use-ops-kyc-realtime'
 import { useAuthStore } from '@/store/auth-store'
 import { useUmami } from '@/hooks/use-umami'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -28,19 +17,20 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+  PageHeader,
+  DataTable,
+  FilterSelect,
+  StatusBadge,
+  TwoLineCell,
+  StatCard,
+  StatGrid,
+  type DataColumn,
+} from '@/components/dashboard'
 import {
   ShieldCheck,
   ShieldX,
   ShieldAlert,
   Clock,
-  Search,
   Eye,
   CheckCircle,
   XCircle,
@@ -58,13 +48,13 @@ import {
 } from 'lucide-react'
 import type { OpsKycRecord, OpsKycDocument } from '@/lib/api/types/ops.types'
 
-const kycStatusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  NOT_STARTED: { label: 'Not Started', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20', icon: Clock },
-  PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: Clock },
-  SUBMITTED: { label: 'Submitted', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20', icon: FileCheck },
-  UNDER_REVIEW: { label: 'Under Review', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20', icon: Eye },
-  APPROVED: { label: 'Approved', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: ShieldCheck },
-  REJECTED: { label: 'Rejected', color: 'bg-red-500/10 text-red-700 border-red-500/20', icon: ShieldX },
+const kycStatusConfig: Record<string, { label: string; icon: React.ElementType }> = {
+  NOT_STARTED: { label: 'Not Started', icon: Clock },
+  PENDING: { label: 'Pending', icon: Clock },
+  SUBMITTED: { label: 'Submitted', icon: FileCheck },
+  UNDER_REVIEW: { label: 'Under Review', icon: Eye },
+  APPROVED: { label: 'Approved', icon: ShieldCheck },
+  REJECTED: { label: 'Rejected', icon: ShieldX },
 }
 
 const docTypeConfig: Record<string, { label: string; icon: React.ElementType; required: boolean }> = {
@@ -76,10 +66,10 @@ const docTypeConfig: Record<string, { label: string; icon: React.ElementType; re
   OTHER: { label: 'Other', icon: FileText, required: false },
 }
 
-const docStatusConfig: Record<string, { label: string; color: string }> = {
-  PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  VERIFIED: { label: 'Verified', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  REJECTED: { label: 'Rejected', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
+const docStatusConfig: Record<string, { label: string }> = {
+  PENDING: { label: 'Pending' },
+  VERIFIED: { label: 'Verified' },
+  REJECTED: { label: 'Rejected' },
 }
 
 export default function OpsKycPage() {
@@ -104,6 +94,7 @@ export default function OpsKycPage() {
   const [rejectReason, setRejectReason] = useState('')
   const [documentViewerOpen, setDocumentViewerOpen] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<OpsKycDocument | null>(null)
+  const [docsKyc, setDocsKyc] = useState<OpsKycRecord | null>(null)
 
   const filteredKyc = kycList?.filter((kyc) => {
     const matchesSearch = !searchTerm ||
@@ -155,38 +146,128 @@ export default function OpsKycPage() {
   const underReviewCount = kycList?.filter(k => k.status === 'UNDER_REVIEW').length || 0
   const approvedCount = kycList?.filter(k => k.status === 'APPROVED').length || 0
 
+  const columns: DataColumn<OpsKycRecord>[] = [
+    {
+      id: 'vendor',
+      header: 'Vendor',
+      label: 'Vendor',
+      cell: (kyc) => (
+        <TwoLineCell
+          title={kyc.vendorProfile?.businessName || kyc.businessName || 'Unnamed Vendor'}
+          subtitle={`KYC ID: ${kyc.id.substring(0, 12)}...`}
+        />
+      ),
+      sortValue: (kyc) => kyc.vendorProfile?.businessName || kyc.businessName,
+      exportValue: (kyc) => kyc.vendorProfile?.businessName || kyc.businessName,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (kyc) => (
+        <StatusBadge status={kyc.status}>{(kycStatusConfig[kyc.status] || kycStatusConfig.PENDING).label}</StatusBadge>
+      ),
+      sortValue: (kyc) => kyc.status,
+      exportValue: (kyc) => kyc.status,
+    },
+    {
+      id: 'type',
+      header: 'Business type',
+      label: 'Business type',
+      hideBelow: 'md',
+      cell: (kyc) => kyc.businessType || '-',
+      sortValue: (kyc) => kyc.businessType,
+    },
+    {
+      id: 'registration',
+      header: 'Registration No.',
+      label: 'Registration No.',
+      hideBelow: 'lg',
+      cell: (kyc) => kyc.registrationNumber || '-',
+      sortValue: (kyc) => kyc.registrationNumber,
+    },
+    {
+      id: 'taxId',
+      header: 'Tax ID',
+      label: 'Tax ID',
+      hideBelow: 'xl',
+      cell: (kyc) => kyc.taxId || '-',
+      sortValue: (kyc) => kyc.taxId,
+    },
+    {
+      id: 'documents',
+      header: 'Docs',
+      label: 'Docs',
+      align: 'right',
+      cell: (kyc) => kyc.documents?.length ?? 0,
+      sortValue: (kyc) => kyc.documents?.length ?? 0,
+    },
+    {
+      id: 'submitted',
+      header: 'Submitted',
+      label: 'Submitted',
+      hideBelow: 'md',
+      cell: (kyc) => (kyc.submittedAt ? new Date(kyc.submittedAt).toLocaleDateString() : '-'),
+      sortValue: (kyc) => (kyc.submittedAt ? new Date(kyc.submittedAt) : null),
+    },
+  ]
+
+  const documentColumns: DataColumn<OpsKycDocument>[] = [
+    {
+      id: 'type',
+      header: 'Document Type',
+      label: 'Document Type',
+      cell: (doc) => {
+        const docType = docTypeConfig[doc.type] || docTypeConfig.OTHER
+        const DocIcon = docType.icon
+        return (
+          <div className="flex items-center gap-2">
+            <DocIcon className="h-4 w-4 text-muted-foreground" />
+            <span>{docType.label}</span>
+            {docType.required && <StatusBadge tone="neutral">Required</StatusBadge>}
+          </div>
+        )
+      },
+      sortValue: (doc) => doc.type,
+      exportValue: (doc) => doc.type,
+    },
+    {
+      id: 'fileName',
+      header: 'File Name',
+      label: 'File Name',
+      cell: (doc) => <span className="text-muted-foreground">{doc.fileName}</span>,
+      sortValue: (doc) => doc.fileName,
+      exportValue: (doc) => doc.fileName,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (doc) => (
+        <StatusBadge status={doc.status}>{(docStatusConfig[doc.status] || docStatusConfig.PENDING).label}</StatusBadge>
+      ),
+      sortValue: (doc) => doc.status,
+      exportValue: (doc) => doc.status,
+    },
+  ]
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">KYC Verification</h1>
-          <p className="text-muted-foreground">Review and verify vendor KYC documents.</p>
-        </div>
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="KYC Verification" />
+        <DataTable data={[]} columns={columns} rowKey={(k) => k.id} isLoading />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">KYC Verification</h1>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="KYC Verification" />
         <Card className="border-destructive">
-          <CardContent className="py-4 text-center">
-            <AlertCircle className="mx-auto h-10 w-10 text-destructive mb-3" />
-            <p className="text-destructive font-medium">Failed to load KYC records</p>
-            <p className="text-sm text-muted-foreground mt-1">Please try refreshing the page.</p>
+          <CardContent className="flex items-center gap-2 p-3 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            Failed to load KYC records. Please try refreshing the page.
           </CardContent>
         </Card>
       </div>
@@ -194,325 +275,99 @@ export default function OpsKycPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">KYC Verification</h1>
-          <p className="text-muted-foreground">Review and verify vendor KYC documents.</p>
-        </div>
-        {isConnected && (
-          <div className="flex items-center gap-1.5 text-xs text-green-600">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            Live updates
-          </div>
-        )}
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="KYC Verification"
+        actions={
+          isConnected ? (
+            <div className="flex items-center gap-1.5 text-xs text-green-600">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              Live updates
+            </div>
+          ) : undefined
+        }
+      />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending Review</p>
-                <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-yellow-500/10">
-                <ShieldAlert className="h-5 w-5 text-yellow-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Under Review</p>
-                <p className="text-2xl font-bold text-purple-600">{underReviewCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <Eye className="h-5 w-5 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Approved</p>
-                <p className="text-2xl font-bold text-green-600">{approvedCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <ShieldCheck className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{kycList?.length || 0}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Store className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid>
+        <StatCard label="Pending Review" value={pendingCount} icon={ShieldAlert} accent="text-yellow-600" />
+        <StatCard label="Under Review" value={underReviewCount} icon={Eye} accent="text-purple-600" />
+        <StatCard label="Approved" value={approvedCount} icon={ShieldCheck} accent="text-green-600" />
+        <StatCard label="Total" value={kycList?.length || 0} icon={Store} accent="text-blue-600" />
+      </StatGrid>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by business name or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+      <DataTable
+        data={filteredKyc}
+        columns={columns}
+        rowKey={(kyc) => kyc.id}
+        search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'Search business name or ID...' }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={['PENDING', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'].map((v) => ({
+              value: v,
+              label: kycStatusConfig[v].label,
+            }))}
           />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="SUBMITTED">Submitted</SelectItem>
-            <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
-            <SelectItem value="APPROVED">Approved</SelectItem>
-            <SelectItem value="REJECTED">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        }
+        columnToggle
+        exportFilename="kyc-records"
+        emptyTitle="No KYC records found"
+        emptyIcon={ShieldAlert}
+        rowActions={(kyc) => [
+          { label: 'View details', icon: Eye, href: `/ops/kyc/${kyc.id}` },
+          { label: 'Documents', icon: FileText, onClick: () => setDocsKyc(kyc) },
+          {
+            label: 'Start review',
+            icon: PlayCircle,
+            onClick: () => handleStartReview(kyc.id),
+            disabled: startReview.isPending,
+            visible: kyc.status === 'PENDING' || kyc.status === 'SUBMITTED',
+          },
+          {
+            label: 'Approve',
+            icon: CheckCircle,
+            onClick: () => handleApprove(kyc.id),
+            disabled: approveKyc.isPending,
+            visible: kyc.status === 'UNDER_REVIEW',
+          },
+          {
+            label: 'Reject',
+            icon: XCircle,
+            danger: true,
+            onClick: () => openRejectDialog(kyc),
+            visible: kyc.status === 'UNDER_REVIEW',
+          },
+        ]}
+      />
 
-      {/* KYC List */}
-      {filteredKyc.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <ShieldAlert className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-muted-foreground font-medium">No KYC records found</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {searchTerm || statusFilter !== 'all' ? 'Try adjusting your filters.' : 'KYC submissions will appear here.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredKyc.map((kyc) => {
-            const statusConfig = kycStatusConfig[kyc.status] || kycStatusConfig.PENDING
-            const StatusIcon = statusConfig.icon
-
-            return (
-              <Card key={kyc.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Store className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">
-                          {kyc.vendorProfile?.businessName || kyc.businessName || 'Unnamed Vendor'}
-                        </CardTitle>
-                        <CardDescription>
-                          KYC ID: {kyc.id.substring(0, 12)}...
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className={statusConfig.color}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
-                      {statusConfig.label}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="details" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="details">Business Details</TabsTrigger>
-                      <TabsTrigger value="documents">
-                        Documents
-                        {kyc.documents && kyc.documents.length > 0 && (
-                          <Badge variant="secondary" className="ml-2 h-5 px-1.5">
-                            {kyc.documents.length}
-                          </Badge>
-                        )}
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="details" className="mt-4">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Business Type</p>
-                          <p className="font-medium">{kyc.businessType || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Registration No.</p>
-                          <p className="font-medium">{kyc.registrationNumber || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Tax ID</p>
-                          <p className="font-medium">{kyc.taxId || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Submitted</p>
-                          <p className="font-medium">
-                            {kyc.submittedAt ? new Date(kyc.submittedAt).toLocaleDateString() : '-'}
-                          </p>
-                        </div>
-                        {kyc.businessAddress && (
-                          <div className="col-span-2 md:col-span-4">
-                            <p className="text-muted-foreground">Business Address</p>
-                            <p className="font-medium">{kyc.businessAddress}</p>
-                          </div>
-                        )}
-                        {kyc.rejectionReason && (
-                          <div className="col-span-2 md:col-span-4">
-                            <p className="text-muted-foreground text-red-600">Rejection Reason</p>
-                            <p className="font-medium text-red-700">{kyc.rejectionReason}</p>
-                          </div>
-                        )}
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="documents" className="mt-4">
-                      {!kyc.documents || kyc.documents.length === 0 ? (
-                        <div className="text-center py-6 text-muted-foreground">
-                          <FileText className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                          <p>No documents uploaded yet</p>
-                        </div>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Document Type</TableHead>
-                              <TableHead>File Name</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {kyc.documents.map((doc) => {
-                              const docType = docTypeConfig[doc.type] || docTypeConfig.OTHER
-                              const docStatus = docStatusConfig[doc.status] || docStatusConfig.PENDING
-                              const DocIcon = docType.icon
-
-                              return (
-                                <TableRow key={doc.id}>
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <DocIcon className="h-4 w-4 text-muted-foreground" />
-                                      <span>{docType.label}</span>
-                                      {docType.required && (
-                                        <Badge variant="outline" className="text-xs">Required</Badge>
-                                      )}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="text-muted-foreground">
-                                    {doc.fileName}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline" className={docStatus.color}>
-                                      {docStatus.label}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => openDocumentViewer(doc)}
-                                      >
-                                        <Eye className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        asChild
-                                      >
-                                        <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                          <ExternalLink className="h-4 w-4" />
-                                        </a>
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              )
-                            })}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2 pt-4 mt-4 border-t">
-                    <Link href={`/ops/kyc/${kyc.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
-                        View Details
-                      </Button>
-                    </Link>
-                    {(kyc.status === 'PENDING' || kyc.status === 'SUBMITTED') && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStartReview(kyc.id)}
-                        disabled={startReview.isPending}
-                      >
-                        <PlayCircle className="h-4 w-4 mr-1" />
-                        Start Review
-                      </Button>
-                    )}
-                    {kyc.status === 'UNDER_REVIEW' && (
-                      <>
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleApprove(kyc.id)}
-                          disabled={approveKyc.isPending}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => openRejectDialog(kyc)}
-                        >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                    {kyc.status === 'APPROVED' && (
-                      <div className="flex items-center gap-2 text-green-600">
-                        <ShieldCheck className="h-5 w-5" />
-                        <span className="text-sm font-medium">KYC Verified</span>
-                      </div>
-                    )}
-                    {kyc.status === 'REJECTED' && (
-                      <div className="flex items-center gap-2 text-red-600">
-                        <ShieldX className="h-5 w-5" />
-                        <span className="text-sm font-medium">KYC Rejected</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+      {/* KYC Documents Dialog */}
+      <Dialog open={!!docsKyc} onOpenChange={(open) => !open && setDocsKyc(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {docsKyc?.vendorProfile?.businessName || docsKyc?.businessName || 'Documents'}
+            </DialogTitle>
+          </DialogHeader>
+          <DataTable
+            data={docsKyc?.documents ?? []}
+            columns={documentColumns}
+            rowKey={(doc) => doc.id}
+            defaultPageSize={10}
+            emptyTitle="No documents uploaded yet"
+            emptyIcon={FileText}
+            maxHeight="50dvh"
+            rowActions={(doc) => [
+              { label: 'Preview', icon: Eye, onClick: () => openDocumentViewer(doc) },
+              { label: 'Open in new tab', icon: ExternalLink, href: doc.url },
+            ]}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
@@ -524,7 +379,7 @@ export default function OpsKycPage() {
               The vendor will be notified and can resubmit their documents.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Textarea
               placeholder="Enter rejection reason..."
               value={rejectReason}
@@ -574,7 +429,7 @@ export default function OpsKycPage() {
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full p-4">
-                  <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                  <FileText className="h-16 w-16 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">Preview not available for this file type</p>
                   <Button variant="outline" className="mt-4" asChild>
                     <a href={selectedDocument.url} download>

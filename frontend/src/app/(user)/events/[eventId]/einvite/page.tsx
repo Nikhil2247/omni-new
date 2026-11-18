@@ -7,7 +7,9 @@ import { EInvitePanel } from '@/components/features/events/einvite-panel'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useEvent } from '@/hooks/queries/use-events'
 import { useEInviteByEvent } from '@/hooks/queries/use-einvites'
-import { Brush, Eyebrow, SketchButton, Stamp } from '@/components/sketch'
+import { Brush, Eyebrow, PaintedNum, SketchButton, Stamp } from '@/components/sketch'
+
+const STEPS = ['Pick a design', 'Edit the words', 'Save and publish', 'Send to guests']
 
 export default function EInvitePage() {
   const params = useParams()
@@ -46,6 +48,18 @@ export default function EInvitePage() {
           <Stamp>WhatsApp Ready</Stamp>
         </div>
       </div>
+
+      {/* The four steps, so it is clear what comes next */}
+      <ol className="flex flex-wrap gap-x-6 gap-y-2">
+        {STEPS.map((s, i) => (
+          <li key={s} className="flex items-center gap-2 text-sm font-medium">
+            <PaintedNum tone={i === 1 ? 'green' : i === 2 ? 'gold' : 'blue'} className="!size-7 !text-[0.95rem]">
+              {i + 1}
+            </PaintedNum>
+            {s}
+          </li>
+        ))}
+      </ol>
 
       {/* E-Invite Panel - Full Height */}
       <EInvitePanel eventId={eventId} />

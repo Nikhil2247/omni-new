@@ -21,6 +21,7 @@ import { FileUpload } from '@/components/ui/file-upload'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { marketingService } from '@/lib/api/services/marketing.service'
 import { getMinioViewUrl } from '@/lib/utils/minio'
+import { ConfirmDialog, PageHeader } from '@/components/dashboard'
 
 export default function MarketingContentDetailPage() {
   const params = useParams()
@@ -60,6 +61,7 @@ export default function MarketingContentDetailPage() {
   const [readingTime, setReadingTime] = useState('')
   const [isUploadingFeatured, setIsUploadingFeatured] = useState(false)
   const [isUploadingOg, setIsUploadingOg] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const categoryOptions = useMemo(
     () =>
@@ -202,7 +204,7 @@ export default function MarketingContentDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <Skeleton className="h-8 w-1/3" />
         <Skeleton className="h-40" />
       </div>
@@ -214,31 +216,39 @@ export default function MarketingContentDetailPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Edit post</h1>
-          <p className="text-muted-foreground">Last updated {formatDate(data.updatedAt)}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {canManagePublishing && data.status === 'DRAFT' ? (
-            <Button onClick={handlePublish} disabled={publishPost.isPending}>
-              {publishPost.isPending ? 'Publishing...' : 'Publish'}
-            </Button>
-          ) : null}
-          {canManagePublishing ? (
-            <Button variant="destructive" onClick={handleDelete} disabled={deletePost.isPending}>
-              Delete
-            </Button>
-          ) : null}
-        </div>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="Edit post"
+        actions={
+          <>
+            {canManagePublishing && data.status === 'DRAFT' ? (
+              <Button size="sm" onClick={handlePublish} disabled={publishPost.isPending}>
+                {publishPost.isPending ? 'Publishing...' : 'Publish'}
+              </Button>
+            ) : null}
+            {canManagePublishing ? (
+              <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)} disabled={deletePost.isPending}>
+                Delete
+              </Button>
+            ) : null}
+          </>
+        }
+      />
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete this blog post?"
+        description="This action cannot be undone."
+        loading={deletePost.isPending}
+        onConfirm={handleDelete}
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Post details</CardTitle>
+        <CardHeader className="p-3 pb-0">
+          <CardTitle className="text-sm">Post details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 p-3">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input id="title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Post title" />
@@ -268,24 +278,24 @@ export default function MarketingContentDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Content</CardTitle>
+        <CardHeader className="p-3 pb-0">
+          <CardTitle className="text-sm">Content</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
           <RichTextEditor
             content={content}
             onChange={setContent}
             placeholder="Write your blog post content..."
-            minHeight="400px"
+            minHeight="340px"
           />
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>SEO & metadata</CardTitle>
+        <CardHeader className="p-3 pb-0">
+          <CardTitle className="text-sm">SEO & metadata</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 p-3">
           <Input value={metaTitle} onChange={(event) => setMetaTitle(event.target.value)} placeholder="Meta title" />
           <Textarea
             value={metaDescription}
@@ -302,10 +312,10 @@ export default function MarketingContentDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Media & classification</CardTitle>
+        <CardHeader className="p-3 pb-0">
+          <CardTitle className="text-sm">Media & classification</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-3 p-3 md:grid-cols-2">
           <div className="space-y-3">
             <Label>Featured image</Label>
             <FileUpload
@@ -338,7 +348,7 @@ export default function MarketingContentDetailPage() {
                 height={400}
                 unoptimized={true}
                 priority={true}
-                className="h-40 w-full rounded-md object-cover"
+                className="h-32 w-full rounded-md object-cover"
               />
             ) : null}
             <Input
@@ -380,7 +390,7 @@ export default function MarketingContentDetailPage() {
                 height={400}
                 unoptimized={true}
                 priority={true}
-                className="h-40 w-full rounded-md object-cover"
+                className="h-32 w-full rounded-md object-cover"
               />
             ) : null}
           </div>
@@ -409,12 +419,12 @@ export default function MarketingContentDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Tags</CardTitle>
+        <CardHeader className="p-3 pb-0">
+          <CardTitle className="text-sm">Tags</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
           {tagOptions.length ? (
-            <ScrollArea className="h-48 rounded-md border p-4">
+            <ScrollArea className="h-48 rounded-md border p-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 {tagOptions.map((tag) => {
                   const checked = tagIds.includes(tag.id)
@@ -452,10 +462,3 @@ export default function MarketingContentDetailPage() {
   )
 }
 
-function formatDate(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return '—'
-  }
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(date)
-}

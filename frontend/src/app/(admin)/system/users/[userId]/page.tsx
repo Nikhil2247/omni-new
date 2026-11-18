@@ -9,8 +9,8 @@ import {
   Clock,
   Laptop,
   LogIn,
+  LogOut,
   Mail,
-  MapPin,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -35,8 +35,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import {
+  ConfirmDialog,
+  DataTable,
+  PageHeader,
+  type DataColumn,
+} from '@/components/dashboard'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 type UserSession = NonNullable<AdminUser['sessions']>[number]
 
@@ -58,6 +63,8 @@ export default function SystemUserDetailPage() {
   const [status, setStatus] = useState('')
   const [selectedRole, setSelectedRole] = useState('')
   const [isChangingRole, setIsChangingRole] = useState(false)
+  const [confirmStatusOpen, setConfirmStatusOpen] = useState(false)
+  const [confirmRevokeAllOpen, setConfirmRevokeAllOpen] = useState(false)
 
   useEffect(() => {
     if (user?.status) setStatus(user.status)
@@ -82,16 +89,14 @@ export default function SystemUserDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-20" />
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-20 w-full rounded-lg" />
+        <div className="grid gap-3 lg:grid-cols-3">
+          <Skeleton className="lg:col-span-2 h-56" />
+          <Skeleton className="h-56" />
         </div>
-        <Skeleton className="h-36 w-full rounded-xl" />
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Skeleton className="lg:col-span-2 h-72" />
-          <Skeleton className="h-72" />
-        </div>
-        <Skeleton className="h-52" />
+        <Skeleton className="h-40" />
       </div>
     )
   }
@@ -112,26 +117,63 @@ export default function SystemUserDetailPage() {
 
   const initials = getInitials(user)
 
+  const sessionColumns: DataColumn<UserSession>[] = [
+    {
+      id: 'device',
+      header: 'Device',
+      label: 'Device',
+      cell: (session) => (
+        <div className="min-w-0 leading-tight">
+          <div className="truncate text-sm font-medium">{session.deviceName || session.deviceType || 'Unknown device'}</div>
+          <div className="text-xs text-muted-foreground">{session.ipAddress || '—'}</div>
+        </div>
+      ),
+      exportValue: (session) => session.deviceName || session.deviceType || 'Unknown device',
+    },
+    {
+      id: 'location',
+      header: 'Location',
+      label: 'Location',
+      cell: (session) => <span className="text-sm">{session.location || '—'}</span>,
+      exportValue: (session) => session.location || '',
+    },
+    {
+      id: 'lastActive',
+      header: 'Last active',
+      label: 'Last active',
+      cell: (session) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDateTime(session.lastActiveAt || session.createdAt || '')}
+        </span>
+      ),
+      sortValue: (session) => session.lastActiveAt || session.createdAt || '',
+      exportValue: (session) => formatDateTime(session.lastActiveAt || session.createdAt || ''),
+    },
+  ]
+
   return (
-    <div className="space-y-4">
-      {/* Back nav */}
-      <Button asChild variant="ghost" size="sm" className="-ml-2">
-        <Link href="/system/users">
-          <ArrowLeft className="mr-1 h-4 w-4" />Users
-        </Link>
-      </Button>
+    <div className="space-y-3">
+      <PageHeader
+        title={formatName(user)}
+        leading={
+          <Button asChild variant="ghost" size="sm" className="-ml-2">
+            <Link href="/system/users">
+              <ArrowLeft className="mr-1 h-4 w-4" />Users
+            </Link>
+          </Button>
+        }
+      />
 
       {/* Profile overview card */}
       <Card className="overflow-hidden">
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
             {/* Avatar */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xl font-semibold text-primary">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
               {initials}
             </div>
             {/* Name + email + badges */}
-            <div className="space-y-1.5">
-              <h1 className="text-xl font-semibold tracking-tight">{formatName(user)}</h1>
+            <div className="space-y-1">
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <Mail className="h-3.5 w-3.5" />
                 {user.email}
@@ -161,15 +203,15 @@ export default function SystemUserDetailPage() {
           {/* Quick stats */}
           <div className="flex flex-wrap gap-4 text-sm">
             <div className="text-center">
-              <p className="text-2xl font-semibold">{sessionList.length}</p>
+              <p className="text-lg font-semibold">{sessionList.length}</p>
               <p className="text-xs text-muted-foreground">Active sessions</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-semibold">{user.twoFactorEnabled ? 'On' : 'Off'}</p>
+              <p className="text-lg font-semibold">{user.twoFactorEnabled ? 'On' : 'Off'}</p>
               <p className="text-xs text-muted-foreground">2FA</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-semibold">{user.hasCompletedOnboarding ? '✓' : '–'}</p>
+              <p className="text-lg font-semibold">{user.hasCompletedOnboarding ? '✓' : '–'}</p>
               <p className="text-xs text-muted-foreground">Onboarding</p>
             </div>
           </div>
@@ -177,7 +219,7 @@ export default function SystemUserDetailPage() {
       </Card>
 
       {/* Management + Details */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
 
         {/* Left: Status + Role management (spans 2 cols) */}
         <Card className="lg:col-span-2">
@@ -187,14 +229,13 @@ export default function SystemUserDetailPage() {
               Account management
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
 
             {/* Status section */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Account status</p>
-                  <p className="text-xs text-muted-foreground">Control whether this user can access the platform</p>
                 </div>
                 <Badge variant={statusVariant(user.status)}>{formatStatus(user.status)}</Badge>
               </div>
@@ -211,7 +252,11 @@ export default function SystemUserDetailPage() {
                   </SelectContent>
                 </Select>
                 <Button
-                  onClick={() => updateStatus.mutate(status)}
+                  onClick={() =>
+                    status === 'SUSPENDED' || status === 'DELETED'
+                      ? setConfirmStatusOpen(true)
+                      : updateStatus.mutate(status)
+                  }
                   disabled={!status || updateStatus.isPending || status === user.status}
                 >
                   {updateStatus.isPending ? 'Saving...' : 'Apply'}
@@ -222,11 +267,10 @@ export default function SystemUserDetailPage() {
             <Separator />
 
             {/* Role section */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Assigned role</p>
-                  <p className="text-xs text-muted-foreground">Users can only have one role at a time</p>
                 </div>
                 {currentRole ? (
                   <Badge variant="secondary">
@@ -337,85 +381,64 @@ export default function SystemUserDetailPage() {
       </div>
 
       {/* Sessions */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Laptop className="h-4 w-4 text-muted-foreground" />
-            Active sessions
-            {sessionList.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{sessionList.length}</Badge>
-            )}
-          </CardTitle>
+      <DataTable
+        data={sessionList}
+        columns={sessionColumns}
+        rowKey={(session) => session.id}
+        toolbarRight={
           <Button
             variant="outline"
             size="sm"
-            onClick={() => revokeAll.mutate()}
+            onClick={() => setConfirmRevokeAllOpen(true)}
             disabled={revokeAll.isPending || sessionList.length === 0}
             className="text-destructive hover:text-destructive"
           >
-            {revokeAll.isPending ? 'Revoking...' : 'Revoke all'}
+            {revokeAll.isPending ? 'Revoking...' : 'Revoke all sessions'}
           </Button>
-        </CardHeader>
-        <CardContent>
-          {sessionList.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Device</TableHead>
-                  <TableHead>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />Location
-                    </span>
-                  </TableHead>
-                  <TableHead>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />Last active
-                    </span>
-                  </TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sessionList.map((session) => (
-                  <TableRow key={session.id}>
-                    <TableCell>
-                      <div className="font-medium">{session.deviceName || session.deviceType || 'Unknown device'}</div>
-                      <div className="text-xs text-muted-foreground">{session.ipAddress || '—'}</div>
-                    </TableCell>
-                    <TableCell className="text-sm">{session.location || '—'}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDateTime(session.lastActiveAt || session.createdAt || '')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => revokeSession.mutate(session.id)}
-                        disabled={revokeSession.isPending}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        Revoke
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
-              <Laptop className="h-8 w-8" />
-              <p className="text-sm">No active sessions</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        }
+        rowActions={(session) => [
+          {
+            label: 'Revoke session',
+            icon: LogOut,
+            danger: true,
+            disabled: revokeSession.isPending,
+            onClick: () => revokeSession.mutate(session.id),
+            confirm: {
+              title: 'Revoke this session?',
+              description: 'The device will be signed out immediately.',
+              confirmLabel: 'Revoke',
+            },
+          },
+        ]}
+        emptyTitle="No active sessions"
+        emptyIcon={Laptop}
+      />
+
+      <ConfirmDialog
+        open={confirmStatusOpen}
+        onOpenChange={setConfirmStatusOpen}
+        title={status === 'DELETED' ? 'Delete this account?' : 'Suspend this account?'}
+        description={`This will set the account status to ${formatStatus(status)}.`}
+        confirmLabel={status === 'DELETED' ? 'Delete' : 'Suspend'}
+        loading={updateStatus.isPending}
+        onConfirm={() => updateStatus.mutateAsync(status)}
+      />
+      <ConfirmDialog
+        open={confirmRevokeAllOpen}
+        onOpenChange={setConfirmRevokeAllOpen}
+        title="Revoke all sessions?"
+        description="Every device signed in as this user will be signed out."
+        confirmLabel="Revoke all"
+        loading={revokeAll.isPending}
+        onConfirm={() => revokeAll.mutateAsync()}
+      />
     </div>
   )
 }
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-2.5">
+    <div className="flex items-center justify-between py-1.5">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{children}</span>
     </div>

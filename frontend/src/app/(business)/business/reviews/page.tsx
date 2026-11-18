@@ -4,17 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessReviews, useRespondToReview } from '@/hooks/queries/use-business'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -30,8 +22,7 @@ import {
   Loader2,
   AlertTriangle,
   MessageSquare,
-  Filter,
-  Search,
+  Pencil,
   Reply,
 } from 'lucide-react'
 import type { BusinessReview } from '@/lib/api/types/business.types'
@@ -50,8 +41,8 @@ export default function BusinessReviewsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [ratingFilter, setRatingFilter] = useState('all')
   const [showResponseDialog, setShowResponseDialog] = useState(false)
-  const [selectedReview, setSelectedReview] = useState<BusinessReview | null>(null)
   const [responseText, setResponseText] = useState('')
+  const [selectedReview, setSelectedReview] = useState<BusinessReview | null>(null)
 
   const openResponseDialog = (review: BusinessReview) => {
     setSelectedReview(review)
@@ -100,19 +91,16 @@ export default function BusinessReviewsPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Reviews</h1>
-          <p className="text-muted-foreground">Monitor feedback from your clients</p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Reviews" />
         <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-yellow-500" />
-            <h3 className="text-lg font-semibold">Profile Required</h3>
-            <p className="mt-2 text-muted-foreground">
+          <CardContent className="py-6 text-center">
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-yellow-500" />
+            <h3 className="text-sm font-semibold">Profile Required</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
               Please create your business profile to view reviews.
             </p>
-            <Button className="mt-4" onClick={() => window.location.href = '/business/profile'}>
+            <Button size="sm" className="mt-3" onClick={() => window.location.href = '/business/profile'}>
               Create Profile
             </Button>
           </CardContent>
@@ -122,104 +110,82 @@ export default function BusinessReviewsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Reviews</h1>
-        <p className="text-muted-foreground">Monitor feedback from your clients</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Reviews" />
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search reviews..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                className="pl-9"
+      <DataTable<BusinessReview>
+        data={filteredReviews}
+        isLoading={reviewsLoading}
+        rowKey={(r) => r.id}
+        search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'Search reviews...' }}
+        filters={
+          <FilterSelect
+            label="Rating"
+            value={ratingFilter}
+            onChange={setRatingFilter}
+            allLabel="All ratings"
+            options={ratingOptions.filter((o) => o !== 'all').map((o) => ({ value: o, label: `${o} stars` }))}
+          />
+        }
+        exportFilename="reviews"
+        emptyTitle="No reviews yet"
+        emptyIcon={MessageSquare}
+        columns={[
+          {
+            id: 'reviewer',
+            header: 'Client',
+            label: 'Client',
+            sortValue: (r) => reviewerName(r),
+            exportValue: (r) => reviewerName(r),
+            cell: (r) => <UserCell name={reviewerName(r)} subtitle={format(new Date(r.createdAt), 'MMM d, yyyy')} />,
+          },
+          {
+            id: 'rating',
+            header: 'Rating',
+            label: 'Rating',
+            sortValue: (r) => r.rating,
+            exportValue: (r) => r.rating,
+            cell: (r) => (
+              <span className="inline-flex items-center gap-1 text-sm">
+                <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
+                {r.rating}/5
+              </span>
+            ),
+          },
+          {
+            id: 'review',
+            header: 'Review',
+            label: 'Review',
+            exportValue: (r) => `${r.title ?? ''} ${r.body ?? ''}`.trim(),
+            cell: (r) => (
+              <TwoLineCell
+                title={r.title || 'Client feedback'}
+                subtitle={r.body}
               />
-            </div>
-            <Select value={ratingFilter} onValueChange={setRatingFilter}>
-              <SelectTrigger className="w-45">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Rating" />
-              </SelectTrigger>
-              <SelectContent>
-                {ratingOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option === 'all' ? 'All ratings' : `${option} stars`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {reviewsLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : filteredReviews.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <MessageSquare className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <h3 className="text-lg font-semibold">No reviews yet</h3>
-            <p className="mt-2 text-muted-foreground">
-              Reviews will appear here once clients leave feedback.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredReviews.map((review) => (
-            <Card key={review.id}>
-              <CardHeader className="pb-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-lg">{review.title || 'Client feedback'}</CardTitle>
-                    <CardDescription>
-                      {reviewerName(review)} · {format(new Date(review.createdAt), 'MMM d, yyyy')}
-                    </CardDescription>
-                  </div>
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Star className="h-3 w-3 text-yellow-500" />
-                    {review.rating}/5
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {review.body && <p className="text-sm text-muted-foreground">{review.body}</p>}
-                {review.reviewNotes ? (
-                  <div className="rounded-lg border bg-muted/40 p-3 text-sm">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium">Your response</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openResponseDialog(review)}
-                      >
-                        Edit
-                      </Button>
-                    </div>
-                    <p className="text-muted-foreground">{review.reviewNotes}</p>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openResponseDialog(review)}
-                  >
-                    <Reply className="mr-2 h-4 w-4" />
-                    Respond to Review
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+            ),
+            className: 'max-w-[360px]',
+          },
+          {
+            id: 'response',
+            header: 'Response',
+            label: 'Response',
+            sortValue: (r) => (r.reviewNotes ? 1 : 0),
+            exportValue: (r) => r.reviewNotes ?? '',
+            cell: (r) => (
+              <StatusBadge tone={r.reviewNotes ? 'success' : 'warning'}>
+                {r.reviewNotes ? 'Responded' : 'Awaiting'}
+              </StatusBadge>
+            ),
+          },
+        ]}
+        rowActions={(r) => [
+          {
+            label: r.reviewNotes ? 'Edit response' : 'Respond',
+            icon: r.reviewNotes ? Pencil : Reply,
+            onClick: () => openResponseDialog(r),
+          },
+        ]}
+      />
 
       {/* Response Dialog */}
       <Dialog open={showResponseDialog} onOpenChange={setShowResponseDialog}>
@@ -232,9 +198,9 @@ export default function BusinessReviewsPage() {
           </DialogHeader>
 
           {selectedReview && (
-            <div className="space-y-4 py-4">
+            <div className="space-y-3 py-2">
               {/* Original Review */}
-              <div className="rounded-lg bg-muted p-4">
+              <div className="rounded-lg bg-muted p-3">
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-medium">{reviewerName(selectedReview)}</p>
                   <div className="flex items-center gap-1">

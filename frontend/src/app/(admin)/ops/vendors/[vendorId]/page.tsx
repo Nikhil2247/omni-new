@@ -1,10 +1,10 @@
+import { PageHeader } from '@/components/dashboard'
 import { OpsVendorsList } from '@/components/features/ops'
 
-export default function OpsVendorDetailPage({ params }: { params: { vendorId: string } }) {
+export default function OpsVendorDetailPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Vendor Details</h1>
-      <p className="text-muted-foreground">Vendor profile ID: {params.vendorId}</p>
+    <div className="space-y-3">
+      <PageHeader title="Vendor Details" />
       <OpsVendorsList />
     </div>
   )

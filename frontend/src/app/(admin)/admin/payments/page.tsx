@@ -3,19 +3,26 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import {
-  ArrowUpDown,
   CreditCard,
   DollarSign,
   Eye,
   RefreshCcw,
-  Search,
   X,
 } from 'lucide-react'
 import { useAdminPayments, useRefundPayment } from '@/hooks/queries/use-admin-payment'
 import { trackDashboard } from '@/lib/analytics/umami'
+import {
+  CopyCell,
+  DataTable,
+  FilterSelect,
+  PageHeader,
+  StatusBadge,
+  TwoLineCell,
+  UserCell,
+  type DataColumn,
+} from '@/components/dashboard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -26,22 +33,6 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import type { AdminPayment, PaymentStatus } from '@/lib/api/types/admin-payment.types'
 
@@ -51,8 +42,8 @@ export default function AdminPaymentsPage() {
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [sortBy, setSortBy] = useState<'createdAt' | 'amount' | 'status'>('createdAt')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const sortBy = 'createdAt' as const
+  const sortOrder = 'desc' as const
 
   // Selected payment for details modal
   const [selectedPayment, setSelectedPayment] = useState<AdminPayment | null>(null)
@@ -89,15 +80,6 @@ export default function AdminPaymentsPage() {
   )
 
   const { data, isLoading, refetch } = useAdminPayments(params)
-
-  const handleSort = (column: 'createdAt' | 'amount' | 'status') => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(column)
-      setSortOrder('desc')
-    }
-  }
 
   const handleViewDetails = (payment: AdminPayment) => {
     setSelectedPayment(payment)
@@ -142,62 +124,110 @@ export default function AdminPaymentsPage() {
 
   const hasActiveFilters = search || status !== 'all' || fromDate || toDate
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">Payments</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View and manage all platform payments
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCcw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+  const columns: DataColumn<AdminPayment>[] = [
+    {
+      id: 'id',
+      header: 'ID',
+      label: 'ID',
+      cell: (p) => <CopyCell value={p.id.slice(0, 8)} />,
+      exportValue: (p) => p.id,
+    },
+    {
+      id: 'party',
+      header: 'User / Vendor',
+      label: 'User / Vendor',
+      cell: (p) => (
+        <UserCell
+          name={p.user ? formatUserName(p.user) : p.vendorProfile?.businessName || '—'}
+          subtitle={p.user?.email ?? (p.vendorProfile ? 'Vendor' : undefined)}
+        />
+      ),
+      sortValue: (p) => (p.user ? formatUserName(p.user) : p.vendorProfile?.businessName || ''),
+      exportValue: (p) => (p.user ? formatUserName(p.user) : p.vendorProfile?.businessName || ''),
+    },
+    {
+      id: 'amount',
+      header: 'Amount',
+      label: 'Amount',
+      cell: (p) => (
+        <TwoLineCell
+          title={formatAmount(p.amount, p.currency)}
+          subtitle={
+            (p.refundedAmount ?? 0) > 0 ? (
+              <span className="text-destructive">
+                Refunded: {formatAmount(p.refundedAmount!, p.currency)}
+              </span>
+            ) : undefined
+          }
+        />
+      ),
+      sortValue: (p) => p.amount,
+      exportValue: (p) => p.amount,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (p) => <StatusBadge status={p.status}>{formatStatus(p.status)}</StatusBadge>,
+      sortValue: (p) => p.status,
+      exportValue: (p) => formatStatus(p.status),
+    },
+    {
+      id: 'date',
+      header: 'Date',
+      label: 'Date',
+      cell: (p) => <span className="text-sm text-muted-foreground">{formatDate(p.createdAt)}</span>,
+      sortValue: (p) => p.createdAt,
+      exportValue: (p) => formatDate(p.createdAt),
+    },
+  ]
 
-      {/* Payments table */}
-      <Card>
-        <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <CardTitle>Payment history</CardTitle>
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by ID, email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="PROCESSING">Processing</SelectItem>
-                <SelectItem value="SUCCEEDED">Succeeded</SelectItem>
-                <SelectItem value="FAILED">Failed</SelectItem>
-                <SelectItem value="REFUNDED">Refunded</SelectItem>
-                <SelectItem value="PARTIALLY_REFUNDED">Partially Refunded</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              type="date"
-              placeholder="From date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="w-full sm:w-36"
+  return (
+    <div className="space-y-3">
+      <PageHeader
+        title="Payments"
+        actions={
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        }
+      />
+
+      <DataTable
+        data={data?.data ?? []}
+        columns={columns}
+        rowKey={(p) => p.id}
+        isLoading={isLoading}
+        search={{ value: search, onChange: setSearch, placeholder: 'Search by ID, email...' }}
+        filters={
+          <>
+            <FilterSelect
+              label="Status"
+              value={status}
+              onChange={setStatus}
+              options={[
+                { value: 'PENDING', label: 'Pending' },
+                { value: 'PROCESSING', label: 'Processing' },
+                { value: 'SUCCEEDED', label: 'Succeeded' },
+                { value: 'FAILED', label: 'Failed' },
+                { value: 'REFUNDED', label: 'Refunded' },
+                { value: 'PARTIALLY_REFUNDED', label: 'Partially Refunded' },
+              ]}
             />
             <Input
               type="date"
-              placeholder="To date"
+              aria-label="From date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="h-8 w-36"
+            />
+            <Input
+              type="date"
+              aria-label="To date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="w-full sm:w-36"
+              className="h-8 w-36"
             />
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -205,162 +235,28 @@ export default function AdminPaymentsPage() {
                 Clear
               </Button>
             )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-14 w-full rounded-md" />
-              ))}
-            </div>
-          ) : data?.data?.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>User / Vendor</TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="-ml-3 h-auto p-0 font-semibold hover:bg-transparent"
-                      onClick={() => handleSort('amount')}
-                    >
-                      Amount
-                      <ArrowUpDown className="ml-1 h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="-ml-3 h-auto p-0 font-semibold hover:bg-transparent"
-                      onClick={() => handleSort('status')}
-                    >
-                      Status
-                      <ArrowUpDown className="ml-1 h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="-ml-3 h-auto p-0 font-semibold hover:bg-transparent"
-                      onClick={() => handleSort('createdAt')}
-                    >
-                      Date
-                      <ArrowUpDown className="ml-1 h-3 w-3" />
-                    </Button>
-                  </TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.data.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>
-                      <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                        {payment.id.slice(0, 8)}...
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">
-                        {payment.user
-                          ? formatUserName(payment.user)
-                          : payment.vendorProfile?.businessName || '—'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {payment.user?.email}
-                        {payment.vendorProfile && (
-                          <Badge variant="outline" className="ml-1 text-xs">
-                            Vendor
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">
-                        {formatAmount(payment.amount, payment.currency)}
-                      </div>
-                      {(payment.refundedAmount ?? 0) > 0 && (
-                        <div className="text-xs text-destructive">
-                          Refunded: {formatAmount(payment.refundedAmount!, payment.currency)}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusVariant(payment.status)}>
-                        {formatStatus(payment.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(payment.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewDetails(payment)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {canRefund(payment) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleOpenRefund(payment)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <RefreshCcw className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <CreditCard className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <p className="mt-4 text-sm font-medium">No payments found</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Try adjusting your search or filters.
-              </p>
-            </div>
-          )}
-
-          {data?.meta?.totalPages && data.meta.totalPages > 1 ? (
-            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
-              <p className="text-sm text-muted-foreground">
-                Page {data.meta.page} of {data.meta.totalPages} - {data.meta.total} payments
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!data.meta.hasPreviousPage || isLoading}
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!data.meta.hasNextPage || isLoading}
-                  onClick={() => setCurrentPage((prev) => prev + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+          </>
+        }
+        rowActions={(p) => [
+          { label: 'View details', icon: Eye, onClick: () => handleViewDetails(p) },
+          {
+            label: 'Refund',
+            icon: RefreshCcw,
+            danger: true,
+            visible: canRefund(p),
+            onClick: () => handleOpenRefund(p),
+          },
+        ]}
+        serverPagination={{
+          page: data?.meta?.page ?? currentPage,
+          pageSize: 20,
+          total: data?.meta?.total ?? data?.data?.length ?? 0,
+          onPageChange: setCurrentPage,
+        }}
+        emptyTitle="No payments found"
+        emptyIcon={CreditCard}
+        exportFilename="admin-payments"
+      />
 
       {/* Payment Details Modal */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -372,8 +268,8 @@ export default function AdminPaymentsPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedPayment && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-muted-foreground">Payment ID</Label>
                   <p className="font-mono text-sm">{selectedPayment.id}</p>
@@ -407,7 +303,7 @@ export default function AdminPaymentsPage() {
               </div>
 
               {selectedPayment.user && (
-                <div className="border-t pt-4">
+                <div className="border-t pt-3">
                   <Label className="text-muted-foreground">User</Label>
                   <p className="font-medium">{formatUserName(selectedPayment.user)}</p>
                   <p className="text-sm text-muted-foreground">{selectedPayment.user.email}</p>
@@ -415,13 +311,13 @@ export default function AdminPaymentsPage() {
               )}
 
               {selectedPayment.vendorProfile && (
-                <div className="border-t pt-4">
+                <div className="border-t pt-3">
                   <Label className="text-muted-foreground">Vendor</Label>
                   <p className="font-medium">{selectedPayment.vendorProfile.businessName}</p>
                 </div>
               )}
 
-              <div className="border-t pt-4">
+              <div className="border-t pt-3">
                 <Label className="text-muted-foreground">Gateway Details</Label>
                 <div className="mt-1 space-y-1 text-sm">
                   <p>
@@ -436,7 +332,7 @@ export default function AdminPaymentsPage() {
               </div>
 
               {(selectedPayment.refundedAmount ?? 0) > 0 && (
-                <div className="border-t pt-4">
+                <div className="border-t pt-3">
                   <Label className="text-muted-foreground">Refund Details</Label>
                   <div className="mt-1 space-y-1 text-sm">
                     <p>
@@ -486,8 +382,8 @@ export default function AdminPaymentsPage() {
             </DialogDescription>
           </DialogHeader>
           {refundPayment && (
-            <div className="space-y-4">
-              <div className="rounded-lg border bg-muted/50 p-4">
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/50 p-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Original Amount</p>

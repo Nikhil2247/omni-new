@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { User, Bell, Shield, CreditCard } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
+import { PageHeader } from '@/components/dashboard'
 import { useUmami } from '@/hooks/use-umami'
 
 export default function BusinessSettingsPage() {
@@ -13,13 +14,10 @@ export default function BusinessSettingsPage() {
   }, [track])
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Settings</h1>
-        <p className="text-muted-foreground">Manage your business account preferences.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Settings" />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         <SettingsCard
           title="Profile"
           description="Update your personal details and account information."

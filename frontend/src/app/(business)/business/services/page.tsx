@@ -55,6 +55,7 @@ import type {
   UpdateServiceRequest,
   CreateServiceItemRequest,
 } from "@/lib/api/types/business.types";
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell } from "@/components/dashboard";
 import { ServiceItemsForm } from "@/components/features/services/service-items-form";
 
 const PRICE_UNITS = [
@@ -133,7 +134,8 @@ export default function BusinessServicesPage() {
     hasItems: false,
     items: [] as (ServiceItem | CreateServiceItemRequest & { id?: string })[],
   });
-  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
+  const [serviceSearch, setServiceSearch] = useState("");
+  const [serviceStatus, setServiceStatus] = useState("all");
   const syncServiceItems = useSyncServiceItems();
 
   const resetForm = () => {
@@ -288,9 +290,7 @@ export default function BusinessServicesPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this service?")) {
-      deleteService.mutate(id);
-    }
+    deleteService.mutate(id);
   };
 
   const handleToggleActive = (service: VendorService) => {
@@ -311,6 +311,13 @@ export default function BusinessServicesPage() {
     return `${formatted} ${unitLabel.toLowerCase()}`;
   };
 
+  const filteredServices = (services ?? []).filter((s) => {
+    if (serviceStatus === "active" && !s.isActive) return false;
+    if (serviceStatus === "inactive" && s.isActive) return false;
+    const q = serviceSearch.trim().toLowerCase();
+    return !q || s.name.toLowerCase().includes(q) || (s.description ?? "").toLowerCase().includes(q);
+  });
+
   if (profileLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -321,19 +328,16 @@ export default function BusinessServicesPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Services</h1>
-          <p className="text-muted-foreground">Manage your service offerings</p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Services" />
         <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-yellow-500" />
-            <h3 className="text-lg font-semibold">Profile Required</h3>
-            <p className="text-muted-foreground mt-2">
+          <CardContent className="py-6 text-center">
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-yellow-500" />
+            <h3 className="text-sm font-semibold">Profile Required</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first before adding services.
             </p>
-            <Button className="mt-4" onClick={() => (window.location.href = "/business/profile")}>
+            <Button size="sm" className="mt-3" onClick={() => (window.location.href = "/business/profile")}>
               Create Profile
             </Button>
           </CardContent>
@@ -343,212 +347,139 @@ export default function BusinessServicesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Services</h1>
-          <p className="text-muted-foreground">Manage your service offerings and packages</p>
-        </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setShowCreateDialog(true);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Service
-        </Button>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="Services"
+        actions={
+          <Button
+            size="sm"
+            onClick={() => {
+              resetForm();
+              setShowCreateDialog(true);
+            }}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add Service
+          </Button>
+        }
+      />
 
-      {/* Services List */}
-      {servicesLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
-        </div>
-      ) : !services || services.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Package className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <h3 className="text-lg font-semibold">No Services Yet</h3>
-            <p className="text-muted-foreground mt-2">
-              Add your first service to start showcasing your offerings.
-            </p>
-            <Button
-              className="mt-4"
-              onClick={() => {
-                resetForm();
-                setShowCreateDialog(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Your First Service
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {services.map((service) => (
-            <Card key={service.id} className={!service.isActive ? "opacity-60" : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{service.name}</CardTitle>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Badge
-                        variant={service.isActive ? "default" : "secondary"}
-                        className={service.isActive ? "bg-green-100 text-green-700" : ""}
-                      >
-                        {service.isActive ? (
-                          <>
-                            <CheckCircle className="mr-1 h-3 w-3" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="mr-1 h-3 w-3" />
-                            Inactive
-                          </>
-                        )}
-                      </Badge>
-                      {service.hasItems && service.items && service.items.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          <UtensilsCrossed className="mr-1 h-3 w-3" />
-                          {service.items.length} items
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEditDialog(service)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleToggleActive(service)}>
-                        {service.isActive ? (
-                          <>
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Deactivate
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Activate
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(service.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {service.description && (
-                  <p className="text-muted-foreground mb-4 line-clamp-2 text-sm">
-                    {service.description}
-                  </p>
-                )}
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                      {service.hasItems && service.items && service.items.length > 0 ? (
-                        <span className="font-semibold">
-                          {formatPrice(
-                            Math.min(...service.items.map(i => i.price)),
-                            null
-                          )} - {formatPrice(
-                            Math.max(...service.items.map(i => i.price)),
-                            null
-                          )}
-                        </span>
-                      ) : (
-                        <span className="font-semibold">
-                          {formatPrice(getServiceBasePrice(service), getServicePriceUnit(service))}
-                        </span>
-                      )}
-                    </div>
-                    {service.duration && (
-                      <div className="text-muted-foreground flex items-center gap-1 text-sm">
-                        <Clock className="h-4 w-4" />
-                        {service.duration} min
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Show items preview */}
-                  {service.hasItems && service.items && service.items.length > 0 && (
-                    <div className="mt-3 border-t pt-3">
-                      <button
-                        type="button"
-                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground w-full"
-                        onClick={() => setExpandedServiceId(
-                          expandedServiceId === service.id ? null : service.id
-                        )}
-                      >
-                        {expandedServiceId === service.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                        View Menu ({service.items.length} items)
-                      </button>
-                      {expandedServiceId === service.id && (
-                        <div className="mt-2 space-y-1">
-                          {service.items.slice(0, 5).map((item) => (
-                            <div key={item.id} className="flex items-center justify-between text-sm py-1">
-                              <span className="truncate">{item.name}</span>
-                              <span className="font-medium ml-2">
-                                {formatPrice(item.price, null)}
-                              </span>
-                            </div>
-                          ))}
-                          {service.items.length > 5 && (
-                            <p className="text-xs text-muted-foreground">
-                              +{service.items.length - 5} more items
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {service.features && service.features.length > 0 && (
-                    <div className="mt-3 border-t pt-3">
-                      <p className="text-muted-foreground mb-2 text-xs">Features:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {service.features.slice(0, 3).map((feature, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {feature}
-                          </Badge>
-                        ))}
-                        {service.features.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{service.features.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <DataTable<VendorService>
+        data={filteredServices}
+        isLoading={servicesLoading}
+        rowKey={(s) => s.id}
+        search={{ value: serviceSearch, onChange: setServiceSearch, placeholder: "Search services..." }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={serviceStatus}
+            onChange={setServiceStatus}
+            options={[
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+            ]}
+          />
+        }
+        exportFilename="services"
+        columnToggle
+        emptyTitle="No services yet"
+        emptyIcon={Package}
+        emptyAction={
+          <Button
+            size="sm"
+            onClick={() => {
+              resetForm();
+              setShowCreateDialog(true);
+            }}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add Your First Service
+          </Button>
+        }
+        columns={[
+          {
+            id: "name",
+            header: "Service",
+            label: "Service",
+            sortValue: (s) => s.name,
+            exportValue: (s) => s.name,
+            cell: (s) => (
+              <TwoLineCell
+                title={s.name}
+                subtitle={
+                  s.hasItems && s.items && s.items.length > 0
+                    ? `${s.items.length} menu items`
+                    : s.description || undefined
+                }
+              />
+            ),
+          },
+          {
+            id: "price",
+            header: "Price",
+            label: "Price",
+            sortValue: (s) => getServiceBasePrice(s),
+            exportValue: (s) => getServiceBasePrice(s),
+            cell: (s) => (
+              <span className="text-sm font-medium">
+                {s.hasItems && s.items && s.items.length > 0
+                  ? `${formatPrice(Math.min(...s.items.map((i) => i.price)), null)} - ${formatPrice(
+                      Math.max(...s.items.map((i) => i.price)),
+                      null
+                    )}`
+                  : formatPrice(getServiceBasePrice(s), getServicePriceUnit(s))}
+              </span>
+            ),
+          },
+          {
+            id: "duration",
+            header: "Duration",
+            label: "Duration",
+            hideBelow: "md",
+            sortValue: (s) => s.duration ?? 0,
+            exportValue: (s) => s.duration ?? "",
+            cell: (s) => <span className="text-sm">{s.duration ? `${s.duration} min` : "-"}</span>,
+          },
+          {
+            id: "features",
+            header: "Features",
+            label: "Features",
+            hideBelow: "lg",
+            exportValue: (s) => s.features?.join("; ") ?? "",
+            cell: (s) => (
+              <span className="text-muted-foreground block max-w-[260px] truncate text-sm">
+                {s.features && s.features.length > 0 ? s.features.join(", ") : "-"}
+              </span>
+            ),
+          },
+          {
+            id: "status",
+            header: "Status",
+            label: "Status",
+            sortValue: (s) => (s.isActive ? "Active" : "Inactive"),
+            exportValue: (s) => (s.isActive ? "Active" : "Inactive"),
+            cell: (s) => <StatusBadge tone={s.isActive ? "success" : "neutral"}>{s.isActive ? "Active" : "Inactive"}</StatusBadge>,
+          },
+        ]}
+        rowActions={(s) => [
+          { label: "Edit", icon: Edit, onClick: () => openEditDialog(s) },
+          {
+            label: s.isActive ? "Deactivate" : "Activate",
+            icon: s.isActive ? XCircle : CheckCircle,
+            onClick: () => handleToggleActive(s),
+          },
+          {
+            label: "Delete",
+            icon: Trash2,
+            danger: true,
+            onClick: () => handleDelete(s.id),
+            confirm: {
+              title: "Delete this service?",
+              description: `"${s.name}" will be permanently removed. This cannot be undone.`,
+            },
+          },
+        ]}
+      />
 
       {/* Create Service Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -557,7 +488,7 @@ export default function BusinessServicesPage() {
             <DialogTitle>Add New Service</DialogTitle>
             <DialogDescription>Create a new service offering for your customers.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             <div className="space-y-2">
               <Label htmlFor="name">Service Name *</Label>
               <Input
@@ -598,7 +529,7 @@ export default function BusinessServicesPage() {
 
             {/* Show items form if hasItems is enabled */}
             {formData.hasItems && (
-              <div className="border rounded-lg p-4 bg-muted/30">
+              <div className="border rounded-lg p-3 bg-muted/30">
                 <ServiceItemsForm
                   items={formData.items}
                   onChange={(items) => setFormData((prev) => ({ ...prev, items }))}
@@ -608,7 +539,7 @@ export default function BusinessServicesPage() {
 
             {/* Only show base price if no items */}
             {!formData.hasItems && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="basePrice">Base Price *</Label>
                   <div className="relative">
@@ -646,7 +577,7 @@ export default function BusinessServicesPage() {
 
             <div className="space-y-2">
               <Label htmlFor="duration">Duration</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Input
                   id="duration"
                   type="number"
@@ -726,7 +657,7 @@ export default function BusinessServicesPage() {
             <DialogTitle>Edit Service</DialogTitle>
             <DialogDescription>Update your service details.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             <div className="space-y-2">
               <Label htmlFor="edit-name">Service Name *</Label>
               <Input
@@ -765,7 +696,7 @@ export default function BusinessServicesPage() {
 
             {/* Show items form if hasItems is enabled */}
             {formData.hasItems && (
-              <div className="border rounded-lg p-4 bg-muted/30">
+              <div className="border rounded-lg p-3 bg-muted/30">
                 <ServiceItemsForm
                   items={formData.items}
                   onChange={(items) => setFormData((prev) => ({ ...prev, items }))}
@@ -775,7 +706,7 @@ export default function BusinessServicesPage() {
 
             {/* Only show base price if no items */}
             {!formData.hasItems && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="edit-basePrice">Base Price *</Label>
                   <div className="relative">
@@ -812,7 +743,7 @@ export default function BusinessServicesPage() {
 
             <div className="space-y-2">
               <Label htmlFor="edit-duration">Duration</Label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Input
                   id="edit-duration"
                   type="number"

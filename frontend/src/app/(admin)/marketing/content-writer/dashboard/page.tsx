@@ -2,86 +2,54 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { Pencil } from 'lucide-react'
 import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { DataTable, PageHeader, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dashboard'
 
 export default function ContentWriterDashboardPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const { data, isLoading } = useBlogPosts({ status: 'DRAFT', page: currentPage, limit: 20 })
+  type Post = NonNullable<typeof data>['data'][number]
+
+  const columns: DataColumn<Post>[] = [
+    {
+      id: 'title',
+      header: 'Title',
+      cell: (p) => <TwoLineCell title={p.title} subtitle={`Updated ${formatDate(p.updatedAt)}`} />,
+      exportValue: (p) => p.title,
+    },
+    { id: 'status', header: 'Status', cell: (p) => <StatusBadge status={p.status} />, exportValue: (p) => p.status },
+  ]
 
   return (
     <RoleGuard allowedRoles={[ROLES.CONTENT_WRITER]} redirectOnFail={true} exactMatch>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h1 className="text-lg font-semibold">Content Writer Dashboard</h1>
-            <p className="text-muted-foreground">Create and edit your draft blog posts. Publishing is handled by Marketing Admin.</p>
-          </div>
-          <Button asChild>
-            <Link href="/marketing/content/new">Write New Draft</Link>
-          </Button>
-        </div>
+      <div className="space-y-3">
+        <PageHeader
+          title="Content Writer Dashboard"
+          actions={
+            <Button asChild size="sm">
+              <Link href="/marketing/content/new">Write New Draft</Link>
+            </Button>
+          }
+        />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>My Draft Posts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-40" />
-            ) : data?.data?.length ? (
-              <div className="space-y-3">
-                {data.data.map((post) => (
-                  <div key={post.id} className="flex items-center justify-between rounded-md border p-4">
-                    <div>
-                      <p className="font-medium">{post.title}</p>
-                      <p className="text-xs text-muted-foreground">Updated {formatDate(post.updatedAt)}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{post.status}</Badge>
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/marketing/content/${post.id}`}>Edit Draft</Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No drafts yet. Start writing your first draft.</p>
-            )}
-
-            {data?.meta?.totalPages && data.meta.totalPages > 1 ? (
-              <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Page {data.meta.page} of {data.meta.totalPages} • {data.meta.total} items
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!data.meta.hasPreviousPage || isLoading}
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!data.meta.hasNextPage || isLoading}
-                    onClick={() => setCurrentPage((prev) => prev + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
+        <DataTable
+          data={data?.data}
+          columns={columns}
+          rowKey={(p) => p.id}
+          isLoading={isLoading}
+          rowActions={(p) => [{ label: 'Edit draft', icon: Pencil, href: `/marketing/content/${p.id}` }]}
+          emptyTitle="No drafts yet. Start writing your first draft."
+          serverPagination={{
+            page: currentPage,
+            pageSize: 20,
+            total: data?.meta?.total ?? data?.data?.length ?? 0,
+            onPageChange: setCurrentPage,
+          }}
+        />
       </div>
     </RoleGuard>
   )

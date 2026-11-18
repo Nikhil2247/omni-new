@@ -8,8 +8,8 @@ export function OpsKycLookup() {
   const { data, isLoading, error } = useOpsKycByVendor(vendorProfileId)
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-4">
+    <div className="space-y-3">
+      <div className="rounded-lg border bg-card p-3">
         <label className="text-sm font-medium">Vendor Profile ID</label>
         <div className="mt-2 flex gap-2">
           <input
@@ -35,7 +35,7 @@ export function OpsKycLookup() {
       )}
 
       {data && (
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-card p-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">KYC Record</p>

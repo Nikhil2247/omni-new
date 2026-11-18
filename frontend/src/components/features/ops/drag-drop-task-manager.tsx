@@ -10,7 +10,7 @@
 import { useState, useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -45,6 +45,7 @@ import {
   Search,
   Filter,
 } from 'lucide-react'
+import { ConfirmDialog, FilterSelect, StatCard, StatGrid, useConfirmAction } from '@/components/dashboard'
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -124,6 +125,7 @@ export function DragDropTaskManager({
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null)
+  const deleteAsk = useConfirmAction<TaskItem>()
   
   // Form state
   const [formData, setFormData] = useState({
@@ -230,10 +232,8 @@ export function DragDropTaskManager({
   }
 
   const handleDelete = (taskId: string) => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      setTasks(prev => prev.filter(t => t.id !== taskId))
-      onDelete?.(taskId)
-    }
+    setTasks(prev => prev.filter(t => t.id !== taskId))
+    onDelete?.(taskId)
   }
 
   const handleCreate = () => {
@@ -279,123 +279,49 @@ export function DragDropTaskManager({
   // RENDER
   // ========================================
   return (
-    <div className="space-y-4">
-      {/* Statistics */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-              <Clock className="h-5 w-5 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-              </div>
-              <Clock className="h-5 w-5 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.inProgress}</p>
-              </div>
-              <PlayCircle className="h-5 w-5 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-              </div>
-              <CheckCircle className="h-5 w-5 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={stats.overdue > 0 ? 'border-red-500' : ''}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
-              </div>
-              <AlertCircle className="h-5 w-5 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-3">
+      <StatGrid className="lg:grid-cols-5">
+        <StatCard label="Total" value={stats.total} icon={Clock} />
+        <StatCard label="Pending" value={stats.pending} icon={Clock} accent="text-yellow-600" />
+        <StatCard label="In Progress" value={stats.inProgress} icon={PlayCircle} accent="text-purple-600" />
+        <StatCard label="Completed" value={stats.completed} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="Overdue" value={stats.overdue} icon={AlertCircle} accent="text-red-600" />
+      </StatGrid>
 
       {/* Filters & Search */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Task Management</CardTitle>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Task
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tasks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {STATUS_LEVELS.map(status => (
-                  <SelectItem key={status} value={status}>
-                    {statusConfig[status].label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                {PRIORITY_LEVELS.map(priority => (
-                  <SelectItem key={priority} value={priority}>
-                    {priorityConfig[priority].label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search tasks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 h-8"
+          />
+        </div>
+        <FilterSelect
+          label="Status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={STATUS_LEVELS.map((status) => ({ value: status, label: statusConfig[status].label }))}
+        />
+        <FilterSelect
+          label="Priority"
+          value={priorityFilter}
+          onChange={setPriorityFilter}
+          options={PRIORITY_LEVELS.map((priority) => ({ value: priority, label: priorityConfig[priority].label }))}
+        />
+        <Button size="sm" className="h-8" onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          Add Task
+        </Button>
+      </div>
 
       {/* Tasks List with Drag & Drop */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {isLoading ? (
           <Card className="animate-pulse">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="space-y-3">
                 <div className="h-4 bg-muted rounded w-3/4" />
                 <div className="h-3 bg-muted rounded w-1/2" />
@@ -404,9 +330,9 @@ export function DragDropTaskManager({
           </Card>
         ) : filteredTasks.length === 0 ? (
           <Card>
-            <CardContent className="py-12 text-center">
-              <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium">No Tasks Found</p>
+            <CardContent className="py-6 text-center">
+              <Clock className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+              <p className="font-medium">No Tasks Found</p>
               <p className="text-sm text-muted-foreground mt-1">
                 {searchTerm || statusFilter !== 'all' || priorityFilter !== 'all'
                   ? 'Try adjusting your filters'
@@ -415,7 +341,7 @@ export function DragDropTaskManager({
               {!searchTerm && statusFilter === 'all' && priorityFilter === 'all' && (
                 <Button
                   onClick={() => setCreateDialogOpen(true)}
-                  className="mt-4"
+                  className="mt-3"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Task
@@ -444,7 +370,7 @@ export function DragDropTaskManager({
                   ${overdue ? 'border-red-500/50' : 'hover:border-primary/50'}
                 `}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-3">
                   <div className="flex items-start gap-3">
                     {/* Drag Handle */}
                     <div className="mt-1 cursor-grab active:cursor-grabbing">
@@ -471,7 +397,7 @@ export function DragDropTaskManager({
                       </div>
 
                       {/* Metadata */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                         {task.dueDate && (
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -524,7 +450,8 @@ export function DragDropTaskManager({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleDelete(task.id)}
+                        onClick={() => deleteAsk.ask(task)}
+                        title="Delete task"
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -538,6 +465,15 @@ export function DragDropTaskManager({
         )}
       </div>
 
+      <ConfirmDialog
+        {...deleteAsk.dialogProps}
+        title="Delete task?"
+        description={deleteAsk.target ? `"${deleteAsk.target.title}" will be permanently deleted. This action cannot be undone.` : undefined}
+        onConfirm={() => {
+          if (deleteAsk.target) handleDelete(deleteAsk.target.id)
+        }}
+      />
+
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent>
@@ -545,7 +481,7 @@ export function DragDropTaskManager({
             <DialogTitle>Create New Task</DialogTitle>
             <DialogDescription>Add a new operational task.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input
@@ -565,7 +501,7 @@ export function DragDropTaskManager({
                 rows={3}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="priority">Priority</Label>
                 <Select
@@ -613,7 +549,7 @@ export function DragDropTaskManager({
             <DialogTitle>Edit Task</DialogTitle>
             <DialogDescription>Update task details.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="edit-title">Title *</Label>
               <Input
@@ -631,7 +567,7 @@ export function DragDropTaskManager({
                 rows={3}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="edit-priority">Priority</Label>
                 <Select

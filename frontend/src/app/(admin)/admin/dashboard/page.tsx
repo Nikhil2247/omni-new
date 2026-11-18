@@ -5,12 +5,11 @@ import { subDays, startOfDay, endOfDay } from 'date-fns'
 import { useAdminDashboard } from '@/hooks/queries/use-admin'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { Badge } from '@/components/ui/badge'
+import { PageHeader, StatCard, StatGrid } from '@/components/dashboard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Progress } from '@/components/ui/progress'
 import {
   Calendar,
-  Gauge,
   Store,
   TrendingUp,
   Users,
@@ -23,7 +22,6 @@ import {
 import {
   AreaLineChart,
   BarChart,
-  MetricCard,
   DateRangeSelector,
   DateRangeValue,
 } from '@/components/charts'
@@ -64,16 +62,16 @@ export default function AdminDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-32 w-full rounded-xl" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-28" />
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-full rounded-lg" />
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-14" />
           ))}
         </div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Skeleton className="h-80 lg:col-span-2" />
-          <Skeleton className="h-80" />
+        <div className="grid gap-3 lg:grid-cols-3">
+          <Skeleton className="h-64 lg:col-span-2" />
+          <Skeleton className="h-64" />
         </div>
       </div>
     )
@@ -117,70 +115,40 @@ export default function AdminDashboardPage() {
   const healthPercent = normalizeHealthPercent(overview.platformHealth)
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">Admin Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Platform overview and key performance signals</p>
-        </div>
-        <DateRangeSelector value={dateRange} onChange={setDateRange} />
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="Admin Dashboard"
+        actions={<DateRangeSelector value={dateRange} onChange={setDateRange} />}
+      />
 
       {/* Overview Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <MetricCard
-          title="Total Users"
-          value={overview.totalUsers}
-          change={overview.userGrowth}
-          icon={Users}
-          variant="gradient"
-        />
-        <MetricCard
-          title="Active Vendors"
-          value={overview.totalVendors}
-          change={overview.vendorGrowth}
-          icon={Store}
-        />
-        <MetricCard
-          title="Active Events"
-          value={overview.totalEvents}
-          change={overview.eventGrowth}
-          icon={Calendar}
-        />
-        <MetricCard
-          title="Total Revenue"
-          value={overview.totalRevenue}
-          change={overview.revenueGrowth}
-          icon={DollarSign}
-          valueFormatter={(v) => `$${Number(v).toLocaleString()}`}
-        />
-        <MetricCard
-          title="Conversion Rate"
-          value={`${Math.round(overview.avgConversionRate * 100)}%`}
-          icon={Target}
-        />
-      </div>
+      <StatGrid className="lg:grid-cols-5">
+        <StatCard label="Total Users" value={overview.totalUsers.toLocaleString()} hint={fmtChange(overview.userGrowth)} icon={Users} />
+        <StatCard label="Active Vendors" value={overview.totalVendors.toLocaleString()} hint={fmtChange(overview.vendorGrowth)} icon={Store} />
+        <StatCard label="Active Events" value={overview.totalEvents.toLocaleString()} hint={fmtChange(overview.eventGrowth)} icon={Calendar} />
+        <StatCard label="Total Revenue" value={`$${Number(overview.totalRevenue).toLocaleString()}`} hint={fmtChange(overview.revenueGrowth)} icon={DollarSign} />
+        <StatCard label="Conversion Rate" value={`${Math.round(overview.avgConversionRate * 100)}%`} icon={Target} />
+      </StatGrid>
 
       {/* Engagement Trends & Platform Health */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {trendChartData.length > 0 ? (
             <AreaLineChart
               title="Engagement Trends"
-              description="Daily active users and sessions over time"
               data={trendChartData}
               dataKeys={[
                 { key: 'activeUsers', label: 'Active Users', color: 'hsl(var(--primary))' },
                 { key: 'sessions', label: 'Sessions', color: 'hsl(var(--chart-2))' },
               ]}
-              height={320}
+              height={240}
             />
           ) : (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base font-medium">Engagement Trends</CardTitle>
               </CardHeader>
-              <CardContent className="flex h-64 items-center justify-center">
+              <CardContent className="flex h-40 items-center justify-center">
                 <p className="text-sm text-muted-foreground">No trend data available yet.</p>
               </CardContent>
             </Card>
@@ -194,11 +162,11 @@ export default function AdminDashboardPage() {
               {healthPercent}%
             </Badge>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {/* Health Ring */}
             <div className="flex justify-center">
-              <div className="relative flex h-32 w-32 items-center justify-center">
-                <svg className="h-32 w-32 -rotate-90 transform">
+              <div className="relative flex h-24 w-24 items-center justify-center">
+                <svg viewBox="0 0 128 128" className="h-24 w-24 -rotate-90 transform">
                   <circle
                     cx="64"
                     cy="64"
@@ -255,7 +223,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Growth Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <GrowthCard label="Users" value={overview.totalUsers} change={overview.userGrowth} icon={Users} />
         <GrowthCard label="Vendors" value={overview.totalVendors} change={overview.vendorGrowth} icon={Store} />
         <GrowthCard label="Events" value={overview.totalEvents} change={overview.eventGrowth} icon={Calendar} />
@@ -263,22 +231,21 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Vendors & Activity */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {/* Top Vendors Chart */}
         {vendorChartData.length > 0 ? (
           <BarChart
             title="Top Vendors Performance"
-            description="Performance scores of top vendors"
             data={vendorChartData}
             layout="vertical"
-            height={280}
+            height={220}
           />
         ) : (
           <Card>
             <CardHeader>
               <CardTitle className="text-base font-medium">Top Vendors Performance</CardTitle>
             </CardHeader>
-            <CardContent className="flex h-64 items-center justify-center">
+            <CardContent className="flex h-40 items-center justify-center">
               <p className="text-sm text-muted-foreground">No vendor performance data yet.</p>
             </CardContent>
           </Card>
@@ -289,7 +256,7 @@ export default function AdminDashboardPage() {
           <CardHeader>
             <CardTitle className="text-base font-medium">User Engagement</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <EngagementRow
               label="Daily Active Users"
               value={userMetrics.dau}
@@ -309,21 +276,21 @@ export default function AdminDashboardPage() {
               color="bg-indigo-500"
             />
 
-            <div className="mt-6 grid grid-cols-3 gap-4 pt-4 border-t">
+            <div className="mt-3 grid grid-cols-3 gap-3 pt-3 border-t">
               <div className="text-center">
-                <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
+                <p className="text-xl font-bold text-violet-600 dark:text-violet-400">
                   {userMetrics.dau}
                 </p>
                 <p className="text-xs text-muted-foreground">DAU</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
                   {userMetrics.wau}
                 </p>
                 <p className="text-xs text-muted-foreground">WAU</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
                   {userMetrics.mau}
                 </p>
                 <p className="text-xs text-muted-foreground">MAU</p>
@@ -348,7 +315,7 @@ export default function AdminDashboardPage() {
               {topVendors.map((vendor, index) => (
                 <div
                   key={vendor.vendorProfileId}
-                  className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
+                  className="flex items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -402,7 +369,7 @@ function GrowthCard({
   const isPositive = change >= 0
   return (
     <Card className="transition-all hover:shadow-md">
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
             <Icon className="h-5 w-5 text-primary" />
@@ -416,8 +383,8 @@ function GrowthCard({
             {change.toFixed(1)}%
           </span>
         </div>
-        <div className="mt-3">
-          <p className="text-2xl font-bold">{value.toLocaleString()}</p>
+        <div className="mt-2">
+          <p className="text-xl font-bold">{value.toLocaleString()}</p>
           <p className="text-xs text-muted-foreground">{label}</p>
         </div>
       </CardContent>
@@ -438,7 +405,7 @@ function EngagementRow({
 }) {
   const percent = max > 0 ? (value / max) * 100 : 0
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">{label}</span>
         <span className="font-medium">{value.toLocaleString()}</span>
@@ -463,6 +430,10 @@ function healthVariant(value: number) {
   if (normalized >= 90) return 'default' as const
   if (normalized >= 75) return 'secondary' as const
   return 'destructive' as const
+}
+
+function fmtChange(value: number) {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 }
 
 function formatPercent(value: number) {

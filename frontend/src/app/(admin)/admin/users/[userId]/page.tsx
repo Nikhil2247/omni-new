@@ -12,6 +12,7 @@ import {
   useUpdateUserStatus,
 } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmDialog, PageHeader } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -32,6 +33,7 @@ export default function AdminUserDetailPage() {
   const [status, setStatus] = useState('')
   const [selectedRole, setSelectedRole] = useState('')
   const [isChangingRole, setIsChangingRole] = useState(false)
+  const [confirmStatusOpen, setConfirmStatusOpen] = useState(false)
 
   // Sync local status state with server value (backend returns uppercase enum)
   useEffect(() => {
@@ -60,9 +62,9 @@ export default function AdminUserDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <div className="grid gap-4 lg:grid-cols-3">
+      <div className="space-y-3">
+        <Skeleton className="h-16 w-full rounded-lg" />
+        <div className="grid gap-3 lg:grid-cols-3">
           <Skeleton className="h-40" />
           <Skeleton className="h-40" />
           <Skeleton className="h-40" />
@@ -83,16 +85,17 @@ export default function AdminUserDetailPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="mb-3 -ml-2">
-          <Link href="/admin/users"><ArrowLeft className="mr-1 h-4 w-4" />Users</Link>
-        </Button>
-        <h1 className="text-lg font-semibold tracking-tight">{formatName(user)}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title={formatName(user)}
+        leading={
+          <Button asChild variant="ghost" size="sm" className="-ml-2">
+            <Link href="/admin/users"><ArrowLeft className="mr-1 h-4 w-4" />Users</Link>
+          </Button>
+        }
+      />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Status card */}
         <Card>
           <CardHeader>
@@ -112,7 +115,11 @@ export default function AdminUserDetailPage() {
               </SelectContent>
             </Select>
             <Button
-              onClick={() => updateStatus.mutate(status)}
+              onClick={() =>
+                status === 'SUSPENDED' || status === 'DELETED'
+                  ? setConfirmStatusOpen(true)
+                  : updateStatus.mutate(status)
+              }
               disabled={!status || updateStatus.isPending || status === user.status}
               className="w-full"
             >
@@ -126,7 +133,7 @@ export default function AdminUserDetailPage() {
           <CardHeader>
             <CardTitle>Role</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {/* Current role display */}
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Current role</p>
@@ -192,7 +199,7 @@ export default function AdminUserDetailPage() {
           <CardHeader>
             <CardTitle>Account details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Status</span>
               <Badge variant={statusVariant(user.status)} className="text-xs">{formatStatus(user.status)}</Badge>
@@ -224,6 +231,15 @@ export default function AdminUserDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        {...{ open: confirmStatusOpen, onOpenChange: setConfirmStatusOpen }}
+        title={status === 'DELETED' ? 'Delete this account?' : 'Suspend this account?'}
+        description={`This will set the account status to ${formatStatus(status)}.`}
+        confirmLabel={status === 'DELETED' ? 'Delete' : 'Suspend'}
+        loading={updateStatus.isPending}
+        onConfirm={() => updateStatus.mutateAsync(status)}
+      />
     </div>
   )
 }

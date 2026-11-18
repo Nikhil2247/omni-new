@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuthStore } from '@/store/auth-store';
 import {
   Calendar,
   Users,
@@ -10,8 +9,10 @@ import {
   Receipt,
   UserPlus,
   CalendarDays,
+  type LucideIcon,
 } from 'lucide-react';
 import { useOpsLeads } from '@/hooks/queries/use-leads';
+import { PageHeader, StatCard as KpiCard } from '@/components/dashboard';
 import { useOpsActiveEvents, useOpsOperationalTasks, useOpsManagers, useOpsAssistants } from '@/hooks/queries/use-ops';
 
 /**
@@ -28,7 +29,6 @@ import { useOpsActiveEvents, useOpsOperationalTasks, useOpsManagers, useOpsAssis
  * - Vendor verification
  */
 export function OpsAdminDashboard() {
-  const { user } = useAuthStore();
   const { data: leadsResponse } = useOpsLeads();
   const { data: eventsResponse } = useOpsActiveEvents();
   const { data: tasksResponse } = useOpsOperationalTasks();
@@ -54,17 +54,11 @@ export function OpsAdminDashboard() {
   const totalAssistants = assistants.length;
 
   return (
-    <div className="space-y-4">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-lg font-semibold">Control Tower</h1>
-        <p className="text-muted-foreground">
-          Welcome, {user?.name || 'Ops Admin'} - Full operational oversight
-        </p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Control Tower" />
 
       {/* Primary Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Active Events"
           value={String(activeEventsTotal)}
@@ -98,21 +92,21 @@ export function OpsAdminDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Leads Ready for Conversion */}
-        <div className="lg:col-span-2 rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Recent Leads</h2>
+        <div className="lg:col-span-2 rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Recent Leads</h2>
             <a href="/ops/leads" className="text-sm text-primary hover:underline">
               View all leads ({leads.length})
             </a>
           </div>
           {leads.length === 0 ? (
-            <div className="py-4 text-center text-muted-foreground">
+            <div className="py-3 text-center text-muted-foreground">
               No leads available
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {leads.slice(0, 3).map((lead) => {
                 // Map backend lead status to UI status
                 const mapStatus = (backendStatus?: string): 'new' | 'contacted' | 'qualified' | 'converted' => {
@@ -139,16 +133,16 @@ export function OpsAdminDashboard() {
               })}
             </div>
           )}
-          <div className="mt-4 flex gap-2">
+          <div className="mt-2 flex gap-2">
             <a
               href="/ops/leads"
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+              className="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"
             >
               Manage Leads
             </a>
             <a
               href="/ops/events/new"
-              className="rounded-md border px-4 py-2 text-sm hover:bg-accent"
+              className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
             >
               Create Direct Booking
             </a>
@@ -156,10 +150,10 @@ export function OpsAdminDashboard() {
         </div>
 
         {/* Team Overview */}
-        <div className="space-y-4">
-          <div className="rounded-lg border bg-card p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Ops Team</h2>
+        <div className="space-y-3">
+          <div className="rounded-lg border bg-card p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Ops Team</h2>
             </div>
             <div className="space-y-3">
               <TeamStatItem 
@@ -173,7 +167,7 @@ export function OpsAdminDashboard() {
                 active={totalAssistants} 
               />
             </div>
-            <div className="mt-4 space-y-2">
+            <div className="mt-2 space-y-2">
               <a
                 href="/ops/team/managers"
                 className="block w-full rounded-md border py-2 text-center text-sm hover:bg-accent"
@@ -190,8 +184,8 @@ export function OpsAdminDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="rounded-lg border bg-card p-4">
-            <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
+          <div className="rounded-lg border bg-card p-3">
+            <h2 className="mb-2 text-sm font-semibold">Quick Actions</h2>
             <div className="space-y-2">
               <QuickAction
                 icon={UserPlus}
@@ -219,21 +213,21 @@ export function OpsAdminDashboard() {
       </div>
 
       {/* Events Needing Assignment & Recent Activity */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {/* Unassigned Events */}
-        <div className="rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Unassigned Events</h2>
+        <div className="rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Unassigned Events</h2>
             <span className="rounded-full bg-orange-100 px-2 py-1 text-xs text-orange-800 dark:bg-orange-900 dark:text-orange-200">
               {unassignedEvents} pending
             </span>
           </div>
           {unassignedEvents === 0 ? (
-            <div className="py-4 text-center text-muted-foreground">
+            <div className="py-3 text-center text-muted-foreground">
               All events are assigned
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {events
                 .filter(event => !event.opsManagerId)
                 .slice(0, 2)
@@ -249,7 +243,7 @@ export function OpsAdminDashboard() {
                 ))}
             </div>
           )}
-          <div className="mt-4">
+          <div className="mt-2">
             <a
               href="/ops/events"
               className="text-sm text-primary hover:underline"
@@ -260,14 +254,14 @@ export function OpsAdminDashboard() {
         </div>
 
         {/* Recent Tasks */}
-        <div className="rounded-lg border bg-card p-4">
-          <h2 className="mb-4 text-lg font-semibold">Recent Tasks</h2>
+        <div className="rounded-lg border bg-card p-3">
+          <h2 className="mb-2 text-sm font-semibold">Recent Tasks</h2>
           {tasks.length === 0 ? (
-            <div className="py-4 text-center text-muted-foreground">
+            <div className="py-3 text-center text-muted-foreground">
               No tasks assigned yet
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {tasks.slice(0, 3).map((task) => (
                 <TaskItem
                   key={task.id}
@@ -279,7 +273,7 @@ export function OpsAdminDashboard() {
               ))}
             </div>
           )}
-          <div className="mt-4">
+          <div className="mt-2">
             <a
               href="/ops/tasks"
               className="text-sm text-primary hover:underline"
@@ -291,20 +285,20 @@ export function OpsAdminDashboard() {
       </div>
 
       {/* Manager Performance */}
-      <div className="grid gap-4 lg:grid-cols-1">
-        <div className="rounded-lg border bg-card p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Manager Performance</h2>
+      <div className="grid gap-3 lg:grid-cols-1">
+        <div className="rounded-lg border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Manager Performance</h2>
             <a href="/ops/team/managers" className="text-sm text-primary hover:underline">
               View all managers →
             </a>
           </div>
           {managers.length === 0 ? (
-            <div className="py-4 text-center text-muted-foreground">
+            <div className="py-3 text-center text-muted-foreground">
               No managers available
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               {managers.slice(0, 4).map((manager) => (
                 <ManagerItem
                   key={manager.id}
@@ -326,29 +320,27 @@ export function OpsAdminDashboard() {
 function StatCard({
   title,
   value,
-  icon: Icon,
+  icon,
   trend,
   trendUp,
   urgent,
 }: {
   title: string;
   value: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   trend: string;
   trendUp: boolean;
   urgent?: boolean;
 }) {
   return (
-    <div className={`rounded-lg border bg-card p-4 ${urgent ? 'border-orange-500' : ''}`}>
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{title}</p>
-        <Icon className={`h-4 w-4 ${urgent ? 'text-orange-500' : 'text-muted-foreground'}`} />
-      </div>
-      <p className="mt-2 text-xl font-bold">{value}</p>
-      <p className={`mt-1 text-xs ${trendUp ? 'text-green-600' : urgent ? 'text-orange-500' : 'text-muted-foreground'}`}>
-        {trend}
-      </p>
-    </div>
+    <KpiCard
+      label={title}
+      value={value}
+      icon={icon}
+      accent={urgent ? 'text-orange-500' : undefined}
+      hint={<span className={trendUp ? 'text-green-600' : urgent ? 'text-orange-500' : undefined}>{trend}</span>}
+      className={urgent ? 'border-orange-500' : undefined}
+    />
   );
 }
 
@@ -375,8 +367,8 @@ function LeadItem({
   const config = statusConfig[status] || statusConfig.new;
 
   return (
-    <div className="flex items-center justify-between rounded-md border p-4">
-      <div className="flex items-center gap-4">
+    <div className="flex items-center justify-between rounded-md border p-3">
+      <div className="flex items-center gap-3">
         <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
         <div>
           <p className="font-medium">{name}</p>
@@ -441,7 +433,7 @@ function UnassignedEventItem({
   managers: any[];
 }) {
   return (
-    <div className="rounded-md border p-4">
+    <div className="rounded-md border p-3">
       <div className="mb-2 flex items-center justify-between">
         <p className="font-medium">{name}</p>
         <p className="text-sm font-medium">{budget}</p>
@@ -510,7 +502,7 @@ function ManagerItem({
   completion: number;
 }) {
   return (
-    <div className="rounded-md border p-4">
+    <div className="rounded-md border p-3">
       <div className="flex items-center gap-2 mb-2">
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
           {name.charAt(0)}

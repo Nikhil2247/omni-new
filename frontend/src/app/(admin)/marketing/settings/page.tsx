@@ -1,40 +1,35 @@
 'use client'
 
+import Link from 'next/link'
 import { User, Bell, Shield } from 'lucide-react'
-import { SettingsCard } from '@/components/settings/settings-card'
+import type { LucideIcon } from 'lucide-react'
+import { PageHeader } from '@/components/dashboard'
+
+const items: { title: string; href: string; icon: LucideIcon; iconColor: string }[] = [
+  { title: 'Profile', href: '/marketing/settings/profile', icon: User, iconColor: 'text-blue-500' },
+  { title: 'Notifications', href: '/marketing/settings/notifications', icon: Bell, iconColor: 'text-amber-500' },
+  { title: 'Security', href: '/marketing/settings/security', icon: Shield, iconColor: 'text-green-500' },
+]
 
 export default function MarketingSettingsPage() {
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Settings</h1>
-        <p className="text-muted-foreground">Manage your marketing account preferences.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Settings" />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <SettingsCard
-          title="Profile"
-          description="Update your personal details and account information."
-          href="/marketing/settings/profile"
-          icon={User}
-          iconColor="text-blue-500"
-        />
-        
-        <SettingsCard
-          title="Notifications"
-          description="Manage notification preferences for marketing updates."
-          href="/marketing/settings/notifications"
-          icon={Bell}
-          iconColor="text-amber-500"
-        />
-        
-        <SettingsCard
-          title="Security"
-          description="Manage sessions, password, and two-factor authentication."
-          href="/marketing/settings/security"
-          icon={Shield}
-          iconColor="text-green-500"
-        />
+      <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+        {items.map(({ title, href, icon: Icon, iconColor }) => (
+          <Link
+            key={href}
+            href={href}
+            className="bg-card hover:bg-accent group flex items-center justify-between rounded-lg border px-3 py-2.5 transition-colors"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Icon className={`h-4 w-4 ${iconColor}`} />
+              {title}
+            </span>
+            <span className="text-primary text-xs group-hover:underline">Manage →</span>
+          </Link>
+        ))}
       </div>
     </div>
   )

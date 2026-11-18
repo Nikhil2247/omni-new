@@ -3,46 +3,22 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell } from '@/components/dashboard';
 import {
   Plus,
-  MoreVertical,
   Play,
   Pause,
   StopCircle,
   Trash2,
   Eye,
   Edit,
-  TrendingUp,
-  MousePointerClick,
   Target,
-  DollarSign,
 } from 'lucide-react';
 import { useCampaigns, usePauseCampaign, useResumeCampaign, useStopCampaign, useCancelCampaign } from '@/hooks/queries/use-subscription';
+import type { Campaign } from '@/lib/api/types/subscription.types';
 import { CampaignStatus, CampaignType } from '@/lib/api/types/subscription.types';
 import { toast } from 'sonner';
 import { FeatureFlagGate, FeatureDisabledMessage, VendorFeatureGate } from '@/components/common';
-
-const statusColors: Record<CampaignStatus, string> = {
-  DRAFT: 'bg-gray-100 text-gray-800',
-  PENDING_APPROVAL: 'bg-orange-100 text-orange-800',
-  APPROVED: 'bg-teal-100 text-teal-800',
-  REJECTED: 'bg-red-100 text-red-800',
-  SCHEDULED: 'bg-blue-100 text-blue-800',
-  ACTIVE: 'bg-green-100 text-green-800',
-  PAUSED: 'bg-yellow-100 text-yellow-800',
-  COMPLETED: 'bg-purple-100 text-purple-800',
-  CANCELLED: 'bg-red-100 text-red-800',
-};
 
 const typeLabels: Record<CampaignType, string> = {
   PROFILE_BOOST: 'Profile Boost',
@@ -63,7 +39,9 @@ function formatNumber(num: number): string {
 
 export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | 'ALL'>('ALL');
-  const { data: campaigns, isLoading } = useCampaigns(statusFilter === 'ALL' ? undefined : statusFilter);
+  const [search, setSearch] = useState('');
+  const { data: allCampaigns, isLoading } = useCampaigns(statusFilter === 'ALL' ? undefined : statusFilter);
+  const campaigns = allCampaigns?.filter((c) => !search.trim() || c.name.toLowerCase().includes(search.trim().toLowerCase()));
   const pauseCampaign = usePauseCampaign();
   const resumeCampaign = useResumeCampaign();
   const stopCampaign = useStopCampaign();
@@ -104,168 +82,167 @@ export default function CampaignsPage() {
         feature="marketing.campaigns"
         fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing" backText="Back to Marketing" />}
       >
-        <div className="container py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-lg font-semibold">Campaigns</h1>
-            <p className="text-muted-foreground">Manage your advertising campaigns</p>
-          </div>
-          <Link href="/business/marketing/campaigns/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Campaign
-            </Button>
-          </Link>
-        </div>
+        <div className="space-y-3">
+          <PageHeader
+            title="Campaigns"
+            actions={
+              <Button asChild size="sm">
+                <Link href="/business/marketing/campaigns/new">
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Create Campaign
+                </Link>
+              </Button>
+            }
+          />
 
-        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as CampaignStatus | 'ALL')}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="ALL">All</TabsTrigger>
-            <TabsTrigger value="ACTIVE">Active</TabsTrigger>
-            <TabsTrigger value="SCHEDULED">Scheduled</TabsTrigger>
-            <TabsTrigger value="PAUSED">Paused</TabsTrigger>
-            <TabsTrigger value="DRAFT">Draft</TabsTrigger>
-            <TabsTrigger value="COMPLETED">Completed</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={statusFilter} className="mt-0">
-            {isLoading ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i}>
-                    <CardHeader>
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-24" />
-                    </CardHeader>
-                    <CardContent>
-                      <Skeleton className="h-20 w-full" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : campaigns?.length === 0 ? (
-              <Card>
-                <CardContent className="py-10 text-center">
-                  <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Create your first campaign to start promoting your business.
-                  </p>
-                  <Link href="/business/marketing/campaigns/new">
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Campaign
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {campaigns?.map((campaign) => (
-                  <Card key={campaign.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{campaign.name}</CardTitle>
-                          <CardDescription>{typeLabels[campaign.type]}</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={statusColors[campaign.status]}>
-                            {campaign.status}
-                          </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <Link href={`/business/marketing/campaigns/${campaign.id}`}>
-                                <DropdownMenuItem>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Details
-                                </DropdownMenuItem>
-                              </Link>
-                              {(campaign.status === 'DRAFT' || campaign.status === 'SCHEDULED') && (
-                                <Link href={`/business/marketing/campaigns/${campaign.id}/edit`}>
-                                  <DropdownMenuItem>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                </Link>
-                              )}
-                              {campaign.status === 'ACTIVE' && (
-                                <DropdownMenuItem onClick={() => handleAction('pause', campaign.id)}>
-                                  <Pause className="mr-2 h-4 w-4" />
-                                  Pause
-                                </DropdownMenuItem>
-                              )}
-                              {campaign.status === 'PAUSED' && (
-                                <DropdownMenuItem onClick={() => handleAction('resume', campaign.id)}>
-                                  <Play className="mr-2 h-4 w-4" />
-                                  Resume
-                                </DropdownMenuItem>
-                              )}
-                              {(campaign.status === 'ACTIVE' || campaign.status === 'PAUSED') && (
-                                <DropdownMenuItem onClick={() => handleAction('stop', campaign.id)}>
-                                  <StopCircle className="mr-2 h-4 w-4" />
-                                  Stop
-                                </DropdownMenuItem>
-                              )}
-                              {campaign.status === 'DRAFT' && (
-                                <DropdownMenuItem
-                                  onClick={() => handleAction('cancel', campaign.id)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+          <DataTable<Campaign>
+            data={campaigns}
+            isLoading={isLoading}
+            rowKey={(c) => c.id}
+            search={{ value: search, onChange: setSearch, placeholder: 'Search campaigns...' }}
+            filters={
+              <FilterSelect
+                label="Status"
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v as CampaignStatus | 'ALL')}
+                allValue="ALL"
+                options={[
+                  { value: 'ACTIVE', label: 'Active' },
+                  { value: 'SCHEDULED', label: 'Scheduled' },
+                  { value: 'PAUSED', label: 'Paused' },
+                  { value: 'DRAFT', label: 'Draft' },
+                  { value: 'COMPLETED', label: 'Completed' },
+                ]}
+              />
+            }
+            exportFilename="campaigns"
+            columnToggle
+            emptyTitle="No campaigns yet"
+            emptyIcon={Target}
+            emptyAction={
+              <Button asChild size="sm">
+                <Link href="/business/marketing/campaigns/new">
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Create Campaign
+                </Link>
+              </Button>
+            }
+            columns={[
+              {
+                id: 'name',
+                header: 'Campaign',
+                label: 'Campaign',
+                sortValue: (c) => c.name,
+                exportValue: (c) => c.name,
+                cell: (c) => <TwoLineCell title={c.name} subtitle={typeLabels[c.type]} />,
+              },
+              {
+                id: 'status',
+                header: 'Status',
+                label: 'Status',
+                sortValue: (c) => c.status,
+                exportValue: (c) => c.status,
+                cell: (c) => <StatusBadge status={c.status} />,
+              },
+              {
+                id: 'views',
+                header: 'Views',
+                label: 'Views',
+                hideBelow: 'md',
+                align: 'right',
+                sortValue: (c) => c.impressions,
+                exportValue: (c) => c.impressions,
+                cell: (c) => <span className="text-sm">{formatNumber(c.impressions)}</span>,
+              },
+              {
+                id: 'clicks',
+                header: 'Clicks',
+                label: 'Clicks',
+                hideBelow: 'md',
+                align: 'right',
+                sortValue: (c) => c.clicks,
+                exportValue: (c) => c.clicks,
+                cell: (c) => <span className="text-sm">{formatNumber(c.clicks)}</span>,
+              },
+              {
+                id: 'conversions',
+                header: 'Conv.',
+                label: 'Conversions',
+                hideBelow: 'lg',
+                align: 'right',
+                sortValue: (c) => c.conversions,
+                exportValue: (c) => c.conversions,
+                cell: (c) => <span className="text-sm">{c.conversions}</span>,
+              },
+              {
+                id: 'budget',
+                header: 'Budget used',
+                label: 'Budget used',
+                sortValue: (c) => (c.totalBudget ? c.creditsSpent / c.totalBudget : 0),
+                exportValue: (c) => `${c.creditsSpent}/${c.totalBudget}`,
+                cell: (c) => {
+                  const pct = c.totalBudget ? Math.min((c.creditsSpent / c.totalBudget) * 100, 100) : 0;
+                  return (
+                    <div className="w-32">
+                      <div className="text-muted-foreground mb-1 flex justify-between text-[11px]">
+                        <span>
+                          {c.creditsSpent} / {c.totalBudget}
+                        </span>
+                        <span>{Math.round(pct)}%</span>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                          <span>{formatNumber(campaign.impressions)} views</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MousePointerClick className="h-4 w-4 text-muted-foreground" />
-                          <span>{formatNumber(campaign.clicks)} clicks</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span>{campaign.creditsSpent} / {campaign.totalBudget}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4 text-muted-foreground" />
-                          <span>{campaign.conversions} conv.</span>
-                        </div>
+                      <div className="bg-muted h-1.5 overflow-hidden rounded-full">
+                        <div className="bg-primary h-full rounded-full" style={{ width: `${pct}%` }} />
                       </div>
-
-                      {/* Budget Progress */}
-                      <div className="mt-4">
-                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                          <span>Budget Used</span>
-                          <span>{Math.round((campaign.creditsSpent / campaign.totalBudget) * 100)}%</span>
-                        </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary rounded-full transition-all"
-                            style={{ width: `${Math.min((campaign.creditsSpent / campaign.totalBudget) * 100, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                    </div>
+                  );
+                },
+              },
+            ]}
+            rowActions={(c) => [
+              { label: 'View details', icon: Eye, href: `/business/marketing/campaigns/${c.id}` },
+              {
+                label: 'Edit',
+                icon: Edit,
+                href: `/business/marketing/campaigns/${c.id}/edit`,
+                visible: c.status === 'DRAFT' || c.status === 'SCHEDULED',
+              },
+              {
+                label: 'Pause',
+                icon: Pause,
+                onClick: () => handleAction('pause', c.id),
+                visible: c.status === 'ACTIVE',
+              },
+              {
+                label: 'Resume',
+                icon: Play,
+                onClick: () => handleAction('resume', c.id),
+                visible: c.status === 'PAUSED',
+              },
+              {
+                label: 'Stop',
+                icon: StopCircle,
+                danger: true,
+                onClick: () => handleAction('stop', c.id),
+                visible: c.status === 'ACTIVE' || c.status === 'PAUSED',
+                confirm: {
+                  title: 'Stop this campaign?',
+                  description: `"${c.name}" will stop running and cannot be restarted.`,
+                  confirmLabel: 'Stop campaign',
+                },
+              },
+              {
+                label: 'Delete',
+                icon: Trash2,
+                danger: true,
+                onClick: () => handleAction('cancel', c.id),
+                visible: c.status === 'DRAFT',
+                confirm: {
+                  title: 'Delete this campaign?',
+                  description: `"${c.name}" will be permanently deleted. This cannot be undone.`,
+                },
+              },
+            ]}
+          />
         </div>
       </FeatureFlagGate>
     </VendorFeatureGate>

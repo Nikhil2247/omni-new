@@ -1,29 +1,30 @@
 'use client'
 
-import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useOpsVendors } from '@/hooks/queries/use-ops'
 import { useUmami } from '@/hooks/use-umami'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { useRouter } from 'next/navigation'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Building2,
   CheckCircle2,
   Clock,
-  Search,
+  Eye,
   Store,
   ShieldCheck,
   ShieldX,
   XCircle,
 } from 'lucide-react'
+import {
+  PageHeader,
+  DataTable,
+  FilterSelect,
+  StatusBadge,
+  TwoLineCell,
+  StatCard,
+  StatGrid,
+  type DataColumn,
+} from '@/components/dashboard'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   ACTIVE: { label: 'Active', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
@@ -33,6 +34,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 }
 
 export default function OpsVendorsPage() {
+  const router = useRouter()
   const { data: vendors, isLoading, error } = useOpsVendors()
   const { track } = useUmami()
 
@@ -54,190 +56,102 @@ export default function OpsVendorsPage() {
   const pendingCount = vendors?.filter(v => v.status === 'PENDING_VERIFICATION').length || 0
   const verifiedCount = vendors?.filter(v => v.verifiedAt).length || 0
 
+  type Vendor = NonNullable<typeof vendors>[number]
+
+  const columns: DataColumn<Vendor>[] = [
+    {
+      id: 'vendor',
+      header: 'Vendor',
+      label: 'Vendor',
+      cell: (v) => (
+        <TwoLineCell title={v.businessName || 'Unnamed Vendor'} subtitle={`ID: ${v.id.slice(0, 8)}...`} />
+      ),
+      sortValue: (v) => v.businessName,
+      exportValue: (v) => v.businessName,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (v) => <StatusBadge status={v.status} />,
+      sortValue: (v) => v.status,
+      exportValue: (v) => v.status,
+    },
+    {
+      id: 'verified',
+      header: 'Verification',
+      label: 'Verification',
+      cell: (v) =>
+        v.verifiedAt ? (
+          <span className="flex items-center gap-1 text-xs text-green-600">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Verified
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <ShieldX className="h-3.5 w-3.5" />
+            Not verified
+          </span>
+        ),
+      sortValue: (v) => (v.verifiedAt ? 1 : 0),
+      exportValue: (v) => (v.verifiedAt ? 'Verified' : 'Not verified'),
+    },
+  ]
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Vendors</h1>
-          <p className="text-muted-foreground">Manage vendor profiles and verifications.</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2 mt-2" />
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Vendors" />
+        <DataTable data={[]} columns={columns} rowKey={(v) => v.id} isLoading />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Vendors</h1>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Vendors" />
         <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive flex items-center gap-2">
-              <XCircle className="h-5 w-5" />
-              Error Loading Vendors
-            </CardTitle>
-            <CardDescription>Failed to load vendors. Please try again.</CardDescription>
-          </CardHeader>
+          <CardContent className="flex items-center gap-2 p-3 text-sm text-destructive">
+            <XCircle className="h-4 w-4" />
+            Failed to load vendors. Please try again.
+          </CardContent>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-lg font-semibold">Vendors</h1>
-        <p className="text-muted-foreground">Manage vendor profiles and verifications.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Vendors" />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Vendors</p>
-                <p className="text-2xl font-bold">{vendors?.length || 0}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Store className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold text-green-600">{activeCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending Verification</p>
-                <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-yellow-500/10">
-                <Clock className="h-5 w-5 text-yellow-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Verified</p>
-                <p className="text-2xl font-bold text-purple-600">{verifiedCount}</p>
-              </div>
-              <div className="p-2 rounded-lg bg-purple-500/10">
-                <ShieldCheck className="h-5 w-5 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid>
+        <StatCard label="Total Vendors" value={vendors?.length || 0} icon={Store} accent="text-blue-600" />
+        <StatCard label="Active" value={activeCount} icon={CheckCircle2} accent="text-green-600" />
+        <StatCard label="Pending Verification" value={pendingCount} icon={Clock} accent="text-yellow-600" />
+        <StatCard label="Verified" value={verifiedCount} icon={ShieldCheck} accent="text-purple-600" />
+      </StatGrid>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search vendors..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
+      <DataTable
+        data={filteredVendors}
+        columns={columns}
+        rowKey={(v) => v.id}
+        search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'Search vendors...' }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={Object.entries(statusConfig).map(([value, c]) => ({ value, label: c.label }))}
           />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="ACTIVE">Active</SelectItem>
-            <SelectItem value="PENDING_VERIFICATION">Pending Verification</SelectItem>
-            <SelectItem value="SUSPENDED">Suspended</SelectItem>
-            <SelectItem value="INACTIVE">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Vendors Grid */}
-      {filteredVendors.length === 0 ? (
-        <Card>
-          <CardContent className="py-4 text-center">
-            <Building2 className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No vendors found.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredVendors.map((vendor) => {
-            const status = statusConfig[vendor.status || ''] || { label: vendor.status || 'Unknown', color: 'bg-gray-500/10 text-gray-700' }
-
-            return (
-              <Link key={vendor.id} href={`/ops/vendors/${vendor.id}`}>
-                <Card className="transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer border-2 hover:border-primary h-full">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <Building2 className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-base">{vendor.businessName || 'Unnamed Vendor'}</CardTitle>
-                          <CardDescription className="text-xs mt-1">
-                            ID: {vendor.id.slice(0, 8)}...
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className={status.color}>
-                        {status.label.replace(/_/g, ' ')}
-                      </Badge>
-                      {vendor.verifiedAt ? (
-                        <div className="flex items-center gap-1 text-xs text-green-600">
-                          <ShieldCheck className="h-3 w-3" />
-                          Verified
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <ShieldX className="h-3 w-3" />
-                          Not verified
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            )
-          })}
-        </div>
-      )}
+        }
+        columnToggle
+        exportFilename="vendors"
+        emptyTitle="No vendors found"
+        emptyIcon={Building2}
+        onRowClick={(v) => router.push(`/ops/vendors/${v.id}`)}
+        rowActions={(v) => [{ label: 'View vendor', icon: Eye, href: `/ops/vendors/${v.id}` }]}
+      />
     </div>
   )
 }

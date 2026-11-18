@@ -12,9 +12,9 @@ import {
 
 // UUID v4 validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ConfirmDialog, PageHeader, StatusBadge } from '@/components/dashboard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -41,7 +41,6 @@ import {
   CheckCircle,
   PlayCircle,
   XCircle,
-  AlertTriangle,
   Upload,
   FileText,
   User,
@@ -51,20 +50,20 @@ import {
   Trash2,
 } from 'lucide-react'
 
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  URGENT: { label: 'Urgent', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
-  HIGH: { label: 'High', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  NORMAL: { label: 'Normal', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
-  LOW: { label: 'Low', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
+const priorityConfig: Record<string, { label: string }> = {
+  URGENT: { label: 'Urgent' },
+  HIGH: { label: 'High' },
+  NORMAL: { label: 'Normal' },
+  LOW: { label: 'Low' },
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: Clock },
-  ASSIGNED: { label: 'Assigned', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20', icon: User },
-  IN_PROGRESS: { label: 'In Progress', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20', icon: PlayCircle },
-  PROOF_SUBMITTED: { label: 'Proof Submitted', color: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20', icon: Upload },
-  COMPLETED: { label: 'Completed', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: CheckCircle },
-  CANCELLED: { label: 'Cancelled', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20', icon: XCircle },
+const statusConfig: Record<string, { label: string; icon: React.ElementType }> = {
+  PENDING: { label: 'Pending', icon: Clock },
+  ASSIGNED: { label: 'Assigned', icon: User },
+  IN_PROGRESS: { label: 'In Progress', icon: PlayCircle },
+  PROOF_SUBMITTED: { label: 'Proof Submitted', icon: Upload },
+  COMPLETED: { label: 'Completed', icon: CheckCircle },
+  CANCELLED: { label: 'Cancelled', icon: XCircle },
 }
 
 export default function TaskDetailPage() {
@@ -83,6 +82,8 @@ export default function TaskDetailPage() {
   const [proofDialogOpen, setProofDialogOpen] = useState(false)
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
 
   const [proofData, setProofData] = useState({ proofUrl: '', proofNotes: '' })
   const [reviewNotes, setReviewNotes] = useState('')
@@ -156,36 +157,35 @@ export default function TaskDetailPage() {
   }
 
   const handleDeleteTask = () => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      deleteTask.mutate(taskId, { onSuccess: () => router.push('/ops/tasks') })
-    }
+    deleteTask.mutate(taskId, { onSuccess: () => router.push('/ops/tasks') })
   }
+
+  const backButton = (
+    <Button variant="ghost" size="icon" className="size-7" asChild>
+      <Link href="/ops/tasks" aria-label="Back to tasks">
+        <ArrowLeft className="h-4 w-4" />
+      </Link>
+    </Button>
+  )
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Link href="/ops/tasks">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Tasks
-            </Button>
-          </Link>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-3">
+      <div className="space-y-3">
+        <PageHeader title="Task" leading={backButton} />
+        <div className="grid gap-3 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Card className="animate-pulse">
-              <CardHeader>
+              <CardHeader className="p-3 pb-0">
                 <div className="h-6 bg-muted rounded w-1/2 mb-2" />
                 <div className="h-4 bg-muted rounded w-1/3" />
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3">
                 <div className="h-20 bg-muted rounded" />
               </CardContent>
             </Card>
           </div>
           <Card className="animate-pulse">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="h-40 bg-muted rounded" />
             </CardContent>
           </Card>
@@ -196,23 +196,16 @@ export default function TaskDetailPage() {
 
   if (!isValidUUID || error || !task) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Link href="/ops/tasks">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Tasks
-            </Button>
-          </Link>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Task" leading={backButton} />
         <Card className="border-destructive">
-          <CardHeader>
+          <CardHeader className="p-3 pb-0">
             <CardTitle className="text-destructive flex items-center gap-2">
               <XCircle className="h-5 w-5" />
               {!isValidUUID ? 'Invalid Task ID' : 'Error Loading Task'}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3">
             <p className="text-sm text-muted-foreground">
               {!isValidUUID
                 ? 'The task ID provided is not valid.'
@@ -224,50 +217,36 @@ export default function TaskDetailPage() {
     )
   }
 
-  const status = statusConfig[task.status] || { label: task.status, color: 'bg-gray-500/10', icon: Clock }
-  const priority = priorityConfig[task.priority] || { label: task.priority, color: 'bg-gray-500/10' }
+  const status = statusConfig[task.status] || { label: task.status, icon: Clock }
+  const priority = priorityConfig[task.priority] || { label: task.priority }
   const StatusIcon = status.icon
   const dueDate = task.dueDate ? new Date(task.dueDate) : null
   const isOverdue = dueDate && dueDate < new Date() && task.status !== 'COMPLETED' && task.status !== 'CANCELLED'
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/ops/tasks">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Tasks
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-lg font-semibold">{task.title}</h1>
-            <p className="text-muted-foreground">Task ID: {task.id.substring(0, 12)}...</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className={priority.color}>{priority.label}</Badge>
-          <Badge variant="outline" className={status.color}>
-            <StatusIcon className="h-3 w-3 mr-1" />
-            {status.label}
-          </Badge>
-          {isOverdue && (
-            <Badge variant="destructive">
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              Overdue
-            </Badge>
-          )}
-        </div>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title={task.title}
+        leading={backButton}
+        actions={
+          <>
+            <StatusBadge status={task.priority}>{priority.label}</StatusBadge>
+            <StatusBadge status={task.status}>
+              <StatusIcon className="h-3 w-3 mr-1" />
+              {status.label}
+            </StatusBadge>
+            {isOverdue && <StatusBadge tone="danger">Overdue</StatusBadge>}
+          </>
+        }
+      />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid gap-3 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-3">
           <Card>
-            <CardHeader>
+            <CardHeader className="p-3 pb-0">
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle>Task Details</CardTitle>
-                  <CardDescription>Task information and description</CardDescription>
+                  <CardTitle className="text-sm">Task Details</CardTitle>
                 </div>
                 <Button variant="outline" size="sm" onClick={openEditDialog}>
                   <Edit className="h-4 w-4 mr-2" />
@@ -275,7 +254,7 @@ export default function TaskDetailPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2 p-3">
               {task.description && (
                 <div>
                   <h4 className="font-medium mb-2">Description</h4>
@@ -283,7 +262,7 @@ export default function TaskDetailPage() {
                 </div>
               )}
               <Separator />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Category</p>
                   <p className="font-medium">{task.category || 'General'}</p>
@@ -298,7 +277,7 @@ export default function TaskDetailPage() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 {task.assignedToUserId && (
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Assigned to User</p>
@@ -324,17 +303,16 @@ export default function TaskDetailPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="flex items-center gap-2 text-sm">
                 <Upload className="h-5 w-5" />
                 Proof of Completion
               </CardTitle>
-              <CardDescription>Submit proof when the task is completed</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               {task.proofUrl || task.proofSubmittedAt ? (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
                     <div className="flex items-center gap-2 text-green-700 mb-2">
                       <CheckCircle className="h-5 w-5" />
                       <span className="font-medium">Proof Submitted</span>
@@ -352,16 +330,16 @@ export default function TaskDetailPage() {
                   {task.proofNotes && <p className="text-sm">{task.proofNotes}</p>}
                 </div>
               ) : task.status === 'IN_PROGRESS' ? (
-                <div className="text-center py-6">
+                <div className="text-center py-4">
                   <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground mb-4">Submit proof when the task is completed.</p>
+                  <p className="text-muted-foreground mb-2">Submit proof when the task is completed.</p>
                   <Button onClick={openProofDialog}>
                     <Upload className="h-4 w-4 mr-2" />
                     Submit Proof
                   </Button>
                 </div>
               ) : (
-                <div className="text-center py-6">
+                <div className="text-center py-4">
                   <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">No proof submitted yet.</p>
                 </div>
@@ -371,16 +349,16 @@ export default function TaskDetailPage() {
 
           {task.reviewNotes && (
             <Card>
-              <CardHeader><CardTitle>Review Notes</CardTitle></CardHeader>
-              <CardContent><p className="text-sm">{task.reviewNotes}</p></CardContent>
+              <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Review Notes</CardTitle></CardHeader>
+              <CardContent className="p-3"><p className="text-sm">{task.reviewNotes}</p></CardContent>
             </Card>
           )}
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Card>
-            <CardHeader><CardTitle className="text-base">Actions</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
+            <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Actions</CardTitle></CardHeader>
+            <CardContent className="space-y-2 p-3">
               {(task.status === 'PENDING' || task.status === 'ASSIGNED') && (
                 <Button className="w-full" onClick={handleStartTask}>
                   <PlayCircle className="h-4 w-4 mr-2" />
@@ -400,13 +378,13 @@ export default function TaskDetailPage() {
                 </Button>
               )}
               {task.status !== 'COMPLETED' && task.status !== 'CANCELLED' && (
-                <Button variant="outline" className="w-full" onClick={() => handleStatusChange('CANCELLED')}>
+                <Button variant="outline" className="w-full" onClick={() => setCancelConfirmOpen(true)}>
                   <XCircle className="h-4 w-4 mr-2" />
                   Cancel Task
                 </Button>
               )}
               <Separator />
-              <Button variant="destructive" className="w-full" onClick={handleDeleteTask}>
+              <Button variant="destructive" className="w-full" onClick={() => setDeleteConfirmOpen(true)}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Task
               </Button>
@@ -415,8 +393,8 @@ export default function TaskDetailPage() {
 
           {task.activeEvent && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Event Information</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
+              <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Event Information</CardTitle></CardHeader>
+              <CardContent className="space-y-2 p-3">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Client</p>
                   <p className="font-medium">{task.activeEvent.clientName || 'Unknown'}</p>
@@ -439,9 +417,9 @@ export default function TaskDetailPage() {
           )}
 
           <Card>
-            <CardHeader><CardTitle className="text-base">Timeline</CardTitle></CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Timeline</CardTitle></CardHeader>
+            <CardContent className="p-3">
+              <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 mt-2 rounded-full bg-blue-500" />
                   <div>
@@ -482,13 +460,31 @@ export default function TaskDetailPage() {
         </div>
       </div>
 
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete this task?"
+        description={`"${task.title}" will be permanently deleted. This action cannot be undone.`}
+        loading={deleteTask.isPending}
+        onConfirm={handleDeleteTask}
+      />
+
+      <ConfirmDialog
+        open={cancelConfirmOpen}
+        onOpenChange={setCancelConfirmOpen}
+        title="Cancel this task?"
+        description="The task will be marked as cancelled."
+        confirmLabel="Cancel task"
+        onConfirm={() => handleStatusChange('CANCELLED')}
+      />
+
       <Dialog open={proofDialogOpen} onOpenChange={setProofDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Submit Proof of Completion</DialogTitle>
             <DialogDescription>Provide evidence that this task has been completed.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="proofUrl">Proof URL</Label>
               <Input id="proofUrl" placeholder="https://..." value={proofData.proofUrl} onChange={(e) => setProofData((p) => ({ ...p, proofUrl: e.target.value }))} />
@@ -511,7 +507,7 @@ export default function TaskDetailPage() {
             <DialogTitle>Review Task Completion</DialogTitle>
             <DialogDescription>Review the submitted proof and approve or reject.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="reviewNotes">Review Notes</Label>
               <Textarea id="reviewNotes" placeholder="Add comments..." value={reviewNotes} onChange={(e) => setReviewNotes(e.target.value)} rows={3} />
@@ -531,7 +527,7 @@ export default function TaskDetailPage() {
             <DialogTitle>Edit Task</DialogTitle>
             <DialogDescription>Update task details.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="edit-title">Title</Label>
               <Input id="edit-title" value={editData.title} onChange={(e) => setEditData((p) => ({ ...p, title: e.target.value }))} />
@@ -540,7 +536,7 @@ export default function TaskDetailPage() {
               <Label htmlFor="edit-description">Description</Label>
               <Textarea id="edit-description" value={editData.description} onChange={(e) => setEditData((p) => ({ ...p, description: e.target.value }))} rows={3} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="edit-priority">Priority</Label>
                 <Select value={editData.priority} onValueChange={(v) => setEditData((p) => ({ ...p, priority: v }))}>

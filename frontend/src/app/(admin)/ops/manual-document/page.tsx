@@ -12,7 +12,8 @@ import {
   Receipt,
   FileSpreadsheet,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ConfirmDialog, PageHeader, useConfirmAction } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -93,6 +94,7 @@ export default function ManualDocumentPage() {
   const { track } = useUmami()
   const [documentType, setDocumentType] = useState<'quotation' | 'invoice'>('quotation')
   const [data, setData] = useState<DocumentData>(initialDocumentData)
+  const removeItemAsk = useConfirmAction<string>()
 
   useEffect(() => {
     track('ops:manual_document:page_view', { documentType })
@@ -419,26 +421,22 @@ export default function ManualDocumentPage() {
   }, [data, documentType, subtotal, discountAmount, taxAmount, grandTotal, track])
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Manual Document Generator</h1>
-          <p className="text-muted-foreground">
-            Create custom invoices and quotations without existing agreements
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={resetForm}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
-          <Button onClick={openPrintPreview}>
-            <Printer className="mr-2 h-4 w-4" />
-            Preview & Print
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="Manual Document Generator"
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={resetForm}>
+              <RotateCcw className="mr-1 h-4 w-4" />
+              Reset
+            </Button>
+            <Button size="sm" onClick={openPrintPreview}>
+              <Printer className="mr-1 h-4 w-4" />
+              Preview & Print
+            </Button>
+          </>
+        }
+      />
 
       {/* Document Type Tabs */}
       <Tabs value={documentType} onValueChange={(v) => setDocumentType(v as 'quotation' | 'invoice')}>
@@ -453,19 +451,19 @@ export default function ManualDocumentPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={documentType} className="mt-6">
-          <div className="grid gap-4 lg:grid-cols-2">
+        <TabsContent value={documentType} className="mt-3">
+          <div className="grid gap-3 lg:grid-cols-2">
             {/* Left Column - Document Info */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Document Details */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
+                <CardHeader className="p-3 pb-0">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <FileText className="h-4 w-4" />
                     Document Details
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2 p-3">
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <Label htmlFor="documentNumber">Document Number</Label>
@@ -482,7 +480,7 @@ export default function ManualDocumentPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="dateIssued">Date Issued</Label>
                       <Input
@@ -507,11 +505,10 @@ export default function ManualDocumentPage() {
 
               {/* Client Information */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Client Information</CardTitle>
-                  <CardDescription>Details of the person receiving this document</CardDescription>
+                <CardHeader className="p-3 pb-0">
+                  <CardTitle className="text-sm">Client Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2 p-3">
                   <div>
                     <Label htmlFor="clientName">Client Name *</Label>
                     <Input
@@ -521,7 +518,7 @@ export default function ManualDocumentPage() {
                       placeholder="Enter client name"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="clientEmail">Email</Label>
                       <Input
@@ -547,11 +544,10 @@ export default function ManualDocumentPage() {
 
               {/* Vendor Information */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Vendor Information</CardTitle>
-                  <CardDescription>Details of the service provider</CardDescription>
+                <CardHeader className="p-3 pb-0">
+                  <CardTitle className="text-sm">Vendor Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2 p-3">
                   <div>
                     <Label htmlFor="vendorName">Vendor Name *</Label>
                     <Input
@@ -561,7 +557,7 @@ export default function ManualDocumentPage() {
                       placeholder="Enter vendor/business name"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="vendorEmail">Email</Label>
                       <Input
@@ -587,27 +583,28 @@ export default function ManualDocumentPage() {
             </div>
 
             {/* Right Column - Line Items & Totals */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Line Items */}
               <Card>
-                <CardHeader>
+                <CardHeader className="p-3 pb-0">
                   <div className="flex items-center justify-between">
-                    <CardTitle>Line Items</CardTitle>
+                    <CardTitle className="text-sm">Line Items</CardTitle>
                     <Button variant="outline" size="sm" onClick={addLineItem}>
                       <Plus className="mr-1 h-4 w-4" />
                       Add Item
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2 p-3">
                   {data.items.map((item, index) => (
-                    <div key={item.id} className="space-y-3 rounded-lg border p-4">
+                    <div key={item.id} className="space-y-3 rounded-lg border p-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeLineItem(item.id)}
+                          onClick={() => removeItemAsk.ask(item.id)}
+                          title="Remove item"
                           disabled={data.items.length === 1}
                           className="h-8 w-8 p-0 text-destructive"
                         >
@@ -650,10 +647,10 @@ export default function ManualDocumentPage() {
 
               {/* Additional Charges */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Additional Charges & Adjustments</CardTitle>
+                <CardHeader className="p-3 pb-0">
+                  <CardTitle className="text-sm">Additional Charges & Adjustments</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-2 p-3">
                   <div>
                     <Label htmlFor="siteCharges">Site Charges</Label>
                     <Input
@@ -664,7 +661,7 @@ export default function ManualDocumentPage() {
                       onChange={(e) => updateField('siteCharges', parseFloat(e.target.value) || 0)}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="discount">Discount</Label>
                       <Input
@@ -707,11 +704,11 @@ export default function ManualDocumentPage() {
 
               {/* Payment Information */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Payment Information</CardTitle>
+                <CardHeader className="p-3 pb-0">
+                  <CardTitle className="text-sm">Payment Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <CardContent className="space-y-2 p-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="tokenMoneyPaid">Token Money Paid</Label>
                       <Input
@@ -738,10 +735,10 @@ export default function ManualDocumentPage() {
 
               {/* Summary */}
               <Card className="bg-muted/50">
-                <CardHeader>
-                  <CardTitle>Summary</CardTitle>
+                <CardHeader className="p-3 pb-0">
+                  <CardTitle className="text-sm">Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 p-3">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal</span>
                     <span>{formatCurrency(subtotal)}</span>
@@ -759,7 +756,7 @@ export default function ManualDocumentPage() {
                     </div>
                   )}
                   <Separator />
-                  <div className="flex justify-between text-lg font-bold">
+                  <div className="flex justify-between text-base font-bold">
                     <span>Grand Total</span>
                     <span>{formatCurrency(grandTotal)}</span>
                   </div>
@@ -769,12 +766,12 @@ export default function ManualDocumentPage() {
           </div>
 
           {/* Notes & Bank Details */}
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
             <Card>
-              <CardHeader>
-                <CardTitle>Notes & Terms</CardTitle>
+              <CardHeader className="p-3 pb-0">
+                <CardTitle className="text-sm">Notes & Terms</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2 p-3">
                 <div>
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
@@ -799,11 +796,10 @@ export default function ManualDocumentPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Bank Details</CardTitle>
-                <CardDescription>Payment information shown on the document</CardDescription>
+              <CardHeader className="p-3 pb-0">
+                <CardTitle className="text-sm">Bank Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2 p-3">
                 <div>
                   <Label htmlFor="bankName">Bank Name</Label>
                   <Input
@@ -833,6 +829,15 @@ export default function ManualDocumentPage() {
           </div>
         </TabsContent>
       </Tabs>
+      <ConfirmDialog
+        {...removeItemAsk.dialogProps}
+        title="Remove line item?"
+        description="This line item will be removed from the document."
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (removeItemAsk.target) removeLineItem(removeItemAsk.target)
+        }}
+      />
     </div>
   )
 }

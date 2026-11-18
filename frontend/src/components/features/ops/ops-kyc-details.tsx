@@ -6,7 +6,7 @@ import { useOpsKycById, useOpsVendorOnboarding, useStartKycReview, useApproveKyc
 import { useAuthStore } from '@/store/auth-store'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
@@ -18,14 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { PageHeader, DataTable, StatusBadge } from '@/components/dashboard'
 import {
   ShieldCheck,
   ShieldX,
@@ -35,7 +28,6 @@ import {
   CheckCircle2,
   XCircle,
   PlayCircle,
-  Store,
   FileText,
   Download,
   ExternalLink,
@@ -147,7 +139,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
 
   if (isKycLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-6">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
@@ -156,11 +148,11 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
   if (kycError || !kyc) {
     return (
       <Card className="border-destructive">
-        <CardContent className="py-4 text-center">
+        <CardContent className="py-3 text-center">
           <AlertCircle className="mx-auto h-10 w-10 text-destructive mb-3" />
           <p className="text-destructive font-medium">Failed to load KYC record</p>
           <p className="text-sm text-muted-foreground mt-1">The record may not exist or you may not have permission to view it.</p>
-          <Button variant="outline" className="mt-4" onClick={() => router.push('/ops/kyc')}>
+          <Button variant="outline" className="mt-2" onClick={() => router.push('/ops/kyc')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to KYC List
           </Button>
@@ -178,40 +170,28 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
     null
 
   return (
-    <div className="space-y-4">
-      {/* Back Button */}
-      <Button variant="ghost" size="sm" onClick={() => router.push('/ops/kyc')}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to KYC List
-      </Button>
+    <div className="space-y-3">
+      <PageHeader
+        title={kyc.vendorProfile?.businessName || kyc.businessName || 'Unnamed Vendor'}
+        leading={
+          <Button variant="ghost" size="icon" className="size-7" onClick={() => router.push('/ops/kyc')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        }
+        actions={
+          <StatusBadge status={kyc.status}>
+            <StatusIcon className="mr-1 h-3.5 w-3.5" />
+            {statusConfig.label}
+          </StatusBadge>
+        }
+      />
 
-      {/* Header Card */}
       <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <Store className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">
-                  {kyc.vendorProfile?.businessName || kyc.businessName || 'Unnamed Vendor'}
-                </CardTitle>
-                <CardDescription>
-                  KYC ID: {kyc.id}
-                </CardDescription>
-              </div>
-            </div>
-            <Badge variant="outline" className={`${statusConfig.color} text-sm px-3 py-1`}>
-              <StatusIcon className="h-4 w-4 mr-1.5" />
-              {statusConfig.label}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
+          <p className="mb-2 text-xs text-muted-foreground">KYC ID: {kyc.id}</p>
           {/* Onboarding Progress */}
           {onboardingStatus && (
-            <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+            <div className="mb-2 p-3 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Onboarding Progress</span>
                 <span className="text-sm text-muted-foreground">
@@ -242,7 +222,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
           )}
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2 pb-4 border-b">
+          <div className="flex flex-wrap gap-2 pb-3 border-b">
             {(kyc.status === 'PENDING' || kyc.status === 'SUBMITTED') && (
               <Button
                 variant="outline"
@@ -295,7 +275,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
           </div>
 
           {/* Tabs */}
-          <Tabs defaultValue="profile" className="mt-4">
+          <Tabs defaultValue="profile" className="mt-2">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="profile" className="flex items-center gap-1">
                 <UserCircle className="h-4 w-4" />
@@ -325,14 +305,14 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             </TabsList>
 
             {/* Profile Tab */}
-            <TabsContent value="profile" className="mt-4">
+            <TabsContent value="profile" className="mt-2">
               {isOnboardingLoading ? (
-                <div className="flex items-center justify-center py-4">
+                <div className="flex items-center justify-center py-3">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : onboardingData?.profile ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     <div>
                       <p className="text-sm text-muted-foreground">Business Name</p>
                       <p className="font-medium">{onboardingData.profile.businessName || '-'}</p>
@@ -346,7 +326,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                       <Badge variant="outline">{onboardingData.profile.status || '-'}</Badge>
                     </div>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
                       <p className="text-sm text-muted-foreground">Contact Email</p>
                       <p className="font-medium">{onboardingData.profile.contactEmail || '-'}</p>
@@ -368,7 +348,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   </div> */}
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-3 text-muted-foreground">
                   <UserCircle className="mx-auto h-10 w-10 mb-3 opacity-50" />
                   <p className="font-medium">No profile data available</p>
                 </div>
@@ -376,12 +356,12 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             </TabsContent>
 
             {/* KYC Tab */}
-            <TabsContent value="kyc" className="mt-4 space-y-4">
+            <TabsContent value="kyc" className="mt-2 space-y-3">
               {/* Business Details */}
               <div>
-                <h4 className="font-medium mb-4">Business Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-4">
+                <h4 className="font-medium mb-2">Business Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     <div>
                       <p className="text-sm text-muted-foreground">Business Name</p>
                       <p className="font-medium">{kyc.vendorProfile?.businessName || kyc.businessName || '-'}</p>
@@ -399,7 +379,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                       <p className="font-medium">{kyc.taxId || '-'}</p>
                     </div>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
                       <p className="text-sm text-muted-foreground">Submitted At</p>
                       <p className="font-medium">
@@ -426,7 +406,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                     </div>
                   )}
                   {kyc.rejectionReason && (
-                    <div className="md:col-span-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="md:col-span-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                       <p className="text-sm text-red-600 font-medium">Rejection Reason</p>
                       <p className="text-red-700 mt-1">{kyc.rejectionReason}</p>
                     </div>
@@ -436,95 +416,95 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
 
               {/* Documents */}
               <div>
-                <h4 className="font-medium mb-4">Documents</h4>
+                <h4 className="font-medium mb-2">Documents</h4>
                 {!kyc.documents || kyc.documents.length === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground">
+                  <div className="text-center py-3 text-muted-foreground">
                     <FileText className="mx-auto h-10 w-10 mb-3 opacity-50" />
                     <p className="font-medium">No documents uploaded yet</p>
                     <p className="text-sm mt-1">The vendor has not uploaded any KYC documents.</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Document Type</TableHead>
-                        <TableHead>File Name</TableHead>
-                        <TableHead>Size</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Uploaded</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {kyc.documents.map((doc) => {
-                        const docType = docTypeConfig[doc.type] || docTypeConfig.OTHER
-                        const docStatus = docStatusConfig[doc.status] || docStatusConfig.PENDING
-                        const DocIcon = docType.icon
-
-                        return (
-                          <TableRow key={doc.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <DocIcon className="h-4 w-4 text-muted-foreground" />
-                                <span>{docType.label}</span>
-                                {docType.required && (
-                                  <Badge variant="outline" className="text-xs">Required</Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                              {doc.fileName}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : '-'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={docStatus.color}>
-                                {docStatus.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openDocumentViewer(doc)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  asChild
-                                >
-                                  <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="h-4 w-4" />
-                                  </a>
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
+                  <DataTable
+                    data={kyc.documents}
+                    rowKey={(doc) => doc.id}
+                    defaultPageSize={10}
+                    columns={[
+                      {
+                        id: 'type',
+                        header: 'Document Type',
+                        label: 'Document Type',
+                        cell: (doc) => {
+                          const docType = docTypeConfig[doc.type] || docTypeConfig.OTHER
+                          const DocIcon = docType.icon
+                          return (
+                            <div className="flex items-center gap-2">
+                              <DocIcon className="h-4 w-4 text-muted-foreground" />
+                              <span>{docType.label}</span>
+                              {docType.required && <StatusBadge tone="neutral">Required</StatusBadge>}
+                            </div>
+                          )
+                        },
+                        sortValue: (doc) => doc.type,
+                        exportValue: (doc) => doc.type,
+                      },
+                      {
+                        id: 'fileName',
+                        header: 'File Name',
+                        label: 'File Name',
+                        cell: (doc) => (
+                          <span className="block max-w-[200px] truncate text-muted-foreground">{doc.fileName}</span>
+                        ),
+                        sortValue: (doc) => doc.fileName,
+                        exportValue: (doc) => doc.fileName,
+                      },
+                      {
+                        id: 'size',
+                        header: 'Size',
+                        label: 'Size',
+                        hideBelow: 'md',
+                        cell: (doc) => (doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : '-'),
+                        sortValue: (doc) => doc.fileSize,
+                      },
+                      {
+                        id: 'status',
+                        header: 'Status',
+                        label: 'Status',
+                        cell: (doc) => (
+                          <StatusBadge status={doc.status}>
+                            {(docStatusConfig[doc.status] || docStatusConfig.PENDING).label}
+                          </StatusBadge>
+                        ),
+                        sortValue: (doc) => doc.status,
+                        exportValue: (doc) => doc.status,
+                      },
+                      {
+                        id: 'uploaded',
+                        header: 'Uploaded',
+                        label: 'Uploaded',
+                        hideBelow: 'md',
+                        cell: (doc) => (doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'),
+                        sortValue: (doc) => (doc.createdAt ? new Date(doc.createdAt) : null),
+                      },
+                    ]}
+                    rowActions={(doc) => [
+                      { label: 'Preview', icon: Eye, onClick: () => openDocumentViewer(doc) },
+                      { label: 'Open in new tab', icon: ExternalLink, href: doc.url },
+                    ]}
+                  />
                 )}
               </div>
             </TabsContent>
 
             {/* Consents Tab */}
-            <TabsContent value="consents" className="mt-4">
+            <TabsContent value="consents" className="mt-2">
               {isOnboardingLoading ? (
-                <div className="flex items-center justify-center py-4">
+                <div className="flex items-center justify-center py-3">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : onboardingData?.consentStatus ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {Object.entries(onboardingData.consentStatus).map(([type, status]) => (
-                    <div key={type} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={type} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         {status.hasConsent ? (
                           <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -557,47 +537,57 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
 
                   {/* Consent History */}
                   {onboardingData.consents && onboardingData.consents.length > 0 && (
-                    <div className="mt-6">
-                      <h4 className="font-medium mb-4">Consent History</h4>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Version</TableHead>
-                            <TableHead>Given At</TableHead>
-                            <TableHead>Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {onboardingData.consents.map((consent) => (
-                            <TableRow key={consent.id}>
-                              <TableCell className="font-medium">
+                    <div className="mt-3">
+                      <h4 className="font-medium mb-2">Consent History</h4>
+                      <DataTable
+                        data={onboardingData.consents}
+                        rowKey={(consent) => consent.id}
+                        defaultPageSize={10}
+                        columns={[
+                          {
+                            id: 'type',
+                            header: 'Type',
+                            label: 'Type',
+                            cell: (consent) => (
+                              <span className="font-medium">
                                 {consentTypeLabels[consent.consentType] || consent.consentType}
-                              </TableCell>
-                              <TableCell>{consent.version}</TableCell>
-                              <TableCell>
-                                {new Date(consent.givenAt).toLocaleString()}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className={consent.withdrawnAt
-                                    ? 'bg-red-500/10 text-red-700 border-red-500/20'
-                                    : 'bg-green-500/10 text-green-700 border-green-500/20'
-                                  }
-                                >
-                                  {consent.withdrawnAt ? 'Withdrawn' : 'Active'}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                              </span>
+                            ),
+                            sortValue: (consent) => consent.consentType,
+                            exportValue: (consent) => consent.consentType,
+                          },
+                          {
+                            id: 'version',
+                            header: 'Version',
+                            label: 'Version',
+                            cell: (consent) => consent.version,
+                            sortValue: (consent) => consent.version,
+                          },
+                          {
+                            id: 'givenAt',
+                            header: 'Given At',
+                            label: 'Given At',
+                            cell: (consent) => new Date(consent.givenAt).toLocaleString(),
+                            sortValue: (consent) => new Date(consent.givenAt),
+                          },
+                          {
+                            id: 'status',
+                            header: 'Status',
+                            label: 'Status',
+                            cell: (consent) => (
+                              <StatusBadge tone={consent.withdrawnAt ? 'danger' : 'success'}>
+                                {consent.withdrawnAt ? 'Withdrawn' : 'Active'}
+                              </StatusBadge>
+                            ),
+                            exportValue: (consent) => (consent.withdrawnAt ? 'Withdrawn' : 'Active'),
+                          },
+                        ]}
+                      />
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-3 text-muted-foreground">
                   <ScrollText className="mx-auto h-10 w-10 mb-3 opacity-50" />
                   <p className="font-medium">No consent data available</p>
                 </div>
@@ -605,15 +595,15 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             </TabsContent>
 
             {/* Contract Tab */}
-            <TabsContent value="contract" className="mt-4">
+            <TabsContent value="contract" className="mt-2">
               {isOnboardingLoading ? (
-                <div className="flex items-center justify-center py-4">
+                <div className="flex items-center justify-center py-3">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : onboardingData?.contract ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Contract Status */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <Badge
                       variant="outline"
                       className={contractStatusConfig[onboardingData.contract.status || '']?.color || 'bg-gray-500/10 text-gray-700 border-gray-500/20'}
@@ -635,8 +625,8 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   </div>
 
                   {/* Contract Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-3">
                       <div>
                         <p className="text-sm text-muted-foreground">Contract Number</p>
                         <p className="font-medium">{onboardingData.contract.contractNumber || '-'}</p>
@@ -655,7 +645,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                         <p className="font-medium">{onboardingData.contract.payoutFrequency || '-'}</p>
                       </div>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div>
                         <p className="text-sm text-muted-foreground">Payout Hold Days</p>
                         <p className="font-medium">{onboardingData.contract.payoutHoldDays ?? '-'} days</p>
@@ -679,7 +669,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div>
                         <p className="text-sm text-muted-foreground">Effective Date</p>
                         <p className="font-medium">
@@ -690,7 +680,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div>
                         <p className="text-sm text-muted-foreground">Expiry Date</p>
                         <p className="font-medium">
@@ -704,7 +694,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-3 text-muted-foreground">
                   <FileSignature className="mx-auto h-10 w-10 mb-3 opacity-50" />
                   <p className="font-medium">No contract created yet</p>
                 </div>
@@ -712,16 +702,16 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
             </TabsContent>
 
             {/* Bank Details Tab */}
-            <TabsContent value="bank" className="mt-4">
+            <TabsContent value="bank" className="mt-2">
               {isOnboardingLoading ? (
-                <div className="flex items-center justify-center py-4">
+                <div className="flex items-center justify-center py-3">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : onboardingData?.contract && (
                 onboardingData.contract.bankAccountNumber || onboardingData.contract.upiId
               ) ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     <div>
                       <p className="text-sm text-muted-foreground">Bank Account Name</p>
                       <p className="font-medium">{onboardingData.contract.bankAccountName || '-'}</p>
@@ -735,7 +725,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                       <p className="font-medium">{onboardingData.contract.bankName || '-'}</p>
                     </div>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
                       <p className="text-sm text-muted-foreground">IFSC Code</p>
                       <p className="font-medium font-mono">{onboardingData.contract.bankIfscCode || '-'}</p>
@@ -747,7 +737,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-4 text-muted-foreground">
+                <div className="text-center py-3 text-muted-foreground">
                   <Landmark className="mx-auto h-10 w-10 mb-3 opacity-50" />
                   <p className="font-medium">No bank details provided yet</p>
                 </div>
@@ -767,7 +757,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
               The vendor will be notified and can resubmit their documents.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Textarea
               placeholder="Enter rejection reason..."
               value={rejectReason}
@@ -816,10 +806,10 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   title={selectedDocument.fileName}
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full p-4">
-                  <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                <div className="flex flex-col items-center justify-center h-full p-3">
+                  <FileText className="h-16 w-16 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">Preview not available for this file type</p>
-                  <Button variant="outline" className="mt-4" asChild>
+                  <Button variant="outline" className="mt-2" asChild>
                     <a href={selectedDocument.url} download>
                       <Download className="h-4 w-4 mr-2" />
                       Download File

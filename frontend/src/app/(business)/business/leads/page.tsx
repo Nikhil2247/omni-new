@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell } from '@/components/dashboard'
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import {
   Calendar,
@@ -213,7 +212,7 @@ function LeadsPageContent() {
   if (error) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center justify-center gap-4 py-12">
+        <CardContent className="flex flex-col items-center justify-center gap-4 py-6">
           <AlertCircle className="h-12 w-12 text-destructive" />
           <p className="text-sm text-muted-foreground">Unable to load leads. Please try again.</p>
           <Button variant="outline" onClick={() => refetch()}>
@@ -225,216 +224,121 @@ function LeadsPageContent() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Leads</h1>
-          <p className="text-muted-foreground">
-            Manage inquiries from event planners and convert them to events.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-sm">
-            {leads.length} Total Leads
-          </Badge>
-          {statusCounts['NEW'] > 0 && (
-            <Badge className="bg-blue-500 text-white">
-              {statusCounts['NEW']} New
+    <div className="space-y-3">
+      <PageHeader
+        title="Leads"
+        actions={
+          <>
+            <Badge variant="secondary" className="text-xs">
+              {leads.length} Total Leads
             </Badge>
-          )}
-        </div>
-      </div>
+            {statusCounts['NEW'] > 0 && (
+              <Badge className="bg-blue-500 text-xs text-white">{statusCounts['NEW']} New</Badge>
+            )}
+          </>
+        }
+      />
 
-      {/* Search and Filter */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="relative flex-1 md:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, event type, or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+      <DataTable<BusinessLead>
+        data={filteredLeads}
+        rowKey={(l) => l.id}
+        search={{
+          value: search,
+          onChange: setSearch,
+          placeholder: 'Search by name, event type, or email...',
+        }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            allValue="ALL"
+            allLabel={`All (${statusCounts['ALL'] ?? 0})`}
+            options={LEAD_STATUSES.filter((s) => s.value !== 'ALL').map((s) => ({
+              value: s.value,
+              label: `${s.label} (${statusCounts[s.value] ?? 0})`,
+            }))}
           />
-        </div>
-      </div>
-
-      {/* Status Tabs */}
-      <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-        <ScrollArea className="w-full">
-          <TabsList className="inline-flex w-full justify-start md:w-auto">
-            {LEAD_STATUSES.map((status) => (
-              <TabsTrigger
-                key={status.value}
-                value={status.value}
-                className="relative whitespace-nowrap"
-              >
-                {status.label}
-                {statusCounts[status.value] > 0 && (
-                  <span className="ml-1.5 text-xs text-muted-foreground">
-                    ({statusCounts[status.value]})
-                  </span>
-                )}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </ScrollArea>
-      </Tabs>
-
-      {/* Leads List */}
-      {filteredLeads.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center gap-4 py-16">
-            <div className="rounded-full bg-muted p-4">
-              <Inbox className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <div className="text-center">
-              <h3 className="font-semibold">No leads found</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {statusFilter !== 'ALL'
-                  ? `No ${statusFilter.toLowerCase().replace('_', ' ')} leads at the moment.`
-                  : search
-                    ? 'Try adjusting your search terms.'
-                    : 'New leads will appear here when planners contact you.'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {filteredLeads.map((lead) => {
-            const config = statusConfig[lead.status] || statusConfig['NEW']
-            const StatusIcon = config.icon
-
-            return (
-              <Card key={lead.id} className="overflow-hidden transition-shadow hover:shadow-md">
-                <CardContent className="p-0">
-                  <div className="flex flex-col md:flex-row">
-                    {/* Left Section - Planner Info */}
-                    <div className="flex-1 p-4 md:p-4">
-                      <div className="flex items-start gap-4">
-                        {/* Avatar */}
-                        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                          {getPlannerInitials(lead)}
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                          {/* Header */}
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-semibold">{getPlannerName(lead)}</h3>
-                            <Badge
-                              variant="outline"
-                              className={`${config.bg} ${config.text} border-0`}
-                            >
-                              <StatusIcon className="mr-1 h-3 w-3" />
-                              {lead.status.replace('_', ' ')}
-                            </Badge>
-                          </div>
-
-                          {/* Contact Info */}
-                          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                            {lead.planner?.email && (
-                              <span className="flex items-center gap-1">
-                                <Mail className="h-3.5 w-3.5" />
-                                {lead.planner.email}
-                              </span>
-                            )}
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3.5 w-3.5" />
-                              {getTimeAgo(lead.createdAt)}
-                            </span>
-                          </div>
-
-                          {/* Event Details */}
-                          <div className="mt-3 flex flex-wrap gap-3">
-                            {lead.eventType && (
-                              <Badge variant="secondary" className="font-normal">
-                                {lead.eventType}
-                              </Badge>
-                            )}
-                            {lead.eventDate && (
-                              <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Calendar className="h-3.5 w-3.5" />
-                                {formatDate(lead.eventDate)}
-                              </span>
-                            )}
-                            {lead.guestCount && (
-                              <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Users className="h-3.5 w-3.5" />
-                                {lead.guestCount} guests
-                              </span>
-                            )}
-                            {lead.budget && (
-                              <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <DollarSign className="h-3.5 w-3.5" />
-                                {formatCurrency(lead.budget)}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Initial Message */}
-                          {lead.initialMessage && (
-                            <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-                              "{lead.initialMessage}"
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Section - Actions */}
-                    <div className="flex flex-row items-center gap-2 border-t bg-muted/30 p-4 md:flex-col md:justify-center md:border-l md:border-t-0 md:px-6">
-                      {lead.status !== 'WON' && lead.status !== 'LOST' && (
-                        <Button
-                          size="sm"
-                          onClick={() => openAcceptDialog(lead)}
-                          className="flex-1 md:w-full md:flex-none"
-                        >
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Accept & Create Event
-                        </Button>
-                      )}
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleMessagePlanner(lead)}
-                        className="flex-1 md:w-full md:flex-none"
-                      >
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Message
-                      </Button>
-
-                      {lead.status === 'NEW' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleUpdateStatus(lead, 'CONTACTED')}
-                          className="flex-1 md:w-full md:flex-none"
-                        >
-                          Mark Contacted
-                        </Button>
-                      )}
-
-                      {lead.status === 'WON' && lead.eventId && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => router.push(`/business/agreements?eventId=${lead.eventId}`)}
-                          className="flex-1 md:w-full md:flex-none"
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          View Event
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+        }
+        exportFilename="leads"
+        columnToggle
+        emptyTitle="No leads found"
+        emptyIcon={Inbox}
+        columns={[
+          {
+            id: 'planner',
+            header: 'Planner',
+            label: 'Planner',
+            sortValue: (l) => getPlannerName(l),
+            exportValue: (l) => getPlannerName(l),
+            cell: (l) => <UserCell name={getPlannerName(l)} subtitle={l.planner?.email} />,
+          },
+          {
+            id: 'eventType',
+            header: 'Event',
+            label: 'Event',
+            sortValue: (l) => l.eventType ?? '',
+            exportValue: (l) => l.eventType ?? '',
+            cell: (l) => <TwoLineCell title={l.eventType || '-'} subtitle={formatDate(l.eventDate)} />,
+          },
+          {
+            id: 'guests',
+            header: 'Guests',
+            label: 'Guests',
+            hideBelow: 'md',
+            sortValue: (l) => l.guestCount ?? 0,
+            exportValue: (l) => l.guestCount ?? '',
+            cell: (l) => <span className="text-sm">{l.guestCount ?? '-'}</span>,
+          },
+          {
+            id: 'budget',
+            header: 'Budget',
+            label: 'Budget',
+            hideBelow: 'md',
+            sortValue: (l) => l.budget ?? 0,
+            exportValue: (l) => l.budget ?? '',
+            cell: (l) => <span className="text-sm">{formatCurrency(l.budget) ?? '-'}</span>,
+          },
+          {
+            id: 'status',
+            header: 'Status',
+            label: 'Status',
+            sortValue: (l) => l.status,
+            exportValue: (l) => l.status,
+            cell: (l) => <StatusBadge status={l.status} />,
+          },
+          {
+            id: 'received',
+            header: 'Received',
+            label: 'Received',
+            hideBelow: 'lg',
+            sortValue: (l) => new Date(l.createdAt),
+            exportValue: (l) => l.createdAt,
+            cell: (l) => <span className="text-muted-foreground text-sm">{getTimeAgo(l.createdAt)}</span>,
+          },
+        ]}
+        rowActions={(l) => [
+          {
+            label: 'Accept & create event',
+            icon: CheckCircle2,
+            onClick: () => openAcceptDialog(l),
+            visible: l.status !== 'WON' && l.status !== 'LOST',
+          },
+          {
+            label: 'Mark contacted',
+            icon: Phone,
+            onClick: () => handleUpdateStatus(l, 'CONTACTED'),
+            visible: l.status === 'NEW',
+          },
+          { label: 'Message', icon: MessageSquare, onClick: () => handleMessagePlanner(l) },
+          {
+            label: 'View event',
+            icon: ExternalLink,
+            onClick: () => router.push(`/business/agreements?eventId=${l.eventId}`),
+            visible: l.status === 'WON' && !!l.eventId,
+          },
+        ]}
+      />
 
       {/* Accept Lead Dialog */}
       <Dialog open={acceptDialogOpen} onOpenChange={setAcceptDialogOpen}>
@@ -447,9 +351,9 @@ function LeadsPageContent() {
           </DialogHeader>
 
           {selectedLead && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Lead Summary */}
-              <div className="rounded-lg bg-muted/50 p-4">
+              <div className="rounded-lg bg-muted/50 p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
                     {getPlannerInitials(selectedLead)}
@@ -466,7 +370,7 @@ function LeadsPageContent() {
               <Separator />
 
               {/* Form Fields */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="venueName">Venue Name (Optional)</Label>
                   <Input

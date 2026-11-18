@@ -5,17 +5,11 @@ import { format } from 'date-fns'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessTasks, useUpdateTaskStatus, useSubmitTaskProof } from '@/hooks/queries/use-business'
 import { VendorFeatureGate } from '@/components/common/vendor-feature-gate'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, StatCard, StatGrid } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -35,11 +29,8 @@ import {
   XCircle,
   Upload,
   AlertTriangle,
-  Search,
-  Filter,
   Eye,
   Loader2,
-  Calendar,
 } from 'lucide-react'
 import type { BusinessTask } from '@/lib/api/types/business.types'
 
@@ -138,19 +129,16 @@ function TasksPageContent() {
 
   if (!profile) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Assigned Tasks</h1>
-          <p className="text-muted-foreground">View tasks assigned to you</p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Assigned Tasks" />
         <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-            <h3 className="text-lg font-semibold">Profile Required</h3>
-            <p className="text-muted-foreground mt-2">
+          <CardContent className="py-6 text-center">
+            <AlertTriangle className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+            <h3 className="text-sm font-semibold">Profile Required</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first.
             </p>
-            <Button className="mt-4" onClick={() => window.location.href = '/business/profile'}>
+            <Button size="sm" className="mt-3" onClick={() => window.location.href = '/business/profile'}>
               Create Profile
             </Button>
           </CardContent>
@@ -160,200 +148,105 @@ function TasksPageContent() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-lg font-semibold">Assigned Tasks</h1>
-        <p className="text-muted-foreground">Tasks assigned to you by event organizers</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Assigned Tasks" />
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Tasks</p>
-                <p className="text-2xl font-bold">{totalTasks}</p>
-              </div>
-              <CheckSquare className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">{pendingTasks}</p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold text-red-600">{overdueTasks}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid>
+        <StatCard label="Total Tasks" value={totalTasks} icon={CheckSquare} />
+        <StatCard label="Pending" value={pendingTasks} icon={Clock} accent="text-yellow-600" />
+        <StatCard label="Completed" value={completedTasks} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="Overdue" value={overdueTasks} icon={AlertTriangle} accent="text-red-600" />
+      </StatGrid>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tasks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="ASSIGNED">Assigned</SelectItem>
-                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                <SelectItem value="PROOF_SUBMITTED">Proof Submitted</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tasks List */}
-      {tasksLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : filteredTasks.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold">No Tasks Found</h3>
-            <p className="text-muted-foreground mt-2">
-              {tasks?.length === 0
-                ? 'You don\'t have any tasks assigned yet.'
-                : 'No tasks match your search criteria.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredTasks.map((task) => {
-            const status = statusConfig[task.status] || statusConfig.PENDING
-            const priority = priorityConfig[task.priority] || priorityConfig.NORMAL
-            const StatusIcon = status.icon
-            const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() &&
-              task.status !== 'COMPLETED' && task.status !== 'CANCELLED'
-
-            return (
-              <Card key={task.id} className={isOverdue ? 'border-red-300' : ''}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold">{task.title}</h3>
-                        <Badge className={status.color}>
-                          <StatusIcon className="mr-1 h-3 w-3" />
-                          {status.label}
-                        </Badge>
-                        <Badge variant="outline" className={priority.color}>
-                          {priority.label}
-                        </Badge>
-                        {isOverdue && (
-                          <Badge variant="destructive">
-                            <AlertTriangle className="mr-1 h-3 w-3" />
-                            Overdue
-                          </Badge>
-                        )}
-                      </div>
-
-                      {task.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {task.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Event:</span>
-                          <span>{task.activeEvent?.clientName || 'N/A'}</span>
-                        </div>
-                        {task.dueDate && (
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Due:</span>
-                            <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
-                              {format(new Date(task.dueDate), 'MMM d, yyyy')}
-                            </span>
-                          </div>
-                        )}
-                        {task.category && (
-                          <Badge variant="secondary">{task.category}</Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      {task.status === 'ASSIGNED' && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleStartTask(task)}
-                          disabled={updateTaskStatus.isPending}
-                        >
-                          <PlayCircle className="mr-2 h-4 w-4" />
-                          Start
-                        </Button>
-                      )}
-                      {task.status === 'IN_PROGRESS' && (
-                        <Button
-                          size="sm"
-                          onClick={() => openProofDialog(task)}
-                        >
-                          <Upload className="mr-2 h-4 w-4" />
-                          Submit Proof
-                        </Button>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => openDetails(task)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+      <DataTable<BusinessTask>
+        data={filteredTasks}
+        isLoading={tasksLoading}
+        rowKey={(t) => t.id}
+        search={{ value: searchTerm, onChange: setSearchTerm, placeholder: 'Search tasks...' }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={Object.entries(statusConfig).map(([value, c]) => ({ value, label: c.label }))}
+          />
+        }
+        exportFilename="tasks"
+        columnToggle
+        emptyTitle={tasks?.length === 0 ? "You don't have any tasks assigned yet." : 'No tasks match your search criteria.'}
+        emptyIcon={CheckSquare}
+        columns={[
+          {
+            id: 'title',
+            header: 'Task',
+            label: 'Task',
+            sortValue: (t) => t.title,
+            exportValue: (t) => t.title,
+            cell: (t) => <TwoLineCell title={t.title} subtitle={t.description} />,
+            className: 'max-w-[320px]',
+          },
+          {
+            id: 'event',
+            header: 'Event',
+            label: 'Event',
+            hideBelow: 'md',
+            sortValue: (t) => t.activeEvent?.clientName ?? '',
+            exportValue: (t) => t.activeEvent?.clientName ?? '',
+            cell: (t) => <span className="text-sm">{t.activeEvent?.clientName || 'N/A'}</span>,
+          },
+          {
+            id: 'due',
+            header: 'Due',
+            label: 'Due',
+            sortValue: (t) => (t.dueDate ? new Date(t.dueDate) : null),
+            exportValue: (t) => t.dueDate ?? '',
+            cell: (t) => {
+              const overdue =
+                t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'COMPLETED' && t.status !== 'CANCELLED'
+              return t.dueDate ? (
+                <span className={overdue ? 'text-sm font-medium text-red-600' : 'text-sm'}>
+                  {format(new Date(t.dueDate), 'MMM d, yyyy')}
+                </span>
+              ) : (
+                <span className="text-muted-foreground text-sm">-</span>
+              )
+            },
+          },
+          {
+            id: 'priority',
+            header: 'Priority',
+            label: 'Priority',
+            hideBelow: 'lg',
+            sortValue: (t) => t.priority,
+            exportValue: (t) => t.priority,
+            cell: (t) => <StatusBadge status={t.priority}>{(priorityConfig[t.priority] || priorityConfig.NORMAL).label}</StatusBadge>,
+          },
+          {
+            id: 'status',
+            header: 'Status',
+            label: 'Status',
+            sortValue: (t) => t.status,
+            exportValue: (t) => statusConfig[t.status]?.label ?? t.status,
+            cell: (t) => <StatusBadge status={t.status}>{statusConfig[t.status]?.label}</StatusBadge>,
+          },
+        ]}
+        rowActions={(t) => [
+          {
+            label: 'Start',
+            icon: PlayCircle,
+            onClick: () => handleStartTask(t),
+            visible: t.status === 'ASSIGNED',
+            disabled: updateTaskStatus.isPending,
+          },
+          {
+            label: 'Submit proof',
+            icon: Upload,
+            onClick: () => openProofDialog(t),
+            visible: t.status === 'IN_PROGRESS',
+          },
+          { label: 'View', icon: Eye, onClick: () => openDetails(t) },
+        ]}
+      />
 
       {/* Task Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
@@ -365,7 +258,7 @@ function TasksPageContent() {
             </DialogDescription>
           </DialogHeader>
           {selectedTask && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Badge className={statusConfig[selectedTask.status]?.color || ''}>
                   {statusConfig[selectedTask.status]?.label || selectedTask.status}
@@ -382,7 +275,7 @@ function TasksPageContent() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4 border-t pt-4">
+              <div className="grid grid-cols-2 gap-3 border-t pt-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Due Date</p>
                   <p className="font-medium">
@@ -462,7 +355,7 @@ function TasksPageContent() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 py-2">
             <div className="space-y-2">
               <Label>Upload Proof Files *</Label>
               <FileUpload

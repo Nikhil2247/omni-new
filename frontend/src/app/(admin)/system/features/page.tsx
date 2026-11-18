@@ -8,13 +8,14 @@ import {
   useUpdateFeatureFlag,
 } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmDialog, PageHeader } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { FeatureFlag, FeatureFlagCategory } from '@/lib/api/types/admin.types'
 
 const CATEGORIES: { value: FeatureFlagCategory | 'all'; label: string }[] = [
@@ -50,6 +51,7 @@ function CategorySection({
   isBulkUpdating,
 }: CategorySectionProps) {
   const [isOpen, setIsOpen] = useState(true)
+  const [confirmDisableOpen, setConfirmDisableOpen] = useState(false)
 
   const enabledCount = flags.filter((f) => f.enabled).length
   const flagIds = flags.map((f) => f.id)
@@ -59,7 +61,7 @@ function CategorySection({
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity">
@@ -68,7 +70,7 @@ function CategorySection({
                 ) : (
                   <ChevronRight className="h-4 w-4" />
                 )}
-                <CardTitle className="text-lg capitalize">{category}</CardTitle>
+                <CardTitle className="text-base capitalize">{category}</CardTitle>
                 <Badge variant="secondary" className="ml-2">
                   {enabledCount} / {flags.length} enabled
                 </Badge>
@@ -86,16 +88,13 @@ function CategorySection({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onBulkToggle(flagIds, false)}
+                onClick={() => setConfirmDisableOpen(true)}
                 disabled={noneEnabled || isBulkUpdating}
               >
                 Disable All
               </Button>
             </div>
           </div>
-          <CardDescription>
-            {flags.length} feature flag{flags.length !== 1 ? 's' : ''} in this category
-          </CardDescription>
         </CardHeader>
         <CollapsibleContent>
           <CardContent className="pt-0">
@@ -103,7 +102,7 @@ function CategorySection({
               {flags.map((flag) => (
                 <div
                   key={flag.id}
-                  className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
+                  className="flex items-center justify-between py-2 first:pt-0 last:pb-0"
                 >
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2">
@@ -143,6 +142,15 @@ function CategorySection({
           </CardContent>
         </CollapsibleContent>
       </Card>
+      <ConfirmDialog
+        open={confirmDisableOpen}
+        onOpenChange={setConfirmDisableOpen}
+        title={`Disable all ${category} features?`}
+        description={`${flags.length} feature flag${flags.length !== 1 ? 's' : ''} will be turned off.`}
+        confirmLabel="Disable all"
+        loading={isBulkUpdating}
+        onConfirm={() => onBulkToggle(flagIds, false)}
+      />
     </Collapsible>
   )
 }
@@ -202,29 +210,19 @@ export default function SystemFeaturesPage() {
     bulkUpdateFlags.mutate({ ids, enabled })
   }
 
-  // Summary stats
-  const totalFlags = Array.isArray(data) ? data.length : 0
-  const enabledFlags = Array.isArray(data) ? data.filter((f) => f.enabled).length : 0
-
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">System Features</h1>
-        <p className="text-muted-foreground">
-          Manage feature flags to control platform functionality. {totalFlags} flags configured,{' '}
-          {enabledFlags} enabled.
-        </p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="System Features" />
 
       {/* Search and Category Filter */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by key or name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="h-8 pl-9"
           />
         </div>
         <Tabs
@@ -243,13 +241,13 @@ export default function SystemFeaturesPage() {
 
       {/* Feature Flags Display */}
       {isLoading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-48" />
-          <Skeleton className="h-48" />
+        <div className="space-y-3">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
         </div>
       ) : filteredFlags.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center">
+          <CardContent className="py-6 text-center">
             <p className="text-muted-foreground">
               {searchQuery || activeCategory !== 'all'
                 ? 'No feature flags match your filters.'
@@ -258,7 +256,7 @@ export default function SystemFeaturesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {nonEmptyCategories.map((category) => (
             <CategorySection
               key={category}

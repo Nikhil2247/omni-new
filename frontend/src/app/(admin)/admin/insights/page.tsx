@@ -8,7 +8,7 @@ import {
   formatCount,
 } from '@/hooks/queries/use-platform-counts'
 import { useAdminDashboard } from '@/hooks/queries/use-admin'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -31,20 +31,16 @@ import {
   Clock,
   AlertCircle,
   BarChart3,
-  LineChart,
   RefreshCw,
   Sparkles,
 } from 'lucide-react'
 import {
-  AreaLineChart,
-  BarChart,
-  DonutChart,
-  MetricCard,
   DateRangeSelector,
   type DateRangeValue,
 } from '@/components/charts'
 import { subDays, startOfDay, endOfDay } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { PageHeader } from '@/components/dashboard'
 
 export default function AdminInsightsPage() {
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = usePlatformCounts()
@@ -74,24 +70,21 @@ export default function AdminInsightsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-20" />
           ))}
         </div>
-        <Skeleton className="h-96" />
+        <Skeleton className="h-64" />
       </div>
     )
   }
 
   if (!counts) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
+      <div className="flex h-[40vh] items-center justify-center">
         <div className="text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
           <p className="mt-4 text-lg font-medium">Unable to load platform insights</p>
@@ -102,28 +95,19 @@ export default function AdminInsightsPage() {
   }
 
   return (
-    <div className="space-y-4 pb-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">Platform Insights</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Real-time analytics, metrics, and performance insights
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            <RefreshCw className={cn('mr-2 h-4 w-4', refreshing && 'animate-spin')} />
-            Refresh
-          </Button>
-          <DateRangeSelector value={dateRange} onChange={setDateRange} />
-        </div>
-      </div>
+    <div className="space-y-3 pb-4">
+      <PageHeader
+        title="Platform Insights"
+        actions={
+          <>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={cn('mr-2 h-4 w-4', refreshing && 'animate-spin')} />
+              Refresh
+            </Button>
+            <DateRangeSelector value={dateRange} onChange={setDateRange} />
+          </>
+        }
+      />
 
       {/* Last Updated Badge */}
       {counts.lastUpdated && (
@@ -142,7 +126,7 @@ export default function AdminInsightsPage() {
       )}
 
       {/* Main Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-3">
         <TabsList className="grid w-full grid-cols-5 lg:w-auto">
           <TabsTrigger value="overview">
             <BarChart3 className="mr-2 h-4 w-4" />
@@ -167,31 +151,31 @@ export default function AdminInsightsPage() {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-3">
           <ExecutiveMetrics counts={counts} />
           <EngagementMetrics counts={counts} />
           {dashboard && <PlatformHealthMetrics dashboard={dashboard} />}
         </TabsContent>
 
         {/* Users Tab */}
-        <TabsContent value="users" className="space-y-4">
+        <TabsContent value="users" className="space-y-3">
           <UserMetrics counts={counts} />
           {dashboard && <UserEngagementDetails dashboard={dashboard} />}
         </TabsContent>
 
         {/* Vendors Tab */}
-        <TabsContent value="vendors" className="space-y-4">
+        <TabsContent value="vendors" className="space-y-3">
           <VendorMetrics counts={counts} />
           {dashboard && <VendorPerformanceDetails dashboard={dashboard} />}
         </TabsContent>
 
         {/* Leads Tab */}
-        <TabsContent value="leads" className="space-y-4">
+        <TabsContent value="leads" className="space-y-3">
           <LeadMetrics counts={counts} />
         </TabsContent>
 
         {/* Content Tab */}
-        <TabsContent value="content" className="space-y-4">
+        <TabsContent value="content" className="space-y-3">
           <ContentMetrics counts={counts} />
         </TabsContent>
       </Tabs>
@@ -205,7 +189,7 @@ export default function AdminInsightsPage() {
 
 function ExecutiveMetrics({ counts }: { counts: any }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Users"
         value={formatCount(counts.totalUsers)}
@@ -250,12 +234,9 @@ function EngagementMetrics({ counts }: { counts: any }) {
           <Activity className="h-5 w-5" />
           Engagement Overview
         </CardTitle>
-        <CardDescription>
-          Platform activity and user interaction metrics
-        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3">
           <MetricBox
             label="Total Searches"
             value={formatCount(counts.totalSearches)}
@@ -291,9 +272,9 @@ function UserMetrics({ counts }: { counts: any }) {
   const verifiedPercentage = counts.totalUsers > 0 ? (counts.verifiedUsers / counts.totalUsers) * 100 : 0
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* User Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Users"
           value={formatCount(counts.totalUsers)}
@@ -326,10 +307,9 @@ function UserMetrics({ counts }: { counts: any }) {
       <Card>
         <CardHeader>
           <CardTitle>User Status Distribution</CardTitle>
-          <CardDescription>Breakdown of users by verification status</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <UserProgressBar
               label="Active Users"
               value={counts.activeUsers}
@@ -360,8 +340,8 @@ function VendorMetrics({ counts }: { counts: any }) {
   const verifiedPercentage = counts.totalVendors > 0 ? (counts.verifiedVendors / counts.totalVendors) * 100 : 0
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Vendors"
           value={formatCount(counts.totalVendors)}
@@ -393,10 +373,9 @@ function VendorMetrics({ counts }: { counts: any }) {
       <Card>
         <CardHeader>
           <CardTitle>Vendor Status Distribution</CardTitle>
-          <CardDescription>Breakdown of vendors by verification status</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <UserProgressBar
               label="Active Vendors"
               value={counts.activeVendors}
@@ -427,8 +406,8 @@ function LeadMetrics({ counts }: { counts: any }) {
   const contactedRate = counts.totalLeads > 0 ? (counts.contactedLeads / counts.totalLeads) * 100 : 0
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Leads"
           value={formatCount(counts.totalLeads)}
@@ -461,10 +440,9 @@ function LeadMetrics({ counts }: { counts: any }) {
       <Card>
         <CardHeader>
           <CardTitle>Lead Funnel Progress</CardTitle>
-          <CardDescription>Lead journey from new to converted</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <FunnelProgressBar
               label="New Leads"
               value={counts.newLeads}
@@ -494,7 +472,7 @@ function ContentMetrics({ counts }: { counts: any }) {
   const approvalRate = counts.totalReviews > 0 ? (counts.approvedReviews / counts.totalReviews) * 100 : 0
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Categories"
         value={formatCount(counts.totalCategories)}
@@ -535,10 +513,9 @@ function PlatformHealthMetrics({ dashboard }: { dashboard: any }) {
     <Card>
       <CardHeader>
         <CardTitle>Platform Health</CardTitle>
-        <CardDescription>Overall platform performance and health metrics</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3">
           <MetricBox
             label="Avg Response Time"
             value={`${Math.round(avgResponseTime)} min`}
@@ -570,10 +547,9 @@ function UserEngagementDetails({ dashboard }: { dashboard: any }) {
     <Card>
       <CardHeader>
         <CardTitle>User Engagement Metrics</CardTitle>
-        <CardDescription>DAU, WAU, and MAU engagement ratios</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3">
           <MetricBox
             label="Daily Active Users"
             value={formatCount(dashboard.userMetrics.dau)}
@@ -607,11 +583,10 @@ function VendorPerformanceDetails({ dashboard }: { dashboard: any }) {
     <Card>
       <CardHeader>
         <CardTitle>Vendor Performance</CardTitle>
-        <CardDescription>Top performing vendors and average scores</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
             <span className="text-sm font-medium">Average Performance Score</span>
             <span className="text-2xl font-bold">
               {avgPerformanceScore.toFixed(1)}
@@ -652,11 +627,11 @@ function StatCard({
 
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-xl font-bold">{value}</p>
             {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
           <div className={cn('rounded-lg p-2', colorClasses[color])}>
@@ -693,7 +668,7 @@ function MetricBox({
   color: string
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-lg border p-4">
+    <div className="flex items-center gap-3 rounded-lg border p-3">
       <div className={cn('rounded-lg p-3', `bg-${color}-500/10`)}>
         <Icon className={cn('h-5 w-5', `text-${color}-500`)} />
       </div>

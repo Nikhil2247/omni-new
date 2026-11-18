@@ -12,13 +12,13 @@ import {
   useResumeMarketingCampaign,
   useUpdateMarketingCampaign,
 } from '@/hooks/queries/use-marketing'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import { ConfirmDialog, PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dashboard'
 
 const editableStatuses = new Set(['DRAFT', 'SCHEDULED'])
 
@@ -37,6 +37,7 @@ export default function MarketingCampaignDetailPage() {
   const updateMutation = useUpdateMarketingCampaign(campaignId ?? '')
 
   const [editing, setEditing] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editDailyBudget, setEditDailyBudget] = useState('')
@@ -68,7 +69,7 @@ export default function MarketingCampaignDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <Skeleton className="h-8 w-1/3" />
         <Skeleton className="h-40" />
       </div>
@@ -80,76 +81,84 @@ export default function MarketingCampaignDetailPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">{campaign.name}</h1>
-          <p className="text-sm text-muted-foreground">Campaign ID: {campaign.id}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href="/marketing/campaigns">Back to campaigns</Link>
-          </Button>
-          {editableStatuses.has(campaign.status) && (
-            <Button variant="outline" size="icon" aria-label="Edit campaign" onClick={openEdit}>
-              <Edit className="h-4 w-4" />
+    <div className="space-y-3">
+      <PageHeader
+        title={campaign.name}
+        actions={
+          <>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/marketing/campaigns">Back to campaigns</Link>
             </Button>
-          )}
-          {campaign.status === 'ACTIVE' && (
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Pause campaign"
-              onClick={() => pauseMutation.mutate(campaign.id)}
-              disabled={pauseMutation.isPending}
-            >
-              <Pause className="h-4 w-4" />
-            </Button>
-          )}
-          {campaign.status === 'PAUSED' && (
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Resume campaign"
-              onClick={() => resumeMutation.mutate(campaign.id)}
-              disabled={resumeMutation.isPending}
-            >
-              <Play className="h-4 w-4" />
-            </Button>
-          )}
-          {campaign.status !== 'COMPLETED' && campaign.status !== 'CANCELLED' && (
-            <Button
-              variant="destructive"
-              size="icon"
-              aria-label="Delete campaign"
-              onClick={async () => {
-                if (!window.confirm('Delete this campaign? This will cancel it immediately.')) {
-                  return
-                }
-                await cancelMutation.mutateAsync(campaign.id)
-              }}
-              disabled={cancelMutation.isPending}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
+            {editableStatuses.has(campaign.status) && (
+              <Button variant="outline" size="icon" className="size-8" aria-label="Edit campaign" onClick={openEdit}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {campaign.status === 'ACTIVE' && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Pause campaign"
+                onClick={() => pauseMutation.mutate(campaign.id)}
+                disabled={pauseMutation.isPending}
+              >
+                <Pause className="h-4 w-4" />
+              </Button>
+            )}
+            {campaign.status === 'PAUSED' && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-8"
+                aria-label="Resume campaign"
+                onClick={() => resumeMutation.mutate(campaign.id)}
+                disabled={resumeMutation.isPending}
+              >
+                <Play className="h-4 w-4" />
+              </Button>
+            )}
+            {campaign.status !== 'COMPLETED' && campaign.status !== 'CANCELLED' && (
+              <Button
+                variant="destructive"
+                size="icon"
+                className="size-8"
+                aria-label="Delete campaign"
+                onClick={() => setConfirmDelete(true)}
+                disabled={cancelMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </>
+        }
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title="Impressions" value={String(stats?.impressions ?? campaign.impressions)} />
-        <MetricCard title="Clicks" value={String(stats?.clicks ?? campaign.clicks)} />
-        <MetricCard title="CTR" value={`${(stats?.ctr ?? 0).toFixed(2)}%`} loading={statsLoading} />
-        <MetricCard title="Conversions" value={String(stats?.conversions ?? campaign.conversions)} />
-      </div>
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete this campaign?"
+        description="This will cancel it immediately."
+        loading={cancelMutation.isPending}
+        onConfirm={async () => {
+          await cancelMutation.mutateAsync(campaign.id)
+        }}
+      />
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <StatGrid>
+        <StatCard label="Impressions" value={String(stats?.impressions ?? campaign.impressions)} />
+        <StatCard label="Clicks" value={String(stats?.clicks ?? campaign.clicks)} />
+        <StatCard label="CTR" value={statsLoading ? '…' : `${(stats?.ctr ?? 0).toFixed(2)}%`} />
+        <StatCard label="Conversions" value={String(stats?.conversions ?? campaign.conversions)} />
+      </StatGrid>
+
+      <div className="grid gap-3 xl:grid-cols-3">
         <Card className="xl:col-span-2">
-          <CardHeader>
-            <CardTitle>Performance and budget</CardTitle>
+          <CardHeader className="p-3 pb-0">
+            <CardTitle className="text-sm">Performance and budget</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
+          <CardContent className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
               <InfoRow label="Type" value={campaign.type} />
               <InfoRow label="Status" value={campaign.status} badge={true} />
               <InfoRow label="Daily budget" value={`${campaign.dailyBudget} credits`} />
@@ -187,16 +196,16 @@ export default function MarketingCampaignDetailPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Latest daily stats</CardTitle>
+          <CardHeader className="p-3 pb-0">
+            <CardTitle className="text-sm">Latest daily stats</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3">
             {statsLoading ? (
               <Skeleton className="h-24" />
             ) : stats?.dailyStats?.length ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {stats.dailyStats.slice(0, 7).map((row) => (
-                  <div key={row.date} className="rounded-md border p-2 text-sm">
+                  <div key={row.date} className="rounded-md border px-2 py-1.5 text-sm">
                     <p className="font-medium">{formatDate(row.date)}</p>
                     <p className="text-xs text-muted-foreground">
                       {row.impressions} imp • {row.clicks} clicks • {row.conversions} conv • {row.creditsSpent} credits
@@ -216,16 +225,16 @@ export default function MarketingCampaignDetailPage() {
           <DialogHeader>
             <DialogTitle>Edit campaign</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="space-y-1">
               <p className="text-sm font-medium">Campaign name</p>
               <Input value={editName} onChange={(event) => setEditName(event.target.value)} />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">Description</p>
-              <Textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} rows={4} />
+              <Textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} rows={3} />
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <p className="text-sm font-medium">Daily budget</p>
                 <Input type="number" min={1} value={editDailyBudget} onChange={(event) => setEditDailyBudget(event.target.value)} />
@@ -252,19 +261,6 @@ export default function MarketingCampaignDetailPage() {
   )
 }
 
-function MetricCard({ title, value, loading }: { title: string; value: string; loading?: boolean }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm text-muted-foreground">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? <Skeleton className="h-7 w-24" /> : <p className="text-2xl font-semibold">{value}</p>}
-      </CardContent>
-    </Card>
-  )
-}
-
 function InfoRow({
   label,
   value,
@@ -277,12 +273,12 @@ function InfoRow({
   loading?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between rounded-md border p-2 text-sm">
+    <div className="flex items-center justify-between rounded-md border px-2 py-1.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
       {loading ? (
         <Skeleton className="h-4 w-16" />
       ) : badge ? (
-        <Badge variant={value === 'ACTIVE' ? 'default' : 'secondary'}>{value}</Badge>
+        <StatusBadge status={value} />
       ) : (
         <span className="font-medium">{value}</span>
       )}

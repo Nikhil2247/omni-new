@@ -1,14 +1,10 @@
+import { PageHeader } from '@/components/dashboard'
 import { OpsEventsList } from '@/components/features/ops'
 
 export default function OpsEventsPage() {
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight">Events</h1>
-        <p className="text-muted-foreground">
-          Manage all active events and their operations
-        </p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Events" />
       <OpsEventsList />
     </div>
   )

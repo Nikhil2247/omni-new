@@ -9,8 +9,6 @@ import {
   useDeleteRequirementItem,
 } from '@/hooks/queries/use-ops'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -30,35 +28,24 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Plus,
   FileText,
-  MoreVertical,
-  Edit,
+  Pencil,
   Trash2,
   Loader2,
   Package,
   DollarSign,
   AlertCircle,
   CheckCircle2,
-  Clock,
 } from 'lucide-react'
+import {
+  DataTable,
+  StatCard,
+  StatGrid,
+  StatusBadge,
+  TwoLineCell,
+  type DataColumn,
+} from '@/components/dashboard'
 
 const CATEGORIES = [
   'Photography',
@@ -75,18 +62,18 @@ const CATEGORIES = [
   'Other',
 ]
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: <Clock className="h-3 w-3" /> },
-  SOURCING: { label: 'Sourcing', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20', icon: <Package className="h-3 w-3" /> },
-  VENDOR_ASSIGNED: { label: 'Vendor Assigned', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20', icon: <CheckCircle2 className="h-3 w-3" /> },
-  FULFILLED: { label: 'Fulfilled', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: <CheckCircle2 className="h-3 w-3" /> },
+const STATUS_CONFIG: Record<string, { label: string }> = {
+  PENDING: { label: 'Pending' },
+  SOURCING: { label: 'Sourcing' },
+  VENDOR_ASSIGNED: { label: 'Vendor Assigned' },
+  FULFILLED: { label: 'Fulfilled' },
 }
 
-const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
-  LOW: { label: 'Low', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
-  NORMAL: { label: 'Normal', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
-  HIGH: { label: 'High', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  URGENT: { label: 'Urgent', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
+const PRIORITY_CONFIG: Record<string, { label: string }> = {
+  LOW: { label: 'Low' },
+  NORMAL: { label: 'Normal' },
+  HIGH: { label: 'High' },
+  URGENT: { label: 'Urgent' },
 }
 
 interface OpsRequirementsPanelProps {
@@ -180,16 +167,16 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-4">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-6">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-4 text-destructive">
-        <AlertCircle className="h-8 w-8 mb-2" />
+      <div className="flex items-center gap-2 py-3 text-sm text-destructive">
+        <AlertCircle className="h-4 w-4" />
         <p className="font-medium">Failed to load requirements</p>
       </div>
     )
@@ -197,14 +184,13 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
 
   if (!data) {
     return (
-      <div className="flex flex-col items-center justify-center py-4">
-        <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-        <p className="text-muted-foreground font-medium mb-2">No requirement sheet found</p>
-        <p className="text-sm text-muted-foreground mb-4">Create a requirement sheet to start adding vendor requirements.</p>
+      <div className="flex flex-col items-center justify-center gap-2 py-6">
+        <FileText className="h-8 w-8 text-muted-foreground/50" />
+        <p className="text-muted-foreground font-medium">No requirement sheet found</p>
         {showCreateSheet && (
-          <Button onClick={handleCreateSheet} disabled={createSheet.isPending}>
+          <Button size="sm" onClick={handleCreateSheet} disabled={createSheet.isPending}>
             {createSheet.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-1 h-4 w-4" />
             Create Requirement Sheet
           </Button>
         )}
@@ -212,143 +198,104 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
     )
   }
 
+  type ReqItem = NonNullable<typeof data.items>[number]
+
+  const columns: DataColumn<ReqItem>[] = [
+    {
+      id: 'description',
+      header: 'Requirement',
+      label: 'Requirement',
+      cell: (item) => <TwoLineCell title={item.description} subtitle={item.category} />,
+      sortValue: (item) => item.description,
+      exportValue: (item) => `${item.category}: ${item.description}`,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (item) => (
+        <StatusBadge status={item.status}>{(STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING).label}</StatusBadge>
+      ),
+      sortValue: (item) => item.status,
+      exportValue: (item) => item.status,
+    },
+    {
+      id: 'priority',
+      header: 'Priority',
+      label: 'Priority',
+      hideBelow: 'md',
+      cell: (item) => (
+        <StatusBadge status={item.priority || 'NORMAL'}>
+          {(PRIORITY_CONFIG[item.priority || 'NORMAL'] || PRIORITY_CONFIG.NORMAL).label}
+        </StatusBadge>
+      ),
+      sortValue: (item) => item.priority,
+      exportValue: (item) => item.priority || 'NORMAL',
+    },
+    {
+      id: 'quantity',
+      header: 'Qty',
+      label: 'Qty',
+      align: 'right',
+      cell: (item) => item.quantity,
+      sortValue: (item) => item.quantity,
+    },
+    {
+      id: 'budget',
+      header: 'Est. budget',
+      label: 'Est. budget',
+      align: 'right',
+      cell: (item) => (item.estimatedBudget ? `$${Number(item.estimatedBudget).toLocaleString()}` : '-'),
+      sortValue: (item) => (item.estimatedBudget ? Number(item.estimatedBudget) : null),
+      exportValue: (item) => (item.estimatedBudget ? Number(item.estimatedBudget) : ''),
+    },
+  ]
+
   const totalEstimatedBudget = data.items?.reduce((sum, item) => sum + (Number(item.estimatedBudget) || 0), 0) || 0
   const fulfilledCount = data.items?.filter(item => item.status === 'FULFILLED').length || 0
 
   return (
-    <div className="space-y-4">
-      {/* Header Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Total Items</p>
-            <p className="text-2xl font-bold">{data.items?.length || 0}</p>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div>
-            <p className="text-sm text-muted-foreground">Fulfilled</p>
-            <p className="text-2xl font-bold text-green-600">{fulfilledCount}</p>
-          </div>
-          <div className="h-8 w-px bg-border" />
-          <div>
-            <p className="text-sm text-muted-foreground">Est. Total</p>
-            <p className="text-2xl font-bold text-blue-600">${totalEstimatedBudget.toLocaleString()}</p>
-          </div>
-        </div>
+    <div className="space-y-3">
+      <StatGrid className="lg:grid-cols-3">
+        <StatCard label="Total Items" value={data.items?.length || 0} icon={Package} />
+        <StatCard label="Fulfilled" value={fulfilledCount} icon={CheckCircle2} accent="text-green-600" />
+        <StatCard label="Est. Total" value={`$${totalEstimatedBudget.toLocaleString()}`} icon={DollarSign} accent="text-blue-600" />
+      </StatGrid>
 
-        <Button onClick={() => setIsAddItemDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Requirement
-        </Button>
-      </div>
-
-      {/* Notes */}
       {data.notes && (
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">Notes</p>
-            <p className="text-sm mt-1">{data.notes}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Requirements List */}
-      {data.items?.length === 0 ? (
-        <Card>
-          <CardContent className="py-4 text-center">
-            <Package className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground font-medium">No requirements added yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Click "Add Requirement" to get started.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {data.items?.map((item) => {
-            const status = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING
-            const priority = PRIORITY_CONFIG[item.priority || 'NORMAL'] || PRIORITY_CONFIG.NORMAL
-
-            return (
-              <Card key={item.id} className="hover:shadow-sm transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary">{item.category}</Badge>
-                        <Badge variant="outline" className={status.color}>
-                          {status.icon}
-                          <span className="ml-1">{status.label}</span>
-                        </Badge>
-                        {item.priority && item.priority !== 'NORMAL' && (
-                          <Badge variant="outline" className={priority.color}>
-                            {priority.label}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <p className="font-medium">{item.description}</p>
-
-                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Package className="h-4 w-4" />
-                          <span>Qty: {item.quantity}</span>
-                        </div>
-                        {item.estimatedBudget && (
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4" />
-                            <span>${Number(item.estimatedBudget).toLocaleString()}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="shrink-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEditClick(item)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Requirement</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this requirement? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteItem(item.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+        <div className="rounded-lg border bg-card px-3 py-2 text-sm">
+          <span className="text-muted-foreground">Notes: </span>
+          {data.notes}
         </div>
       )}
+
+      <DataTable
+        data={data.items}
+        columns={columns}
+        rowKey={(item) => item.id}
+        exportFilename="requirements"
+        emptyTitle="No requirements added yet"
+        emptyIcon={Package}
+        toolbarRight={
+          <Button size="sm" className="h-8" onClick={() => setIsAddItemDialogOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Add Requirement
+          </Button>
+        }
+        rowActions={(item) => [
+          { label: 'Edit', icon: Pencil, onClick: () => handleEditClick(item) },
+          {
+            label: 'Delete requirement',
+            icon: Trash2,
+            danger: true,
+            onClick: () => handleDeleteItem(item.id),
+            confirm: {
+              title: 'Delete requirement?',
+              description: 'This requirement will be permanently deleted. This action cannot be undone.',
+            },
+          },
+        ]}
+      />
 
       {/* Add Item Dialog */}
       <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
@@ -357,8 +304,8 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
             <DialogTitle>Add Requirement</DialogTitle>
             <DialogDescription>Add a new vendor requirement for this event.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-3 py-2">
+            <div className="space-y-1.5">
               <Label htmlFor="category">Category</Label>
               <Select value={itemForm.category} onValueChange={(v) => setItemForm({ ...itemForm, category: v })}>
                 <SelectTrigger>
@@ -371,7 +318,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
@@ -380,8 +327,8 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                 onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="quantity">Quantity</Label>
                 <Input
                   id="quantity"
@@ -391,7 +338,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                   onChange={(e) => setItemForm({ ...itemForm, quantity: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="estimatedBudget">Estimated Budget</Label>
                 <Input
                   id="estimatedBudget"
@@ -403,7 +350,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                 />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="priority">Priority</Label>
               <Select value={itemForm.priority} onValueChange={(v) => setItemForm({ ...itemForm, priority: v })}>
                 <SelectTrigger>
@@ -417,7 +364,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
                 id="notes"
@@ -449,8 +396,8 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
             <DialogTitle>Edit Requirement</DialogTitle>
             <DialogDescription>Update the requirement details.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-3 py-2">
+            <div className="space-y-1.5">
               <Label htmlFor="edit-category">Category</Label>
               <Select value={itemForm.category} onValueChange={(v) => setItemForm({ ...itemForm, category: v })}>
                 <SelectTrigger>
@@ -463,7 +410,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="edit-description">Description</Label>
               <Textarea
                 id="edit-description"
@@ -472,8 +419,8 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                 onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="edit-quantity">Quantity</Label>
                 <Input
                   id="edit-quantity"
@@ -483,7 +430,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                   onChange={(e) => setItemForm({ ...itemForm, quantity: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="edit-estimatedBudget">Estimated Budget</Label>
                 <Input
                   id="edit-estimatedBudget"
@@ -495,7 +442,7 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
                 />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="edit-priority">Priority</Label>
               <Select value={itemForm.priority} onValueChange={(v) => setItemForm({ ...itemForm, priority: v })}>
                 <SelectTrigger>

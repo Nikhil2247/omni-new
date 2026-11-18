@@ -22,7 +22,16 @@ import {
 import { trackDashboard } from '@/lib/analytics/umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  PageHeader,
+  DataTable,
+  StatusBadge,
+  TwoLineCell,
+  UserCell,
+  StatCard,
+  StatGrid,
+  type DataColumn,
+} from '@/components/dashboard'
 import {
   Dialog,
   DialogContent,
@@ -32,15 +41,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import type {
@@ -50,22 +50,8 @@ import type {
 import type { ClaimStatus, ClaimVerificationMethod } from '@/lib/api/types/vendor-claim.types'
 import {
   CLAIM_STATUS_LABELS,
-  CLAIM_STATUS_COLORS,
   VERIFICATION_METHOD_LABELS,
 } from '@/lib/api/types/vendor-claim.types'
-
-// ============================================================================
-// Status Badge Color Mapping
-// ============================================================================
-
-const STATUS_BADGE_STYLES: Record<ClaimStatus, string> = {
-  PENDING: 'bg-gray-500/10 text-gray-700 border-gray-500/20',
-  VERIFICATION_SENT: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20',
-  VERIFIED: 'bg-blue-500/10 text-blue-700 border-blue-500/20',
-  APPROVED: 'bg-green-500/10 text-green-700 border-green-500/20',
-  REJECTED: 'bg-red-500/10 text-red-700 border-red-500/20',
-  EXPIRED: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
-}
 
 type StatusFilter = 'all' | ClaimStatus
 
@@ -172,96 +158,100 @@ export default function AdminClaimsPage() {
     )
   }
 
-  const pendingCount = (counts?.pending ?? 0) + (counts?.verified ?? 0)
   const totalClaims = data?.total ?? 0
-  const totalPages = Math.ceil(totalClaims / limit)
+
+  const claimantName = (claim: AdminClaimResponse) =>
+    claim.user?.firstName || claim.user?.lastName
+      ? `${claim.user?.firstName ?? ''} ${claim.user?.lastName ?? ''}`.trim()
+      : claim.user?.email || 'Unknown'
+
+  const columns: DataColumn<AdminClaimResponse>[] = [
+    {
+      id: 'business',
+      header: 'Business Name',
+      label: 'Business Name',
+      cell: (claim) => (
+        <TwoLineCell
+          title={claim.vendorProfile?.businessName || 'Unknown'}
+          subtitle={claim.vendorProfile?.slug ? `/${claim.vendorProfile.slug}` : undefined}
+        />
+      ),
+      sortValue: (claim) => claim.vendorProfile?.businessName,
+      exportValue: (claim) => claim.vendorProfile?.businessName,
+    },
+    {
+      id: 'claimant',
+      header: 'Claimant',
+      label: 'Claimant',
+      cell: (claim) => (
+        <UserCell
+          name={claimantName(claim)}
+          subtitle={claim.user?.firstName ? claim.user?.email : undefined}
+        />
+      ),
+      sortValue: (claim) => claimantName(claim),
+      exportValue: (claim) => claim.user?.email,
+    },
+    {
+      id: 'method',
+      header: 'Method',
+      label: 'Method',
+      hideBelow: 'md',
+      cell: (claim) => <StatusBadge tone="neutral">{VERIFICATION_METHOD_LABELS[claim.verificationMethod]}</StatusBadge>,
+      sortValue: (claim) => claim.verificationMethod,
+      exportValue: (claim) => VERIFICATION_METHOD_LABELS[claim.verificationMethod],
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (claim) => (
+        <StatusBadge status={claim.status}>{CLAIM_STATUS_LABELS[claim.status]}</StatusBadge>
+      ),
+      sortValue: (claim) => claim.status,
+      exportValue: (claim) => CLAIM_STATUS_LABELS[claim.status],
+    },
+    {
+      id: 'created',
+      header: 'Created',
+      label: 'Created',
+      hideBelow: 'md',
+      cell: (claim) => <span className="text-muted-foreground">{formatDate(claim.createdAt)}</span>,
+      sortValue: (claim) => new Date(claim.createdAt),
+      exportValue: (claim) => formatDate(claim.createdAt),
+    },
+  ]
+
+  const claimsPending = approveMutation.isPending || rejectMutation.isPending
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">Vendor Claims</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {pendingCount > 0
-              ? `${pendingCount} claim${pendingCount === 1 ? '' : 's'} pending review`
-              : 'Review and approve vendor ownership claims'}
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCcw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="Vendor Claims"
+        actions={
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCcw className="mr-1 h-4 w-4" />
+            Refresh
+          </Button>
+        }
+      />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold text-gray-600">{counts?.pending ?? 0}</p>
-            </div>
-            <Clock className="h-8 w-8 text-gray-600" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Verification Sent</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {counts?.verificationSent ?? 0}
-              </p>
-            </div>
-            <FileCheck className="h-8 w-8 text-yellow-600" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Verified</p>
-              <p className="text-2xl font-bold text-blue-600">{counts?.verified ?? 0}</p>
-            </div>
-            <ShieldCheck className="h-8 w-8 text-blue-600" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Approved</p>
-              <p className="text-2xl font-bold text-green-600">{counts?.approved ?? 0}</p>
-            </div>
-            <CheckCircle className="h-8 w-8 text-green-600" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Rejected</p>
-              <p className="text-2xl font-bold text-red-600">{counts?.rejected ?? 0}</p>
-            </div>
-            <XCircle className="h-8 w-8 text-red-600" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Expired</p>
-              <p className="text-2xl font-bold text-gray-500">{counts?.expired ?? 0}</p>
-            </div>
-            <Clock className="h-8 w-8 text-gray-400" />
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid className="md:grid-cols-3 lg:grid-cols-6">
+        <StatCard label="Pending" value={counts?.pending ?? 0} icon={Clock} accent="text-gray-600" />
+        <StatCard label="Verification Sent" value={counts?.verificationSent ?? 0} icon={FileCheck} accent="text-yellow-600" />
+        <StatCard label="Verified" value={counts?.verified ?? 0} icon={ShieldCheck} accent="text-blue-600" />
+        <StatCard label="Approved" value={counts?.approved ?? 0} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="Rejected" value={counts?.rejected ?? 0} icon={XCircle} accent="text-red-600" />
+        <StatCard label="Expired" value={counts?.expired ?? 0} icon={Clock} accent="text-gray-500" />
+      </StatGrid>
 
-      {/* Claims Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StatusFilter)}>
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="PENDING" className="relative">
             Pending
             {(counts?.pending ?? 0) > 0 && (
-              <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-500 text-xs font-medium text-white">
+              <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gray-500 px-1 text-[10px] font-medium text-white">
                 {counts?.pending}
               </span>
             )}
@@ -269,7 +259,7 @@ export default function AdminClaimsPage() {
           <TabsTrigger value="VERIFIED" className="relative">
             Verified
             {(counts?.verified ?? 0) > 0 && (
-              <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-xs font-medium text-white">
+              <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-medium text-white">
                 {counts?.verified}
               </span>
             )}
@@ -278,31 +268,40 @@ export default function AdminClaimsPage() {
           <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {activeTab === 'all' ? 'All Claims' : `${CLAIM_STATUS_LABELS[activeTab as ClaimStatus]} Claims`}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ClaimsTable
-                claims={data?.claims ?? []}
-                isLoading={isLoading}
-                onViewDetails={handleViewDetails}
-                onApprove={handleOpenApprove}
-                onReject={handleOpenReject}
-                isPending={approveMutation.isPending || rejectMutation.isPending}
-              />
-              <Pagination
-                totalPages={totalPages}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                total={totalClaims}
-                isLoading={isLoading}
-              />
-            </CardContent>
-          </Card>
+        <TabsContent value={activeTab} className="mt-2">
+          <DataTable
+            data={data?.claims ?? []}
+            columns={columns}
+            rowKey={(claim) => claim.id}
+            isLoading={isLoading}
+            exportFilename="vendor-claims"
+            emptyTitle="No claims found"
+            emptyIcon={FileCheck}
+            serverPagination={{
+              page: currentPage,
+              pageSize: limit,
+              total: totalClaims,
+              onPageChange: setCurrentPage,
+            }}
+            rowActions={(claim) => [
+              { label: 'View details', icon: Eye, onClick: () => handleViewDetails(claim) },
+              {
+                label: 'Approve',
+                icon: CheckCircle,
+                onClick: () => handleOpenApprove(claim),
+                disabled: claimsPending,
+                visible: claim.status === 'PENDING' || claim.status === 'VERIFIED',
+              },
+              {
+                label: 'Reject',
+                icon: XCircle,
+                danger: true,
+                onClick: () => handleOpenReject(claim),
+                disabled: claimsPending,
+                visible: claim.status === 'PENDING' || claim.status === 'VERIFIED',
+              },
+            ]}
+          />
         </TabsContent>
       </Tabs>
 
@@ -316,13 +315,13 @@ export default function AdminClaimsPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedClaim && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Business Info */}
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <Label className="text-muted-foreground">Business Name</Label>
-                    <p className="font-semibold text-lg">
+                    <p className="font-semibold">
                       {selectedClaim.vendorProfile?.businessName || 'Unknown'}
                     </p>
                     {selectedClaim.vendorProfile?.slug && (
@@ -345,16 +344,13 @@ export default function AdminClaimsPage() {
               </div>
 
               {/* Claim Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-muted-foreground">Claim Status</Label>
                   <div className="mt-1">
-                    <Badge
-                      variant="outline"
-                      className={STATUS_BADGE_STYLES[selectedClaim.status]}
-                    >
+                    <StatusBadge status={selectedClaim.status}>
                       {CLAIM_STATUS_LABELS[selectedClaim.status]}
-                    </Badge>
+                    </StatusBadge>
                   </div>
                 </div>
                 <div>
@@ -387,7 +383,7 @@ export default function AdminClaimsPage() {
               </div>
 
               {selectedClaim.status === 'REJECTED' && selectedClaim.reviewNotes && (
-                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3">
                   <Label className="text-destructive">Rejection Reason</Label>
                   <p className="text-sm">{selectedClaim.reviewNotes}</p>
                   {selectedClaim.reviewedAt && (
@@ -399,7 +395,7 @@ export default function AdminClaimsPage() {
               )}
 
               {selectedClaim.status === 'APPROVED' && (
-                <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-4">
+                <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
                   <Label className="text-green-700">Approved</Label>
                   {selectedClaim.reviewedAt && (
                     <p className="text-sm text-muted-foreground">
@@ -411,14 +407,14 @@ export default function AdminClaimsPage() {
 
               {/* Documents Section */}
               {selectedClaim.documents && selectedClaim.documents.length > 0 && (
-                <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+                <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-semibold">Supporting Documents</Label>
                     <span className="text-xs text-muted-foreground">
                       {selectedClaim.documents.length} file{selectedClaim.documents.length !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {selectedClaim.documents.map((doc) => (
                       <div
                         key={doc.id}
@@ -511,7 +507,7 @@ export default function AdminClaimsPage() {
             </DialogDescription>
           </DialogHeader>
           {approveClaim && (
-            <div className="rounded-lg border bg-muted/50 p-4">
+            <div className="rounded-lg border bg-muted/50 p-3">
               <p className="font-medium">
                 {approveClaim.vendorProfile?.businessName || 'Unknown Vendor'}
               </p>
@@ -544,8 +540,8 @@ export default function AdminClaimsPage() {
             </DialogDescription>
           </DialogHeader>
           {rejectClaim && (
-            <div className="space-y-4">
-              <div className="rounded-lg border bg-muted/50 p-4">
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/50 p-3">
                 <p className="font-medium">
                   {rejectClaim.vendorProfile?.businessName || 'Unknown Vendor'}
                 </p>
@@ -557,7 +553,7 @@ export default function AdminClaimsPage() {
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="reject-reason">Rejection Reason *</Label>
                 <Textarea
                   id="reject-reason"
@@ -568,7 +564,7 @@ export default function AdminClaimsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="internal-notes">Internal Notes (optional)</Label>
                 <Textarea
                   id="internal-notes"
@@ -594,184 +590,6 @@ export default function AdminClaimsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-// ============================================================================
-// Claims Table Component
-// ============================================================================
-
-function ClaimsTable({
-  claims,
-  isLoading,
-  onViewDetails,
-  onApprove,
-  onReject,
-  isPending,
-}: {
-  claims: AdminClaimResponse[]
-  isLoading: boolean
-  onViewDetails: (claim: AdminClaimResponse) => void
-  onApprove: (claim: AdminClaimResponse) => void
-  onReject: (claim: AdminClaimResponse) => void
-  isPending: boolean
-}) {
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-md" />
-        ))}
-      </div>
-    )
-  }
-
-  if (!claims.length) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-          <FileCheck className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <p className="mt-4 text-sm font-medium">No claims found</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          No claims match the current filter.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Business Name</TableHead>
-          <TableHead>Claimant</TableHead>
-          <TableHead>Method</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Created</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {claims.map((claim) => {
-          const canApproveReject =
-            claim.status === 'PENDING' || claim.status === 'VERIFIED'
-
-          return (
-            <TableRow key={claim.id}>
-              <TableCell>
-                <div className="font-medium">
-                  {claim.vendorProfile?.businessName || 'Unknown'}
-                </div>
-                {claim.vendorProfile?.slug && (
-                  <div className="text-xs text-muted-foreground">
-                    /{claim.vendorProfile.slug}
-                  </div>
-                )}
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  {claim.user?.firstName || claim.user?.lastName
-                    ? `${claim.user?.firstName ?? ''} ${claim.user?.lastName ?? ''}`.trim()
-                    : claim.user?.email || 'Unknown'}
-                </div>
-                {claim.user?.email && claim.user?.firstName && (
-                  <div className="text-xs text-muted-foreground">{claim.user.email}</div>
-                )}
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">
-                  {VERIFICATION_METHOD_LABELS[claim.verificationMethod]}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className={STATUS_BADGE_STYLES[claim.status]}>
-                  {CLAIM_STATUS_LABELS[claim.status]}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {formatDate(claim.createdAt)}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => onViewDetails(claim)}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  {canApproveReject && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onApprove(claim)}
-                        disabled={isPending}
-                        className="text-green-600 hover:text-green-700"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onReject(claim)}
-                        disabled={isPending}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          )
-        })}
-      </TableBody>
-    </Table>
-  )
-}
-
-// ============================================================================
-// Pagination Component
-// ============================================================================
-
-function Pagination({
-  totalPages,
-  currentPage,
-  setCurrentPage,
-  total,
-  isLoading,
-}: {
-  totalPages: number
-  currentPage: number
-  setCurrentPage: (page: number | ((prev: number) => number)) => void
-  total: number
-  isLoading: boolean
-}) {
-  if (totalPages <= 1) return null
-
-  return (
-    <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
-      <p className="text-sm text-muted-foreground">
-        Page {currentPage} of {totalPages} - {total} claims
-      </p>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={currentPage <= 1 || isLoading}
-          onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={currentPage >= totalPages || isLoading}
-          onClick={() => setCurrentPage((prev) => prev + 1)}
-        >
-          Next
-        </Button>
-      </div>
     </div>
   )
 }

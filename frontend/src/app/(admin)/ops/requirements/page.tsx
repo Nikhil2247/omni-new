@@ -11,9 +11,16 @@ import {
   useDeleteRequirementItem,
   useSendRequirementToClient,
 } from "@/hooks/queries/use-ops";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  PageHeader,
+  DataTable,
+  StatusBadge,
+  TwoLineCell,
+  StatCard,
+  StatGrid,
+  type DataColumn,
+} from "@/components/dashboard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,20 +40,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Search,
   Plus,
   ClipboardList,
   Calendar,
   Edit,
   Trash2,
-  MoreVertical,
   CheckCircle,
   Clock,
   Package,
@@ -78,23 +76,20 @@ const categoryOptions = [
 
 const priorityOptions = ["LOW", "NORMAL", "HIGH", "URGENT"];
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Pending", color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20" },
-  SOURCING: { label: "Sourcing", color: "bg-blue-500/10 text-blue-700 border-blue-500/20" },
-  QUOTED: { label: "Quoted", color: "bg-indigo-500/10 text-indigo-700 border-indigo-500/20" },
-  APPROVED: { label: "Approved", color: "bg-green-500/10 text-green-700 border-green-500/20" },
-  FULFILLED: {
-    label: "Fulfilled",
-    color: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
-  },
-  CANCELLED: { label: "Cancelled", color: "bg-red-500/10 text-red-700 border-red-500/20" },
+const statusConfig: Record<string, { label: string }> = {
+  PENDING: { label: "Pending" },
+  SOURCING: { label: "Sourcing" },
+  QUOTED: { label: "Quoted" },
+  APPROVED: { label: "Approved" },
+  FULFILLED: { label: "Fulfilled" },
+  CANCELLED: { label: "Cancelled" },
 };
 
-const approvalStatusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  DRAFT: { label: "Draft", color: "bg-gray-500/10 text-gray-700 border-gray-500/20", icon: <ClipboardList className="h-3 w-3" /> },
-  PENDING: { label: "Awaiting Approval", color: "bg-amber-500/10 text-amber-700 border-amber-500/20", icon: <Clock className="h-3 w-3" /> },
-  APPROVED: { label: "Client Approved", color: "bg-green-500/10 text-green-700 border-green-500/20", icon: <CheckCircle2 className="h-3 w-3" /> },
-  REJECTED: { label: "Client Rejected", color: "bg-red-500/10 text-red-700 border-red-500/20", icon: <XCircle className="h-3 w-3" /> },
+const approvalStatusConfig: Record<string, { label: string }> = {
+  DRAFT: { label: "Draft" },
+  PENDING: { label: "Awaiting Approval" },
+  APPROVED: { label: "Client Approved" },
+  REJECTED: { label: "Client Rejected" },
 };
 
 export default function OpsRequirementsPage() {
@@ -218,9 +213,7 @@ export default function OpsRequirementsPage() {
   };
 
   const handleDeleteItem = (itemId: string) => {
-    if (confirm("Are you sure you want to delete this requirement item?")) {
-      deleteItem.mutate(itemId);
-    }
+    deleteItem.mutate(itemId);
   };
 
   const openEditDialog = (item: {
@@ -268,215 +261,197 @@ export default function OpsRequirementsPage() {
 
   const selectedEvent = events?.find((e) => e.id === selectedEventId);
 
+  type EventRow = NonNullable<typeof events>[number];
+  type ReqItem = NonNullable<NonNullable<typeof requirements>["items"]>[number];
+
+  const eventColumns: DataColumn<EventRow>[] = [
+    {
+      id: "event",
+      header: "Event",
+      label: "Event",
+      cell: (event) => (
+        <div className="flex items-center gap-2">
+          <span
+            className={`size-1.5 shrink-0 rounded-full ${selectedEventId === event.id ? "bg-primary" : "bg-transparent"}`}
+          />
+          <TwoLineCell
+            title={event.clientName || "Unnamed Client"}
+            subtitle={`${event.eventType || "Event"} · ${event.eventDate ? new Date(event.eventDate).toLocaleDateString() : "No date"}`}
+          />
+        </div>
+      ),
+      sortValue: (event) => event.clientName,
+      exportValue: (event) => event.clientName,
+    },
+    {
+      id: "status",
+      header: "Status",
+      label: "Status",
+      cell: (event) => <StatusBadge status={event.status || "Unknown"} />,
+      sortValue: (event) => event.status,
+      exportValue: (event) => event.status,
+    },
+  ];
+
+  const itemColumns: DataColumn<ReqItem>[] = [
+    {
+      id: "item",
+      header: "Requirement",
+      label: "Requirement",
+      cell: (item) => <TwoLineCell title={item.category} subtitle={item.description} />,
+      sortValue: (item) => item.category,
+      exportValue: (item) => `${item.category}: ${item.description}`,
+    },
+    {
+      id: "status",
+      header: "Status",
+      label: "Status",
+      cell: (item) => (
+        <StatusBadge status={item.status}>
+          {(statusConfig[item.status] || { label: item.status }).label}
+        </StatusBadge>
+      ),
+      sortValue: (item) => item.status,
+      exportValue: (item) => item.status,
+    },
+    {
+      id: "priority",
+      header: "Priority",
+      label: "Priority",
+      hideBelow: "md",
+      cell: (item) => <StatusBadge status={item.priority || "NORMAL"} />,
+      sortValue: (item) => item.priority,
+      exportValue: (item) => item.priority || "NORMAL",
+    },
+    {
+      id: "quantity",
+      header: "Qty",
+      label: "Qty",
+      align: "right",
+      cell: (item) => item.quantity,
+      sortValue: (item) => item.quantity,
+    },
+    {
+      id: "budget",
+      header: "Est. budget",
+      label: "Est. budget",
+      align: "right",
+      cell: (item) =>
+        item.estimatedBudget ? `$${Number(item.estimatedBudget).toLocaleString()}` : "-",
+      sortValue: (item) => (item.estimatedBudget ? Number(item.estimatedBudget) : null),
+      exportValue: (item) => (item.estimatedBudget ? Number(item.estimatedBudget) : ""),
+    },
+  ];
+
   if (eventsLoading) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Requirements Management</h1>
-          <p className="text-muted-foreground">Manage event requirements and sourcing items.</p>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="animate-pulse">
-            <CardHeader>
-              <div className="bg-muted h-4 w-1/2 rounded" />
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted h-32 rounded" />
-            </CardContent>
-          </Card>
-          <Card className="animate-pulse">
-            <CardContent className="p-4">
-              <div className="bg-muted h-32 rounded" />
-            </CardContent>
-          </Card>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Requirements Management" />
+        <DataTable data={[]} columns={eventColumns} rowKey={(e) => e.id} isLoading />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-lg font-semibold">Requirements Management</h1>
-        <p className="text-muted-foreground">Manage event requirements and sourcing items.</p>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Left: Events List */}
-        <div className="space-y-4">
-          <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <Input
-              placeholder="Search events..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          <div className="max-h-[600px] space-y-2 overflow-y-auto">
-            {filteredEvents.length === 0 ? (
-              <Card>
-                <CardContent className="py-4 text-center">
-                  <Calendar className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-                  <p className="text-muted-foreground text-sm">No events found.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredEvents.map((event) => (
-                <Card
-                  key={event.id}
-                  className={`hover:border-primary/50 cursor-pointer transition-all ${
-                    selectedEventId === event.id ? "border-primary ring-primary ring-1" : ""
-                  }`}
-                  onClick={() => setSelectedEventId(event.id)}
+    <div className="space-y-3">
+      <PageHeader
+        title="Requirements Management"
+        actions={
+          selectedEventId && requirements ? (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/ops/events/${selectedEventId}`}>View Event</Link>
+              </Button>
+              {requirements.approvalStatus !== "APPROVED" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSendToClientDialogOpen(true)}
+                  disabled={!requirements.items || requirements.items.length === 0}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">{event.clientName || "Unnamed Client"}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {event.eventType || "Event"}
-                        </p>
-                        <div className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
-                          <Calendar className="h-3 w-3" />
-                          {event.eventDate
-                            ? new Date(event.eventDate).toLocaleDateString()
-                            : "No date"}
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {event.status?.replace(/_/g, " ") || "Unknown"}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
+                  <Send className="mr-1 h-4 w-4" />
+                  {requirements.approvalStatus === "PENDING" ? "Resend" : "Send to Client"}
+                </Button>
+              )}
+              <Button size="sm" onClick={() => setAddItemDialogOpen(true)}>
+                <Plus className="mr-1 h-4 w-4" />
+                Add Item
+              </Button>
+            </>
+          ) : undefined
+        }
+      />
 
-        {/* Right: Requirements Panel */}
-        <div className="space-y-4 lg:col-span-2">
+      <div className="grid gap-3 lg:grid-cols-3">
+        {/* Left: Events */}
+        <DataTable
+          data={filteredEvents}
+          columns={eventColumns}
+          rowKey={(e) => e.id}
+          search={{ value: searchTerm, onChange: setSearchTerm, placeholder: "Search events..." }}
+          emptyTitle="No events found"
+          emptyIcon={Calendar}
+          onRowClick={(event) => setSelectedEventId(event.id)}
+          defaultPageSize={10}
+          pageSizeOptions={[10, 20, 50]}
+        />
+
+        {/* Right: Requirements */}
+        <div className="space-y-3 lg:col-span-2">
           {!selectedEventId ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <ClipboardList className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                <p className="text-lg font-medium">Select an Event</p>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  Choose an event from the list to view or manage its requirements.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="rounded-lg border bg-card py-8 text-center">
+              <ClipboardList className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+              <p className="font-medium">Select an event</p>
+            </div>
           ) : reqLoading ? (
-            <Card className="animate-pulse">
-              <CardHeader>
-                <div className="bg-muted h-6 w-1/3 rounded" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="bg-muted h-16 rounded" />
-                  <div className="bg-muted h-16 rounded" />
-                </div>
-              </CardContent>
-            </Card>
+            <DataTable data={[]} columns={itemColumns} rowKey={(i) => i.id} isLoading />
           ) : !requirements ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>No Requirement Sheet</CardTitle>
-                <CardDescription>This event doesn't have a requirement sheet yet.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="py-4 text-center">
-                  <ClipboardList className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                  <p className="text-muted-foreground mb-4">
-                    Create a requirement sheet to start tracking items needed for this event.
-                  </p>
-                  <Button onClick={() => setCreateSheetDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Requirement Sheet
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="rounded-lg border bg-card py-8 text-center">
+              <ClipboardList className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+              <p className="font-medium">No requirement sheet for {selectedEvent?.clientName}</p>
+              <Button size="sm" className="mt-3" onClick={() => setCreateSheetDialogOpen(true)}>
+                <Plus className="mr-1 h-4 w-4" />
+                Create Requirement Sheet
+              </Button>
+            </div>
           ) : (
             <>
-              {/* Requirement Sheet Header */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle>Requirement Sheet</CardTitle>
-                        {requirements.approvalStatus && (
-                          <Badge
-                            variant="outline"
-                            className={approvalStatusConfig[requirements.approvalStatus]?.color}
-                          >
-                            {approvalStatusConfig[requirements.approvalStatus]?.icon}
-                            <span className="ml-1">
-                              {approvalStatusConfig[requirements.approvalStatus]?.label}
-                            </span>
-                          </Badge>
-                        )}
-                      </div>
-                      <CardDescription>
-                        {selectedEvent?.clientName} - {selectedEvent?.eventType}
-                      </CardDescription>
+              {/* Approval state */}
+              {(requirements.approvalStatus || requirements.notes) && (
+                <div className="space-y-2">
+                  {requirements.approvalStatus && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">{selectedEvent?.clientName}</span>
+                      <StatusBadge status={requirements.approvalStatus}>
+                        {approvalStatusConfig[requirements.approvalStatus]?.label}
+                      </StatusBadge>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Link href={`/ops/events/${selectedEventId}`}>
-                        <Button variant="outline" size="sm">
-                          View Event
-                        </Button>
-                      </Link>
-                      {requirements.approvalStatus !== "APPROVED" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSendToClientDialogOpen(true)}
-                          disabled={!requirements.items || requirements.items.length === 0}
-                        >
-                          <Send className="mr-2 h-4 w-4" />
-                          {requirements.approvalStatus === "PENDING" ? "Resend" : "Send to Client"}
-                        </Button>
-                      )}
-                      <Button size="sm" onClick={() => setAddItemDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Item
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Approval Link Section */}
+                  )}
+
                   {requirements.approvalStatus === "PENDING" && requirements.approvalToken && (
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="mt-0.5 h-4 w-4 text-amber-600" />
                         <div className="flex-1">
-                          <p className="font-medium text-amber-800 dark:text-amber-200">
-                            Awaiting Client Approval
-                          </p>
-                          <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                            Sent on{" "}
+                          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                            Awaiting Client Approval - sent on{" "}
                             {requirements.sentToClientAt
                               ? new Date(requirements.sentToClientAt).toLocaleDateString()
                               : "N/A"}
                           </p>
-                          <div className="flex items-center gap-2 mt-3">
+                          <div className="mt-2 flex items-center gap-2">
                             <Input
                               readOnly
                               value={getApprovalLink() || ""}
-                              className="text-xs bg-white dark:bg-slate-800"
+                              className="h-8 bg-white text-xs dark:bg-slate-800"
                             />
-                            <Button size="sm" variant="outline" onClick={copyApprovalLink}>
+                            <Button size="sm" variant="outline" className="h-8" onClick={copyApprovalLink}>
                               <Copy className="h-4 w-4" />
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
+                              className="h-8"
                               onClick={() => window.open(getApprovalLink() || "", "_blank")}
                             >
                               <ExternalLink className="h-4 w-4" />
@@ -487,202 +462,90 @@ export default function OpsRequirementsPage() {
                     </div>
                   )}
 
-                  {/* Approved Section */}
                   {requirements.approvalStatus === "APPROVED" && (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        <div>
-                          <p className="font-medium text-green-800 dark:text-green-200">
-                            Approved by Client
-                          </p>
-                          <p className="text-sm text-green-700 dark:text-green-300">
-                            Approved on{" "}
-                            {requirements.clientApprovedAt
-                              ? new Date(requirements.clientApprovedAt).toLocaleDateString()
-                              : "N/A"}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm dark:border-green-800 dark:bg-green-900/20">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-800 dark:text-green-200">
+                        Approved by Client on{" "}
+                        {requirements.clientApprovedAt
+                          ? new Date(requirements.clientApprovedAt).toLocaleDateString()
+                          : "N/A"}
+                      </span>
                     </div>
                   )}
 
-                  {/* Rejected Section */}
                   {requirements.approvalStatus === "REJECTED" && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <XCircle className="h-5 w-5 text-red-600 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-red-800 dark:text-red-200">
-                            Rejected by Client
-                          </p>
-                          <p className="text-sm text-red-700 dark:text-red-300">
-                            Rejected on{" "}
-                            {requirements.clientRejectedAt
-                              ? new Date(requirements.clientRejectedAt).toLocaleDateString()
-                              : "N/A"}
-                          </p>
-                          {requirements.rejectionReason && (
-                            <p className="text-sm text-red-600 dark:text-red-400 mt-2">
-                              Reason: {requirements.rejectionReason}
-                            </p>
-                          )}
-                        </div>
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm dark:border-red-800 dark:bg-red-900/20">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-red-600" />
+                        <span className="font-medium text-red-800 dark:text-red-200">
+                          Rejected by Client on{" "}
+                          {requirements.clientRejectedAt
+                            ? new Date(requirements.clientRejectedAt).toLocaleDateString()
+                            : "N/A"}
+                        </span>
                       </div>
+                      {requirements.rejectionReason && (
+                        <p className="mt-1 text-red-600 dark:text-red-400">
+                          Reason: {requirements.rejectionReason}
+                        </p>
+                      )}
                     </div>
                   )}
 
-                  {/* Notes */}
                   {requirements.notes && (
-                    <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="bg-muted/50 rounded-lg px-3 py-2">
                       <p className="text-muted-foreground text-sm">{requirements.notes}</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              )}
 
-              {/* Stats */}
-              <div className="grid gap-4 md:grid-cols-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-muted-foreground text-sm">Total Items</p>
-                        <p className="text-2xl font-bold">{requirements.items?.length || 0}</p>
-                      </div>
-                      <Package className="text-muted-foreground h-5 w-5" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-muted-foreground text-sm">Pending</p>
-                        <p className="text-2xl font-bold text-yellow-600">
-                          {requirements.items?.filter((i) => i.status === "PENDING").length || 0}
-                        </p>
-                      </div>
-                      <Clock className="h-5 w-5 text-yellow-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-muted-foreground text-sm">Fulfilled</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {requirements.items?.filter((i) => i.status === "FULFILLED").length || 0}
-                        </p>
-                      </div>
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-muted-foreground text-sm">Est. Total</p>
-                        <p className="text-2xl font-bold">
-                          $
-                          {requirements.items
-                            ?.reduce((sum, i) => sum + (Number(i.estimatedBudget) || 0), 0)
-                            .toLocaleString() || 0}
-                        </p>
-                      </div>
-                      <span className="text-muted-foreground">$</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <StatGrid>
+                <StatCard label="Total Items" value={requirements.items?.length || 0} icon={Package} />
+                <StatCard
+                  label="Pending"
+                  value={requirements.items?.filter((i) => i.status === "PENDING").length || 0}
+                  icon={Clock}
+                  accent="text-yellow-600"
+                />
+                <StatCard
+                  label="Fulfilled"
+                  value={requirements.items?.filter((i) => i.status === "FULFILLED").length || 0}
+                  icon={CheckCircle}
+                  accent="text-green-600"
+                />
+                <StatCard
+                  label="Est. Total"
+                  value={`$${
+                    requirements.items
+                      ?.reduce((sum, i) => sum + (Number(i.estimatedBudget) || 0), 0)
+                      .toLocaleString() || 0
+                  }`}
+                />
+              </StatGrid>
 
-              {/* Items List */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Requirement Items</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!requirements?.items || requirements.items.length === 0 ? (
-                    <div className="py-4 text-center">
-                      <Package className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-                      <p className="text-muted-foreground">No items added yet.</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-4"
-                        onClick={() => setAddItemDialogOpen(true)}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add First Item
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {requirements?.items?.map((item) => {
-                        const itemStatus = statusConfig[item.status] || {
-                          label: item.status,
-                          color: "bg-gray-500/10 text-gray-700",
-                        };
-                        return (
-                          <div
-                            key={item.id}
-                            className="flex items-start justify-between rounded-lg border p-4"
-                          >
-                            <div className="flex-1 space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{item.category}</span>
-                                <Badge variant="outline" className={itemStatus.color}>
-                                  {itemStatus.label}
-                                </Badge>
-                                {item.priority === "URGENT" && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    Urgent
-                                  </Badge>
-                                )}
-                                {item.priority === "HIGH" && (
-                                  <Badge variant="default" className="bg-orange-500 text-xs">
-                                    High
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-muted-foreground text-sm">{item.description}</p>
-                              <div className="text-muted-foreground flex items-center gap-4 text-xs">
-                                <span>Qty: {item.quantity}</span>
-                                {item.estimatedBudget && (
-                                  <span>Est: ${Number(item.estimatedBudget).toLocaleString()}</span>
-                                )}
-                              </div>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openEditDialog(item)}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteItem(item.id)}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <DataTable
+                data={requirements.items}
+                columns={itemColumns}
+                rowKey={(item) => item.id}
+                exportFilename="requirement-items"
+                emptyTitle="No items added yet"
+                emptyIcon={Package}
+                rowActions={(item) => [
+                  { label: "Edit", icon: Edit, onClick: () => openEditDialog(item) },
+                  {
+                    label: "Delete item",
+                    icon: Trash2,
+                    danger: true,
+                    onClick: () => handleDeleteItem(item.id),
+                    confirm: {
+                      title: "Delete requirement item?",
+                      description: "This requirement item will be permanently deleted. This action cannot be undone.",
+                    },
+                  },
+                ]}
+              />
             </>
           )}
         </div>
@@ -697,8 +560,8 @@ export default function OpsRequirementsPage() {
               Create a new requirement sheet for {selectedEvent?.clientName}'s event.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
+          <div className="space-y-3">
+            <div className="space-y-1.5">
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
                 id="notes"
@@ -727,8 +590,8 @@ export default function OpsRequirementsPage() {
             <DialogTitle>Add Requirement Item</DialogTitle>
             <DialogDescription>Add a new item to the requirement sheet.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
+          <div className="space-y-3">
+            <div className="space-y-1.5">
               <Label htmlFor="category">Category</Label>
               <Select
                 value={newItem.category}
@@ -746,7 +609,7 @@ export default function OpsRequirementsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
@@ -756,8 +619,8 @@ export default function OpsRequirementsPage() {
                 rows={2}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="quantity">Quantity</Label>
                 <Input
                   id="quantity"
@@ -769,7 +632,7 @@ export default function OpsRequirementsPage() {
                   }
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="priority">Priority</Label>
                 <Select
                   value={newItem.priority}
@@ -788,7 +651,7 @@ export default function OpsRequirementsPage() {
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="estimatedBudget">Estimated Budget (Optional)</Label>
               <Input
                 id="estimatedBudget"
@@ -824,8 +687,8 @@ export default function OpsRequirementsPage() {
             <DialogDescription>Update this requirement item.</DialogDescription>
           </DialogHeader>
           {selectedItem && (
-            <div className="space-y-4">
-              <div className="space-y-2">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="edit-category">Category</Label>
                 <Select
                   value={selectedItem.category}
@@ -845,7 +708,7 @@ export default function OpsRequirementsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="edit-description">Description</Label>
                 <Textarea
                   id="edit-description"
@@ -856,8 +719,8 @@ export default function OpsRequirementsPage() {
                   rows={2}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
                   <Label htmlFor="edit-quantity">Quantity</Label>
                   <Input
                     id="edit-quantity"
@@ -871,7 +734,7 @@ export default function OpsRequirementsPage() {
                     }
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="edit-priority">Priority</Label>
                   <Select
                     value={selectedItem.priority}
@@ -892,8 +755,8 @@ export default function OpsRequirementsPage() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
                   <Label htmlFor="edit-status">Status</Label>
                   <Select
                     value={selectedItem.status}
@@ -913,7 +776,7 @@ export default function OpsRequirementsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label htmlFor="edit-estimatedBudget">Estimated Budget</Label>
                   <Input
                     id="edit-estimatedBudget"
@@ -955,8 +818,8 @@ export default function OpsRequirementsPage() {
               receive a link to view and approve the quotation.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-muted/50 rounded-lg p-4">
+          <div className="space-y-3">
+            <div className="bg-muted/50 rounded-lg p-3">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium">Total Items</span>
                 <span className="font-bold">{requirements?.items?.length || 0}</span>
@@ -971,7 +834,7 @@ export default function OpsRequirementsPage() {
                 </span>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="sendMessage">Message (Optional)</Label>
               <Textarea
                 id="sendMessage"

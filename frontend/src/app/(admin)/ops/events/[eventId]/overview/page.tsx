@@ -1,9 +1,10 @@
+import { PageHeader } from '@/components/dashboard'
 import { OpsEventDetails } from '@/components/features/ops'
 
 export default function OpsEventOverviewPage({ params }: { params: { eventId: string } }) {
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Event Overview</h1>
+    <div className="space-y-3">
+      <PageHeader title="Event Overview" />
       <OpsEventDetails eventId={params.eventId} />
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
@@ -40,7 +40,7 @@ export default function EditCampaignPage() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-2xl py-4">
+      <div className="container max-w-2xl py-2">
         <Skeleton className="h-8 w-48 mb-4" />
         <Card>
           <CardHeader>
@@ -48,7 +48,7 @@ export default function EditCampaignPage() {
             <Skeleton className="h-4 w-64" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-20 w-full" />
@@ -62,7 +62,7 @@ export default function EditCampaignPage() {
 
   if (!campaign) {
     return (
-      <div className="container py-4">
+      <div className="container py-2">
         <Card>
           <CardContent className="py-10 text-center">
             <h2 className="text-xl font-semibold mb-2">Campaign not found</h2>
@@ -78,7 +78,7 @@ export default function EditCampaignPage() {
   // Only allow editing of DRAFT or SCHEDULED campaigns
   if (campaign.status !== 'DRAFT' && campaign.status !== 'SCHEDULED') {
     return (
-      <div className="container py-4">
+      <div className="container py-2">
         <Card>
           <CardContent className="py-10 text-center">
             <h2 className="text-xl font-semibold mb-2">Cannot edit this campaign</h2>
@@ -95,10 +95,10 @@ export default function EditCampaignPage() {
   }
 
   return (
-    <div className="container max-w-2xl py-4">
+    <div className="container max-w-2xl py-2">
       <Link
         href={`/business/marketing/campaigns/${campaignId}`}
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-3"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Campaign
@@ -106,10 +106,7 @@ export default function EditCampaignPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Edit Campaign</CardTitle>
-          <CardDescription>
-            Update your campaign settings. Note: Campaign type cannot be changed after creation.
-          </CardDescription>
+          <CardTitle className="text-base">Edit Campaign</CardTitle>
         </CardHeader>
         <CardContent>
           <CampaignForm

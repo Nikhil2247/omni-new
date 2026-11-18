@@ -4,12 +4,10 @@ import { useEffect, useState } from 'react'
 import { Plus, ShieldOff, Trash2 } from 'lucide-react'
 import { useAdminRoles, useCreateRole, useDeleteRole } from '@/hooks/queries/use-admin'
 import { trackDashboard } from '@/lib/analytics/umami'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
 
 export default function AdminRolesPage() {
   const { data, isLoading } = useAdminRoles()
@@ -32,14 +30,45 @@ export default function AdminRolesPage() {
     setDescription('')
   }
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold tracking-tight">Roles</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Define platform roles — each user holds exactly one role</p>
-      </div>
+  const columns: DataColumn<NonNullable<typeof data>[number]>[] = [
+    {
+      id: 'name',
+      header: 'Name',
+      label: 'Name',
+      cell: (role) => <span className="font-mono text-sm font-medium">{role.name}</span>,
+      sortValue: (role) => role.name,
+    },
+    {
+      id: 'displayName',
+      header: 'Display name',
+      label: 'Display name',
+      cell: (role) => role.displayName,
+      sortValue: (role) => role.displayName,
+    },
+    {
+      id: 'level',
+      header: 'Level',
+      label: 'Level',
+      cell: (role) => <span className="text-muted-foreground">{role.level}</span>,
+      sortValue: (role) => role.level,
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      label: 'Type',
+      cell: (role) => (
+        <StatusBadge tone={role.isSystem ? 'info' : 'neutral'}>
+          {role.isSystem ? 'System' : 'Custom'}
+        </StatusBadge>
+      ),
+      exportValue: (role) => (role.isSystem ? 'System' : 'Custom'),
+    },
+  ]
 
-      {/* Create role form */}
+  return (
+    <div className="space-y-3">
+      <PageHeader title="Roles" />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -48,7 +77,7 @@ export default function AdminRolesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-2 md:grid-cols-3">
             <Input placeholder="Role name (e.g. vendor)" value={name} onChange={(e) => setName(e.target.value)} />
             <Input
               placeholder="Display name (e.g. Vendor)"
@@ -61,7 +90,7 @@ export default function AdminRolesPage() {
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          <div className="mt-3">
+          <div className="mt-2">
             <Button onClick={handleCreate} disabled={!name || !displayName || createRole.isPending}>
               {createRole.isPending ? 'Creating...' : 'Create role'}
             </Button>
@@ -69,69 +98,27 @@ export default function AdminRolesPage() {
         </CardContent>
       </Card>
 
-      {/* Roles table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All roles</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-md" />
-              ))}
-            </div>
-          ) : data?.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Display name</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((role) => (
-                  <TableRow key={role.id}>
-                    <TableCell className="font-mono text-sm font-medium">{role.name}</TableCell>
-                    <TableCell>{role.displayName}</TableCell>
-                    <TableCell className="text-muted-foreground">{role.level}</TableCell>
-                    <TableCell>
-                      <Badge variant={role.isSystem ? 'default' : 'secondary'}>
-                        {role.isSystem ? 'System' : 'Custom'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteRole.mutate(role.id)}
-                        disabled={deleteRole.isPending || role.isSystem}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="mr-1 h-4 w-4" />
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <ShieldOff className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <p className="mt-4 text-sm font-medium">No roles defined</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Create your first role using the form above.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable
+        data={data}
+        columns={columns}
+        rowKey={(role) => role.id}
+        isLoading={isLoading}
+        rowActions={(role) => [
+          {
+            label: 'Delete role',
+            icon: Trash2,
+            danger: true,
+            disabled: deleteRole.isPending || role.isSystem,
+            onClick: () => deleteRole.mutate(role.id),
+            confirm: {
+              title: 'Delete role?',
+              description: `"${role.displayName}" will be permanently removed. This cannot be undone.`,
+            },
+          },
+        ]}
+        emptyTitle="No roles defined"
+        emptyIcon={ShieldOff}
+      />
     </div>
   )
 }

@@ -5,10 +5,8 @@ import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useCreateBlogPost } from '@/hooks/queries/use-marketing'
 import { usePublicBlogCategories, usePublicBlogTags } from '@/hooks/queries/use-public-blog'
-import { useAuthStore } from '@/store/auth-store'
-import { ROLES } from '@/config/roles'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +20,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { marketingService } from '@/lib/api/services/marketing.service'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { FileText, Image, Settings, Tags } from 'lucide-react'
+import { PageHeader } from '@/components/dashboard'
 
 const slugify = (value: string) =>
   value
@@ -35,8 +34,6 @@ const slugify = (value: string) =>
 export default function MarketingContentNewPage() {
   const router = useRouter()
   const createPost = useCreateBlogPost()
-  const { user } = useAuthStore()
-  const isContentWriter = user?.role === ROLES.CONTENT_WRITER
   const { data: categories } = usePublicBlogCategories()
   const { data: tags } = usePublicBlogTags()
 
@@ -173,27 +170,21 @@ export default function MarketingContentNewPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Create Blog Post</h1>
-          <p className="text-muted-foreground mt-1">
-            {isContentWriter
-              ? 'Create a draft blog post for marketing admin review.'
-              : 'Create content and publish when ready.'}
-          </p>
-        </div>
-        <Button
-          onClick={handleCreate}
-          disabled={!title || !content || createPost.isPending || isUploadingFeatured || isUploadingOg}
-          size="lg"
-          className="w-full sm:w-auto"
-        >
-          {createPost.isPending ? 'Saving...' : 'Save Draft'}
-        </Button>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="Create Blog Post"
+        actions={
+          <Button
+            onClick={handleCreate}
+            disabled={!title || !content || createPost.isPending || isUploadingFeatured || isUploadingOg}
+            size="sm"
+          >
+            {createPost.isPending ? 'Saving...' : 'Save Draft'}
+          </Button>
+        }
+      />
 
-      <Tabs defaultValue="content" className="space-y-4">
+      <Tabs defaultValue="content" className="space-y-3">
         <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
           <TabsTrigger value="content" className="gap-2">
             <FileText className="h-4 w-4" />
@@ -214,14 +205,13 @@ export default function MarketingContentNewPage() {
         </TabsList>
 
         {/* Content Tab */}
-        <TabsContent value="content" className="space-y-4">
+        <TabsContent value="content" className="space-y-3">
           <Card>
-            <CardHeader>
-              <CardTitle>Post Details</CardTitle>
-              <CardDescription>Enter the main content for your blog post</CardDescription>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Post Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+            <CardContent className="space-y-3 p-3">
+              <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-2 md:col-span-2">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor="title">Title *</Label>
@@ -288,30 +278,28 @@ export default function MarketingContentNewPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Content Editor</CardTitle>
-              <CardDescription>Write your content using the rich text editor with formatting tools</CardDescription>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Content Editor</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               <RichTextEditor
                 content={content}
                 onChange={setContent}
                 placeholder="Start writing your blog post content..."
-                minHeight="500px"
+                minHeight="380px"
               />
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Media Tab */}
-        <TabsContent value="media" className="space-y-4">
+        <TabsContent value="media" className="space-y-3">
 
           <Card>
-            <CardHeader>
-              <CardTitle>Featured Image</CardTitle>
-              <CardDescription>Main image displayed with your blog post</CardDescription>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Featured Image</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 p-3">
               <div className="space-y-2">
                 <Label>Upload Image</Label>
                 <FileUpload
@@ -375,11 +363,10 @@ export default function MarketingContentNewPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Social Media Image</CardTitle>
-              <CardDescription>Image shown when sharing on social platforms</CardDescription>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Social Media Image</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 p-3">
               <div className="space-y-2">
                 <Label>Upload Image</Label>
                 <FileUpload
@@ -432,11 +419,10 @@ export default function MarketingContentNewPage() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Classification</CardTitle>
-              <CardDescription>Organize your blog post</CardDescription>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Classification</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 p-3">
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
@@ -454,7 +440,7 @@ export default function MarketingContentNewPage() {
                 </Select>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="vendorId">Vendor ID (Optional)</Label>
                   <Input 
@@ -483,13 +469,12 @@ export default function MarketingContentNewPage() {
         </TabsContent>
 
         {/* SEO Tab */}
-        <TabsContent value="seo" className="space-y-4">
+        <TabsContent value="seo" className="space-y-3">
           <Card>
-            <CardHeader>
-              <CardTitle>SEO Settings</CardTitle>
-              <CardDescription>Optimize your post for search engines</CardDescription>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">SEO Settings</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 p-3">
               <div className="space-y-2">
                 <Label htmlFor="metaTitle">Meta Title</Label>
                 <Input
@@ -548,27 +533,26 @@ export default function MarketingContentNewPage() {
         </TabsContent>
 
         {/* Tags Tab */}
-        <TabsContent value="tags" className="space-y-4">
+        <TabsContent value="tags" className="space-y-3">
 
           <Card>
-            <CardHeader>
-              <CardTitle>Post Tags</CardTitle>
-              <CardDescription>Select relevant tags for better content discovery</CardDescription>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Post Tags</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               {tagOptions.length ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="text-sm text-muted-foreground">
                     Selected: {tagIds.length} tag{tagIds.length !== 1 ? 's' : ''}
                   </div>
-                  <ScrollArea className="h-96 rounded-lg border p-4">
+                  <ScrollArea className="h-72 rounded-lg border p-3">
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {tagOptions.map((tag) => {
                         const checked = tagIds.includes(tag.id)
                         return (
                           <div 
                             key={tag.id} 
-                            className="flex items-center gap-2 rounded-md border p-3 transition-colors hover:bg-accent"
+                            className="flex items-center gap-2 rounded-md border px-3 py-2 transition-colors hover:bg-accent"
                           >
                             <Checkbox
                               id={`tag-${tag.id}`}
@@ -595,7 +579,7 @@ export default function MarketingContentNewPage() {
                   </ScrollArea>
                 </div>
               ) : (
-                <div className="text-center py-4">
+                <div className="py-3 text-center">
                   <p className="text-sm text-muted-foreground">No tags available yet.</p>
                   <p className="text-xs text-muted-foreground mt-1">Create tags in the tag management section.</p>
                 </div>

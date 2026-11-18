@@ -44,6 +44,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmDialog, useConfirmAction } from '@/components/dashboard'
 import {
   useCreateQuotation,
   useUpdateQuotation,
@@ -94,6 +95,7 @@ export function QuotationBuilder({
 }: QuotationBuilderProps) {
   const [showSendDialog, setShowSendDialog] = useState(false)
   const [sendMessage, setSendMessage] = useState('')
+  const removeItemAsk = useConfirmAction<number>()
 
   const createQuotation = useCreateQuotation()
   const updateQuotation = useUpdateQuotation(existingQuotation?.id || '')
@@ -217,23 +219,19 @@ export function QuotationBuilder({
   const isSending = sendQuotation.isPending
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleSave)} className="space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="h-6 w-6 text-primary" />
-              <div>
-                <h2 className="text-xl font-semibold">
-                  {isEditing ? 'Edit Quotation' : 'Create Quotation'}
-                </h2>
-                {existingQuotation && (
-                  <p className="text-sm text-muted-foreground">
-                    {existingQuotation.quotationNumber}
-                  </p>
-                )}
-              </div>
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold">
+                {isEditing ? 'Edit Quotation' : 'Create Quotation'}
+              </h2>
+              {existingQuotation && (
+                <Badge variant="outline">{existingQuotation.quotationNumber}</Badge>
+              )}
               {existingQuotation && (
                 <Badge
                   variant={existingQuotation.status === 'DRAFT' ? 'outline' : 'default'}
@@ -275,11 +273,11 @@ export function QuotationBuilder({
 
           {/* Currency Selection */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Settings</CardTitle>
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-sm">Settings</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-3">
+            <CardContent className="p-3 pt-0">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <FormField
                   control={form.control}
                   name="currency"
@@ -359,9 +357,9 @@ export function QuotationBuilder({
 
           {/* Line Items */}
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="p-3 pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Line Items</CardTitle>
+                <CardTitle className="text-sm">Line Items</CardTitle>
                 {isDraft && (
                   <Button
                     type="button"
@@ -377,7 +375,7 @@ export function QuotationBuilder({
                 )}
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 pt-0">
               <div className="space-y-3">
                 {/* Table Header */}
                 <div className="grid grid-cols-12 gap-2 text-sm font-medium text-muted-foreground pb-2 border-b">
@@ -485,7 +483,8 @@ export function QuotationBuilder({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          onClick={() => remove(index)}
+                          onClick={() => removeItemAsk.ask(index)}
+                          title="Remove item"
                           className="text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -499,14 +498,14 @@ export function QuotationBuilder({
           </Card>
 
           {/* Discount & Summary */}
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-3 lg:grid-cols-2">
             {/* Discount */}
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Discount</CardTitle>
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-sm">Discount</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2">
+              <CardContent className="p-3 pt-0">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="discountType"
@@ -565,13 +564,13 @@ export function QuotationBuilder({
 
             {/* Summary */}
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="p-3 pb-2">
                 <div className="flex items-center gap-2">
                   <Calculator className="h-4 w-4" />
-                  <CardTitle className="text-base">Summary</CardTitle>
+                  <CardTitle className="text-sm">Summary</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-0">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
@@ -600,8 +599,8 @@ export function QuotationBuilder({
                       </span>
                     </div>
                   )}
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between font-bold text-lg">
+                  <div className="border-t pt-1.5 mt-1.5">
+                    <div className="flex justify-between font-bold text-base">
                       <span>Total</span>
                       <span className="text-primary">
                         {currencySymbol}
@@ -616,11 +615,11 @@ export function QuotationBuilder({
 
           {/* Notes & Terms */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Additional Information</CardTitle>
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-sm">Additional Information</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 lg:grid-cols-2">
+            <CardContent className="p-3 pt-0">
+              <div className="grid gap-3 lg:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="notes"
@@ -662,6 +661,16 @@ export function QuotationBuilder({
         </form>
       </Form>
 
+      <ConfirmDialog
+        {...removeItemAsk.dialogProps}
+        title="Remove line item?"
+        description="This line item will be removed from the quotation."
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (removeItemAsk.target !== null) remove(removeItemAsk.target)
+        }}
+      />
+
       {/* Send Confirmation Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
         <DialogContent>
@@ -672,7 +681,7 @@ export function QuotationBuilder({
               and can accept or reject it.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-2">
             <Label htmlFor="sendMessage">Message (optional)</Label>
             <Textarea
               id="sendMessage"

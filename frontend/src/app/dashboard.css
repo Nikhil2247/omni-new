@@ -1,0 +1,117 @@
+/*
+ * Dashboard skin.
+ * Every rule is scoped to html[data-area='dashboard'], which DashboardLayout sets only while a
+ * dashboard (admin / ops / marketing / sales / system / business) is mounted. Radix portals
+ * (dialogs, selects, menus) render under <body>, so the attribute lives on <html> to reach them.
+ * Public pages never get the attribute, so nothing here can affect them.
+ *
+ * It replaces the hand-drawn "sketch" look with a flat, compact, professional one.
+ */
+
+html[data-area='dashboard'] {
+  --dash-radius: 8px;
+  --dash-radius-sm: 6px;
+  --dash-border: var(--border);
+  --dash-row-hover: color-mix(in srgb, var(--blue-wash) 12%, transparent);
+  --dash-head-bg: color-mix(in srgb, var(--blue-wash) 10%, var(--card));
+}
+
+/* ---------- form controls ---------- */
+html[data-area='dashboard'] [data-slot='input'],
+html[data-area='dashboard'] [data-slot='textarea'],
+html[data-area='dashboard'] [data-slot='select-trigger'] {
+  border-radius: var(--dash-radius-sm);
+  border-width: 1px;
+  border-color: var(--input);
+  background-color: var(--card);
+  box-shadow: none;
+}
+html[data-area='dashboard'] [data-slot='input']:hover,
+html[data-area='dashboard'] [data-slot='textarea']:hover,
+html[data-area='dashboard'] [data-slot='select-trigger']:hover {
+  border-color: color-mix(in srgb, var(--blue) 55%, var(--input));
+}
+html[data-area='dashboard'] [data-slot='input']:focus-visible,
+html[data-area='dashboard'] [data-slot='textarea']:focus-visible,
+html[data-area='dashboard'] [data-slot='select-trigger']:focus-visible,
+html[data-area='dashboard'] [data-slot='select-trigger'][data-state='open'] {
+  border-color: var(--blue);
+  background-color: var(--card);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 14%, transparent);
+}
+
+/* ---------- popovers: select / dropdown ---------- */
+html[data-area='dashboard'] [data-slot='select-content'],
+html[data-area='dashboard'] [data-slot='dropdown-menu-content'],
+html[data-area='dashboard'] [data-slot='popover-content'] {
+  border-radius: var(--dash-radius);
+  border-width: 1px;
+  border-color: var(--dash-border);
+  box-shadow: 0 8px 24px -8px rgb(16 23 58 / 0.25);
+}
+
+/* ---------- dialogs ---------- */
+html[data-area='dashboard'] [data-slot='dialog-overlay'],
+html[data-area='dashboard'] [data-slot='alert-dialog-overlay'] {
+  background: rgb(16 23 58 / 0.45);
+}
+html[data-area='dashboard'] [data-slot='dialog-content'],
+html[data-area='dashboard'] [data-slot='alert-dialog-content'] {
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: var(--dash-border);
+  padding: 1rem;
+  gap: 0.75rem;
+  box-shadow: 0 24px 48px -16px rgb(16 23 58 / 0.35);
+}
+html[data-area='dashboard'] [data-slot='dialog-title'],
+html[data-area='dashboard'] [data-slot='alert-dialog-title'] {
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.4rem;
+  font-weight: 600;
+}
+html[data-area='dashboard'] [data-slot='dialog-close'] {
+  border-width: 0;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--dash-radius-sm);
+}
+html[data-area='dashboard'] [data-slot='dialog-close']:hover {
+  background: var(--accent);
+}
+
+/* ---------- cards ---------- */
+html[data-area='dashboard'] [data-slot='card'] {
+  border-radius: var(--dash-radius);
+  border-color: var(--dash-border);
+  box-shadow: none;
+}
+
+/* ---------- tabs: compact underline-ish ---------- */
+html[data-area='dashboard'] [data-slot='tabs-list'] {
+  height: 2rem;
+}
+
+/* ---------- shared dashboard data table ---------- */
+.dash-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--dash-head-bg);
+  box-shadow: inset 0 -1px 0 var(--dash-border);
+}
+.dash-table tbody tr {
+  border-bottom: 1px solid var(--dash-border);
+}
+.dash-table tbody tr:last-child {
+  border-bottom: 0;
+}
+.dash-table tbody tr:hover {
+  background: var(--dash-row-hover);
+}
+.dash-table tbody tr[data-selected='true'] {
+  background: color-mix(in srgb, var(--blue-wash) 24%, transparent);
+}

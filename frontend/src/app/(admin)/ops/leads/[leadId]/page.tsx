@@ -11,7 +11,8 @@ import { useAuthStore } from '@/store/auth-store'
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageHeader, StatusBadge } from '@/components/dashboard'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -44,14 +45,14 @@ import {
   XCircle,
 } from 'lucide-react'
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  NEW: { label: 'New', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
-  CONTACTED: { label: 'Contacted', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  QUALIFIED: { label: 'Qualified', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20' },
-  PROPOSAL_SENT: { label: 'Proposal Sent', color: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20' },
-  NEGOTIATING: { label: 'Negotiating', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  WON: { label: 'Won', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  LOST: { label: 'Lost', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
+const statusConfig: Record<string, { label: string }> = {
+  NEW: { label: 'New' },
+  CONTACTED: { label: 'Contacted' },
+  QUALIFIED: { label: 'Qualified' },
+  PROPOSAL_SENT: { label: 'Proposal Sent' },
+  NEGOTIATING: { label: 'Negotiating' },
+  WON: { label: 'Won' },
+  LOST: { label: 'Lost' },
 }
 
 const sourceConfig: Record<string, { label: string }> = {
@@ -126,35 +127,36 @@ export default function LeadDetailPage() {
     )
   }
 
+  const backButton = (
+    <Button variant="ghost" size="icon" className="size-7" asChild>
+      <Link href="/ops/leads" aria-label="Back to leads">
+        <ArrowLeft className="h-4 w-4" />
+      </Link>
+    </Button>
+  )
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Link href="/ops/leads">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Leads
-            </Button>
-          </Link>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
+      <div className="space-y-3">
+        <PageHeader title="Lead" leading={backButton} />
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-3">
             <Card className="animate-pulse">
-              <CardHeader>
+              <CardHeader className="p-3 pb-0">
                 <div className="h-6 bg-muted rounded w-1/3 mb-2" />
                 <div className="h-4 bg-muted rounded w-1/4" />
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="p-3">
+                <div className="space-y-3">
                   <div className="h-4 bg-muted rounded w-full" />
                   <div className="h-4 bg-muted rounded w-3/4" />
                 </div>
               </CardContent>
             </Card>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Card className="animate-pulse">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="h-32 bg-muted rounded" />
               </CardContent>
             </Card>
@@ -166,23 +168,16 @@ export default function LeadDetailPage() {
 
   if (!isValidUUID || error || !lead) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Link href="/ops/leads">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Leads
-            </Button>
-          </Link>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title="Lead" leading={backButton} />
         <Card className="border-destructive">
-          <CardHeader>
+          <CardHeader className="p-3 pb-0">
             <CardTitle className="text-destructive flex items-center gap-2">
               <XCircle className="h-5 w-5" />
               {!isValidUUID ? 'Invalid Lead ID' : 'Error Loading Lead'}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3">
             <p className="text-sm text-muted-foreground">
               {!isValidUUID
                 ? 'The lead ID provided is not valid.'
@@ -194,7 +189,7 @@ export default function LeadDetailPage() {
     )
   }
 
-  const status = statusConfig[lead.status] || { label: lead.status, color: 'bg-gray-500/10 text-gray-700' }
+  const status = statusConfig[lead.status] || { label: lead.status }
   const source = sourceConfig[lead.source] || { label: lead.source }
   const plannerName = lead.planner
     ? `${lead.planner.firstName || ''} ${lead.planner.lastName || ''}`.trim() || lead.planner.email
@@ -202,48 +197,36 @@ export default function LeadDetailPage() {
   const canConvert = lead.status !== 'WON' && lead.status !== 'LOST'
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/ops/leads">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Leads
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-lg font-semibold">{plannerName}</h1>
-            <p className="text-muted-foreground">Lead ID: {lead.id.substring(0, 12)}...</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className={status.color}>
-            {status.label}
-          </Badge>
-          {canConvert && (
-            <Button onClick={openConvertDialog} className="bg-green-600 hover:bg-green-700">
-              <ArrowRightCircle className="h-4 w-4 mr-2" />
-              Convert to Event
-            </Button>
-          )}
-        </div>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title={plannerName}
+        leading={backButton}
+        actions={
+          <>
+            <StatusBadge status={lead.status}>{status.label}</StatusBadge>
+            {canConvert && (
+              <Button size="sm" onClick={openConvertDialog} className="bg-green-600 hover:bg-green-700">
+                <ArrowRightCircle className="h-4 w-4 mr-1" />
+                Convert to Event
+              </Button>
+            )}
+          </>
+        }
+      />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-3">
           {/* Lead Information */}
           <Card>
-            <CardHeader>
-              <CardTitle>Lead Information</CardTitle>
-              <CardDescription>Details about this inquiry</CardDescription>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Lead Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2 p-3">
               {/* Event Details */}
               <div>
-                <h4 className="font-medium mb-3">Event Details</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="font-medium mb-2">Event Details</h4>
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Event Type</p>
                     <p className="font-medium">{lead.eventType || 'Not specified'}</p>
@@ -285,8 +268,8 @@ export default function LeadDetailPage() {
 
               {/* Source Information */}
               <div>
-                <h4 className="font-medium mb-3">Source Information</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <h4 className="font-medium mb-2">Source Information</h4>
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Lead Source</p>
                     <Badge variant="secondary">{source.label}</Badge>
@@ -314,9 +297,9 @@ export default function LeadDetailPage() {
                 <>
                   <Separator />
                   <div>
-                    <h4 className="font-medium mb-3">Initial Message</h4>
+                    <h4 className="font-medium mb-2">Initial Message</h4>
                     <Card className="bg-muted/50">
-                      <CardContent className="p-4">
+                      <CardContent className="p-3">
                         <div className="flex items-start gap-3">
                           <MessageSquare className="h-5 w-5 text-muted-foreground mt-0.5" />
                           <p className="text-sm whitespace-pre-wrap">{lead.initialMessage}</p>
@@ -332,12 +315,11 @@ export default function LeadDetailPage() {
           {/* Messages Timeline */}
           {lead.messages && lead.messages.length > 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle>Communication History</CardTitle>
-                <CardDescription>Messages exchanged with this lead</CardDescription>
+              <CardHeader className="p-3 pb-0">
+                <CardTitle className="text-sm">Communication History</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="p-3">
+                <div className="space-y-3">
                   {lead.messages.map((message) => (
                     <div
                       key={message.id}
@@ -368,13 +350,13 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Client Information */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Client Information</CardTitle>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Client Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2 p-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
                   <User className="h-5 w-5 text-primary" />
@@ -404,10 +386,10 @@ export default function LeadDetailPage() {
           {/* Vendor Information */}
           {lead.vendorProfile && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Vendor Information</CardTitle>
+              <CardHeader className="p-3 pb-0">
+                <CardTitle className="text-sm">Vendor Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2 p-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-primary/10">
                     <Store className="h-5 w-5 text-primary" />
@@ -429,11 +411,11 @@ export default function LeadDetailPage() {
 
           {/* Timeline */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Timeline</CardTitle>
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="text-sm">Timeline</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-3">
+              <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 mt-2 rounded-full bg-blue-500" />
                   <div>
@@ -482,10 +464,10 @@ export default function LeadDetailPage() {
           {/* Quick Actions */}
           {canConvert && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Quick Actions</CardTitle>
+              <CardHeader className="p-3 pb-0">
+                <CardTitle className="text-sm">Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 p-3">
                 <Button onClick={openConvertDialog} className="w-full bg-green-600 hover:bg-green-700">
                   <ArrowRightCircle className="h-4 w-4 mr-2" />
                   Convert to Event
@@ -506,9 +488,9 @@ export default function LeadDetailPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Lead Summary */}
-            <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+            <div className="p-3 rounded-lg bg-muted/50 space-y-2">
               <p className="font-medium">{plannerName}</p>
               <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                 <span>Event: {lead.eventType || 'N/A'}</span>
@@ -524,7 +506,7 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Conversion Fields */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="venueName">Venue Name (Optional)</Label>
                 <Input

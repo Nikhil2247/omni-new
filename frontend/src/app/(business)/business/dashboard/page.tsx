@@ -17,6 +17,7 @@ import { useCampaigns, useAdCreditBalance, useVendorSubscription } from '@/hooks
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { PageHeader } from '@/components/dashboard'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -113,18 +114,13 @@ export default function BusinessDashboardPage() {
 
   if (!profile) {
     return (
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-lg font-semibold">Welcome, {user?.name || 'Vendor'}!</h1>
-          <p className="text-muted-foreground">
-            Get started by setting up your business profile
-          </p>
-        </div>
+      <div className="space-y-3">
+        <PageHeader title={`Welcome, ${user?.name || 'Vendor'}!`} />
         <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-4" />
-            <h3 className="text-lg font-semibold">Profile Required</h3>
-            <p className="text-muted-foreground mt-2">
+          <CardContent className="py-6 text-center">
+            <AlertTriangle className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+            <h3 className="text-sm font-semibold">Profile Required</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
               Create your business profile to receive agreements and manage your tasks.
             </p>
             <Button className="mt-4" onClick={() => window.location.href = '/business/profile'}>
@@ -137,16 +133,11 @@ export default function BusinessDashboardPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Welcome Section */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Welcome back, {user?.name || profile.businessName}!</h1>
-          <p className="text-muted-foreground">
-            Here&apos;s what&apos;s happening with your business today
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      <PageHeader
+        title={`Welcome back, ${user?.name || profile.businessName}!`}
+        actions={
+          <>
           {isPaidPlan && (
             <Badge variant="secondary" className="gap-1">
               <Crown className="h-3 w-3" />
@@ -159,24 +150,22 @@ export default function BusinessDashboardPage() {
               {profile.status === 'PENDING_REVIEW' ? 'Pending Verification' : 'Profile Incomplete'}
             </Badge>
           )}
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Overdue Tasks Alert - Show prominently at top */}
       {overdueTasks.length > 0 && (
         <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900">
-          <CardContent className="py-4">
+          <CardContent className="py-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-full">
-                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <div className="p-1.5 bg-red-100 dark:bg-red-900/50 rounded-full">
+                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
                   <p className="font-semibold text-red-800 dark:text-red-200">
                     {overdueTasks.length} Overdue Task{overdueTasks.length > 1 ? 's' : ''}
-                  </p>
-                  <p className="text-sm text-red-600 dark:text-red-400">
-                    Requires immediate attention
                   </p>
                 </div>
               </div>
@@ -192,10 +181,10 @@ export default function BusinessDashboardPage() {
 
       {/* Key Metrics */}
       {summaryLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i}>
-              <CardContent className="pt-6">
+              <CardContent className="p-3">
                 <Skeleton className="h-4 w-24 mb-2" />
                 <Skeleton className="h-8 w-16" />
               </CardContent>
@@ -203,7 +192,7 @@ export default function BusinessDashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Profile Views"
             value={summary?.totalViews || profile.viewCount || 0}
@@ -235,12 +224,11 @@ export default function BusinessDashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Megaphone className="h-5 w-5 text-primary" />
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <Megaphone className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-lg">Campaign Performance</CardTitle>
-                <CardDescription>{activeCampaigns.length} active campaign{activeCampaigns.length > 1 ? 's' : ''}</CardDescription>
+                <CardTitle className="text-sm">Campaign Performance ({activeCampaigns.length} active)</CardTitle>
               </div>
             </div>
             <Link href="/business/marketing/campaigns">
@@ -250,7 +238,7 @@ export default function BusinessDashboardPage() {
             </Link>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-4">
               <CampaignMetric
                 label="Impressions"
                 value={campaignStats.impressions}
@@ -274,7 +262,7 @@ export default function BusinessDashboardPage() {
                   <Coins className="h-4 w-4" />
                   <span>Budget Used</span>
                 </div>
-                <p className="text-2xl font-bold">{formatNumber(campaignStats.spent)}</p>
+                <p className="text-xl font-bold">{formatNumber(campaignStats.spent)}</p>
                 <Progress
                   value={campaignStats.budget > 0 ? (campaignStats.spent / campaignStats.budget) * 100 : 0}
                   className="mt-2 h-2"
@@ -289,10 +277,10 @@ export default function BusinessDashboardPage() {
       )}
 
       {/* Quick Actions & Ad Credits */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         {/* Ad Credits Card */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Coins className="h-4 w-4 text-primary" />
@@ -306,7 +294,7 @@ export default function BusinessDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">{formatNumber(creditBalance?.balance || 0)}</p>
+            <p className="text-xl font-semibold">{formatNumber(creditBalance?.balance || 0)}</p>
             <p className="text-sm text-muted-foreground mt-1">Available credits</p>
             {!hasActiveCampaigns && (creditBalance?.balance || 0) > 0 && (
               <Link href="/business/marketing/campaigns/new">
@@ -321,7 +309,7 @@ export default function BusinessDashboardPage() {
 
         {/* Pending Actions */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Zap className="h-4 w-4 text-primary" />
               Pending Actions
@@ -352,7 +340,7 @@ export default function BusinessDashboardPage() {
 
         {/* Upcoming Tasks */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />
@@ -367,7 +355,7 @@ export default function BusinessDashboardPage() {
           </CardHeader>
           <CardContent>
             {upcomingTasks.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground text-sm">
+              <div className="text-center py-2 text-muted-foreground text-sm">
                 <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>All caught up!</p>
               </div>
@@ -387,14 +375,13 @@ export default function BusinessDashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Recent Agreements */}
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CardTitle>Recent Agreements</CardTitle>
-                <CardDescription>Latest agreements from operations team</CardDescription>
+                <CardTitle className="text-sm">Recent Agreements</CardTitle>
               </div>
               <Link href="/business/agreements">
                 <Button variant="ghost" size="sm">
@@ -404,8 +391,8 @@ export default function BusinessDashboardPage() {
             </CardHeader>
             <CardContent>
               {recentAgreements.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  <Briefcase className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <div className="text-center py-2 text-muted-foreground">
+                  <Briefcase className="h-8 w-8 mx-auto mb-1 opacity-50" />
                   <p>No agreements yet</p>
                 </div>
               ) : (
@@ -428,13 +415,13 @@ export default function BusinessDashboardPage() {
 
         {/* Performance Insights */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <BarChart3 className="h-4 w-4" />
               Performance Insights
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <InsightItem
               label="Profile completion"
               value={profile.status === 'ACTIVE' ? 100 : 75}
@@ -471,10 +458,9 @@ export default function BusinessDashboardPage() {
 
       {/* Recent Reviews */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
-            <CardTitle>Recent Reviews</CardTitle>
-            <CardDescription>What clients are saying about you</CardDescription>
+            <CardTitle className="text-sm">Recent Reviews</CardTitle>
           </div>
           <Link href="/business/reviews">
             <Button variant="ghost" size="sm">
@@ -484,13 +470,13 @@ export default function BusinessDashboardPage() {
         </CardHeader>
         <CardContent>
           {!reviews || reviews.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              <Star className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <div className="text-center py-2 text-muted-foreground">
+              <Star className="h-8 w-8 mx-auto mb-1 opacity-50" />
               <p>No reviews yet</p>
-              <p className="text-sm mt-1">Reviews will appear here once clients rate your services</p>
+              
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               {reviews.slice(0, 4).map((review) => (
                 <ReviewCard
                   key={review.id}
@@ -544,13 +530,13 @@ function StatCard({
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <Icon className={`h-5 w-5 ${iconColor || 'text-muted-foreground'}`} />
+          <p className="text-xs font-medium text-muted-foreground">{title}</p>
+          <Icon className={`h-4 w-4 ${iconColor || 'text-muted-foreground'}`} />
         </div>
-        <div className="flex items-baseline gap-2 mt-2">
-          <p className="text-2xl font-bold">{value}</p>
+        <div className="flex items-baseline gap-2 mt-1">
+          <p className="text-xl font-bold">{value}</p>
           {highlight && (
             <span className={`text-sm font-medium ${highlightColor}`}>{highlight}</span>
           )}
@@ -590,7 +576,7 @@ function CampaignMetric({
         <Icon className="h-4 w-4" />
         <span>{label}</span>
       </div>
-      <p className="text-2xl font-bold">{formatNumber(value)}</p>
+      <p className="text-xl font-bold">{formatNumber(value)}</p>
       {subValue && (
         <p className="text-xs text-muted-foreground mt-1">{subValue}</p>
       )}
@@ -621,10 +607,10 @@ function AgreementItem({
   const config = statusConfig[status] || { label: status, variant: 'outline' as const }
 
   return (
-    <div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
+    <div className="flex items-center justify-between rounded-lg border p-2 hover:bg-accent/50 transition-colors">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-          <Briefcase className="h-5 w-5 text-primary" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+          <Briefcase className="h-4 w-4 text-primary" />
         </div>
         <div>
           <p className="font-medium text-sm">{clientName || 'Client'}</p>
@@ -765,13 +751,13 @@ function RatingCard({
 }) {
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">Average Rating</p>
-          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+          <p className="text-xs font-medium text-muted-foreground">Average Rating</p>
+          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
         </div>
-        <div className="flex items-baseline gap-2 mt-2">
-          <p className="text-2xl font-bold">{rating.toFixed(1)}</p>
+        <div className="flex items-baseline gap-2 mt-1">
+          <p className="text-xl font-bold">{rating.toFixed(1)}</p>
           <div className="flex items-center gap-1">
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
@@ -803,8 +789,8 @@ function ReviewCard({
   hasResponse?: boolean
 }) {
   return (
-    <div className="rounded-lg border p-4 hover:bg-accent/30 transition-colors">
-      <div className="mb-2 flex items-center justify-between">
+    <div className="rounded-lg border p-3 hover:bg-accent/30 transition-colors">
+      <div className="mb-1 flex items-center justify-between">
         <span className="font-medium text-sm">{author}</span>
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (

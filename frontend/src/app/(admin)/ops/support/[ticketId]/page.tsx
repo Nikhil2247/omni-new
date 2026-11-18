@@ -1,10 +1,10 @@
+import { PageHeader } from '@/components/dashboard'
 import { OpsSupportList } from '@/components/features/ops'
 
-export default function OpsSupportDetailPage({ params }: { params: { ticketId: string } }) {
+export default function OpsSupportDetailPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Support Ticket</h1>
-      <p className="text-muted-foreground">Ticket ID: {params.ticketId}</p>
+    <div className="space-y-3">
+      <PageHeader title="Support Ticket" />
       <OpsSupportList />
     </div>
   )

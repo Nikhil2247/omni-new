@@ -5,9 +5,10 @@ import { useSystemHealth } from '@/hooks/queries/use-admin'
 import { useUmami } from '@/hooks/use-umami'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { PageHeader } from '@/components/dashboard'
 import {
   Database,
   HardDrive,
@@ -44,20 +45,11 @@ const SERVICE_LABELS: Record<string, string> = {
   queue: 'BullMQ Jobs',
 }
 
-const SERVICE_DESCRIPTIONS: Record<string, string> = {
-  database: 'Primary database connection',
-  cache: 'Redis-compatible cache layer',
-  search: 'Full-text search engine',
-  storage: 'Object storage service',
-  jobs: 'Background job processing',
-  queue: 'Background job processing',
-}
-
 // Circular Progress / Speedometer Component
 function CircularProgress({
   value,
-  size = 100,
-  strokeWidth = 8,
+  size = 80,
+  strokeWidth = 7,
   label,
   sublabel,
 }: {
@@ -80,8 +72,8 @@ function CircularProgress({
   const colors = getColor(value)
 
   return (
-    <Card className="flex flex-col items-center p-4">
-      <p className="mb-2 text-sm font-medium text-muted-foreground">{label}</p>
+    <Card className="flex flex-col items-center p-3">
+      <p className="mb-1 text-sm font-medium text-muted-foreground">{label}</p>
       <div className="relative" style={{ width: size, height: size }}>
         <svg className="transform -rotate-90" width={size} height={size}>
           <circle
@@ -107,10 +99,10 @@ function CircularProgress({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn('text-2xl font-bold', colors.text)}>{value}%</span>
+          <span className={cn('text-xl font-bold', colors.text)}>{value}%</span>
         </div>
       </div>
-      {sublabel && <p className="mt-2 text-xs text-muted-foreground text-center">{sublabel}</p>}
+      {sublabel && <p className="mt-1 text-xs text-muted-foreground text-center">{sublabel}</p>}
     </Card>
   )
 }
@@ -174,10 +166,9 @@ export default function SystemHealthPage() {
 
   if (!data || !parsedData) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-12">
-        <WifiOff className="h-12 w-12 text-muted-foreground" />
-        <p className="text-lg font-medium text-destructive">Unable to load health metrics</p>
-        <p className="text-sm text-muted-foreground">Make sure the backend server is running and accessible</p>
+      <div className="flex flex-col items-center justify-center gap-2 py-6">
+        <WifiOff className="h-8 w-8 text-muted-foreground" />
+        <p className="text-sm font-medium text-destructive">Unable to load health metrics</p>
         <Button variant="outline" onClick={() => refetch()}>
           <RefreshCw className="mr-2 h-4 w-4" /> Retry
         </Button>
@@ -195,58 +186,56 @@ export default function SystemHealthPage() {
   const avgLatency = latencies.length > 0 ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">System Health</h1>
-          <p className="text-muted-foreground">Real-time infrastructure monitoring and service status</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className={cn(autoRefresh && 'border-primary text-primary')}
-          >
-            <Activity className={cn('mr-2 h-4 w-4', autoRefresh && 'animate-pulse')} />
-            {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={cn('mr-2 h-4 w-4', isFetching && 'animate-spin')} />
-            Refresh
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-3">
+      <PageHeader
+        title="System Health"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className={cn(autoRefresh && 'border-primary text-primary')}
+            >
+              <Activity className={cn('mr-2 h-4 w-4', autoRefresh && 'animate-pulse')} />
+              {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={cn('mr-2 h-4 w-4', isFetching && 'animate-spin')} />
+              Refresh
+            </Button>
+          </>
+        }
+      />
 
       {/* Overall Status Banner */}
       <Card className={cn(
-        'border-2',
+        'border',
         overallStatus === 'healthy' && 'border-green-500/50 bg-green-500/5',
         overallStatus === 'degraded' && 'border-yellow-500/50 bg-yellow-500/5',
         overallStatus === 'error' && 'border-red-500/50 bg-red-500/5',
         overallStatus === 'unknown' && 'border-gray-400/50 bg-gray-400/5'
       )}>
-        <CardContent className="flex flex-col items-center justify-between gap-4 py-6 md:flex-row">
-          <div className="flex items-center gap-4">
+        <CardContent className="flex flex-col items-center justify-between gap-3 py-3 md:flex-row">
+          <div className="flex items-center gap-3">
             <div className={cn(
-              'flex h-14 w-14 items-center justify-center rounded-full',
+              'flex h-10 w-10 items-center justify-center rounded-full',
               overallStatus === 'healthy' && 'bg-green-500/20',
               overallStatus === 'degraded' && 'bg-yellow-500/20',
               overallStatus === 'error' && 'bg-red-500/20',
               overallStatus === 'unknown' && 'bg-gray-400/20'
             )}>
-              {overallStatus === 'healthy' && <CheckCircle2 className="h-7 w-7 text-green-500" />}
-              {overallStatus === 'degraded' && <AlertCircle className="h-7 w-7 text-yellow-500" />}
-              {overallStatus === 'error' && <XCircle className="h-7 w-7 text-red-500" />}
-              {overallStatus === 'unknown' && <AlertCircle className="h-7 w-7 text-gray-400" />}
+              {overallStatus === 'healthy' && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+              {overallStatus === 'degraded' && <AlertCircle className="h-5 w-5 text-yellow-500" />}
+              {overallStatus === 'error' && <XCircle className="h-5 w-5 text-red-500" />}
+              {overallStatus === 'unknown' && <AlertCircle className="h-5 w-5 text-gray-400" />}
             </div>
             <div>
-              <h2 className="text-xl font-bold capitalize">{overallStatus === 'unknown' ? 'Checking...' : overallStatus}</h2>
-              <p className="text-muted-foreground">{healthyCount} of {totalServices} services operational</p>
+              <h2 className="text-lg font-bold capitalize">{overallStatus === 'unknown' ? 'Checking...' : overallStatus}</h2>
+              <p className="text-sm text-muted-foreground">{healthyCount} of {totalServices} services operational</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="text-center">
               <p className={cn(
                 'text-2xl font-bold',
@@ -285,7 +274,7 @@ export default function SystemHealthPage() {
       </Card>
 
       {/* Circular Progress Indicators */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         <CircularProgress
           value={healthPercent}
           label="Health Score"
@@ -305,12 +294,11 @@ export default function SystemHealthPage() {
 
       {/* Service Status Cards */}
       <div>
-        <h3 className="mb-4 text-lg font-semibold">Infrastructure Services</h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <h3 className="mb-2 text-sm font-semibold">Infrastructure Services</h3>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {Object.entries(services).map(([key, service]) => {
             const Icon = SERVICE_ICONS[key] || Server
             const label = SERVICE_LABELS[key] || key
-            const description = SERVICE_DESCRIPTIONS[key] || ''
             const status = normalizeStatus(service.status)
             const latency = (service as any).latency || (service as any).latencyMs
 
@@ -322,27 +310,26 @@ export default function SystemHealthPage() {
                 status === 'error' && 'border-l-4 border-l-red-500',
                 status === 'unknown' && 'border-l-4 border-l-gray-400'
               )}>
-                <CardContent className="pt-6">
+                <CardContent className="pt-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-lg',
+                        'flex h-8 w-8 items-center justify-center rounded-lg',
                         status === 'healthy' && 'bg-green-500/10 text-green-600',
                         status === 'degraded' && 'bg-yellow-500/10 text-yellow-600',
                         status === 'error' && 'bg-red-500/10 text-red-600',
                         status === 'unknown' && 'bg-gray-500/10 text-gray-600'
                       )}>
-                        <Icon className="h-5 w-5" />
+                        <Icon className="h-4 w-4" />
                       </div>
                       <div>
                         <h3 className="font-semibold">{label}</h3>
-                        <p className="text-xs text-muted-foreground">{description}</p>
                       </div>
                     </div>
                     <StatusBadge status={status} />
                   </div>
 
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-2 space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Latency</span>
                       <span className={cn(
@@ -381,21 +368,20 @@ export default function SystemHealthPage() {
       </div>
 
       {/* Latency & System Info */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Gauge className="h-5 w-5" />
               Response Latency
             </CardTitle>
-            <CardDescription>Service response times in milliseconds</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2">
             {Object.entries(services).map(([key, service]) => {
               const latency = (service as any).latency || (service as any).latencyMs || 0
               const label = SERVICE_LABELS[key] || key
               return (
-                <div key={key} className="space-y-2">
+                <div key={key} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{label}</span>
                     <span className={cn(
@@ -432,7 +418,6 @@ export default function SystemHealthPage() {
               <Server className="h-5 w-5" />
               System Information
             </CardTitle>
-            <CardDescription>Runtime environment details</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <InfoRow label="Status" value={
@@ -465,10 +450,9 @@ export default function SystemHealthPage() {
               <MemoryStick className="h-5 w-5" />
               Memory Allocation
             </CardTitle>
-            <CardDescription>Node.js process memory breakdown</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-4">
               <MemoryCard label="RSS" value={memory.rss} percent={65} description="Resident Set Size" icon={<Server className="h-4 w-4" />} />
               <MemoryCard label="Heap Used" value={memory.heapUsed} percent={memoryUsedPercent} description="Active heap memory" icon={<Activity className="h-4 w-4" />} />
               <MemoryCard label="Heap Total" value={memory.heapTotal} percent={80} description="Total heap allocated" icon={<Database className="h-4 w-4" />} />
@@ -515,12 +499,12 @@ function MemoryCard({ label, value, percent, description, icon }: {
   label: string; value: number; percent: number; description: string; icon: React.ReactNode
 }) {
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+    <div className="rounded-lg border bg-card p-3">
+      <div className="mb-1 flex items-center gap-2 text-muted-foreground">
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <p className="text-xl font-bold">{formatBytes(value)}</p>
+      <p className="text-lg font-bold">{formatBytes(value)}</p>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div className={cn(
           'h-full',
@@ -536,17 +520,11 @@ function MemoryCard({ label, value, percent, description, icon }: {
 
 function HealthSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-        <Skeleton className="h-9 w-32" />
-      </div>
-      <Skeleton className="h-28 w-full" />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-36" />)}
+    <div className="space-y-3">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-16 w-full" />
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28" />)}
       </div>
     </div>
   )

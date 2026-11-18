@@ -4,44 +4,30 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useUmami } from '@/hooks/use-umami'
 import { format } from 'date-fns'
-import { FileText, DollarSign, Clock, CheckCircle, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, Eye, Receipt, XCircle, Loader2, Printer } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { FileText, DollarSign, Clock, CheckCircle, AlertCircle, Eye, Receipt, Trash2, Loader2, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  PageHeader,
+  DataTable,
+  FilterSelect,
+  StatusBadge,
+  StatCard,
+  StatGrid,
+  type DataColumn,
+} from '@/components/dashboard'
 import { useOpsAllInvoices, useMarkInvoicePaid, useDeleteInvoice } from '@/hooks/queries/use-ops'
 import type { OpsInvoice } from '@/lib/api/types/ops.types'
 import { QuotationPreviewDialog } from '@/components/features/ops/quotation-preview-dialog'
 import type { QuotationTemplateData } from '@/components/features/ops/quotation-template'
 
 const STATUS_OPTIONS = [
-  { value: 'all', label: 'All Statuses' },
   { value: 'PENDING', label: 'Pending' },
   { value: 'PARTIALLY_PAID', label: 'Partially Paid' },
   { value: 'PAID', label: 'Paid' },
   { value: 'OVERDUE', label: 'Overdue' },
   { value: 'CANCELLED', label: 'Cancelled' },
 ]
-
-function getStatusBadge(status: string) {
-  switch (status) {
-    case 'PENDING':
-      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>
-    case 'PARTIALLY_PAID':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Partially Paid</Badge>
-    case 'PAID':
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Paid</Badge>
-    case 'OVERDUE':
-      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Overdue</Badge>
-    case 'CANCELLED':
-      return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Cancelled</Badge>
-    default:
-      return <Badge variant="outline">{status}</Badge>
-  }
-}
 
 function formatCurrency(amount: number | string | null | undefined): string {
   if (amount === null || amount === undefined) return '-'
@@ -76,7 +62,6 @@ export default function OpsInvoicesPage() {
   const deleteMutation = useDeleteInvoice()
 
   const invoices = invoicesData?.items || []
-  const totalPages = invoicesData?.totalPages || 1
   const totalInvoices = invoicesData?.total || 0
 
   // Filter by search query (client-side for invoice number, vendor name, client name)
@@ -153,279 +138,184 @@ export default function OpsInvoicesPage() {
     }
   }
 
+  const columns: DataColumn<OpsInvoice>[] = [
+    {
+      id: 'invoiceNumber',
+      header: 'Invoice #',
+      label: 'Invoice #',
+      cell: (invoice) => <span className="font-mono text-[13px]">{invoice.invoiceNumber}</span>,
+      sortValue: (invoice) => invoice.invoiceNumber,
+      exportValue: (invoice) => invoice.invoiceNumber,
+    },
+    {
+      id: 'vendor',
+      header: 'Vendor',
+      label: 'Vendor',
+      cell: (invoice) => (
+        <span className="font-medium">
+          {invoice.vendorAgreement?.vendorProfile?.businessName || invoice.vendorAgreement?.vendorName || '-'}
+        </span>
+      ),
+      sortValue: (invoice) =>
+        invoice.vendorAgreement?.vendorProfile?.businessName || invoice.vendorAgreement?.vendorName,
+      exportValue: (invoice) =>
+        invoice.vendorAgreement?.vendorProfile?.businessName || invoice.vendorAgreement?.vendorName,
+    },
+    {
+      id: 'event',
+      header: 'Event / Client',
+      label: 'Event / Client',
+      hideBelow: 'md',
+      cell: (invoice) => {
+        const ev = invoice.vendorAgreement?.activeEvent
+        if (!ev) return <span className="text-muted-foreground">-</span>
+        return (
+          <div className="min-w-0 leading-tight" onClick={(e) => e.stopPropagation()}>
+            <Link href={`/ops/events/${ev.id}`} className="truncate text-sm font-medium text-primary hover:underline">
+              {ev.clientName}
+            </Link>
+            <div className="truncate text-xs text-muted-foreground">
+              {ev.eventType}
+              {ev.eventDate && <> - {format(new Date(ev.eventDate), 'MMM d, yyyy')}</>}
+            </div>
+          </div>
+        )
+      },
+      sortValue: (invoice) => invoice.vendorAgreement?.activeEvent?.clientName,
+      exportValue: (invoice) => invoice.vendorAgreement?.activeEvent?.clientName,
+    },
+    {
+      id: 'amount',
+      header: 'Amount',
+      label: 'Amount',
+      align: 'right',
+      cell: (invoice) => <span className="font-semibold">{formatCurrency(invoice.amount)}</span>,
+      sortValue: (invoice) => Number(invoice.amount) || 0,
+      exportValue: (invoice) => Number(invoice.amount) || 0,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (invoice) => <StatusBadge status={invoice.status} />,
+      sortValue: (invoice) => invoice.status,
+      exportValue: (invoice) => invoice.status,
+    },
+    {
+      id: 'issued',
+      header: 'Issued',
+      label: 'Issued',
+      hideBelow: 'lg',
+      cell: (invoice) => (invoice.issuedAt ? format(new Date(invoice.issuedAt), 'MMM d, yyyy') : '-'),
+      sortValue: (invoice) => (invoice.issuedAt ? new Date(invoice.issuedAt) : null),
+    },
+    {
+      id: 'paid',
+      header: 'Paid',
+      label: 'Paid',
+      hideBelow: 'lg',
+      cell: (invoice) => (invoice.paidAt ? format(new Date(invoice.paidAt), 'MMM d, yyyy') : '-'),
+      sortValue: (invoice) => (invoice.paidAt ? new Date(invoice.paidAt) : null),
+    },
+  ]
+
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
-          <h3 className="mt-2 text-lg font-semibold">Failed to load invoices</h3>
-          <p className="text-muted-foreground">Please try again later</p>
-          <Button onClick={() => refetch()} className="mt-4">Retry</Button>
+      <div className="space-y-3">
+        <PageHeader title="Invoices" />
+        <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            Failed to load invoices. Please try again later.
+          </div>
+          <Button size="sm" onClick={() => refetch()}>Retry</Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Invoices</h1>
-          <p className="text-muted-foreground">Manage all vendor invoices across events</p>
-        </div>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="Invoices" />
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalInvoices}</div>
-            <p className="text-xs text-muted-foreground">All invoices</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pending}</div>
-            <p className="text-xs text-muted-foreground">Awaiting payment</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Paid</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.paid}</div>
-            <p className="text-xs text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.overdue}</div>
-            <p className="text-xs text-muted-foreground">Past due date</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalAmount)}</div>
-            <p className="text-xs text-muted-foreground">
-              Paid: {formatCurrency(stats.paidAmount)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatGrid className="lg:grid-cols-5">
+        <StatCard label="Total Invoices" value={totalInvoices} icon={FileText} />
+        <StatCard label="Pending" value={stats.pending} icon={Clock} accent="text-yellow-600" />
+        <StatCard label="Paid" value={stats.paid} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="Overdue" value={stats.overdue} icon={AlertCircle} accent="text-red-600" />
+        <StatCard
+          label="Total Value"
+          value={formatCurrency(stats.totalAmount)}
+          icon={DollarSign}
+          hint={`Paid: ${formatCurrency(stats.paidAmount)}`}
+        />
+      </StatGrid>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-1 gap-4">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search invoices..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1) }}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Invoices Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Invoice List</CardTitle>
-          <CardDescription>
-            Showing {filteredInvoices.length} of {totalInvoices} invoices
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredInvoices.length === 0 ? (
-            <div className="text-center py-12">
-              <Receipt className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-2 text-lg font-semibold">No invoices found</h3>
-              <p className="text-muted-foreground">
-                {searchQuery || statusFilter !== 'all'
-                  ? 'Try adjusting your filters'
-                  : 'Invoices will appear here once created'}
-              </p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Event / Client</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Issued</TableHead>
-                    <TableHead>Paid</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
-                      <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{invoice.vendorAgreement?.vendorProfile?.businessName || invoice.vendorAgreement?.vendorName || '-'}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {invoice.vendorAgreement?.activeEvent ? (
-                          <div>
-                            <Link
-                              href={`/ops/events/${invoice.vendorAgreement.activeEvent.id}`}
-                              className="font-medium text-primary hover:underline"
-                            >
-                              {invoice.vendorAgreement.activeEvent.clientName}
-                            </Link>
-                            <p className="text-xs text-muted-foreground">
-                              {invoice.vendorAgreement.activeEvent.eventType}
-                              {invoice.vendorAgreement.activeEvent.eventDate && (
-                                <> - {format(new Date(invoice.vendorAgreement.activeEvent.eventDate), 'MMM d, yyyy')}</>
-                              )}
-                            </p>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-semibold">{formatCurrency(invoice.amount)}</TableCell>
-                      <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {invoice.issuedAt ? format(new Date(invoice.issuedAt), 'MMM d, yyyy') : '-'}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {invoice.paidAt ? format(new Date(invoice.paidAt), 'MMM d, yyyy') : '-'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedInvoice(invoice)
-                              setShowDetailsDialog(true)
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedInvoice(invoice)
-                              setShowPreviewDialog(true)
-                            }}
-                          >
-                            <Printer className="h-4 w-4" />
-                          </Button>
-                          {invoice.status === 'PENDING' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-green-600 hover:text-green-700"
-                              onClick={() => {
-                                setSelectedInvoice(invoice)
-                                setShowMarkPaidDialog(true)
-                              }}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {(invoice.status === 'PENDING' || invoice.status === 'CANCELLED') && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => {
-                                setSelectedInvoice(invoice)
-                                setShowDeleteDialog(true)
-                              }}
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable
+        data={filteredInvoices}
+        columns={columns}
+        rowKey={(invoice) => invoice.id}
+        isLoading={isLoading}
+        search={{ value: searchQuery, onChange: setSearchQuery, placeholder: 'Search invoices...' }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={statusFilter}
+            onChange={(value) => {
+              setStatusFilter(value)
+              setCurrentPage(1)
+            }}
+            options={STATUS_OPTIONS}
+          />
+        }
+        columnToggle
+        exportFilename="invoices"
+        emptyTitle="No invoices found"
+        emptyIcon={Receipt}
+        serverPagination={{
+          page: currentPage,
+          pageSize: 20,
+          total: totalInvoices,
+          onPageChange: setCurrentPage,
+        }}
+        rowActions={(invoice) => [
+          {
+            label: 'View details',
+            icon: Eye,
+            onClick: () => {
+              setSelectedInvoice(invoice)
+              setShowDetailsDialog(true)
+            },
+          },
+          {
+            label: 'Print',
+            icon: Printer,
+            onClick: () => {
+              setSelectedInvoice(invoice)
+              setShowPreviewDialog(true)
+            },
+          },
+          {
+            label: 'Mark as paid',
+            icon: CheckCircle,
+            onClick: () => {
+              setSelectedInvoice(invoice)
+              setShowMarkPaidDialog(true)
+            },
+            visible: invoice.status === 'PENDING',
+          },
+          {
+            label: 'Delete invoice',
+            icon: Trash2,
+            danger: true,
+            onClick: () => {
+              setSelectedInvoice(invoice)
+              setShowDeleteDialog(true)
+            },
+            visible: invoice.status === 'PENDING' || invoice.status === 'CANCELLED',
+          },
+        ]}
+      />
 
       {/* Invoice Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
@@ -437,19 +327,19 @@ export default function OpsInvoicesPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedInvoice && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <div className="mt-1">{getStatusBadge(selectedInvoice.status)}</div>
+                  <div className="mt-1"><StatusBadge status={selectedInvoice.status} /></div>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Amount</p>
-                  <p className="text-lg font-semibold">{formatCurrency(selectedInvoice.amount)}</p>
+                  <p className="font-semibold">{formatCurrency(selectedInvoice.amount)}</p>
                 </div>
               </div>
 
-              <div className="border-t pt-4">
+              <div className="border-t pt-3">
                 <h4 className="font-medium mb-2">Vendor Information</h4>
                 <div className="space-y-1 text-sm">
                   <p><span className="text-muted-foreground">Business:</span> {selectedInvoice.vendorAgreement?.vendorProfile?.businessName || '-'}</p>
@@ -459,7 +349,7 @@ export default function OpsInvoicesPage() {
               </div>
 
               {selectedInvoice.vendorAgreement?.activeEvent && (
-                <div className="border-t pt-4">
+                <div className="border-t pt-3">
                   <h4 className="font-medium mb-2">Event Information</h4>
                   <div className="space-y-1 text-sm">
                     <p><span className="text-muted-foreground">Client:</span> {selectedInvoice.vendorAgreement.activeEvent.clientName}</p>
@@ -471,7 +361,7 @@ export default function OpsInvoicesPage() {
                 </div>
               )}
 
-              <div className="border-t pt-4">
+              <div className="border-t pt-3">
                 <h4 className="font-medium mb-2">Timeline</h4>
                 <div className="space-y-1 text-sm">
                   <p><span className="text-muted-foreground">Issued:</span> {selectedInvoice.issuedAt ? format(new Date(selectedInvoice.issuedAt), 'MMMM d, yyyy h:mm a') : '-'}</p>
@@ -503,7 +393,7 @@ export default function OpsInvoicesPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedInvoice && (
-            <div className="py-4">
+            <div className="py-2">
               <p className="text-sm">
                 <span className="text-muted-foreground">Amount:</span>{' '}
                 <span className="font-semibold">{formatCurrency(selectedInvoice.amount)}</span>

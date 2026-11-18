@@ -1,56 +1,42 @@
 'use client'
 
 import { useMarketingPromotions } from '@/hooks/queries/use-marketing'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
+
+type Promotion = NonNullable<ReturnType<typeof useMarketingPromotions>['data']>[number]
+
+const columns: DataColumn<Promotion>[] = [
+  { id: 'name', header: 'Name', cell: (p) => <span className="font-medium">{p.name}</span>, sortValue: (p) => p.name },
+  {
+    id: 'status',
+    header: 'Status',
+    cell: (p) => <StatusBadge status={p.status || 'UNKNOWN'} />,
+    sortValue: (p) => p.status,
+    exportValue: (p) => p.status,
+  },
+  {
+    id: 'endsAt',
+    header: 'End date',
+    cell: (p) => (p.endsAt ? formatDate(p.endsAt) : '—'),
+    sortValue: (p) => (p.endsAt ? new Date(p.endsAt) : null),
+    exportValue: (p) => (p.endsAt ? formatDate(p.endsAt) : ''),
+  },
+]
 
 export default function MarketingPromotionsPage() {
   const { data, isLoading } = useMarketingPromotions()
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Promotions</h1>
-        <p className="text-muted-foreground">Track featured vendor promotions and offers.</p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Promotion list</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-40" />
-          ) : data?.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>End date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((promotion) => (
-                  <TableRow key={promotion.id}>
-                    <TableCell className="font-medium">{promotion.name}</TableCell>
-                    <TableCell>
-                      <Badge variant={promotion.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                        {promotion.status || 'UNKNOWN'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{promotion.endsAt ? formatDate(promotion.endsAt) : '—'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-sm text-muted-foreground">No promotions available.</p>
-          )}
-        </CardContent>
-      </Card>
+    <div className="space-y-3">
+      <PageHeader title="Promotions" />
+      <DataTable
+        data={data}
+        columns={columns}
+        rowKey={(p) => p.id}
+        isLoading={isLoading}
+        exportFilename="promotions"
+        emptyTitle="No promotions available"
+      />
     </div>
   )
 }

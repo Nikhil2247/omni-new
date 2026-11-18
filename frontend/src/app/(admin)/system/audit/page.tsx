@@ -1,15 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { useAdminAudit } from '@/hooks/queries/use-admin'
 import { useUmami } from '@/hooks/use-umami'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
 
 export default function SystemAuditPage() {
   const { track } = useUmami()
@@ -71,95 +67,73 @@ export default function SystemAuditPage() {
     return undefined
   }, [data])
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Audit logs</h1>
-        <p className="text-muted-foreground">Trace system actions and changes.</p>
-      </div>
+  const columns: DataColumn<(typeof rows)[number]>[] = [
+    {
+      id: 'action',
+      header: 'Action',
+      label: 'Action',
+      cell: (log) => <span className="font-medium">{log.action}</span>,
+      exportValue: (log) => log.action,
+    },
+    {
+      id: 'entity',
+      header: 'Entity',
+      label: 'Entity',
+      cell: (log) => <StatusBadge tone="neutral">{log.entityType}</StatusBadge>,
+      exportValue: (log) => log.entityType,
+    },
+    {
+      id: 'user',
+      header: 'User',
+      label: 'User',
+      cell: (log) => <span className="text-muted-foreground">{log.userId || 'System'}</span>,
+      exportValue: (log) => log.userId || 'System',
+    },
+    {
+      id: 'time',
+      header: 'Time',
+      label: 'Time',
+      cell: (log) => <span className="text-sm text-muted-foreground">{formatDateTime(log.createdAt)}</span>,
+      exportValue: (log) => formatDateTime(log.createdAt),
+    },
+  ]
 
-      <Card>
-        <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <CardTitle>Audit activity</CardTitle>
-          <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-3">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Action"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className="pl-8"
-              />
-            </div>
+  return (
+    <div className="space-y-3">
+      <PageHeader title="Audit logs" />
+
+      <DataTable
+        data={rows}
+        columns={columns}
+        rowKey={(log) => log.id}
+        isLoading={isLoading}
+        search={{ value: query, onChange: setQuery, placeholder: 'Action' }}
+        filters={
+          <>
             <Input
               placeholder="Entity type"
               value={entityType}
               onChange={(event) => setEntityType(event.target.value)}
+              className="h-8 w-36"
             />
             <Input
               placeholder="User ID"
               value={userId}
               onChange={(event) => setUserId(event.target.value)}
+              className="h-8 w-36"
             />
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-40" />
-          ) : rows.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Entity</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="font-medium">{log.action}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{log.entityType}</Badge>
-                    </TableCell>
-                    <TableCell>{log.userId || 'System'}</TableCell>
-                    <TableCell>{formatDateTime(log.createdAt)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <p className="text-sm text-muted-foreground">No audit logs found.</p>
-          )}
-
-          {paginationMeta ? (
-            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
-              <p className="text-sm text-muted-foreground">
-                Page {paginationMeta.page} of {paginationMeta.totalPages} • {paginationMeta.total} logs
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!paginationMeta.hasPreviousPage || isLoading}
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!paginationMeta.hasNextPage || isLoading}
-                  onClick={() => setCurrentPage((prev) => prev + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+          </>
+        }
+        serverPagination={{
+          page: paginationMeta?.page ?? currentPage,
+          pageSize: 25,
+          total: paginationMeta?.total ?? rows.length,
+          onPageChange: setCurrentPage,
+        }}
+        emptyTitle="No audit logs found"
+        emptyIcon={FileText}
+        exportFilename="system-audit-logs"
+      />
     </div>
   )
 }

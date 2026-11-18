@@ -1,23 +1,17 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Eye, Users } from 'lucide-react'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
 import { useUmami } from '@/hooks/use-umami'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+  DataTable,
+  FilterSelect,
+  PageHeader,
+  StatusBadge,
+  UserCell,
+  type DataColumn,
+} from '@/components/dashboard'
 
 export default function SystemUsersPage() {
   const { track } = useUmami()
@@ -45,115 +39,86 @@ export default function SystemUsersPage() {
     track('system:users:page_view', { totalUsers: data?.data?.length || 0 })
   }, [data, track])
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">Users</h1>
-        <p className="text-muted-foreground">Manage platform users and access.</p>
-      </div>
+  const rows = data?.data ?? []
 
-      <Card>
-        <CardHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <CardTitle>User directory</CardTitle>
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-40" />
-          ) : data?.data?.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.data.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="font-medium">{formatName(user)}</div>
-                      <div className="text-xs text-muted-foreground">{user.email}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant(user.status)}>{user.status}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.userRoles?.length
-                          ? user.userRoles.map((role) => (
-                              <Badge key={role.id} variant="secondary">
-                                {role.role.displayName}
-                              </Badge>
-                            ))
-                          : '—'}
-                      </div>
-                    </TableCell>
-                    <TableCell>{formatDate(user.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/system/users/${user.id}`}>View</Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+  const columns: DataColumn<(typeof rows)[number]>[] = [
+    {
+      id: 'user',
+      header: 'User',
+      label: 'User',
+      cell: (user) => <UserCell name={formatName(user)} subtitle={user.email} />,
+      exportValue: (user) => `${formatName(user)} <${user.email}>`,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      label: 'Status',
+      cell: (user) => <StatusBadge status={user.status} />,
+      exportValue: (user) => user.status,
+    },
+    {
+      id: 'roles',
+      header: 'Roles',
+      label: 'Roles',
+      cell: (user) => (
+        <div className="flex flex-wrap gap-1">
+          {user.userRoles?.length ? (
+            user.userRoles.map((role) => (
+              <StatusBadge key={role.id} tone="purple">
+                {role.role.displayName}
+              </StatusBadge>
+            ))
           ) : (
-            <p className="text-sm text-muted-foreground">No users found.</p>
+            <span className="text-muted-foreground">—</span>
           )}
+        </div>
+      ),
+      exportValue: (user) => user.userRoles?.map((r) => r.role.displayName).join(', ') ?? '',
+    },
+    {
+      id: 'joined',
+      header: 'Joined',
+      label: 'Joined',
+      cell: (user) => <span className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</span>,
+      exportValue: (user) => formatDate(user.createdAt),
+    },
+  ]
 
-          {data?.meta?.totalPages && data.meta.totalPages > 1 ? (
-            <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
-              <p className="text-sm text-muted-foreground">
-                Page {data.meta.page} of {data.meta.totalPages} • {data.meta.total} users
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!data.meta.hasPreviousPage || isLoading}
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!data.meta.hasNextPage || isLoading}
-                  onClick={() => setCurrentPage((prev) => prev + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+  return (
+    <div className="space-y-3">
+      <PageHeader title="Users" />
+
+      <DataTable
+        data={rows}
+        columns={columns}
+        rowKey={(user) => user.id}
+        isLoading={isLoading}
+        search={{ value: query, onChange: setQuery, placeholder: 'Search users' }}
+        filters={
+          <FilterSelect
+            label="Status"
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+              { value: 'suspended', label: 'Suspended' },
+            ]}
+          />
+        }
+        rowActions={(user) => [
+          { label: 'View user', icon: Eye, href: `/system/users/${user.id}` },
+        ]}
+        serverPagination={{
+          page: data?.meta?.page ?? currentPage,
+          pageSize: 20,
+          total: data?.meta?.total ?? rows.length,
+          onPageChange: setCurrentPage,
+        }}
+        emptyTitle="No users found"
+        emptyIcon={Users}
+        exportFilename="system-users"
+      />
     </div>
   )
 }
@@ -169,10 +134,4 @@ function formatDate(value: string) {
     return '—'
   }
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(date)
-}
-
-function statusVariant(status: string) {
-  if (status === 'active') return 'default'
-  if (status === 'suspended') return 'destructive'
-  return 'secondary'
 }

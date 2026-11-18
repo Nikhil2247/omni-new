@@ -21,7 +21,7 @@ export function OpsTaskDetails({ taskId }: { taskId: string }) {
         <CardHeader>
           <div className="h-6 bg-muted rounded w-2/3" />
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <div className="h-4 bg-muted rounded" />
           <div className="h-4 bg-muted rounded w-3/4" />
         </CardContent>
@@ -32,7 +32,7 @@ export function OpsTaskDetails({ taskId }: { taskId: string }) {
   if (error || !data) {
     return (
       <Card>
-        <CardContent className="py-4 text-center">
+        <CardContent className="py-3 text-center">
           <p className="text-sm text-destructive">Failed to load task details.</p>
         </CardContent>
       </Card>
@@ -46,7 +46,7 @@ export function OpsTaskDetails({ taskId }: { taskId: string }) {
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between">
-          <CardTitle className="text-2xl">{data.title}</CardTitle>
+          <CardTitle className="text-lg">{data.title}</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant={priorityColors[data.priority as keyof typeof priorityColors] || 'secondary'}>
               {data.priority}
@@ -55,7 +55,7 @@ export function OpsTaskDetails({ taskId }: { taskId: string }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {data.description && (
           <div>
             <h3 className="text-sm font-medium mb-2">Description</h3>
@@ -63,7 +63,7 @@ export function OpsTaskDetails({ taskId }: { taskId: string }) {
           </div>
         )}
 
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {dueDate && (
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 text-muted-foreground" />

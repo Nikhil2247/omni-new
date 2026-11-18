@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeader } from '@/components/dashboard'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 
@@ -82,7 +83,7 @@ export default function SystemConfigPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <Skeleton className="h-8 w-1/3" />
         <Skeleton className="h-40" />
       </div>
@@ -90,17 +91,14 @@ export default function SystemConfigPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-semibold">System configuration</h1>
-        <p className="text-muted-foreground">Toggle platform settings and maintenance mode.</p>
-      </div>
+    <div className="space-y-3">
+      <PageHeader title="System configuration" />
 
       <Card>
         <CardHeader>
           <CardTitle>Platform controls</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium">Maintenance mode</p>
@@ -150,7 +148,7 @@ export default function SystemConfigPage() {
         <CardHeader>
           <CardTitle>Support details</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-2 md:grid-cols-2">
           <Input
             placeholder="Support email"
             value={supportEmail}

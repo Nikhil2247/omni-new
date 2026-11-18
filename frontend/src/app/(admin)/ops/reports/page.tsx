@@ -19,18 +19,11 @@ import {
   Loader2,
   ArrowRight,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageHeader, StatCard, StatGrid, StatusBadge, type StatusTone } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { useOpsDashboardMetrics } from '@/hooks/queries/use-ops-dashboard'
-
-interface StatusItem {
-  label: string
-  value: number
-  color: string
-  icon: React.ReactNode
-}
 
 function getEventStatusColor(status: string): string {
   switch (status) {
@@ -84,134 +77,104 @@ export default function OpsReportsPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
-          <h3 className="mt-2 text-lg font-semibold">Failed to load reports</h3>
-          <p className="text-muted-foreground">Please try again later</p>
-          <Button onClick={() => refetch()} className="mt-4">Retry</Button>
+      <div className="space-y-3">
+        <PageHeader title="Operations Reports" />
+        <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            Failed to load reports. Please try again later.
+          </div>
+          <Button size="sm" onClick={() => refetch()}>Retry</Button>
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Operations Reports</h1>
-          <p className="text-muted-foreground">Comprehensive overview of operational performance and metrics</p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => refetch()}
-          disabled={isRefetching}
-        >
-          {isRefetching ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="mr-2 h-4 w-4" />
-          )}
-          Refresh
-        </Button>
+  const statusRow = (icon: React.ReactNode, label: string, value: number, tone: StatusTone) => (
+    <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center gap-2">
+        {icon}
+        <span>{label}</span>
       </div>
+      <StatusBadge tone={tone}>{value}</StatusBadge>
+    </div>
+  )
+
+  return (
+    <div className="space-y-3">
+      <PageHeader
+        title="Operations Reports"
+        actions={
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isRefetching}>
+            {isRefetching ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-1 h-4 w-4" />
+            )}
+            Refresh
+          </Button>
+        }
+      />
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : metrics ? (
         <>
-          {/* Key Metrics Row */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Events</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics.activeEvents.total}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total events being managed
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Task Completion</CardTitle>
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{taskCompletionRate}%</div>
-                <Progress value={taskCompletionRate} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {metrics.tasks.completed} of {metrics.tasks.totalAssigned} tasks completed
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Overdue Tasks</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600">{metrics.tasks.overdue}</div>
-                <p className="text-xs text-muted-foreground">
-                  Tasks past due date
-                </p>
-                {metrics.tasks.overdue > 0 && (
-                  <Button variant="link" className="p-0 h-auto mt-1" asChild>
-                    <Link href="/ops/tasks?status=overdue">
-                      View overdue tasks <ArrowRight className="ml-1 h-3 w-3" />
-                    </Link>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">KYC Approval Rate</CardTitle>
-                <ShieldCheck className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{kycApprovalRate}%</div>
-                <Progress value={kycApprovalRate} className="mt-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {metrics.kyc.approved} approved vendors
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          <StatGrid>
+            <StatCard label="Active Events" value={metrics.activeEvents.total} icon={Calendar} />
+            <StatCard
+              label="Task Completion"
+              value={`${taskCompletionRate}%`}
+              icon={CheckCircle}
+              accent="text-green-600"
+              hint={`${metrics.tasks.completed} of ${metrics.tasks.totalAssigned} tasks`}
+            />
+            <StatCard
+              label="Overdue Tasks"
+              value={metrics.tasks.overdue}
+              icon={AlertTriangle}
+              accent="text-red-600"
+              hint={
+                metrics.tasks.overdue > 0 ? (
+                  <Link href="/ops/tasks?status=overdue" className="text-primary hover:underline">
+                    View overdue tasks
+                  </Link>
+                ) : undefined
+              }
+            />
+            <StatCard
+              label="KYC Approval Rate"
+              value={`${kycApprovalRate}%`}
+              icon={ShieldCheck}
+              accent="text-blue-600"
+              hint={`${metrics.kyc.approved} approved vendors`}
+            />
+          </StatGrid>
 
           {/* Event Status Breakdown */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
+            <CardHeader className="p-3 pb-0">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Activity className="h-4 w-4" />
                 Event Status Breakdown
               </CardTitle>
-              <CardDescription>
-                Distribution of events across different stages
-              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3">
               {Object.keys(metrics.activeEvents.byStatus).length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No events to display</p>
+                <p className="text-muted-foreground text-center py-3 text-sm">No events to display</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {Object.entries(metrics.activeEvents.byStatus)
                     .sort((a, b) => b[1] - a[1])
                     .map(([status, count]) => {
                       const percentage = Math.round((count / metrics.activeEvents.total) * 100)
                       return (
-                        <div key={status} className="space-y-2">
+                        <div key={status} className="space-y-1">
                           <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${getEventStatusColor(status)}`} />
+                              <div className={`w-2.5 h-2.5 rounded-full ${getEventStatusColor(status)}`} />
                               <span>{formatStatusLabel(status)}</span>
                             </div>
                             <div className="flex items-center gap-2">
@@ -219,7 +182,7 @@ export default function OpsReportsPage() {
                               <span className="text-muted-foreground">({percentage}%)</span>
                             </div>
                           </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
                               className={`h-full ${getEventStatusColor(status)} transition-all`}
                               style={{ width: `${percentage}%` }}
@@ -233,214 +196,115 @@ export default function OpsReportsPage() {
             </CardContent>
           </Card>
 
-          {/* KYC and Disputes Row */}
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             {/* KYC Status */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+              <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4" />
                   KYC Status
                 </CardTitle>
-                <CardDescription>
-                  Vendor verification overview
-                </CardDescription>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" asChild>
+                  <Link href="/ops/kyc">
+                    View records <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </Button>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-yellow-500" />
-                      <span>Pending</span>
-                    </div>
-                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                      {metrics.kyc.pending}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-blue-500" />
-                      <span>Under Review</span>
-                    </div>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {metrics.kyc.underReview}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>Approved</span>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      {metrics.kyc.approved}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <XCircle className="h-4 w-4 text-red-500" />
-                      <span>Rejected</span>
-                    </div>
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                      {metrics.kyc.rejected}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link href="/ops/kyc">
-                      View KYC Records <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
+              <CardContent className="space-y-2 p-3">
+                {statusRow(<Clock className="h-4 w-4 text-yellow-500" />, 'Pending', metrics.kyc.pending, 'warning')}
+                {statusRow(<FileText className="h-4 w-4 text-blue-500" />, 'Under Review', metrics.kyc.underReview, 'info')}
+                {statusRow(<CheckCircle className="h-4 w-4 text-green-500" />, 'Approved', metrics.kyc.approved, 'success')}
+                {statusRow(<XCircle className="h-4 w-4 text-red-500" />, 'Rejected', metrics.kyc.rejected, 'danger')}
               </CardContent>
             </Card>
 
             {/* Disputes */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Scale className="h-5 w-5" />
-                  Dispute Resolution
+              <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Scale className="h-4 w-4" />
+                  Dispute Resolution ({disputeResolutionRate}%)
                 </CardTitle>
-                <CardDescription>
-                  Resolution rate: {disputeResolutionRate}%
-                </CardDescription>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" asChild>
+                  <Link href="/ops/disputes">
+                    View all <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </Button>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
-                      <span>Open</span>
-                    </div>
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                      {metrics.disputes.open}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-orange-500" />
-                      <span>Investigating</span>
-                    </div>
-                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                      {metrics.disputes.investigating}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>Resolved</span>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      {metrics.disputes.resolved}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Progress value={disputeResolutionRate} className="h-3" />
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link href="/ops/disputes">
-                      View All Disputes <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
+              <CardContent className="space-y-2 p-3">
+                {statusRow(<AlertTriangle className="h-4 w-4 text-red-500" />, 'Open', metrics.disputes.open, 'danger')}
+                {statusRow(<FileText className="h-4 w-4 text-orange-500" />, 'Investigating', metrics.disputes.investigating, 'warning')}
+                {statusRow(<CheckCircle className="h-4 w-4 text-green-500" />, 'Resolved', metrics.disputes.resolved, 'success')}
+                <Progress value={disputeResolutionRate} className="h-2" />
               </CardContent>
             </Card>
           </div>
 
           {/* Task Performance */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="h-5 w-5" />
+            <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <ClipboardList className="h-4 w-4" />
                 Task Performance
               </CardTitle>
-              <CardDescription>
-                Overview of operational task metrics
-              </CardDescription>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" asChild>
+                  <Link href="/ops/tasks">View All Tasks</Link>
+                </Button>
+                <Button size="sm" className="h-7 px-2 text-xs" asChild>
+                  <Link href="/ops/tasks?status=PENDING">Pending Tasks</Link>
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="text-center p-4 rounded-lg border">
-                  <div className="text-2xl font-semibold text-primary">{metrics.tasks.totalAssigned}</div>
-                  <p className="text-sm text-muted-foreground mt-1">Total Tasks</p>
+            <CardContent className="space-y-3 p-3">
+              <StatGrid className="grid-cols-3 lg:grid-cols-3">
+                <StatCard label="Total Tasks" value={metrics.tasks.totalAssigned} accent="text-primary" />
+                <StatCard label="Completed" value={metrics.tasks.completed} accent="text-green-600" />
+                <StatCard label="Overdue" value={metrics.tasks.overdue} accent="text-red-600" />
+              </StatGrid>
+              <div>
+                <div className="mb-1 flex items-center justify-between text-xs">
+                  <span className="font-medium">Completion Progress</span>
+                  <span className="text-muted-foreground">
+                    {taskCompletionRate}% -{' '}
+                    {metrics.tasks.totalAssigned - metrics.tasks.completed - metrics.tasks.overdue} in progress
+                  </span>
                 </div>
-                <div className="text-center p-4 rounded-lg border bg-green-50">
-                  <div className="text-2xl font-semibold text-green-600">{metrics.tasks.completed}</div>
-                  <p className="text-sm text-green-700 mt-1">Completed</p>
-                </div>
-                <div className="text-center p-4 rounded-lg border bg-red-50">
-                  <div className="text-2xl font-semibold text-red-600">{metrics.tasks.overdue}</div>
-                  <p className="text-sm text-red-700 mt-1">Overdue</p>
-                </div>
-              </div>
-
-              <div className="mt-6 p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Completion Progress</span>
-                  <span className="text-sm text-muted-foreground">{taskCompletionRate}%</span>
-                </div>
-                <Progress value={taskCompletionRate} className="h-3" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {metrics.tasks.totalAssigned - metrics.tasks.completed - metrics.tasks.overdue} tasks in progress
-                </p>
-              </div>
-
-              <div className="mt-4 pt-4 border-t flex gap-2">
-                <Button variant="outline" className="flex-1" asChild>
-                  <Link href="/ops/tasks">
-                    View All Tasks
-                  </Link>
-                </Button>
-                <Button variant="default" className="flex-1" asChild>
-                  <Link href="/ops/tasks?status=PENDING">
-                    Pending Tasks
-                  </Link>
-                </Button>
+                <Progress value={taskCompletionRate} className="h-2" />
               </div>
             </CardContent>
           </Card>
 
           {/* Quick Links */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Navigate to commonly used sections</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2" asChild>
-                  <Link href="/ops/events">
-                    <Calendar className="h-5 w-5" />
-                    <span>Active Events</span>
-                  </Link>
-                </Button>
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2" asChild>
-                  <Link href="/ops/leads">
-                    <TrendingUp className="h-5 w-5" />
-                    <span>Leads</span>
-                  </Link>
-                </Button>
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2" asChild>
-                  <Link href="/ops/vendors">
-                    <Users className="h-5 w-5" />
-                    <span>Vendors</span>
-                  </Link>
-                </Button>
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2" asChild>
-                  <Link href="/ops/invoices">
-                    <FileText className="h-5 w-5" />
-                    <span>Invoices</span>
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/ops/events">
+                <Calendar className="mr-1 h-4 w-4" />
+                Active Events
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/ops/leads">
+                <TrendingUp className="mr-1 h-4 w-4" />
+                Leads
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/ops/vendors">
+                <Users className="mr-1 h-4 w-4" />
+                Vendors
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/ops/invoices">
+                <FileText className="mr-1 h-4 w-4" />
+                Invoices
+              </Link>
+            </Button>
+          </div>
         </>
       ) : (
-        <div className="text-center py-12">
+        <div className="text-center py-6">
           <p className="text-muted-foreground">No report data available</p>
         </div>
       )}
