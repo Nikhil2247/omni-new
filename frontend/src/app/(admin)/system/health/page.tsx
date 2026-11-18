@@ -64,9 +64,9 @@ function CircularProgress({
   const offset = circumference - (value / 100) * circumference
 
   const getColor = (val: number) => {
-    if (val >= 80) return { text: 'text-success', stroke: '#22c55e' }
-    if (val >= 50) return { text: 'text-warning', stroke: '#eab308' }
-    return { text: 'text-destructive', stroke: '#ef4444' }
+    if (val >= 80) return { text: 'text-success', stroke: 'var(--success)' }
+    if (val >= 50) return { text: 'text-warning', stroke: 'var(--warning)' }
+    return { text: 'text-destructive', stroke: 'var(--destructive)' }
   }
 
   const colors = getColor(value)
