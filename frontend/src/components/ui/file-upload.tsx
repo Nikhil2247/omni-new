@@ -260,18 +260,18 @@ export function FileUpload({
                 <div
                   className={cn(
                     'absolute inset-0 flex items-center justify-center bg-black/50',
-                    item.status === 'success' && 'bg-success/20',
-                    item.status === 'error' && 'bg-destructive/20'
+                    item.status === 'success' && 'bg-green-500/20',
+                    item.status === 'error' && 'bg-red-500/20'
                   )}
                 >
                   {item.status === 'uploading' && (
                     <Loader2 className="h-8 w-8 text-white animate-spin" />
                   )}
                   {item.status === 'success' && (
-                    <CheckCircle2 className="h-8 w-8 text-success" />
+                    <CheckCircle2 className="h-8 w-8 text-green-500" />
                   )}
                   {item.status === 'error' && (
-                    <AlertCircle className="h-8 w-8 text-destructive" />
+                    <AlertCircle className="h-8 w-8 text-red-500" />
                   )}
                 </div>
               )}
