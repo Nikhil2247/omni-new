@@ -1,27 +1,30 @@
-<html>
-  <body style="font-family: Arial, sans-serif; color: #111;">
-    <h2>Your Tickets</h2>
-    <p>Hello {{name}},</p>
-    <p>Here are your ticket details for {{eventName}} on {{eventDate}}.</p>
-    {{#if ticketDetails}}
-    <ul>
-      {{#each ticketDetails}}
-      <li>{{ticketType}} — Qty: {{quantity}} — Price: {{price}}</li>
-      {{/each}}
-    </ul>
-    {{/if}}
-    {{#if tickets}}
-    <ul>
-      {{#each tickets}}
-      <li>{{type}} — Qty: {{quantity}}</li>
-      {{/each}}
-    </ul>
-    {{/if}}
-    {{#if qrCodeUrl}}
-    <p>QR Code: {{qrCodeUrl}}</p>
-    {{/if}}
-    {{#if ticketDownloadUrl}}
-    <p>Download: {{ticketDownloadUrl}}</p>
-    {{/if}}
-  </body>
-</html>
+{{#> layout title="Your tickets" preheader="Your tickets are ready."}}
+  <p class="eyebrow">Tickets ready</p>
+  <h1>Your tickets for <span class="brush">{{eventName}}</span></h1>
+  {{> greeting}}
+  <p>Here are your ticket details for <strong>{{eventName}}</strong>{{#if eventDate}} on <strong>{{eventDate}}</strong>{{/if}}.</p>
+
+  {{#if ticketDetails}}
+  <table role="presentation" class="details" cellpadding="0" cellspacing="0">
+    {{#each ticketDetails}}
+    <tr><td class="dl">{{ticketType}} &times; {{quantity}}</td><td class="dv">{{price}}</td></tr>
+    {{/each}}
+  </table>
+  {{/if}}
+  {{#if tickets}}
+  <table role="presentation" class="details" cellpadding="0" cellspacing="0">
+    {{#each tickets}}
+    <tr><td class="dl">{{type}}</td><td class="dv">&times; {{quantity}}</td></tr>
+    {{/each}}
+  </table>
+  {{/if}}
+
+  {{#if qrCodeUrl}}
+  <div class="code-box">
+    <p class="eyebrow" style="margin-bottom:12px;">Scan at the entrance</p>
+    <img src="{{qrCodeUrl}}" alt="Ticket QR code" width="180" height="180" style="display:block;margin:0 auto;border:2px solid #1c2757;border-radius:10px 3px 10px 3px;background:#ffffff;padding:6px;">
+  </div>
+  {{/if}}
+  {{#if ticketDownloadUrl}}{{> button url=ticketDownloadUrl label="Download tickets"}}{{/if}}
+  {{> signoff}}
+{{/layout}}

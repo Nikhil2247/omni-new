@@ -1,16 +1,15 @@
-<html>
-  <body style="font-family: Arial, sans-serif; color: #111;">
-    <h2>Event Confirmation</h2>
-    <p>Hello {{name}},</p>
-    <p>Your event has been confirmed.</p>
-    <ul>
-      <li><strong>Event:</strong> {{eventName}}</li>
-      <li><strong>Date:</strong> {{eventDate}}</li>
-      <li><strong>Location:</strong> {{eventLocation}}</li>
-      <li><strong>Order #:</strong> {{orderNumber}}</li>
-      {{#if ticketCount}}
-      <li><strong>Tickets:</strong> {{ticketCount}}</li>
-      {{/if}}
-    </ul>
-  </body>
-</html>
+{{#> layout title="Event confirmation" preheader="Your event is confirmed - here are the details."}}
+  <p class="eyebrow">You're confirmed</p>
+  <h1>See you at <span class="brush">{{eventName}}</span></h1>
+  {{> greeting}}
+  <p>Great news - your spot is confirmed. Here's everything in one place.</p>
+  <table role="presentation" class="details" cellpadding="0" cellspacing="0">
+    <tr><td class="dl">Event</td><td class="dv">{{eventName}}</td></tr>
+    <tr><td class="dl">Date</td><td class="dv">{{eventDate}}</td></tr>
+    <tr><td class="dl">Location</td><td class="dv">{{eventLocation}}</td></tr>
+    <tr><td class="dl">Order #</td><td class="dv">{{orderNumber}}</td></tr>
+    {{#if ticketCount}}<tr><td class="dl">Tickets</td><td class="dv">{{ticketCount}}</td></tr>{{/if}}
+  </table>
+  {{#if eventUrl}}{{> button url=eventUrl label="View event details"}}{{/if}}
+  {{> signoff}}
+{{/layout}}

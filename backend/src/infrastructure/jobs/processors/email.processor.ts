@@ -8,6 +8,7 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
+import { EmailService } from '../../notifications/email.service';
 import {
   EMAIL_QUEUE_NAME,
   EmailJobData,
@@ -18,6 +19,10 @@ import {
 @Processor(EMAIL_QUEUE_NAME)
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
+
+  constructor(private readonly emailService: EmailService) {
+    super();
+  }
 
   async process(job: Job<EmailJobData | BulkEmailJobData>): Promise<unknown> {
     this.logger.debug(`Processing email job: ${job.id} (${job.name})`);
@@ -64,40 +69,32 @@ export class EmailProcessor extends WorkerHost {
       replyTo,
     } = job.data;
 
-    // Update progress
     await job.updateProgress(10);
 
-    // Render template if specified
-    let emailHtml = html;
-    let emailText = text;
-    let emailSubject = subject;
-
-    if (template) {
-      const rendered = await this.renderTemplate(template, context || {});
-      emailHtml = rendered.html;
-      emailText = rendered.text;
-      emailSubject = emailSubject || rendered.subject;
-    }
-
-    await job.updateProgress(50);
-
-    // Send email (placeholder - would integrate with actual email service)
-    const messageId = await this.sendEmail({
-      to: Array.isArray(to) ? to : [to],
-      subject: emailSubject || 'No Subject',
-      html: emailHtml,
-      text: emailText,
+    // Templates are rendered (with the branded layout) by EmailService.send
+    const result = await this.emailService.send({
+      to,
+      subject,
+      template,
+      context,
+      html,
+      text,
       attachments,
       cc,
       bcc,
       replyTo,
     });
 
+    // Throw so BullMQ applies the configured retry/backoff
+    if (!result.success) {
+      throw new Error(result.error || 'Email delivery failed');
+    }
+
     await job.updateProgress(100);
 
     this.logger.log(`Email sent: ${job.id} to ${to}`);
 
-    return { messageId };
+    return { messageId: result.messageId ?? '' };
   }
 
   private async processBulkEmail(
@@ -117,17 +114,16 @@ export class EmailProcessor extends WorkerHost {
       await Promise.all(
         batch.map(async (recipient) => {
           try {
-            const rendered = await this.renderTemplate(template, {
-              ...recipient.context,
-              ...metadata,
+            const result = await this.emailService.send({
+              to: recipient.email,
+              subject,
+              template,
+              context: { ...recipient.context, ...metadata },
             });
 
-            await this.sendEmail({
-              to: [recipient.email],
-              subject,
-              html: rendered.html,
-              text: rendered.text,
-            });
+            if (!result.success) {
+              throw new Error(result.error || 'Email delivery failed');
+            }
 
             sent++;
           } catch (error) {
@@ -152,74 +148,6 @@ export class EmailProcessor extends WorkerHost {
     );
 
     return { sent, failed };
-  }
-
-  private async renderTemplate(
-    template: string,
-    context: Record<string, unknown>,
-  ): Promise<{ html: string; text: string; subject?: string }> {
-    // Placeholder - would integrate with actual template engine (e.g., Handlebars, MJML)
-    // For now, return basic template
-
-    const subjectMap: Record<string, string> = {
-      welcome: 'Welcome to Omnicassion!',
-      'email-verification': 'Verify Your Email Address',
-      'password-reset': 'Reset Your Password',
-      'event-confirmation': 'Your Event Registration is Confirmed',
-      'ticket-confirmation': 'Your Tickets are Ready',
-      'payment-receipt': 'Payment Receipt',
-      'reminder-day-before': 'Event Reminder: Tomorrow!',
-      'reminder-hour-before': 'Event Reminder: Starting Soon!',
-      'reminder-week-before': 'Event Reminder: Coming Up Next Week',
-      newsletter: 'Omnicassion Newsletter',
-    };
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>${subjectMap[template] || 'Omnicassion'}</title>
-      </head>
-      <body>
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <h1>Omnicassion</h1>
-          <p>Template: ${template}</p>
-          <pre>${JSON.stringify(context, null, 2)}</pre>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const text = `Omnicassion - ${template}\n\n${JSON.stringify(context, null, 2)}`;
-
-    return {
-      html,
-      text,
-      subject: subjectMap[template],
-    };
-  }
-
-  private async sendEmail(options: {
-    to: string[];
-    subject: string;
-    html?: string;
-    text?: string;
-    attachments?: unknown[];
-    cc?: string[];
-    bcc?: string[];
-    replyTo?: string;
-  }): Promise<string> {
-    // Placeholder - would integrate with actual email provider (SendGrid, SES, etc.)
-    // For now, simulate sending
-
-    this.logger.debug(`Sending email to: ${options.to.join(', ')}`);
-
-    // Simulate network delay
-    await this.sleep(100);
-
-    // Return fake message ID
-    return `msg_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   }
 
   private sleep(ms: number): Promise<void> {

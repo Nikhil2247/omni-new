@@ -1,12 +1,8 @@
-<html>
-  <body style="font-family: Arial, sans-serif; color: #111;">
-    <h2>Omnicassion Newsletter</h2>
-    <p>Hello {{name}},</p>
-    <div>
-      {{{content}}}
-    </div>
-    <p style="margin-top: 24px; font-size: 12px; color: #555;">
-      <a href="{{unsubscribeUrl}}">Unsubscribe</a>
-    </p>
-  </body>
-</html>
+{{#> layout title="Omnicassion newsletter" preheader="News and ideas from Omnicassion." unsubscribeUrl=unsubscribeUrl}}
+  <p class="eyebrow">Omnicassion newsletter</p>
+  {{> greeting}}
+  <div>
+    {{{content}}}
+  </div>
+  {{> signoff}}
+{{/layout}}

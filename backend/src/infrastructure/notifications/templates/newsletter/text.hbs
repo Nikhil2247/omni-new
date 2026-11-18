@@ -1,5 +1,7 @@
-Hello {{name}},
+Hello{{#if name}} {{name}}{{/if}},
 
 {{content}}
 
 Unsubscribe: {{unsubscribeUrl}}
+
+{{> text-footer}}

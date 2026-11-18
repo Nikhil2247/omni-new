@@ -1,11 +1,13 @@
-<html>
-  <body style="font-family: Arial, sans-serif; color: #111;">
-    <h2>Reset your password</h2>
-    <p>Hello {{name}},</p>
-    <p>Click the button below to reset your password.</p>
-    <p>
-      <a href="{{resetUrl}}" style="background:#ef4444;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;display:inline-block;">Reset password</a>
-    </p>
-    <p>This link expires in {{expiresIn}}.</p>
-  </body>
-</html>
+{{#> layout title="Reset your password" preheader="Use this link to choose a new password."}}
+  <p class="eyebrow">Account security</p>
+  <h1>Reset your <span class="brush">password</span></h1>
+  {{> greeting}}
+  <p>We received a request to reset the password for your account. Choose a new one with the button below.</p>
+  {{> button url=resetUrl label="Choose a new password"}}
+  <p class="small muted">This link expires in {{#if expiresIn}}{{expiresIn}}{{else}}{{#if expiresInHours}}about {{expiresInHours}} hour(s){{else}}1 hour{{/if}}{{/if}}.</p>
+  <div class="callout callout-warning">
+    <p><strong>Didn't ask for this?</strong> You can ignore this email and your password will stay exactly as it is.</p>
+  </div>
+  <hr class="divider">
+  <p class="small muted">Button not working? Copy and paste this link into your browser:<br><a href="{{resetUrl}}" style="word-break:break-all;">{{resetUrl}}</a></p>
+{{/layout}}

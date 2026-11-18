@@ -1,10 +1,9 @@
-<html>
-  <body style="font-family: Arial, sans-serif; color: #111;">
-    <h2>You're invited!</h2>
-    <p>{{inviterName}} invited you to join <strong>{{displayName}}</strong> on Omnicassion.</p>
-    <p>
-      <a href="{{inviteUrl}}" style="background:#8b5cf6;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;display:inline-block;">Accept Invitation</a>
-    </p>
-    <p>If you weren’t expecting this, you can ignore the email.</p>
-  </body>
-</html>
+{{#> layout title="You're invited" preheader="Join your partner's celebration on Omnicassion."}}
+  <p class="eyebrow">You're invited</p>
+  <h1>Plan <span class="brush">{{displayName}}</span> together</h1>
+  <p><strong>{{inviterName}}</strong> has invited you to join <strong>{{displayName}}</strong> on Omnicassion, so you can plan the guest list, vendors and details side by side.</p>
+  {{> button url=inviteUrl label="Accept invitation"}}
+  <hr class="divider">
+  <p class="small muted">Button not working? Copy and paste this link into your browser:<br><a href="{{inviteUrl}}" style="word-break:break-all;">{{inviteUrl}}</a></p>
+  <p class="small muted">If you weren't expecting this, you can ignore this email.</p>
+{{/layout}}

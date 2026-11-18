@@ -1,0 +1,9 @@
+{{#> layout title="Claim expired" preheader="Your claim has expired - you can start a new one any time."}}
+  <p class="eyebrow">Claim expired</p>
+  <h1>Your claim for <span class="brush">{{businessName}}</span> has expired</h1>
+  <p>{{#if firstName}}Hi {{firstName}},{{else}}Hello there,{{/if}}</p>
+  <p>Your claim for <strong>{{businessName}}</strong> expired because it was inactive for a while.</p>
+  <p>If you're still interested, you can start a new claim request whenever you're ready.</p>
+  {{> button url=frontendUrl label="Visit Omnicassion"}}
+  {{> signoff}}
+{{/layout}}

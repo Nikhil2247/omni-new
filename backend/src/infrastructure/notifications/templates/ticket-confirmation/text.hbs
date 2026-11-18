@@ -1,4 +1,4 @@
-Hello {{name}},
+Hello{{#if name}} {{name}}{{/if}},
 
 Your tickets for {{eventName}} on {{eventDate}}.
 {{#if ticketDetails}}
@@ -11,3 +11,5 @@ Your tickets for {{eventName}} on {{eventDate}}.
 {{/if}}
 {{#if qrCodeUrl}}QR Code: {{qrCodeUrl}}{{/if}}
 {{#if ticketDownloadUrl}}Download: {{ticketDownloadUrl}}{{/if}}
+
+{{> text-footer}}

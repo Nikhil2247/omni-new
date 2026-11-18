@@ -1,49 +1,17 @@
-<html>
-  <body style="font-family: Arial, sans-serif; color: #111; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="text-align: center; margin-bottom: 24px;">
-      <h1 style="color: #1370c6; margin: 0;">Omnicassion</h1>
-    </div>
-
-    <h2 style="margin-bottom: 16px;">Your Claim is Under Review</h2>
-
-    <p>Hello,</p>
-
-    <p>Thank you for claiming <strong>{{businessName}}</strong> on Omnicassion. Your claim has been submitted successfully and is now pending admin review.</p>
-
-    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0;">
-      <p style="margin: 0; color: #92400e;">
-        <strong>What happens next?</strong><br>
-        Our team will review your claim and supporting documents. This typically takes 1-2 business days.
-      </p>
-    </div>
-
-    <p>You will receive an email notification once your claim has been reviewed.</p>
-
-    <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;" />
-
-    <p style="color: #666; font-size: 14px;">
-      While you wait, you can:
-    </p>
-    <ul style="color: #666; font-size: 14px; padding-left: 20px;">
-      <li>Log in to your account to check the claim status</li>
-      <li>Prepare your business information and portfolio</li>
-      <li>Review our vendor guidelines</li>
-    </ul>
-
-    {{#if dashboardUrl}}
-    <p style="text-align: center; margin: 24px 0;">
-      <a href="{{dashboardUrl}}" style="background: #1370c6; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Check Claim Status</a>
-    </p>
-    {{/if}}
-
-    <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;" />
-
-    <p style="color: #666; font-size: 14px;">
-      If you have any questions, please contact our support team.
-    </p>
-
-    <p style="color: #999; font-size: 12px; text-align: center;">
-      &copy; {{currentYear}} Omnicassion. All rights reserved.
-    </p>
-  </body>
-</html>
+{{#> layout title="Claim under review" preheader="We're reviewing your claim - usually 1-2 business days."}}
+  <p class="eyebrow">Claim submitted</p>
+  <h1>Your claim is <span class="brush">under review</span></h1>
+  {{> greeting}}
+  <p>Thanks for claiming <strong>{{businessName}}</strong> on Omnicassion. Your claim is in and our team is taking a look.</p>
+  <div class="callout callout-warning">
+    <p><strong>What happens next?</strong></p>
+    <p>We review your claim and supporting documents, which typically takes 1-2 business days. We'll email you as soon as there's a decision.</p>
+  </div>
+  <h3>While you wait</h3>
+  <ul>
+    <li>Check your claim status from your account</li>
+    <li>Gather your business information and portfolio</li>
+    <li>Read through our vendor guidelines</li>
+  </ul>
+  {{#if dashboardUrl}}{{> button url=dashboardUrl label="Check claim status"}}{{/if}}
+{{/layout}}

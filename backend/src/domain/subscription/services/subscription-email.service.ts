@@ -372,53 +372,20 @@ export class SubscriptionEmailService {
   // PRIVATE TEMPLATE METHODS - HTML
   // ============================================================================
 
-  private getBaseStyles(): string {
-    return `
-      body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f5; }
-      .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-      .header { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 32px 24px; text-align: center; }
-      .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; }
-      .content { padding: 32px 24px; }
-      .content p { color: #374151; line-height: 1.6; margin: 0 0 16px 0; }
-      .highlight-box { background-color: #f5f3ff; border-left: 4px solid #8b5cf6; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; }
-      .highlight-box p { margin: 0; }
-      .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e5e7eb; }
-      .detail-label { color: #6b7280; }
-      .detail-value { color: #111827; font-weight: 500; }
-      .button { display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 500; margin: 16px 0; }
-      .button-secondary { background: #ffffff; color: #8b5cf6; border: 2px solid #8b5cf6; }
-      .footer { background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; }
-      .footer p { color: #6b7280; font-size: 14px; margin: 0 0 8px 0; }
-      .footer a { color: #8b5cf6; text-decoration: none; }
-      .amount { font-size: 32px; font-weight: 700; color: #111827; }
-      .currency { font-size: 16px; color: #6b7280; }
-      .warning-box { background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; }
-      .warning-box p { color: #991b1b; margin: 0; }
-      .success-box { background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; }
-      .success-box p { color: #065f46; margin: 0; }
-    `;
-  }
-
+  /**
+   * Wraps the body in the shared Omnicassion e-mail layout
+   * (infrastructure/notifications/templates/_partials/layout.hbs).
+   */
   private wrapInLayout(content: string, title: string): string {
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
-  <style>${this.getBaseStyles()}</style>
-</head>
-<body>
-  <div class="container">
-    ${content}
-    <div class="footer">
-      <p>Need help? <a href="${this.supportUrl}">Contact Support</a> or email us at <a href="mailto:${this.supportEmail}">${this.supportEmail}</a></p>
-      <p style="margin-top: 16px; font-size: 12px; color: #9ca3af;">Omnicassion Inc.</p>
-    </div>
-  </div>
-</body>
-</html>`;
+    return this.emailService.renderLayout({
+      content,
+      title,
+      context: {
+        supportEmail: this.supportEmail,
+        supportUrl: this.supportUrl,
+        frontendUrl: this.frontendUrl,
+      },
+    });
   }
 
   private formatCurrency(amount: number, currency: string = 'INR'): string {
@@ -545,7 +512,7 @@ export class SubscriptionEmailService {
       context.paymentMethodUpdateUrl || `${this.frontendUrl}/billing/payment-methods`;
 
     const content = `
-    <div class="header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+    <div class="header">
       <h1>Payment Failed</h1>
     </div>
     <div class="content">
@@ -566,7 +533,7 @@ export class SubscriptionEmailService {
       ` : ''}
 
       <p><strong>To avoid interruption to your service:</strong></p>
-      <ol style="color: #374151; line-height: 1.8;">
+      <ol style="line-height: 1.8;">
         <li>Update your payment method</li>
         <li>Ensure sufficient funds are available</li>
         <li>Contact your bank if the issue persists</li>
@@ -630,7 +597,7 @@ export class SubscriptionEmailService {
     const upgradeUrl = context.upgradeUrl || `${this.frontendUrl}/pricing`;
 
     const content = `
-    <div class="header" style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);">
+    <div class="header">
       <h1>Subscription Cancelled</h1>
     </div>
     <div class="content">
@@ -754,7 +721,7 @@ export class SubscriptionEmailService {
     const upgradeUrl = context.upgradeUrl || `${this.frontendUrl}/pricing`;
 
     const content = `
-    <div class="header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+    <div class="header">
       <h1>Subscription Expired</h1>
     </div>
     <div class="content">
@@ -993,15 +960,15 @@ Support: ${this.supportEmail}
     const unit = context.unit || '';
 
     const content = `
-    <div class="header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+    <div class="header">
       <h1>Usage Alert</h1>
     </div>
     <div class="content">
       <p>Hi ${context.userName},</p>
       <p>You're approaching your <strong>${context.featureName}</strong> limit${context.eventName ? ` for <strong>${context.eventName}</strong>` : ''}.</p>
 
-      <div class="warning-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
-        <p style="color: #92400e;"><strong>${context.usedPercent}% of your limit has been used</strong></p>
+      <div class="callout callout-warning">
+        <p><strong>${context.usedPercent}% of your limit has been used</strong></p>
       </div>
 
       <div class="highlight-box">
@@ -1042,7 +1009,7 @@ Support: ${this.supportEmail}
     const unit = context.unit || '';
 
     const content = `
-    <div class="header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+    <div class="header">
       <h1>Limit Reached</h1>
     </div>
     <div class="content">
@@ -1085,15 +1052,15 @@ Support: ${this.supportEmail}
     const upgradeUrl = context.upgradeUrl || `${this.frontendUrl}/pricing`;
 
     const content = `
-    <div class="header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+    <div class="header">
       <h1>Storage Alert</h1>
     </div>
     <div class="content">
       <p>Hi ${context.userName},</p>
       <p>Your storage is running low${context.eventName ? ` for <strong>${context.eventName}</strong>` : ''}.</p>
 
-      <div class="warning-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
-        <p style="color: #92400e;"><strong>${context.usedPercent}% of your storage has been used</strong></p>
+      <div class="callout callout-warning">
+        <p><strong>${context.usedPercent}% of your storage has been used</strong></p>
       </div>
 
       <div class="highlight-box">
@@ -1126,7 +1093,7 @@ Support: ${this.supportEmail}
     const upgradeUrl = context.upgradeUrl || `${this.frontendUrl}/pricing`;
 
     const content = `
-    <div class="header" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+    <div class="header">
       <h1>Storage Full</h1>
     </div>
     <div class="content">
@@ -1180,8 +1147,8 @@ Support: ${this.supportEmail}
       ` : `
       <p>Auto-renewal has been <strong>disabled</strong> for your <strong>${context.planName}</strong> subscription.</p>
 
-      <div class="warning-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
-        <p style="color: #92400e;"><strong>Important:</strong> Your subscription will not renew automatically. Make sure to manually renew before your current period ends to avoid losing access to premium features.</p>
+      <div class="callout callout-warning">
+        <p><strong>Important:</strong> Your subscription will not renew automatically. Make sure to manually renew before your current period ends to avoid losing access to premium features.</p>
       </div>
       `}
 
@@ -1219,10 +1186,10 @@ Support: ${this.supportEmail}
   private renderEventCreditPurchaseTemplate(context: EventCreditPurchaseContext): string {
     const dashboardUrl = context.dashboardUrl || `${this.frontendUrl}/dashboard`;
     const tierLabel = context.tier === 'PREMIUM' ? 'Premium' : 'Basic';
-    const tierColor = context.tier === 'PREMIUM' ? '#8b5cf6' : '#3b82f6';
+    const tierColor = context.tier === 'PREMIUM' ? '#b87a00' : '#2748c4';
 
     const content = `
-    <div class="header" style="background: linear-gradient(135deg, ${tierColor} 0%, ${context.tier === 'PREMIUM' ? '#7c3aed' : '#2563eb'} 100%);">
+    <div class="header">
       <h1>Event Credits Purchased!</h1>
     </div>
     <div class="content">
@@ -1235,7 +1202,7 @@ Support: ${this.supportEmail}
 
       <div style="text-align: center; margin: 32px 0;">
         <span style="font-size: 48px; font-weight: 700; color: ${tierColor};">${context.creditCount}</span>
-        <p style="color: #6b7280; margin-top: 8px;">${tierLabel} Event Credit${context.creditCount > 1 ? 's' : ''}</p>
+        <p class="muted" style="margin-top: 8px;">${tierLabel} Event Credit${context.creditCount > 1 ? 's' : ''}</p>
       </div>
 
       <div class="highlight-box">
@@ -1261,7 +1228,7 @@ Support: ${this.supportEmail}
       </div>
 
       <p><strong>What's next?</strong></p>
-      <ul style="color: #374151; line-height: 1.8; padding-left: 20px;">
+      <ul style="line-height: 1.8; padding-left: 20px;">
         <li>Go to your dashboard to create a new event</li>
         <li>Select ${tierLabel} tier when creating your event</li>
         <li>One credit will be used per event created</li>

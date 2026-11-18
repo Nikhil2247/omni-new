@@ -1,11 +1,12 @@
-<html>
-  <body style="font-family: Arial, sans-serif; color: #111;">
-    <h2>Event Reminder</h2>
-    <p>Hello {{name}},</p>
-    <p>This is a reminder that {{eventName}} is tomorrow.</p>
-    <ul>
-      <li><strong>Date:</strong> {{eventDate}}</li>
-      <li><strong>Location:</strong> {{eventLocation}}</li>
-    </ul>
-  </body>
-</html>
+{{#> layout title="Event reminder" preheader="Your event is tomorrow."}}
+  <p class="eyebrow">Happening tomorrow</p>
+  <h1><span class="brush">{{eventName}}</span> is tomorrow</h1>
+  {{> greeting}}
+  <p>Just a friendly nudge - the big day is almost here.</p>
+  <table role="presentation" class="details" cellpadding="0" cellspacing="0">
+    <tr><td class="dl">When</td><td class="dv">{{eventDate}}</td></tr>
+    <tr><td class="dl">Where</td><td class="dv">{{eventLocation}}</td></tr>
+  </table>
+  {{#if eventUrl}}{{> button url=eventUrl label="View event details"}}{{/if}}
+  {{> signoff}}
+{{/layout}}

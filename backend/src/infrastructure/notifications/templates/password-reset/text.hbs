@@ -1,6 +1,8 @@
-Hello {{name}},
+Hello{{#if name}} {{name}}{{/if}},
 
 Reset your password using the link below:
 {{resetUrl}}
 
 This link expires in {{expiresIn}}.
+
+{{> text-footer}}

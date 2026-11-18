@@ -1,4 +1,4 @@
-Welcome to Omnicassion, {{name}}!
+Welcome to Omnicassion{{#if name}}, {{name}}{{/if}}!
 
 We’re excited to have you here.
 {{#if verificationUrl}}
@@ -6,3 +6,5 @@ Verify your email: {{verificationUrl}}
 {{/if}}
 
 — The Omnicassion Team
+
+{{> text-footer}}

@@ -1,4 +1,4 @@
-Hello {{name}},
+Hello{{#if name}} {{name}}{{/if}},
 
 Payment received.
 Order #: {{orderNumber}}
@@ -10,3 +10,5 @@ Items:
 {{/each}}
 {{/if}}
 {{#if receiptUrl}}Receipt: {{receiptUrl}}{{/if}}
+
+{{> text-footer}}

@@ -341,23 +341,12 @@ export class EmailNotificationListener {
 
     const result = await this.emailService.send({
       to: recipient,
-      subject: `Your claim for ${businessName} has expired`,
-      html: `
-        <html>
-          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Claim Expired</h1>
-            <p>Hello ${firstName},</p>
-            <p>Your claim for <strong>${businessName}</strong> has expired due to inactivity.</p>
-            <p>If you're still interested in claiming this business, you can start a new claim request.</p>
-            <p>
-              <a href="${this.frontendUrl}" style="background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">
-                Visit Omnicassion
-              </a>
-            </p>
-            <p>Best regards,<br>The Omnicassion Team</p>
-          </body>
-        </html>
-      `,
+      template: 'claim-expired',
+      context: {
+        firstName,
+        businessName,
+        frontendUrl: this.frontendUrl,
+      },
     });
 
     if (result.success) {
@@ -381,23 +370,13 @@ export class EmailNotificationListener {
 
     const result = await this.emailService.send({
       to: recipient,
-      subject: `Your claim for ${businessName} expires in ${daysRemaining} days`,
-      html: `
-        <html>
-          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Claim Expiring Soon</h1>
-            <p>Hello ${firstName},</p>
-            <p>Your claim for <strong>${businessName}</strong> will expire in <strong>${daysRemaining} days</strong>.</p>
-            <p>Please complete any pending verification steps to avoid having to restart the claim process.</p>
-            <p>
-              <a href="${this.frontendUrl}/dashboard" style="background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">
-                Complete Verification
-              </a>
-            </p>
-            <p>Best regards,<br>The Omnicassion Team</p>
-          </body>
-        </html>
-      `,
+      template: 'claim-expiry-warning',
+      context: {
+        firstName,
+        businessName,
+        daysRemaining,
+        dashboardUrl: `${this.frontendUrl}/dashboard`,
+      },
     });
 
     if (result.success) {

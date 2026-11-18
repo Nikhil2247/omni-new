@@ -1,0 +1,11 @@
+{{#> layout title="Claim expiring soon" preheader="Complete verification to keep your claim active."}}
+  <p class="eyebrow">Action needed</p>
+  <h1>Your claim for <span class="brush">{{businessName}}</span> expires soon</h1>
+  <p>{{#if firstName}}Hi {{firstName}},{{else}}Hello there,{{/if}}</p>
+  <div class="callout callout-warning">
+    <p>Your claim will expire in <strong>{{daysRemaining}} days</strong>.</p>
+  </div>
+  <p>Please complete any pending verification steps so you don't have to restart the claim process.</p>
+  {{> button url=dashboardUrl label="Complete verification"}}
+  {{> signoff}}
+{{/layout}}

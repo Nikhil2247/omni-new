@@ -1,12 +1,30 @@
-<html>
-  <body style="font-family: Arial, sans-serif; color: #111;">
-    <h2>Welcome to Omnicassion, {{name}}!</h2>
-    <p>We’re excited to have you here.</p>
-    {{#if verificationUrl}}
-    <p>
-      <a href="{{verificationUrl}}" style="background:#ec4899;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;display:inline-block;">Verify your email</a>
-    </p>
+{{#> layout title="Welcome to Omnicassion" preheader="Your account is ready - let's start planning something beautiful."}}
+  <p class="eyebrow">Welcome aboard</p>
+  <h1>{{#if businessName}}{{businessName}} is <span class="brush">all yours</span>{{else}}Let's plan something <span class="brush">beautiful</span>{{/if}}</h1>
+  {{> greeting}}
+  {{#if message}}
+  <p>{{message}}</p>
+  {{else}}
+  <p>We're so glad you're here. Omnicassion brings your guests, vendors, invitations and plans together in one calm place, so you can enjoy the celebration as much as everyone else.</p>
+  {{/if}}
+
+  {{#if verificationUrl}}
+  <div class="callout callout-info">
+    <p><strong>One last step:</strong> confirm your email address to unlock everything.</p>
+  </div>
+  {{> button url=verificationUrl label="Verify my email"}}
+  {{else}}
+    {{#if dashboardUrl}}
+    {{> button url=dashboardUrl label="Open my dashboard"}}
     {{/if}}
-    <p>— The Omnicassion Team</p>
-  </body>
-</html>
+  {{/if}}
+
+  <h3>A few ways to begin</h3>
+  <ul>
+    <li>Create your first event and set the date</li>
+    <li>Build your guest list and send e-invites</li>
+    <li>Discover trusted vendors near you</li>
+  </ul>
+  {{#if loginUrl}}<p class="small muted">You can sign in any time at <a href="{{loginUrl}}">{{loginUrl}}</a>.</p>{{/if}}
+  {{> signoff}}
+{{/layout}}

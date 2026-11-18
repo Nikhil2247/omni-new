@@ -5,6 +5,13 @@
   "compilerOptions": {
     "builder": "swc",
     "typeCheck": false,
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "infrastructure/notifications/templates/**/*.hbs",
+        "outDir": "dist",
+        "watchAssets": true
+      }
+    ]
   }
 }

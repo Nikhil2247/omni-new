@@ -61,12 +61,32 @@ export class EmailService implements OnModuleInit {
   private readonly templates = new Map<string, CompiledTemplate>();
   private readonly fromAddress: string;
   private readonly fromName: string;
-  private readonly templatesDir: string;
+  private readonly templatesDir: string | undefined;
+  private readonly brandContext: Record<string, unknown>;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly circuitBreaker: CircuitBreakerService,
   ) {
+    const frontendUrl = this.configService.get<string>(
+      'FRONTEND_URL',
+      'https://omnicassion.com',
+    );
+    // Defaults available to every template (the layout footer relies on these).
+    // Callers can override any of them through `context`.
+    this.brandContext = {
+      brandName: 'Omnicassion',
+      frontendUrl,
+      supportEmail: this.configService.get<string>(
+        'SUPPORT_EMAIL',
+        'support@omnicassion.com',
+      ),
+      supportUrl: this.configService.get<string>(
+        'SUPPORT_URL',
+        `${frontendUrl.replace(/\/$/, '')}/support`,
+      ),
+    };
+
     this.fromAddress = this.configService.get<string>(
       'EMAIL_FROM_ADDRESS',
       'noreply@omnicassion.com',
@@ -75,16 +95,13 @@ export class EmailService implements OnModuleInit {
       'EMAIL_FROM_NAME',
       'Omnicassion',
     );
-    this.templatesDir = this.configService.get<string>(
-      'EMAIL_TEMPLATES_DIR',
-      'src/infrastructure/notifications/templates',
-    );
+    this.templatesDir = this.configService.get<string>('EMAIL_TEMPLATES_DIR');
   }
 
   async onModuleInit(): Promise<void> {
-    await this.initializeTransporter();
-    await this.loadTemplates();
     this.registerHandlebarsHelpers();
+    await this.loadTemplates();
+    await this.initializeTransporter();
   }
 
   private async ensureTransporterInitialized(): Promise<void> {
@@ -264,49 +281,85 @@ export class EmailService implements OnModuleInit {
     }
   }
 
+  /**
+   * Finds the templates folder. Works from source (ts-node / jest), from the
+   * compiled `dist` output (templates are copied there via nest-cli assets),
+   * and from an explicit EMAIL_TEMPLATES_DIR override.
+   */
+  private async resolveTemplatesPath(): Promise<string | null> {
+    const candidates = [
+      this.templatesDir
+        ? path.resolve(process.cwd(), this.templatesDir)
+        : null,
+      path.join(__dirname, 'templates'),
+      path.resolve(process.cwd(), 'src/infrastructure/notifications/templates'),
+      path.resolve(
+        process.cwd(),
+        'dist/infrastructure/notifications/templates',
+      ),
+    ].filter((candidate): candidate is string => Boolean(candidate));
+
+    for (const candidate of candidates) {
+      try {
+        const stat = await fs.stat(candidate);
+        if (stat.isDirectory()) {
+          return candidate;
+        }
+      } catch {
+        // try next candidate
+      }
+    }
+
+    return null;
+  }
+
   private async loadTemplates(): Promise<void> {
     try {
-      const templatesPath = path.resolve(process.cwd(), this.templatesDir);
+      const templatesPath = await this.resolveTemplatesPath();
 
-      // Check if templates directory exists
-      try {
-        await fs.access(templatesPath);
-      } catch {
-        this.logger.debug(
-          'Templates directory not found, using inline templates only',
+      if (!templatesPath) {
+        this.logger.warn(
+          'Email templates directory not found - template emails cannot be rendered',
         );
         return;
       }
 
-      const files = await fs.readdir(templatesPath);
-      const templateDirs = files.filter(async (f) => {
-        const stat = await fs.stat(path.join(templatesPath, f));
-        return stat.isDirectory();
-      });
+      const entries = await fs.readdir(templatesPath, { withFileTypes: true });
 
-      for (const dir of templateDirs) {
+      // Shared partials (layout, button, ...) live in `_partials/*.hbs`
+      const partialsDir = path.join(templatesPath, '_partials');
+      const partialFiles = await fs.readdir(partialsDir).catch(() => []);
+      for (const file of partialFiles) {
+        if (!file.endsWith('.hbs')) continue;
+        const source = await fs.readFile(path.join(partialsDir, file), 'utf-8');
+        Handlebars.registerPartial(path.basename(file, '.hbs'), source);
+      }
+
+      for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name.startsWith('_')) continue;
+
+        const dir = entry.name;
         const templatePath = path.join(templatesPath, dir);
 
         try {
-          const htmlPath = path.join(templatePath, 'html.hbs');
-          const textPath = path.join(templatePath, 'text.hbs');
-          const subjectPath = path.join(templatePath, 'subject.hbs');
+          const read = (file: string) =>
+            fs.readFile(path.join(templatePath, file), 'utf-8').catch(() => null);
 
-          const htmlContent = await fs
-            .readFile(htmlPath, 'utf-8')
-            .catch(() => null);
-          const textContent = await fs
-            .readFile(textPath, 'utf-8')
-            .catch(() => null);
-          const subjectContent = await fs
-            .readFile(subjectPath, 'utf-8')
-            .catch(() => dir);
+          const htmlContent = await read('html.hbs');
+          const textContent = await read('text.hbs');
+          const subjectContent = (await read('subject.hbs')) ?? dir;
 
           if (htmlContent) {
             this.templates.set(dir, {
               html: Handlebars.compile(htmlContent),
-              text: textContent ? Handlebars.compile(textContent) : undefined,
-              subject: Handlebars.compile(subjectContent),
+              // Plain-text parts and subjects must not be HTML-escaped,
+              // otherwise URLs get mangled (e.g. "=" -> "&#x3D;").
+              text: textContent
+                ? Handlebars.compile(textContent, { noEscape: true })
+                : undefined,
+              subject: Handlebars.compile(subjectContent.trim(), {
+                noEscape: true,
+              }),
             });
 
             this.logger.debug(`Loaded email template: ${dir}`);
@@ -316,10 +369,87 @@ export class EmailService implements OnModuleInit {
         }
       }
 
-      this.logger.log(`Loaded ${this.templates.size} email templates`);
+      this.logger.log(
+        `Loaded ${this.templates.size} email templates from ${templatesPath}`,
+      );
     } catch (error) {
       this.logger.warn('Failed to load email templates:', error);
     }
+  }
+
+  // ============================================================================
+  // RENDERING
+  // ============================================================================
+
+  private buildContext(
+    context: Record<string, unknown> = {},
+  ): Record<string, unknown> {
+    return {
+      ...this.brandContext,
+      currentYear: new Date().getFullYear(),
+      ...context,
+    };
+  }
+
+  /**
+   * Render a named template (html + text + subject) with the brand defaults applied.
+   * Returns null when the template does not exist.
+   */
+  render(
+    templateName: string,
+    context: Record<string, unknown> = {},
+  ): { html: string; text?: string; subject: string } | null {
+    const template = this.templates.get(templateName);
+    if (!template) return null;
+
+    const data = this.buildContext(context);
+    return {
+      html: template.html(data),
+      text: template.text ? template.text(data) : undefined,
+      subject: template.subject(data),
+    };
+  }
+
+  /**
+   * Wrap already-built HTML content in the branded Omnicassion layout.
+   * Use this for emails whose body is assembled in code rather than in a template file.
+   */
+  renderLayout(options: {
+    content: string;
+    title?: string;
+    preheader?: string;
+    context?: Record<string, unknown>;
+  }): string {
+    const wrapper = Handlebars.compile(
+      '{{#> layout title=title preheader=preheader}}{{{content}}}{{/layout}}',
+    );
+    return wrapper(
+      this.buildContext({
+        ...options.context,
+        title: options.title,
+        preheader: options.preheader,
+        content: options.content,
+      }),
+    );
+  }
+
+  private htmlToText(html: string): string {
+    return html
+      .replace(/<(style|script|head)[\s\S]*?<\/\1>/gi, '')
+      .replace(/<a [^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&#x3D;/g, '=')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#x27;|&#39;/g, "'")
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   }
 
   private registerHandlebarsHelpers(): void {
@@ -366,9 +496,14 @@ export class EmailService implements OnModuleInit {
 
     // Truncate helper
     Handlebars.registerHelper('truncate', (str: string, length: number) => {
-      if (str.length <= length) return str;
+      if (!str || str.length <= length) return str;
       return str.substring(0, length) + '...';
     });
+
+    // Concatenate helper, e.g. {{> layout title=(concat "Hello " name)}}
+    Handlebars.registerHelper('concat', (...args: unknown[]) =>
+      args.slice(0, -1).join(''),
+    );
   }
 
   // ============================================================================
@@ -396,20 +531,23 @@ export class EmailService implements OnModuleInit {
 
           // Render template if specified
           if (options.template) {
-            const template = this.templates.get(options.template);
+            const rendered = this.render(options.template, options.context);
 
-            if (template) {
-              const context = options.context || {};
-              html = template.html(context);
-              text = template.text ? template.text(context) : undefined;
-              subject = template.subject(context);
-            } else {
-              // Fallback to inline template
-              html = this.renderInlineTemplate(
-                options.template,
-                options.context || {},
+            if (!rendered) {
+              throw new Error(
+                `Email template "${options.template}" not found. Available: ${this.getAvailableTemplates().join(', ') || 'none loaded'}`,
               );
             }
+
+            html = rendered.html;
+            text = options.text ?? rendered.text;
+            // An explicit subject from the caller wins over the template's subject
+            subject = options.subject || rendered.subject;
+          }
+
+          // Always send a plain-text alternative (better deliverability)
+          if (html && !text) {
+            text = this.htmlToText(html);
           }
 
           const mailOptions = {
@@ -567,70 +705,6 @@ export class EmailService implements OnModuleInit {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private renderInlineTemplate(
-    templateName: string,
-    context: Record<string, unknown>,
-  ): string {
-    // Fallback inline templates for common email types
-    const templates: Record<string, string> = {
-      welcome: `
-        <html>
-          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Welcome to Omnicassion!</h1>
-            <p>Hello {{name}},</p>
-            <p>Thank you for joining Omnicassion. We're excited to have you on board!</p>
-            {{#if verificationUrl}}
-            <p><a href="{{verificationUrl}}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Verify Your Email</a></p>
-            {{/if}}
-            <p>Best regards,<br>The Omnicassion Team</p>
-          </body>
-        </html>
-      `,
-      'email-verification': `
-        <html>
-          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Verify Your Email</h1>
-            <p>Hello {{name}},</p>
-            <p>Please click the button below to verify your email address:</p>
-            <p><a href="{{verificationUrl}}" style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Verify Email</a></p>
-            <p>This link will expire in 24 hours.</p>
-          </body>
-        </html>
-      `,
-      'password-reset': `
-        <html>
-          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Reset Your Password</h1>
-            <p>Hello {{name}},</p>
-            <p>You requested to reset your password. Click the button below:</p>
-            <p><a href="{{resetUrl}}" style="background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Reset Password</a></p>
-            <p>This link will expire in {{expiresIn}}.</p>
-            <p>If you didn't request this, please ignore this email.</p>
-          </body>
-        </html>
-      `,
-      'wedding-partner-invite': `
-        <html>
-          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>You're invited!</h1>
-            <p>{{inviterName}} invited you to join <strong>{{displayName}}</strong> on Omnicassion.</p>
-            <p><a href="{{inviteUrl}}" style="background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">Accept Invitation</a></p>
-            <p>If you didn’t request this, you can ignore this email.</p>
-          </body>
-        </html>
-      `,
-    };
-
-    const template = templates[templateName];
-
-    if (template) {
-      const compiled = Handlebars.compile(template);
-      return compiled(context);
-    }
-
-    return `<html><body><pre>${JSON.stringify(context, null, 2)}</pre></body></html>`;
-  }
-
   // ============================================================================
   // CONVENIENCE METHODS
   // ============================================================================
@@ -746,12 +820,6 @@ export class EmailService implements OnModuleInit {
     templateName: string,
     context: Record<string, unknown>,
   ): Promise<string | null> {
-    const template = this.templates.get(templateName);
-
-    if (template) {
-      return template.html(context);
-    }
-
-    return this.renderInlineTemplate(templateName, context);
+    return this.render(templateName, context)?.html ?? null;
   }
 }

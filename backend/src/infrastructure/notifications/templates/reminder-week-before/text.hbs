@@ -1,5 +1,7 @@
-Hello {{name}},
+Hello{{#if name}} {{name}}{{/if}},
 
 Reminder: {{eventName}} is next week.
 Date: {{eventDate}}
 Location: {{eventLocation}}
+
+{{> text-footer}}

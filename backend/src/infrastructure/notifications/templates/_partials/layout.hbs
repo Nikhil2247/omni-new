@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>{{#if title}}{{title}}{{else}}{{brandName}}{{/if}}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Karla:wght@400;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+  <style>
+    /* Omnicassion e-mail theme - mirrors the hand-painted web theme (frontend/src/app/globals.css) */
+    body { margin: 0; padding: 0; width: 100% !important; background-color: #f7f6f1; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table { border-collapse: collapse; mso-table-lspace: 0; mso-table-rspace: 0; }
+    img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+    a { color: #2748c4; }
+    .body-bg { background-color: #f7f6f1; }
+    .font-body { font-family: 'Karla', 'Segoe UI', Helvetica, Arial, sans-serif; color: #1c2757; }
+    .font-hand { font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive; }
+    .preheader { display: none !important; visibility: hidden; opacity: 0; color: transparent; height: 0; width: 0; max-height: 0; max-width: 0; overflow: hidden; mso-hide: all; }
+
+    .wordmark { font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 700; color: #1c2757; text-decoration: none; letter-spacing: -0.01em; }
+    .tagline { font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive; font-size: 20px; font-weight: 700; color: #2748c4; line-height: 1; }
+
+    .card { background-color: #fffdf8; border: 2px solid #1c2757; border-radius: 22px 6px 22px 6px; box-shadow: 5px 5px 0 #a9bbf0; }
+
+    .content { padding: 32px 36px 36px; font-family: 'Karla', 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.65; color: #1c2757; }
+    .content p { margin: 0 0 16px 0; color: #1c2757; }
+    .content a { color: #2748c4; }
+    .content ul, .content ol { margin: 0 0 16px 0; padding-left: 22px; color: #4b5684; }
+    .content li { margin-bottom: 6px; }
+    .content h1, .content h2, .content h3 { font-family: 'Fraunces', Georgia, 'Times New Roman', serif; color: #1c2757; line-height: 1.2; }
+    .content h1 { font-size: 30px; margin: 0 0 16px 0; font-weight: 700; }
+    .content h2 { font-size: 22px; margin: 28px 0 12px 0; font-weight: 600; }
+    .content h3 { font-size: 18px; margin: 20px 0 8px 0; font-weight: 600; }
+
+    .eyebrow { margin: 0 0 12px 0; font-size: 12px; line-height: 1; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #4b5684; }
+    .brush { background-image: linear-gradient(transparent 58%, #a9bbf0 58%, #a9bbf0 94%, transparent 94%); padding: 0 3px; }
+    .muted { color: #4b5684 !important; }
+    .small { font-size: 14px; line-height: 1.55; }
+    .center { text-align: center; }
+    .divider { border: 0; border-top: 2px dashed #d9d9d0; margin: 28px 0; }
+
+    /* Button - brush button with hard ink shadow */
+    .btn-wrap { margin: 24px 0; }
+    .btn { display: inline-block; background-color: #2748c4; color: #ffffff !important; font-family: 'Karla', 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 700; line-height: 1; text-decoration: none; padding: 15px 28px; border: 2px solid #1c2757; border-radius: 16px 4px 16px 4px; box-shadow: 3px 3px 0 #1c2757; }
+    .btn-secondary { background-color: #fffdf8; color: #2748c4 !important; }
+    .btn-success { background-color: #2f6048; }
+    .btn-danger { background-color: #c0392b; }
+
+    /* Callouts */
+    .callout { margin: 22px 0; padding: 16px 18px; background-color: #e9eefc; border: 2px solid #1c2757; border-radius: 14px 4px 14px 4px; }
+    .callout p { margin: 0 0 8px 0; }
+    .callout p:last-child { margin-bottom: 0; }
+    .callout-success { background-color: #e6f0dc; }
+    .callout-warning { background-color: #fdf0d2; }
+    .callout-danger  { background-color: #fbe3e3; }
+    .callout-info    { background-color: #e9eefc; }
+
+    /* One-time codes */
+    .code-box { margin: 24px 0; padding: 22px; text-align: center; background-color: #e9eefc; border: 2px dashed #2748c4; border-radius: 14px 4px 14px 4px; }
+    .code { font-family: 'Fraunces', Georgia, serif; font-size: 36px; font-weight: 700; letter-spacing: 10px; color: #2748c4; }
+
+    /* Detail rows (tables render everywhere; .detail-row kept for the legacy subscription markup) */
+    .details { width: 100%; margin: 20px 0; background-color: #fffdf8; border: 2px solid #1c2757; border-radius: 14px 4px 14px 4px; border-collapse: separate; border-spacing: 0; }
+    .details td { padding: 12px 16px; border-bottom: 1px dashed #d9d9d0; font-size: 15px; vertical-align: top; }
+    .details tr:last-child td { border-bottom: 0; }
+    .dl { color: #4b5684; width: 40%; }
+    .dv { color: #1c2757; font-weight: 700; text-align: right; }
+    .highlight-box { margin: 22px 0; padding: 16px 18px; background-color: #e9eefc; border: 2px solid #1c2757; border-radius: 14px 4px 14px 4px; }
+    .highlight-box p { margin: 0 0 8px 0; }
+    .detail-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px dashed #b9bfd9; }
+    .detail-row:last-child { border-bottom: 0; }
+    .detail-label { color: #4b5684; }
+    .detail-value { color: #1c2757; font-weight: 700; text-align: right; }
+    .success-box { margin: 22px 0; padding: 14px 18px; background-color: #e6f0dc; border: 2px solid #1c2757; border-radius: 14px 4px 14px 4px; }
+    .success-box p { margin: 0; color: #2f6048; font-weight: 700; }
+    .warning-box { margin: 22px 0; padding: 14px 18px; background-color: #fbe3e3; border: 2px solid #1c2757; border-radius: 14px 4px 14px 4px; }
+    .warning-box p { margin: 0; color: #8f2d2d; }
+    .amount { font-family: 'Fraunces', Georgia, serif; font-size: 40px; font-weight: 700; color: #1c2757; }
+    .currency { font-size: 16px; color: #4b5684; }
+    .button { display: inline-block; background-color: #2748c4; color: #ffffff !important; font-weight: 700; text-decoration: none; padding: 14px 26px; margin: 8px 0; border: 2px solid #1c2757; border-radius: 16px 4px 16px 4px; box-shadow: 3px 3px 0 #1c2757; }
+    .button-secondary { background-color: #fffdf8; color: #2748c4 !important; }
+    /* Legacy markup wraps its body in another .content div - don't double the padding */
+    .content .content { padding: 0; }
+    /* Legacy hero block inside .content: rendered as the page heading */
+    .content .header { margin: 0 0 20px 0; padding: 0 0 14px 0; text-align: left; background: none; border-bottom: 2px dashed #d9d9d0; }
+    .content .header h1 { margin: 0; font-size: 28px; }
+
+    .footer { padding: 24px 12px 8px; font-family: 'Karla', 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.6; color: #4b5684; text-align: center; }
+    .footer a { color: #2748c4; font-weight: 700; text-decoration: none; }
+    .footer p { margin: 0 0 6px 0; }
+
+    @media only screen and (max-width: 620px) {
+      .outer { padding: 16px 10px !important; }
+      .content { padding: 24px 20px 28px !important; }
+      .content h1 { font-size: 26px !important; }
+      .code { font-size: 28px !important; letter-spacing: 6px !important; }
+      .btn { display: block !important; text-align: center; }
+    }
+
+    /* Dark theme - mirrors the .dark tokens from globals.css */
+    @media (prefers-color-scheme: dark) {
+      body, .body-bg { background-color: #10173a !important; }
+      .font-body, .content, .content p, .content h1, .content h2, .content h3, .wordmark { color: #eaedfb !important; }
+      .muted, .content ul, .content ol, .eyebrow, .footer, .dl, .detail-label, .currency { color: #a5aed6 !important; }
+      a, .content a, .tagline, .footer a { color: #7f9cf5 !important; }
+      .card { background-color: #18214c !important; border-color: #eaedfb !important; box-shadow: 5px 5px 0 #33489a !important; }
+      .btn, .button { background-color: #7f9cf5 !important; color: #0b1230 !important; border-color: #eaedfb !important; box-shadow: 3px 3px 0 #eaedfb !important; }
+      .btn-secondary, .button-secondary { background-color: #18214c !important; color: #7f9cf5 !important; }
+      .callout, .callout-info, .highlight-box, .code-box { background-color: #1f2b66 !important; border-color: #eaedfb !important; }
+      .callout-success, .success-box { background-color: #1f3f35 !important; border-color: #eaedfb !important; }
+      .callout-warning { background-color: #4a3a14 !important; border-color: #eaedfb !important; }
+      .callout-danger, .warning-box { background-color: #4a2330 !important; border-color: #eaedfb !important; }
+      .success-box p { color: #a8d3a0 !important; }
+      .warning-box p { color: #f3b8bf !important; }
+      .details { background-color: #18214c !important; border-color: #eaedfb !important; }
+      .details td, .detail-row { border-color: #33489a !important; }
+      .dv, .detail-value, .amount { color: #eaedfb !important; }
+      .code { color: #7f9cf5 !important; }
+      .divider, .content .header { border-color: #33489a !important; }
+      .brush { background-image: linear-gradient(transparent 58%, #33489a 58%, #33489a 94%, transparent 94%) !important; }
+    }
+  </style>
+</head>
+<body class="body-bg" style="margin:0;padding:0;background-color:#f7f6f1;">
+  {{#if preheader}}<div class="preheader" style="display:none;max-height:0;overflow:hidden;opacity:0;">{{preheader}}</div>{{/if}}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="body-bg" bgcolor="#f7f6f1">
+    <tr>
+      <td align="center" class="outer" style="padding:32px 16px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+          <!-- Brand header -->
+          <tr>
+            <td align="center" style="padding:0 0 22px 0;">
+              <a href="{{frontendUrl}}" class="wordmark" style="font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;color:#1c2757;text-decoration:none;">{{brandName}}</a>
+              <div class="tagline font-hand" style="padding-top:4px;">{{#if tagline}}{{tagline}}{{else}}plan it. share it. celebrate it.{{/if}}</div>
+            </td>
+          </tr>
+          <!-- Paper card -->
+          <tr>
+            <td>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="card" bgcolor="#fffdf8" style="background-color:#fffdf8;border:2px solid #1c2757;border-radius:22px 6px 22px 6px;">
+                <tr>
+                  <td>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="50%" bgcolor="#2748c4" style="height:6px;line-height:6px;font-size:0;background-color:#2748c4;border-radius:20px 0 0 0;">&nbsp;</td>
+                        <td width="30%" bgcolor="#6b9a62" style="height:6px;line-height:6px;font-size:0;background-color:#6b9a62;">&nbsp;</td>
+                        <td width="20%" bgcolor="#f2a516" style="height:6px;line-height:6px;font-size:0;background-color:#f2a516;border-radius:0 4px 0 0;">&nbsp;</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="content font-body">
+                    {{> @partial-block}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td class="footer font-body" align="center">
+              <p>Need a hand? <a href="{{supportUrl}}">Visit our help centre</a> or write to <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+              {{#if footerNote}}<p>{{footerNote}}</p>{{/if}}
+              {{#if unsubscribeUrl}}<p><a href="{{unsubscribeUrl}}">Unsubscribe</a> from these emails</p>{{/if}}
+              <p style="color:#8a90ae;">&copy; {{currentYear}} {{brandName}}. Made with care for every celebration.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
