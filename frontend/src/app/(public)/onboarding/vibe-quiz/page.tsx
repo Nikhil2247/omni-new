@@ -2,22 +2,27 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import NextImage from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { trackOnboarding } from '@/lib/analytics/umami'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Check, Sparkles, ArrowRight, Loader2 } from 'lucide-react'
+import { Check, Loader2 } from 'lucide-react'
 import { useVibeQuizImages, useSubmitVibeQuiz, useVibeQuizStatus } from '@/hooks/queries/use-onboarding'
 import { useAuthStore } from '@/store/auth-store'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Brush, BrushBar, Eyebrow, Ico, ICONS, Paper, SketchButton, SkContainer, Stamp } from '@/components/sketch'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import Link from 'next/link'
 
 const MIN_SELECTIONS = 5
 const MAX_SELECTIONS = 10
+
+interface QuizImage {
+  id: string
+  url: string
+  thumbnailUrl?: string
+  category?: string
+  style?: string
+}
 
 export default function VibeQuizPage() {
   const router = useRouter()
@@ -32,14 +37,21 @@ export default function VibeQuizPage() {
   const { data: quizStatus, isLoading: statusLoading } = useVibeQuizStatus()
   const submitQuiz = useSubmitVibeQuiz()
 
-  // Handle different API response formats (array or { data: array })
-  const images = Array.isArray(imagesData) ? imagesData : (imagesData as any)?.data ?? []
+  // The API can answer with an array or { data: array }
+  const images: QuizImage[] = Array.isArray(imagesData)
+    ? (imagesData as QuizImage[])
+    : ((imagesData as unknown as { data?: QuizImage[] })?.data ?? [])
+
+  const completed = Boolean(quizStatus?.completed)
+
+  // If the quiz is already done, go on to the dashboard
+  useEffect(() => {
+    if (completed) router.push('/dashboard')
+  }, [completed, router])
 
   const toggleSelection = useCallback((imageId: string) => {
-    setSelectedImages(prev => {
-      if (prev.includes(imageId)) {
-        return prev.filter(id => id !== imageId)
-      }
+    setSelectedImages((prev) => {
+      if (prev.includes(imageId)) return prev.filter((id) => id !== imageId)
       if (prev.length >= MAX_SELECTIONS) {
         toast.error(`You can select up to ${MAX_SELECTIONS} images`)
         return prev
@@ -53,10 +65,8 @@ export default function VibeQuizPage() {
       toast.error(`Please select at least ${MIN_SELECTIONS} images`)
       return
     }
-
     try {
       await submitQuiz.mutateAsync({ selectedImageIds: selectedImages })
-      // Update auth store to mark onboarding as complete
       setOnboardingComplete()
       toast.success('Your style preferences have been saved!')
       router.push('/dashboard')
@@ -65,186 +75,153 @@ export default function VibeQuizPage() {
     }
   }
 
-  // If quiz already completed, redirect
-  if (quizStatus?.completed) {
-    router.push('/dashboard')
-    return null
-  }
+  if (completed) return null
 
   if (imagesLoading || statusLoading) {
     return (
-      <div className="min-h-screen p-4 md:p-8">
-        <div className="mx-auto max-w-5xl space-y-8">
-          <div className="text-center space-y-4">
-            <Skeleton className="h-12 w-3/4 mx-auto" />
-            <Skeleton className="h-6 w-1/2 mx-auto" />
+      <SkContainer className="py-8 sm:py-12">
+        <div aria-busy="true" className="space-y-8">
+          <div className="space-y-3 text-center">
+            <Skeleton className="mx-auto h-5 w-32" />
+            <Skeleton className="mx-auto h-12 w-3/4 max-w-md" />
+            <Skeleton className="mx-auto h-5 w-1/2 max-w-sm" />
           </div>
-          <Skeleton className="h-16 w-full rounded-xl" />
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-20 w-full rounded-xl" />
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 12 }).map((_, i) => (
               <Skeleton key={i} className="aspect-square rounded-xl" />
             ))}
           </div>
         </div>
-      </div>
+      </SkContainer>
     )
   }
 
   if (imagesError || images.length === 0) {
     return (
-      <div className="min-h-screen p-4 flex items-center justify-center">
-        <Card className="max-w-md text-center">
-          <CardHeader>
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-pink-100 flex items-center justify-center">
-              <Sparkles className="h-6 w-6 text-pink-500" />
-            </div>
-            <CardTitle>Unable to Load Quiz</CardTitle>
-            <CardDescription>
-              We couldn't load the quiz images. Please try again or continue to your dashboard.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+      <SkContainer className="max-w-md py-12">
+        <Paper tape className="px-6 py-10 text-center">
+          <Ico d={ICONS.heart} className="mx-auto mb-3 h-12 w-12" />
+          <h1 className="font-display text-2xl font-semibold">Unable to load the quiz</h1>
+          <p className="text-ink-soft mt-2">We couldn&apos;t load the quiz images. Try again, or continue to your dashboard.</p>
+          <div className="mt-6 grid gap-3">
+            <SketchButton variant="line" onClick={() => window.location.reload()}>
               Try Again
-            </Button>
-            <Button asChild variant="ghost" className="w-full">
+            </SketchButton>
+            <SketchButton variant="ghost" asChild>
               <Link href="/dashboard">Continue to Dashboard</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+            </SketchButton>
+          </div>
+        </Paper>
+      </SkContainer>
     )
   }
 
-  const progress = (selectedImages.length / MIN_SELECTIONS) * 100
+  const count = selectedImages.length
+  const ready = count >= MIN_SELECTIONS
+  const progress = Math.min((count / MIN_SELECTIONS) * 100, 100)
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="mx-auto max-w-5xl space-y-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-4"
-        >
-          <div className="flex items-center justify-center gap-2">
-            <Sparkles className="h-8 w-8 text-pink-500" />
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-              Discover Your Vibe
-            </h1>
-          </div>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Select {MIN_SELECTIONS}-{MAX_SELECTIONS} images that resonate with your dream celebration.
-            This helps us personalize your experience.
-          </p>
-        </motion.div>
+    <SkContainer className="py-8 sm:py-12">
+      {/* Header */}
+      <div className="mx-auto mb-8 max-w-2xl text-center">
+        <Eyebrow>Step 1 · Your style</Eyebrow>
+        <h1 className="font-display mt-3 text-[clamp(2rem,6vw,3.2rem)] leading-[1.05] font-semibold tracking-tight text-balance">
+          Discover Your <Brush>Vibe</Brush>
+        </h1>
+        <p className="text-ink-soft mt-3 text-lg">
+          Pick {MIN_SELECTIONS} to {MAX_SELECTIONS} pictures that feel like your dream celebration. We use them to suggest vendors and ideas you&apos;ll love.
+        </p>
+      </div>
 
-        {/* Progress */}
-        <Card className="border-pink-100 shadow-lg shadow-pink-500/5">
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {selectedImages.length} of {MIN_SELECTIONS} minimum selected
-                </span>
-                <span className="font-medium text-pink-600">
-                  {selectedImages.length >= MIN_SELECTIONS ? 'Ready to continue!' : `${MIN_SELECTIONS - selectedImages.length} more to go`}
-                </span>
-              </div>
-              <Progress value={Math.min(progress, 100)} className="h-2" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Image Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <AnimatePresence>
-            {images.map((image: any, index: number) => {
-              const isSelected = selectedImages.includes(image.id)
-              return (
-                <motion.div
-                  key={image.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.03 }}
-                  onClick={() => toggleSelection(image.id)}
-                  className={cn(
-                    'relative aspect-square rounded-xl overflow-hidden cursor-pointer group',
-                    'ring-4 transition-all duration-200',
-                    isSelected
-                      ? 'ring-pink-500 scale-[0.98]'
-                      : 'ring-transparent hover:ring-pink-200'
-                  )}
-                >
-                  <NextImage
-                    src={image.thumbnailUrl || image.url}
-                    alt={`${image.category} - ${image.style}`}
-                    width={800}
-                    height={800}
-                    unoptimized={true}
-                    priority={true}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  />
-
-                  {/* Overlay */}
-                  <div className={cn(
-                    'absolute inset-0 transition-all duration-200',
-                    isSelected
-                      ? 'bg-pink-500/30'
-                      : 'bg-black/0 group-hover:bg-black/10'
-                  )} />
-
-                  {/* Selection indicator */}
-                  <AnimatePresence>
-                    {isSelected && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                        className="absolute top-2 right-2 bg-pink-500 rounded-full p-1.5 shadow-lg"
-                      >
-                        <Check className="h-4 w-4 text-white" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Style badge */}
-                  <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium">
-                    {image.style}
-                  </div>
-                </motion.div>
-              )
-            })}
-          </AnimatePresence>
+      {/* Progress */}
+      <Paper alt className="mx-auto mb-8 max-w-3xl px-5 py-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="text-ink-soft">
+            {count} of {MIN_SELECTIONS} minimum chosen
+          </span>
+          <Stamp tone={ready ? 'ok' : 'wait'}>{ready ? 'Ready to continue' : `${MIN_SELECTIONS - count} more to go`}</Stamp>
         </div>
+        <BrushBar value={progress} tone={ready ? 'green' : 'blue'} />
+      </Paper>
 
-        {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex justify-center pt-4"
-        >
-          <Button
-            size="lg"
-            onClick={handleSubmit}
-            disabled={selectedImages.length < MIN_SELECTIONS || submitQuiz.isPending}
-            className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg shadow-pink-500/25 px-8"
-          >
+      {/* Image grid */}
+      <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
+        {images.map((image, index) => {
+          const isSelected = selectedImages.includes(image.id)
+          return (
+            <button
+              key={image.id}
+              type="button"
+              onClick={() => toggleSelection(image.id)}
+              aria-pressed={isSelected}
+              aria-label={`${image.category ?? 'Style'} ${image.style ?? ''}`.trim()}
+              className={cn(
+                'sk-paper group relative block aspect-square overflow-hidden p-1.5 text-left transition-transform duration-200',
+                index % 2 ? 'sk-paper--alt rotate-[0.6deg]' : '-rotate-[0.6deg]',
+                isSelected ? 'scale-[0.97] !rotate-0' : 'hover:-translate-y-1',
+              )}
+            >
+              <span
+                className={cn(
+                  'border-ink relative block h-full w-full overflow-hidden rounded-[10px_14px_10px_16px] border-2',
+                  isSelected && 'outline-blue outline-4 -outline-offset-4',
+                )}
+              >
+                <NextImage
+                  src={image.thumbnailUrl || image.url}
+                  alt={`${image.category ?? ''} ${image.style ?? ''}`.trim() || 'Style inspiration'}
+                  width={800}
+                  height={800}
+                  unoptimized
+                  priority={index < 8}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+
+                {/* chosen tint */}
+                <span
+                  className={cn(
+                    'absolute inset-0 transition-opacity duration-200',
+                    isSelected ? 'bg-blue/25 opacity-100' : 'opacity-0',
+                  )}
+                />
+
+                {/* chosen mark */}
+                {isSelected ? (
+                  <span className="bg-blue text-on-blue border-ink absolute top-2 right-2 flex size-8 items-center justify-center rounded-full border-2">
+                    <Check className="size-4" />
+                  </span>
+                ) : null}
+
+                {image.style ? (
+                  <span className="sk-hand border-ink bg-card text-ink absolute bottom-2 left-2 rounded-[10px_14px_10px_12px] border-2 px-2.5 py-0.5 text-[1.05rem] leading-tight">
+                    {image.style}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Action */}
+      <div className="sticky bottom-4 z-10 mt-8 flex justify-center">
+        <Paper className="flex flex-wrap items-center justify-center gap-4 px-5 py-3">
+          <span className="text-ink-soft text-sm">
+            {count} chosen
+            {count >= MAX_SELECTIONS ? ' (maximum)' : ''}
+          </span>
+          <SketchButton onClick={handleSubmit} disabled={!ready || submitQuiz.isPending}>
             {submitQuiz.isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                <Loader2 className="size-4 animate-spin" /> Saving...
               </>
             ) : (
-              <>
-                Continue
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
+              'Continue →'
             )}
-          </Button>
-        </motion.div>
+          </SketchButton>
+        </Paper>
       </div>
-    </div>
+    </SkContainer>
   )
 }

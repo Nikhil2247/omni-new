@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useOnboardingStatus } from '@/hooks/queries/use-onboarding'
 import { trackOnboarding } from '@/lib/analytics/umami'
 import { Loader2 } from 'lucide-react'
+import { Paper, SkContainer } from '@/components/sketch'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -25,11 +26,11 @@ export default function OnboardingPage() {
   }, [status, isLoading, router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
-        <p className="text-sm text-muted-foreground">Loading...</p>
-      </div>
-    </div>
+    <SkContainer className="flex min-h-[60vh] items-center justify-center py-12">
+      <Paper alt className="flex flex-col items-center gap-4 px-10 py-8" role="status" aria-live="polite">
+        <Loader2 className="text-blue h-8 w-8 animate-spin" />
+        <p className="text-ink-soft text-sm">Loading...</p>
+      </Paper>
+    </SkContainer>
   )
 }

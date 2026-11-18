@@ -5,11 +5,9 @@ import { useParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { QRCodeSVG } from 'qrcode.react'
 import { useQuoteDetails, useApproveQuote, useRejectQuote } from '@/hooks/queries/use-public-quote-approval'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -18,15 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  CheckCircle2,
-  AlertTriangle,
-  Loader2,
-  XCircle,
-  Clock,
-  ThumbsUp,
-  ThumbsDown,
-} from 'lucide-react'
+import { CheckCircle2, Loader2, Clock, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Brush, Ico, ICONS, Paper, SketchButton, SkContainer, Stamp } from '@/components/sketch'
 
 export default function PublicQuoteApprovalPage() {
   const params = useParams()
@@ -74,111 +65,103 @@ export default function PublicQuoteApprovalPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <Skeleton className="h-32 w-full rounded-lg" />
-          <Skeleton className="h-64 w-full rounded-lg" />
-          <Skeleton className="h-48 w-full rounded-lg" />
+      <SkContainer className="py-8 sm:py-12">
+        <div aria-busy="true" className="mx-auto max-w-4xl space-y-6">
+          <Skeleton className="h-32 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-48 w-full rounded-xl" />
         </div>
-      </div>
+      </SkContainer>
     )
   }
 
   // Error state
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 border-4 border-black max-w-md w-full text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-            <AlertTriangle className="h-8 w-8 text-amber-600" />
-          </div>
-          <h2 className="text-xl font-bold">Invalid Link</h2>
-          <p className="mt-2 text-gray-600">
+      <SkContainer className="flex min-h-[60vh] items-center justify-center py-12">
+        <Paper tape className="w-full max-w-md px-6 py-10 text-center">
+          <Ico d={ICONS.shield} className="text-gold mx-auto mb-3 h-14 w-14" />
+          <h2 className="font-display text-2xl font-semibold">Invalid Link</h2>
+          <p className="text-ink-soft mt-2">
             This quote approval link is invalid or has expired. Please contact Omnicassion for assistance.
           </p>
-          <p className="mt-4 text-sm text-gray-500">
+          <p className="text-ink-soft mt-4 text-sm break-words">
             Email: omnicassion@gmail.com | Phone: +91-6284598500
           </p>
-        </div>
-      </div>
+        </Paper>
+      </SkContainer>
     )
   }
 
   // Success states
   if (actionCompleted === 'approved') {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 border-4 border-green-500 max-w-md w-full text-center">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="h-10 w-10 text-green-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-green-700">Quotation Approved!</h2>
-          <p className="mt-3 text-gray-600">
-            Thank you for approving the quotation for your <span className="font-semibold">{data.eventType}</span>.
+      <SkContainer className="flex min-h-[60vh] items-center justify-center py-12">
+        <Paper tape className="w-full max-w-md px-6 py-10 text-center">
+          <Ico d={ICONS.shield} className="text-leaf-deep mx-auto mb-3 h-16 w-16" />
+          <h2 className="font-display text-2xl font-semibold">
+            Quotation <Brush>Approved!</Brush>
+          </h2>
+          <p className="text-ink-soft mt-3">
+            Thank you for approving the quotation for your <span className="text-ink font-semibold">{data.eventType}</span>.
             Our team will proceed with the next steps and contact you shortly.
           </p>
-          <Badge className="mt-4 bg-green-100 text-green-700">
-            <CheckCircle2 className="mr-1 h-3 w-3" />
+          <Stamp tone="ok" className="mt-4">
+            <CheckCircle2 className="size-3" />
             Approved
-          </Badge>
-          <div className="mt-6 pt-4 border-t text-center">
-            <p className="text-lg font-bold">JUST SIT BACK AND ENJOY</p>
+          </Stamp>
+          <div className="border-line mt-6 border-t-2 border-dashed pt-4 text-center">
+            <p className="font-display text-lg font-semibold">JUST SIT BACK AND ENJOY</p>
           </div>
-        </div>
-      </div>
+        </Paper>
+      </SkContainer>
     )
   }
 
   if (actionCompleted === 'rejected') {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 border-4 border-black max-w-md w-full text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-            <Clock className="h-8 w-8 text-gray-600" />
-          </div>
-          <h2 className="text-2xl font-bold">Feedback Received</h2>
-          <p className="mt-3 text-gray-600">
+      <SkContainer className="flex min-h-[60vh] items-center justify-center py-12">
+        <Paper tape className="w-full max-w-md px-6 py-10 text-center">
+          <Ico d={ICONS.clock} className="text-blue mx-auto mb-3 h-14 w-14" />
+          <h2 className="font-display text-2xl font-semibold">Feedback Received</h2>
+          <p className="text-ink-soft mt-3">
             Thank you for your feedback. Our team will review your comments and contact you to discuss alternatives.
           </p>
-          <Badge className="mt-4 bg-gray-100 text-gray-700">
-            <Clock className="mr-1 h-3 w-3" />
+          <Stamp tone="wait" className="mt-4">
+            <Clock className="size-3" />
             Under Review
-          </Badge>
-        </div>
-      </div>
+          </Stamp>
+        </Paper>
+      </SkContainer>
     )
   }
 
   // Already processed states
   if (data.approvalStatus === 'APPROVED') {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 border-4 border-green-500 max-w-md w-full text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="h-8 w-8 text-green-600" />
-          </div>
-          <h2 className="text-xl font-bold">Already Approved</h2>
-          <p className="mt-2 text-gray-600">
+      <SkContainer className="flex min-h-[60vh] items-center justify-center py-12">
+        <Paper tape className="w-full max-w-md px-6 py-10 text-center">
+          <Ico d={ICONS.shield} className="text-leaf-deep mx-auto mb-3 h-14 w-14" />
+          <h2 className="font-display text-2xl font-semibold">Already Approved</h2>
+          <p className="text-ink-soft mt-2">
             This quotation has already been approved. Our team is working on your {data.eventType}.
           </p>
-        </div>
-      </div>
+        </Paper>
+      </SkContainer>
     )
   }
 
   if (data.approvalStatus === 'REJECTED') {
     return (
-      <div className="min-h-screen bg-gray-100 p-4 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-lg p-8 border-4 border-black max-w-md w-full text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-            <XCircle className="h-8 w-8 text-gray-600" />
-          </div>
-          <h2 className="text-xl font-bold">Quotation Rejected</h2>
-          <p className="mt-2 text-gray-600">
-            This quotation was previously declined. Please contact us if you'd like to discuss a revised quote.
+      <SkContainer className="flex min-h-[60vh] items-center justify-center py-12">
+        <Paper tape className="w-full max-w-md px-6 py-10 text-center">
+          <Ico d={ICONS.chat} className="text-rose mx-auto mb-3 h-14 w-14" />
+          <h2 className="font-display text-2xl font-semibold">Quotation Rejected</h2>
+          <p className="text-ink-soft mt-2">
+            This quotation was previously declined. Please contact us if you&apos;d like to discuss a revised quote.
           </p>
-        </div>
-      </div>
+        </Paper>
+      </SkContainer>
     )
   }
 
@@ -186,32 +169,30 @@ export default function PublicQuoteApprovalPage() {
   const quotationNumber = `OMNI-${data.id.slice(0, 8).toUpperCase()}`
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
-      <div
-        className="bg-white rounded-lg shadow-lg p-6 md:p-8 border-4 border-black max-w-4xl mx-auto"
-        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
-      >
+    <SkContainer className="py-8 sm:py-12">
+      <Paper className="mx-auto max-w-4xl px-4 py-6 sm:px-6 md:px-8">
         {/* Header */}
-        <div className="flex justify-between items-start mb-6 pb-4 border-b-2 border-black">
-          <div>
+        <div className="border-line mb-6 flex items-start justify-between gap-4 border-b-2 border-dashed pb-4">
+          <div className="min-w-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               alt="Omnicassion"
-              className="h-16 mb-2"
+              className="mb-2 h-16"
               src="/images/omnilogo.avif"
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
               }}
             />
             <p className="text-xs font-semibold">Event Management Platform</p>
-            <p className="text-xs text-gray-600">
+            <p className="text-ink-soft text-xs">
               All types of vendors and services related to your event are provided here
             </p>
           </div>
           <div className="text-right">
-            <div className="w-16 h-16 ml-auto mb-2">
+            <div className="border-ink ml-auto mb-2 h-[72px] w-[72px] shrink-0 rounded-lg border-2 bg-white p-1">
               <QRCodeSVG
                 value={`https://omnicassion.com/quote-approval/${token}`}
-                size={64}
+                size={60}
                 level="M"
               />
             </div>
@@ -219,72 +200,66 @@ export default function PublicQuoteApprovalPage() {
         </div>
 
         {/* Title and Number */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-3xl font-bold">QUOTATION</h1>
-            <p className="text-sm text-gray-600 mt-1">For Approval</p>
+            <h1 className="font-display text-[clamp(1.9rem,5vw,2.8rem)] leading-[1.05] font-semibold tracking-tight">
+              <Brush>QUOTATION</Brush>
+            </h1>
+            <p className="text-ink-soft mt-2 text-sm">For Approval</p>
           </div>
-          <div className="border-2 border-black px-4 py-2">
-            <span className="text-sm font-semibold">{quotationNumber}</span>
-          </div>
+          <Stamp tone="wait" className="max-w-full break-all">
+            {quotationNumber}
+          </Stamp>
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6 text-sm">
+        <div className="mb-6 grid grid-cols-1 gap-6 text-sm md:grid-cols-3 md:gap-8">
           <div>
-            <p className="font-semibold mb-1">Date Issued:</p>
+            <p className="sk-eyebrow mb-1">Date Issued:</p>
             <p className="mb-4">{formatDate(data.createdAt)}</p>
             {eventDate && (
               <>
-                <p className="font-semibold mb-1">Event Date:</p>
+                <p className="sk-eyebrow mb-1">Event Date:</p>
                 <p className="mb-4">{format(eventDate, 'MMMM d, yyyy')}</p>
               </>
             )}
-            <p className="font-semibold mb-1">Issued to:</p>
-            <p className="font-medium text-base">{data.clientName}</p>
+            <p className="sk-eyebrow mb-1">Issued to:</p>
+            <p className="text-base font-medium break-words">{data.clientName}</p>
           </div>
           <div>
-            <p className="font-semibold mb-1">Event Name:</p>
-            <p className="font-medium text-base">{data.eventType}</p>
+            <p className="sk-eyebrow mb-1">Event Name:</p>
+            <p className="text-base font-medium break-words">{data.eventType}</p>
           </div>
           <div className="text-left md:text-right">
-            <p className="font-semibold mb-1">Contact Info:</p>
-            <p className="text-xs">omnicassion@gmail.com</p>
+            <p className="sk-eyebrow mb-1">Contact Info:</p>
+            <p className="text-xs break-words">omnicassion@gmail.com</p>
             <p className="text-xs">+91-6284598500, +91 9988777462</p>
             <p className="text-xs">omnicassion.com</p>
           </div>
         </div>
 
         {/* Items Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full mb-6 border-collapse border border-gray-300">
+        <div className="border-ink mb-6 overflow-x-auto rounded-xl border-2">
+          <table className="w-full min-w-[420px] border-collapse">
             <thead>
-              <tr className="bg-black text-white">
-                <th className="text-left px-3 py-2 text-sm font-semibold border-r border-gray-400">
-                  SERVICE
-                </th>
-                <th className="text-center px-3 py-2 text-sm font-semibold border-r border-gray-400 w-20">
-                  QTY
-                </th>
-                <th className="text-right px-3 py-2 text-sm font-semibold w-32">
-                  AMOUNT
-                </th>
+              <tr className="bg-blue text-on-blue">
+                <th className="px-3 py-2 text-left text-sm font-semibold">SERVICE</th>
+                <th className="w-20 px-3 py-2 text-center text-sm font-semibold">QTY</th>
+                <th className="w-32 px-3 py-2 text-right text-sm font-semibold">AMOUNT</th>
               </tr>
             </thead>
             <tbody>
-              {data.items.map((item, index) => (
-                <tr key={item.id} className="border-b border-gray-300">
-                  <td className="px-3 py-3 border-r border-gray-300">
-                    <p className="font-medium text-sm">{item.category}</p>
-                    <p className="text-xs text-gray-600">{item.description}</p>
+              {data.items.map((item) => (
+                <tr key={item.id} className="border-line border-b-2 border-dashed">
+                  <td className="px-3 py-3">
+                    <p className="text-sm font-medium">{item.category}</p>
+                    <p className="text-ink-soft text-xs">{item.description}</p>
                     {item.notes && (
-                      <p className="text-xs text-gray-500 mt-1 italic">{item.notes}</p>
+                      <p className="text-ink-soft mt-1 text-xs italic">{item.notes}</p>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-center text-sm border-r border-gray-300">
-                    {item.quantity}
-                  </td>
-                  <td className="px-3 py-3 text-right text-sm font-medium">
+                  <td className="px-3 py-3 text-center text-sm">{item.quantity}</td>
+                  <td className="px-3 py-3 text-right text-sm font-medium whitespace-nowrap">
                     {formatCurrency(item.estimatedBudget)}
                   </td>
                 </tr>
@@ -293,19 +268,19 @@ export default function PublicQuoteApprovalPage() {
               {/* Empty rows for visual consistency (minimum 3 items) */}
               {data.items.length < 3 &&
                 Array.from({ length: 3 - data.items.length }).map((_, i) => (
-                  <tr key={`empty-${i}`} className="border-b border-gray-300">
-                    <td className="px-3 py-3 text-xs border-r border-gray-300">&nbsp;</td>
-                    <td className="px-3 py-3 text-center text-sm border-r border-gray-300">&nbsp;</td>
+                  <tr key={`empty-${i}`} className="border-line border-b-2 border-dashed">
+                    <td className="px-3 py-3 text-xs">&nbsp;</td>
+                    <td className="px-3 py-3 text-center text-sm">&nbsp;</td>
                     <td className="px-3 py-3 text-right text-sm">&nbsp;</td>
                   </tr>
                 ))}
 
               {/* Grand Total */}
-              <tr className="bg-black text-white border-b border-gray-300">
-                <td colSpan={2} className="px-3 py-3 text-right font-bold border-r border-gray-400">
+              <tr className="bg-blue-wash">
+                <td colSpan={2} className="px-3 py-3 text-right font-bold">
                   GRAND TOTAL
                 </td>
-                <td className="px-3 py-3 text-right font-bold">
+                <td className="font-display px-3 py-3 text-right font-bold whitespace-nowrap">
                   {formatCurrency(data.totalAmount)}
                 </td>
               </tr>
@@ -315,67 +290,57 @@ export default function PublicQuoteApprovalPage() {
 
         {/* Notes Section */}
         {data.notes && (
-          <div className="mb-6 p-4 bg-gray-50 rounded border border-gray-200">
-            <p className="font-bold text-sm mb-1">Notes:</p>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{data.notes}</p>
-          </div>
+          <Paper alt className="mb-6 p-4">
+            <p className="mb-1 text-sm font-bold">Notes:</p>
+            <p className="text-ink-soft text-sm whitespace-pre-wrap">{data.notes}</p>
+          </Paper>
         )}
 
-        {/* Bank Details */}
-        {/* <div className="mb-6 p-5 bg-gray-50 rounded">
-          <p className="font-bold text-sm mb-3">Company Bank Detail:</p>
-          <p className="text-sm mb-2">Bank Name: HDFC BANK</p>
-          <p className="text-sm mb-2">Account No: 50100570331614</p>
-          <p className="text-sm">Account Name: ADITYA</p>
-        </div> */}
-
         {/* Approval Section */}
-        <div className="mb-6 p-5 bg-blue-50 rounded border-2 border-blue-200">
-          <h3 className="font-bold text-lg mb-2">Your Decision</h3>
-          <p className="text-sm text-gray-600 mb-4">
+        <Paper alt className="bg-blue-wash mb-6 p-5">
+          <h3 className="font-display mb-2 text-lg font-semibold">Your Decision</h3>
+          <p className="text-ink-soft mb-4 text-sm">
             Please review the quotation above and let us know if you approve or have any concerns.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button
-              size="lg"
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <SketchButton
+              className="flex-1"
               onClick={handleApprove}
               disabled={approveQuote.isPending}
             >
               {approveQuote.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="size-5 animate-spin" />
                   Approving...
                 </>
               ) : (
                 <>
-                  <ThumbsUp className="mr-2 h-5 w-5" />
+                  <ThumbsUp className="size-5" />
                   Approve Quotation
                 </>
               )}
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="flex-1 border-2 border-red-400 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold"
+            </SketchButton>
+            <SketchButton
+              variant="line"
+              className="text-rose flex-1"
               onClick={() => setShowRejectDialog(true)}
               disabled={rejectQuote.isPending}
             >
-              <ThumbsDown className="mr-2 h-5 w-5" />
+              <ThumbsDown className="size-5" />
               Request Changes
-            </Button>
+            </SketchButton>
           </div>
-        </div>
+        </Paper>
 
         {/* Footer */}
-        <div className="border-t-2 border-black pt-4 text-center">
-          <p className="text-xs mb-1">
+        <div className="border-line border-t-2 border-dashed pt-4 text-center">
+          <p className="mb-1 text-xs">
             Visit our website <span className="font-semibold">www.omnicassion.com</span> to get
             access to our services.
           </p>
-          <p className="text-lg font-bold">JUST SIT BACK AND ENJOY</p>
+          <p className="font-display text-lg font-semibold">JUST SIT BACK AND ENJOY</p>
         </div>
-      </div>
+      </Paper>
 
       {/* Reject Dialog */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
@@ -383,7 +348,7 @@ export default function PublicQuoteApprovalPage() {
           <DialogHeader>
             <DialogTitle>Request Changes</DialogTitle>
             <DialogDescription>
-              Please let us know what changes you'd like to see in the quotation.
+              Please let us know what changes you&apos;d like to see in the quotation.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -399,26 +364,22 @@ export default function PublicQuoteApprovalPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+            <SketchButton variant="line" onClick={() => setShowRejectDialog(false)}>
               Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={rejectQuote.isPending}
-            >
+            </SketchButton>
+            <SketchButton onClick={handleReject} disabled={rejectQuote.isPending}>
               {rejectQuote.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="size-4 animate-spin" />
                   Submitting...
                 </>
               ) : (
                 'Submit Feedback'
               )}
-            </Button>
+            </SketchButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </SkContainer>
   )
 }

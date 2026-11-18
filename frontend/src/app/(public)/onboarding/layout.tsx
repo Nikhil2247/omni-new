@@ -9,9 +9,7 @@ export default function OnboardingLayout({
 }) {
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-purple-50">
-        {children}
-      </div>
+      <div className="min-h-screen">{children}</div>
     </AuthGuard>
   )
 }

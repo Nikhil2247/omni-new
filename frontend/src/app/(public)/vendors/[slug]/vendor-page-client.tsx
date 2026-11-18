@@ -289,58 +289,45 @@ const badgeIconMap: Record<string, LucideIcon> = {
   'search': Search,
 }
 
-// Badge color mapping (bg and text classes)
+// Badge colour mapping (theme tokens only; keys stay as the backend colour names)
+const badgeTone = {
+  cool: { bg: 'bg-blue-wash', text: 'text-blue', ring: 'ring-line' },
+  leaf: { bg: 'bg-leaf-light/40', text: 'text-leaf-deep', ring: 'ring-line' },
+  warm: { bg: 'bg-gold/15', text: 'text-gold', ring: 'ring-line' },
+  rose: { bg: 'bg-rose/10', text: 'text-rose', ring: 'ring-line' },
+  neutral: { bg: 'bg-paper', text: 'text-ink-soft', ring: 'ring-line' },
+}
 const badgeColorMap: Record<string, { bg: string; text: string; ring: string }> = {
-  slate: { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-300', ring: 'ring-slate-200 dark:ring-slate-700' },
-  zinc: { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-600 dark:text-zinc-300', ring: 'ring-zinc-200 dark:ring-zinc-700' },
-  emerald: { bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-600 dark:text-emerald-400', ring: 'ring-emerald-200 dark:ring-emerald-800' },
-  teal: { bg: 'bg-teal-100 dark:bg-teal-900/40', text: 'text-teal-600 dark:text-teal-400', ring: 'ring-teal-200 dark:ring-teal-800' },
-  cyan: { bg: 'bg-cyan-100 dark:bg-cyan-900/40', text: 'text-cyan-600 dark:text-cyan-400', ring: 'ring-cyan-200 dark:ring-cyan-800' },
-  sky: { bg: 'bg-sky-100 dark:bg-sky-900/40', text: 'text-sky-600 dark:text-sky-400', ring: 'ring-sky-200 dark:ring-sky-800' },
-  blue: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-600 dark:text-blue-400', ring: 'ring-blue-200 dark:ring-blue-800' },
-  indigo: { bg: 'bg-indigo-100 dark:bg-indigo-900/40', text: 'text-indigo-600 dark:text-indigo-400', ring: 'ring-indigo-200 dark:ring-indigo-800' },
-  violet: { bg: 'bg-violet-100 dark:bg-violet-900/40', text: 'text-violet-600 dark:text-violet-400', ring: 'ring-violet-200 dark:ring-violet-800' },
-  purple: { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-600 dark:text-purple-400', ring: 'ring-purple-200 dark:ring-purple-800' },
-  fuchsia: { bg: 'bg-fuchsia-100 dark:bg-fuchsia-900/40', text: 'text-fuchsia-600 dark:text-fuchsia-400', ring: 'ring-fuchsia-200 dark:ring-fuchsia-800' },
-  pink: { bg: 'bg-pink-100 dark:bg-pink-900/40', text: 'text-pink-600 dark:text-pink-400', ring: 'ring-pink-200 dark:ring-pink-800' },
-  rose: { bg: 'bg-rose-100 dark:bg-rose-900/40', text: 'text-rose-600 dark:text-rose-400', ring: 'ring-rose-200 dark:ring-rose-800' },
-  orange: { bg: 'bg-orange-100 dark:bg-orange-900/40', text: 'text-orange-600 dark:text-orange-400', ring: 'ring-orange-200 dark:ring-orange-800' },
-  amber: { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-600 dark:text-amber-400', ring: 'ring-amber-200 dark:ring-amber-800' },
-  yellow: { bg: 'bg-yellow-100 dark:bg-yellow-900/40', text: 'text-yellow-600 dark:text-yellow-400', ring: 'ring-yellow-200 dark:ring-yellow-800' },
+  slate: badgeTone.neutral,
+  zinc: badgeTone.neutral,
+  emerald: badgeTone.leaf,
+  teal: badgeTone.leaf,
+  cyan: badgeTone.cool,
+  sky: badgeTone.cool,
+  blue: badgeTone.cool,
+  indigo: badgeTone.cool,
+  violet: badgeTone.cool,
+  purple: badgeTone.cool,
+  fuchsia: badgeTone.rose,
+  pink: badgeTone.rose,
+  rose: badgeTone.rose,
+  orange: badgeTone.warm,
+  amber: badgeTone.warm,
+  yellow: badgeTone.warm,
 }
 
 const getEventStatusTone = (status?: string) => {
   switch (status) {
     case 'BOOKED':
-      return {
-        dot: 'bg-emerald-500',
-        badge: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-        card: 'border-emerald-100/70 dark:border-emerald-900/40',
-      }
+      return { dot: 'bg-leaf-deep', badge: 'border-leaf-deep bg-leaf-light/40 text-leaf-deep', card: 'border-line' }
     case 'CONFIRMED':
-      return {
-        dot: 'bg-sky-500',
-        badge: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-900/30 dark:text-sky-300',
-        card: 'border-sky-100/70 dark:border-sky-900/40',
-      }
+      return { dot: 'bg-blue', badge: 'border-blue bg-blue-wash text-blue', card: 'border-line' }
     case 'CONTACTED':
-      return {
-        dot: 'bg-violet-500',
-        badge: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
-        card: 'border-violet-100/70 dark:border-violet-900/40',
-      }
+      return { dot: 'bg-sky1', badge: 'border-line bg-sky1/30 text-ink', card: 'border-line' }
     case 'CANCELLED':
-      return {
-        dot: 'bg-rose-500',
-        badge: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
-        card: 'border-rose-100/70 dark:border-rose-900/40',
-      }
+      return { dot: 'bg-rose', badge: 'border-rose bg-rose/10 text-rose', card: 'border-line' }
     default:
-      return {
-        dot: 'bg-amber-500',
-        badge: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-        card: 'border-amber-100/70 dark:border-amber-900/40',
-      }
+      return { dot: 'bg-gold', badge: 'border-gold bg-gold/15 text-gold', card: 'border-line' }
   }
 }
 
@@ -917,7 +904,7 @@ export default function VendorPageClient({
                                       {/* Hover overlay */}
                                       <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/30">
                                         <div className="opacity-0 transition-opacity group-hover:opacity-100">
-                                          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                                          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-card/90 shadow-lg">
                                             <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
                                           </div>
                                         </div>
@@ -986,7 +973,7 @@ export default function VendorPageClient({
                                 />
                                 {media.type === 'VIDEO' && (
                                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-card/90">
                                       <Play className="h-3.5 w-3.5 text-foreground" />
                                     </div>
                                   </div>
@@ -1560,7 +1547,7 @@ export default function VendorPageClient({
                               className={cn(
                                 'h-3 w-3',
                                 star <= review.rating
-                                  ? 'fill-amber-400 text-amber-400'
+                                  ? 'fill-gold text-gold'
                                   : 'text-muted-foreground/30'
                               )}
                             />
@@ -1613,7 +1600,7 @@ export default function VendorPageClient({
 
       {/* Full Gallery Panel */}
       <Dialog open={galleryPanelOpen} onOpenChange={setGalleryPanelOpen}>
-        <DialogContent className="h-[95vh] max-h-[95vh] w-[95vw] max-w-[95vw] flex flex-col p-0 gap-0 sm:rounded-2xl">
+        <DialogContent className="h-[95vh] max-h-[95vh] w-[95vw] max-w-[95vw] flex flex-col p-0 gap-0 sm:rounded-[18px]">
           {/* Header */}
           <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6 sm:py-4">
             <div>
@@ -1655,7 +1642,7 @@ export default function VendorPageClient({
                   />
                   {media.type === 'VIDEO' && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-lg sm:h-8 sm:w-8">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-card/90 shadow-lg sm:h-8 sm:w-8">
                         <Play className="h-3 w-3 text-foreground sm:h-3.5 sm:w-3.5" />
                       </div>
                     </div>
@@ -1682,7 +1669,7 @@ export default function VendorPageClient({
 
       {/* Album Detail Dialog */}
       <Dialog open={!!selectedAlbum} onOpenChange={(open) => !open && setSelectedAlbum(null)}>
-        <DialogContent className="h-[90vh] max-h-[90vh] w-[90vw] max-w-[900px] flex flex-col p-0 gap-0 sm:rounded-2xl">
+        <DialogContent className="h-[90vh] max-h-[90vh] w-[90vw] max-w-[900px] flex flex-col p-0 gap-0 sm:rounded-[18px]">
           {/* Header */}
           <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6 sm:py-4">
             <div className="min-w-0 flex-1">
@@ -1731,7 +1718,7 @@ export default function VendorPageClient({
                     />
                     {media.type === 'VIDEO' && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-lg sm:h-8 sm:w-8">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-card/90 shadow-lg sm:h-8 sm:w-8">
                           <Play className="h-3 w-3 text-foreground sm:h-3.5 sm:w-3.5" />
                         </div>
                       </div>

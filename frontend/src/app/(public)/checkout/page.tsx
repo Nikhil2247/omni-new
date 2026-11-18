@@ -1,10 +1,8 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
+import { Chip, Ico, ICONS, Paper, SketchButton, SkContainer, Stamp } from '@/components/sketch';
 import {
   ArrowLeft,
   Check,
@@ -168,14 +166,12 @@ export default function UnifiedCheckoutPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
-            <Skeleton className="h-[500px] rounded-2xl" />
-            <Skeleton className="h-[400px] rounded-2xl" />
-          </div>
+      <SkContainer className="py-8">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-16" aria-busy="true">
+          <Skeleton className="h-[500px] rounded-[18px]" />
+          <Skeleton className="h-[400px] rounded-[18px]" />
         </div>
-      </div>
+      </SkContainer>
     );
   }
 
@@ -184,30 +180,22 @@ export default function UnifiedCheckoutPage() {
 
   if (!hasValidItem) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
-        <Card className="max-w-md mx-4 border-0 shadow-xl">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-              {isEventCreditPurchase ? (
-                <Coins className="h-8 w-8 text-muted-foreground" />
-              ) : (
-                <CreditCard className="h-8 w-8 text-muted-foreground" />
-              )}
-            </div>
-            <h2 className="text-xl font-semibold mb-2">
-              {isEventCreditPurchase ? 'Product not found' : 'Plan not found'}
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              {isEventCreditPurchase
-                ? 'The event credit package you\'re looking for doesn\'t exist or is no longer available.'
-                : 'The subscription plan you\'re looking for doesn\'t exist or is no longer available.'}
-            </p>
-            <Link href="/pricing">
-              <Button className="w-full">View Available Plans</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+      <SkContainer className="max-w-md py-12">
+        <Paper className="px-6 py-10 text-center">
+          <Ico d={isEventCreditPurchase ? ICONS.wallet : ICONS.card} className="mx-auto mb-3 h-12 w-12" />
+          <h2 className="font-display text-2xl font-semibold">
+            {isEventCreditPurchase ? 'Product not found' : 'Plan not found'}
+          </h2>
+          <p className="text-ink-soft mt-2 mb-6">
+            {isEventCreditPurchase
+              ? 'The event credit package you\'re looking for doesn\'t exist or is no longer available.'
+              : 'The subscription plan you\'re looking for doesn\'t exist or is no longer available.'}
+          </p>
+          <SketchButton asChild className="w-full">
+            <Link href="/pricing">View Available Plans</Link>
+          </SketchButton>
+        </Paper>
+      </SkContainer>
     );
   }
 
@@ -226,337 +214,288 @@ export default function UnifiedCheckoutPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
+    <SkContainer className="py-6 sm:py-8">
       {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link
-              href="/pricing"
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to pricing
-            </Link>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Lock className="h-4 w-4" />
-              <span>Secure checkout</span>
-            </div>
-          </div>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <SketchButton variant="ghost" size="sm" asChild>
+          <Link href="/pricing">
+            <ArrowLeft className="h-4 w-4" />
+            Back to pricing
+          </Link>
+        </SketchButton>
+        <div className="text-ink-soft flex items-center gap-2 text-sm font-bold">
+          <Lock className="h-4 w-4" />
+          <span>Secure checkout</span>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+      <main>
+        <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-16">
           {/* Left Column - Plan Details */}
           <div className="order-2 lg:order-1">
-            <div className="sticky top-24">
+            <div className="lg:sticky lg:top-24">
               {/* Plan/Product Card */}
-              <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                <CardContent className="p-8 relative">
-                  {/* Badge */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center",
-                      isEventCreditPurchase
-                        ? selectedProduct!.tier === 'BASIC'
-                          ? 'bg-blue-100 dark:bg-blue-900'
-                          : 'bg-purple-100 dark:bg-purple-900'
-                        : 'bg-primary/10'
-                    )}>
-                      {isEventCreditPurchase ? (
-                        <Coins className={cn(
-                          "h-6 w-6",
-                          selectedProduct!.tier === 'BASIC'
-                            ? 'text-blue-600 dark:text-blue-400'
-                            : 'text-purple-600 dark:text-purple-400'
-                        )} />
-                      ) : (
-                        <Sparkles className="h-6 w-6 text-primary" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h1 className="text-2xl font-bold">{displayName}</h1>
-                        {!isEventCreditPurchase && selectedPlan?.isPopular && (
-                          <Badge variant="default" className="bg-primary">Popular</Badge>
-                        )}
-                        {isEventCreditPurchase && selectedProduct!.tier === 'PREMIUM' && (
-                          <Badge variant="default" className="bg-purple-500">Premium</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {isEventCreditPurchase
-                          ? `${getTierLabel(selectedProduct!.tier)} Tier - ${getBundleLabel(selectedProduct!.bundleType)}`
-                          : (isVendor ? 'Business' : 'Personal') + ' Subscription'}
-                      </p>
-                    </div>
+              <Paper tape className="px-5 py-6 sm:px-8 sm:py-8">
+                {/* Badge */}
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="bg-blue-wash border-ink flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2">
+                    {isEventCreditPurchase ? (
+                      <Coins className="text-blue h-6 w-6" />
+                    ) : (
+                      <Sparkles className="text-blue h-6 w-6" />
+                    )}
                   </div>
-
-                  {/* Price Display */}
-                  <div className="bg-muted/50 rounded-2xl p-6 mb-6">
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-4xl lg:text-5xl font-bold tracking-tight">
-                        {formatCurrency(displayAmount)}
-                      </span>
-                      {!isEventCreditPurchase && (
-                        <span className="text-lg text-muted-foreground">
-                          /{getBillingLabel(billingCycle)}
-                        </span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="font-display text-2xl font-semibold tracking-tight">{displayName}</h1>
+                      {!isEventCreditPurchase && selectedPlan?.isPopular && (
+                        <Stamp>Popular</Stamp>
+                      )}
+                      {isEventCreditPurchase && selectedProduct!.tier === 'PREMIUM' && (
+                        <Stamp tone="wait">Premium</Stamp>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {isEventCreditPurchase ? (
-                        <>
-                          <Badge variant="outline" className="font-medium">
-                            One-time purchase
-                          </Badge>
-                          {productSavingsText && (
-                            <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
-                              {productSavingsText}
-                            </Badge>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <Badge variant="outline" className="font-medium">
-                            {getBillingPeriodLabel(billingCycle)}
-                          </Badge>
-                          {savingsText && (
-                            <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20">
-                              {savingsText}
-                            </Badge>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Features List */}
-                  <div className="space-y-3">
-                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
-                      {isEventCreditPurchase ? 'Features per event' : "What's included"}
-                    </h3>
-                    <ul className="space-y-3">
-                      {isEventCreditPurchase ? (
-                        (displayFeatures as string[]).map((feature, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className={cn(
-                              "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                              selectedProduct!.tier === 'BASIC' ? 'bg-blue-100 dark:bg-blue-900' : 'bg-purple-100 dark:bg-purple-900'
-                            )}>
-                              <Check className={cn(
-                                "h-3 w-3",
-                                selectedProduct!.tier === 'BASIC' ? 'text-blue-600' : 'text-purple-600'
-                              )} />
-                            </div>
-                            <span className="text-sm">{feature}</span>
-                          </li>
-                        ))
-                      ) : (
-                        (displayFeatures as any[]).map((feature, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <Check className="h-3 w-3 text-primary" />
-                            </div>
-                            <span className="text-sm">
-                              {feature.name}
-                              {feature.displayValue && feature.displayValue !== 'Yes' && feature.displayValue !== '-' && (
-                                <span className="text-muted-foreground ml-1">({feature.displayValue})</span>
-                              )}
-                            </span>
-                          </li>
-                        ))
-                      )}
-                    </ul>
-                  </div>
-
-                  {/* Description / Credits Info */}
-                  {isEventCreditPurchase ? (
-                    <div className="mt-6 pt-6 border-t">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Gift className="h-4 w-4 text-emerald-600" />
-                        <span className="text-muted-foreground">
-                          Credits never expire - use them whenever you're ready!
-                        </span>
-                      </div>
-                    </div>
-                  ) : selectedPlan?.description ? (
-                    <p className="text-sm text-muted-foreground mt-6 pt-6 border-t">
-                      {selectedPlan.description}
+                    <p className="text-ink-soft text-sm">
+                      {isEventCreditPurchase
+                        ? `${getTierLabel(selectedProduct!.tier)} Tier - ${getBundleLabel(selectedProduct!.bundleType)}`
+                        : (isVendor ? 'Business' : 'Personal') + ' Subscription'}
                     </p>
-                  ) : null}
-                </CardContent>
-              </Card>
+                  </div>
+                </div>
+
+                {/* Price Display */}
+                <Paper alt className="mb-6 px-5 py-5">
+                  <div className="mb-2 flex items-baseline gap-2">
+                    <span className="font-display text-4xl font-semibold tracking-tight lg:text-5xl">
+                      {formatCurrency(displayAmount)}
+                    </span>
+                    {!isEventCreditPurchase && (
+                      <span className="text-ink-soft text-lg">
+                        /{getBillingLabel(billingCycle)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isEventCreditPurchase ? (
+                      <>
+                        <Chip>One-time purchase</Chip>
+                        {productSavingsText && <Stamp>{productSavingsText}</Stamp>}
+                      </>
+                    ) : (
+                      <>
+                        <Chip>{getBillingPeriodLabel(billingCycle)}</Chip>
+                        {savingsText && <Stamp>{savingsText}</Stamp>}
+                      </>
+                    )}
+                  </div>
+                </Paper>
+
+                {/* Features List */}
+                <div className="space-y-3">
+                  <h3 className="sk-eyebrow">
+                    {isEventCreditPurchase ? 'Features per event' : "What's included"}
+                  </h3>
+                  <ul className="space-y-3">
+                    {isEventCreditPurchase ? (
+                      (displayFeatures as string[]).map((feature, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <div className="bg-blue-wash mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full">
+                            <Check className="text-blue h-3 w-3" />
+                          </div>
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))
+                    ) : (
+                      (displayFeatures as any[]).map((feature, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <div className="bg-blue-wash mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full">
+                            <Check className="text-blue h-3 w-3" />
+                          </div>
+                          <span className="text-sm">
+                            {feature.name}
+                            {feature.displayValue && feature.displayValue !== 'Yes' && feature.displayValue !== '-' && (
+                              <span className="text-ink-soft ml-1">({feature.displayValue})</span>
+                            )}
+                          </span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+
+                {/* Description / Credits Info */}
+                {isEventCreditPurchase ? (
+                  <div className="border-line mt-6 border-t-2 border-dashed pt-6">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Gift className="text-leaf-deep h-4 w-4" />
+                      <span className="text-ink-soft">
+                        Credits never expire - use them whenever you&apos;re ready!
+                      </span>
+                    </div>
+                  </div>
+                ) : selectedPlan?.description ? (
+                  <p className="text-ink-soft border-line mt-6 border-t-2 border-dashed pt-6 text-sm">
+                    {selectedPlan.description}
+                  </p>
+                ) : null}
+              </Paper>
 
               {/* Trust Badges */}
-              <div className="mt-6 grid grid-cols-3 gap-4">
-                <div className="flex flex-col items-center text-center p-4 rounded-xl bg-card border">
-                  <Shield className="h-6 w-6 text-primary mb-2" />
-                  <span className="text-xs font-medium">Secure Payment</span>
-                </div>
-                <div className="flex flex-col items-center text-center p-4 rounded-xl bg-card border">
-                  <Zap className="h-6 w-6 text-primary mb-2" />
-                  <span className="text-xs font-medium">Instant Access</span>
-                </div>
-                <div className="flex flex-col items-center text-center p-4 rounded-xl bg-card border">
+              <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-4">
+                <Paper alt className="flex flex-col items-center p-3 text-center sm:p-4">
+                  <Shield className="text-blue mb-2 h-6 w-6" />
+                  <span className="text-xs font-bold">Secure Payment</span>
+                </Paper>
+                <Paper alt className="flex flex-col items-center p-3 text-center sm:p-4">
+                  <Zap className="text-blue mb-2 h-6 w-6" />
+                  <span className="text-xs font-bold">Instant Access</span>
+                </Paper>
+                <Paper alt className="flex flex-col items-center p-3 text-center sm:p-4">
                   {isEventCreditPurchase ? (
-                    <Gift className="h-6 w-6 text-primary mb-2" />
+                    <Gift className="text-blue mb-2 h-6 w-6" />
                   ) : (
-                    <CreditCard className="h-6 w-6 text-primary mb-2" />
+                    <CreditCard className="text-blue mb-2 h-6 w-6" />
                   )}
-                  <span className="text-xs font-medium">
+                  <span className="text-xs font-bold">
                     {isEventCreditPurchase ? 'Never Expires' : 'Cancel Anytime'}
                   </span>
-                </div>
+                </Paper>
               </div>
             </div>
           </div>
 
           {/* Right Column - Payment Form */}
           <div className="order-1 lg:order-2">
-            <Card className="border-0 shadow-xl">
-              <CardContent className="p-8">
-                <h2 className="text-xl font-semibold mb-6">Complete your purchase</h2>
+            <Paper className="px-5 py-6 sm:px-8 sm:py-8">
+              <h2 className="font-display mb-6 text-xl font-semibold">Complete your purchase</h2>
 
-                {/* Account Info */}
-                {user && (
-                  <div className="bg-muted/50 rounded-xl p-4 mb-6">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                      {isVendor ? 'Business Account' : 'Account'}
+              {/* Account Info */}
+              {user && (
+                <Paper alt className="mb-6 px-4 py-4">
+                  <p className="sk-eyebrow mb-1">
+                    {isVendor ? 'Business Account' : 'Account'}
+                  </p>
+                  <p className="font-bold">{user.name || 'User'}</p>
+                  <p className="text-ink-soft text-sm">{user.email}</p>
+                </Paper>
+              )}
+
+              {/* Order Summary */}
+              <div className="mb-6 space-y-4">
+                <h3 className="font-display font-semibold">Order Summary</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-soft">
+                      {isEventCreditPurchase
+                        ? `${displayName} (${getBundleLabel(selectedProduct!.bundleType)})`
+                        : `${selectedPlan!.name} (${getBillingPeriodLabel(billingCycle)})`}
+                    </span>
+                    <span className="font-bold">{formatCurrency(displayAmount)}</span>
+                  </div>
+                  {(isEventCreditPurchase ? productSavingsText : savingsText) && (
+                    <div className="text-leaf-deep flex justify-between font-bold">
+                      <span>Discount</span>
+                      <span>{isEventCreditPurchase ? productSavingsText : savingsText}</span>
+                    </div>
+                  )}
+                  <div className="border-line mt-3 border-t-2 border-dashed pt-3">
+                    <div className="flex justify-between text-base font-bold">
+                      <span>Total</span>
+                      <span>{formatCurrency(displayAmount)}</span>
+                    </div>
+                    <p className="text-ink-soft mt-1 text-xs">
+                      {isEventCreditPurchase
+                        ? 'One-time payment'
+                        : `Billed ${getBillingPeriodLabel(billingCycle).toLowerCase()}`}
                     </p>
-                    <p className="font-medium">{user.name || 'User'}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                  </div>
-                )}
-
-                {/* Order Summary */}
-                <div className="space-y-4 mb-6">
-                  <h3 className="font-medium">Order Summary</h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {isEventCreditPurchase
-                          ? `${displayName} (${getBundleLabel(selectedProduct!.bundleType)})`
-                          : `${selectedPlan!.name} (${getBillingPeriodLabel(billingCycle)})`}
-                      </span>
-                      <span className="font-medium">{formatCurrency(displayAmount)}</span>
-                    </div>
-                    {(isEventCreditPurchase ? productSavingsText : savingsText) && (
-                      <div className="flex justify-between text-green-600">
-                        <span>Discount</span>
-                        <span>{isEventCreditPurchase ? productSavingsText : savingsText}</span>
-                      </div>
-                    )}
-                    <div className="border-t pt-3 mt-3">
-                      <div className="flex justify-between text-base font-semibold">
-                        <span>Total</span>
-                        <span>{formatCurrency(displayAmount)}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {isEventCreditPurchase
-                          ? 'One-time payment'
-                          : `Billed ${getBillingPeriodLabel(billingCycle).toLowerCase()}`}
-                      </p>
-                    </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Payment Methods */}
-                <div className="mb-6">
-                  <h3 className="font-medium mb-3">Payment Method</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {['Card', 'UPI', 'NetBanking', 'Wallet'].map((method) => (
-                      <div
-                        key={method}
-                        className="border rounded-lg p-3 text-center text-xs font-medium text-muted-foreground"
-                      >
-                        {method}
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Select your preferred payment method on the next screen
-                  </p>
+              {/* Payment Methods */}
+              <div className="mb-6">
+                <h3 className="font-display mb-3 font-semibold">Payment Method</h3>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {['Card', 'UPI', 'NetBanking', 'Wallet'].map((method) => (
+                    <Chip key={method} className="text-ink-soft text-center">
+                      {method}
+                    </Chip>
+                  ))}
                 </div>
-
-                {/* Pay Button */}
-                <Button
-                  onClick={handleCheckout}
-                  disabled={isProcessing || !isScriptLoaded || scriptError}
-                  className={cn(
-                    "w-full h-12 text-base font-semibold transition-all",
-                    scriptError
-                      ? "bg-destructive hover:bg-destructive/90"
-                      : "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
-                  )}
-                  size="lg"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Processing...
-                    </>
-                  ) : scriptError ? (
-                    <>
-                      Payment unavailable - Refresh page
-                    </>
-                  ) : !isScriptLoaded ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Loading payment gateway...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="mr-2 h-5 w-5" />
-                      Pay {formatCurrency(displayAmount)}
-                    </>
-                  )}
-                </Button>
-
-                {/* Security Info */}
-                <div className="mt-6 text-center">
-                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-2">
-                    <Shield className="h-4 w-4" />
-                    <span>256-bit SSL Encrypted Payment</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Powered by Razorpay. Your payment information is secure.
-                  </p>
-                </div>
-
-                {/* Terms */}
-                <p className="text-xs text-center text-muted-foreground mt-6 pt-6 border-t leading-relaxed">
-                  By completing this purchase, you agree to our{' '}
-                  <Link href="/terms" className="underline hover:text-foreground">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link href="/privacy" className="underline hover:text-foreground">
-                    Privacy Policy
-                  </Link>
-                  .{' '}
-                  {isEventCreditPurchase
-                    ? 'Event credits never expire and can be used anytime.'
-                    : 'You can cancel your subscription at any time from your account settings.'}
+                <p className="text-ink-soft mt-2 text-xs">
+                  Select your preferred payment method on the next screen
                 </p>
-              </CardContent>
-            </Card>
+              </div>
+
+              {/* Pay Button */}
+              <SketchButton
+                onClick={handleCheckout}
+                disabled={isProcessing || !isScriptLoaded || scriptError}
+                className={cn('w-full text-base', scriptError && 'bg-rose')}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : scriptError ? (
+                  <>
+                    Payment unavailable - Refresh page
+                  </>
+                ) : !isScriptLoaded ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Loading payment gateway...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="mr-2 h-5 w-5" />
+                    Pay {formatCurrency(displayAmount)}
+                  </>
+                )}
+              </SketchButton>
+
+              {/* Security Info */}
+              <div className="mt-6 text-center">
+                <div className="text-ink-soft mb-2 flex items-center justify-center gap-2 text-xs">
+                  <Shield className="h-4 w-4" />
+                  <span>256-bit SSL Encrypted Payment</span>
+                </div>
+                <p className="text-ink-soft text-xs">
+                  Powered by Razorpay. Your payment information is secure.
+                </p>
+              </div>
+
+              {/* Terms */}
+              <p className="text-ink-soft border-line mt-6 border-t-2 border-dashed pt-6 text-center text-xs leading-relaxed">
+                By completing this purchase, you agree to our{' '}
+                <Link href="/terms" className="hover:text-ink underline">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="hover:text-ink underline">
+                  Privacy Policy
+                </Link>
+                .{' '}
+                {isEventCreditPurchase
+                  ? 'Event credits never expire and can be used anytime.'
+                  : 'You can cancel your subscription at any time from your account settings.'}
+              </p>
+            </Paper>
 
             {/* Help Section */}
-            <div className="mt-6 p-4 rounded-xl bg-muted/50 text-center">
-              <p className="text-sm text-muted-foreground">
+            <Paper alt className="mt-6 p-4 text-center">
+              <p className="text-ink-soft text-sm">
                 Need help?{' '}
-                <Link href="/contact" className="text-primary hover:underline font-medium">
+                <Link href="/contact" className="text-blue font-bold hover:underline">
                   Contact Support
                 </Link>
               </p>
-            </div>
+            </Paper>
           </div>
         </div>
       </main>
-    </div>
+    </SkContainer>
   );
 }

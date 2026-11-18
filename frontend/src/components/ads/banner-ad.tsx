@@ -7,6 +7,7 @@ import { useBannerAds, useRecordBannerClick } from '@/hooks/queries/use-ads'
 import { cn } from '@/lib/utils'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { Skeleton } from '@/components/ui/skeleton'
+import { skBtn, skPaper } from '@/components/sketch'
 import type { BannerAd as BannerAdType, BannerPlacement } from '@/lib/api/types/ads.types'
 
 interface BannerAdProps {
@@ -43,14 +44,14 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
         onClick={handleClick}
         aria-label={`View ${title} profile`}
         className={cn(
-          'relative group block overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-r from-primary/10 via-primary/5 to-transparent shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/35',
+          skPaper({ className: 'relative group block transition-transform duration-300 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue' }),
           className
         )}
       >
         <div className="flex items-center gap-3 p-3.5">
           {/* Banner Image */}
           {imageUrl && (
-            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 ring-primary/20">
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-ink">
               <Image
                 src={imageUrl}
                 alt={title}
@@ -63,19 +64,19 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="mb-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+            <div className="mb-0.5 inline-flex items-center gap-1 sk-eyebrow text-[10px]">
               <Sparkles className="h-2.5 w-2.5" />
               Promoted
             </div>
-            <h4 className="text-sm font-semibold text-foreground truncate">
+            <h4 className="font-display text-sm font-semibold text-ink truncate">
               {title}
             </h4>
             {subtitle && (
-              <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+              <p className="text-xs text-ink-soft truncate">{subtitle}</p>
             )}
           </div>
 
-          <div className="shrink-0 rounded-full bg-background/80 p-1.5 text-muted-foreground transition-colors group-hover:text-foreground">
+          <div className="shrink-0 rounded-full bg-blue-wash p-1.5 text-blue transition-colors">
             <ArrowUpRight className="h-4 w-4" />
           </div>
         </div>
@@ -87,7 +88,7 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
     return (
       <div
         className={cn(
-          'relative group overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-slate-900 via-slate-800 to-zinc-800 shadow-xl',
+          'sk-paper relative group overflow-hidden bg-ink',
           className
         )}
       >
@@ -110,7 +111,7 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
         <div className="relative z-10 flex flex-col items-center gap-6 p-8 md:flex-row md:p-12">
           {/* Vendor Image */}
           {imageUrl && (
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl ring-2 ring-white/30 shadow-2xl md:h-32 md:w-32">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md border-2 border-paper md:h-32 md:w-32">
               <Image
                 src={imageUrl}
                 alt={title}
@@ -123,18 +124,18 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
 
           {/* Content */}
           <div className="flex-1 text-center md:text-left">
-            <div className="mb-2 inline-flex items-center justify-center gap-1 rounded-full border border-white/20 bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/90 md:justify-start">
+            <div className="mb-2 inline-flex items-center justify-center gap-1 rounded-full border-2 border-paper/60 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-paper md:justify-start">
               <Sparkles className="h-2.5 w-2.5" />
               Promoted
             </div>
-            <h3 className="mb-2 text-2xl font-bold text-white md:text-3xl">
+            <h3 className="font-display mb-2 text-2xl font-semibold text-paper md:text-3xl">
               {title}
             </h3>
             {subtitle && (
-              <p className="mb-4 line-clamp-2 text-base text-white/85 md:text-lg">{subtitle}</p>
+              <p className="mb-4 line-clamp-2 text-base text-paper/85 md:text-lg">{subtitle}</p>
             )}
             <Link href={vendorLink} onClick={handleClick}>
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/92 px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg transition-all hover:bg-white hover:shadow-xl">
+              <span className={skBtn('solid', 'md', 'gap-2')}>
                 View Profile
                 <ArrowUpRight className="h-4 w-4" />
               </span>
@@ -149,14 +150,14 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
   return (
     <div
       className={cn(
-        'relative group rounded-xl overflow-hidden bg-linear-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 hover:border-primary/30 transition-colors',
+        skPaper({ className: 'relative group' }),
         className
       )}
     >
       <div className="flex items-center gap-4 p-4 md:p-6">
         {/* Vendor Image */}
         {imageUrl && (
-          <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden shrink-0 ring-2 ring-primary/20">
+          <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-md overflow-hidden shrink-0 border-2 border-ink">
             <Image
               src={imageUrl}
               alt={title}
@@ -169,15 +170,15 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1 text-primary text-xs font-medium mb-1">
+          <div className="sk-eyebrow flex items-center gap-1 mb-1">
             <Sparkles className="w-3 h-3" />
             Promoted
           </div>
-          <h4 className="font-bold text-foreground text-base md:text-lg line-clamp-1">
+          <h4 className="font-display font-semibold text-ink text-base md:text-lg line-clamp-1">
             {title}
           </h4>
           {subtitle && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+            <p className="text-sm text-ink-soft line-clamp-2 mt-0.5">
               {subtitle}
             </p>
           )}
@@ -185,7 +186,7 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
 
         {/* CTA */}
         <Link href={vendorLink} onClick={handleClick} className="shrink-0">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+          <span className={skBtn('solid', 'sm', 'gap-1.5')}>
             View Profile
             <ArrowUpRight className="h-3 w-3" />
           </span>
@@ -198,12 +199,12 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
 function BannerSkeleton({ variant }: { variant: 'default' | 'compact' | 'large' }) {
   if (variant === 'large') {
     return (
-      <Skeleton className="w-full h-64 rounded-2xl" />
+      <Skeleton className="w-full h-64 rounded-[18px]" />
     )
   }
 
   return (
-    <div className="flex items-center gap-4 p-4 border border-border rounded-xl">
+    <div className="sk-paper flex items-center gap-4 p-4">
       <Skeleton className="w-16 h-16 rounded-xl shrink-0" />
       <div className="flex-1 space-y-2">
         <Skeleton className="h-3 w-16" />

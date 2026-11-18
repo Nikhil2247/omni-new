@@ -4,6 +4,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Star, MapPin, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PaintedScene, skPaper } from '@/components/sketch';
+
+function seedOf(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
 
 interface Vendor {
   id: string;
@@ -49,15 +56,15 @@ export function RelatedVendors({
 
   if (variant === 'compact') {
     return (
-      <section className="py-6 border-t">
+      <section className="py-6 border-t-2 border-dashed border-line">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          <h3 className="sk-eyebrow">
             {title}
           </h3>
           {showViewAll && (
             <Link
               href={viewAllHref}
-              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+              className="text-xs font-bold text-blue hover:underline inline-flex items-center gap-1"
             >
               View All <ArrowRight className="h-3 w-3" />
             </Link>
@@ -68,9 +75,9 @@ export function RelatedVendors({
             <Link
               key={vendor.id}
               href={`/vendors/${vendor.slug}`}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors group"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-wash transition-colors group"
             >
-              <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-muted shrink-0">
+              <div className="relative h-12 w-12 rounded-md overflow-hidden bg-blue-wash shrink-0 border-2 border-ink">
                 {vendor.coverImage ? (
                   <Image
                     src={vendor.coverImage}
@@ -79,17 +86,17 @@ export function RelatedVendors({
                     className="object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/10" />
+                  <PaintedScene seed={seedOf(vendor.id)} />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                <p className="text-sm font-medium truncate group-hover:text-blue transition-colors">
                   {vendor.name}
                 </p>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-ink-soft">
                   {vendor.rating && (
                     <span className="flex items-center gap-0.5">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-gold text-gold" />
                       {vendor.rating.toFixed(1)}
                     </span>
                   )}
@@ -113,26 +120,26 @@ export function RelatedVendors({
       <section className="py-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-serif font-semibold">{title}</h2>
-            {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
+            <h2 className="font-display text-xl font-semibold">{title}</h2>
+            {subtitle && <p className="text-sm text-ink-soft mt-1">{subtitle}</p>}
           </div>
           {showViewAll && (
             <Link
               href={viewAllHref}
-              className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+              className="text-sm font-bold text-blue hover:underline inline-flex items-center gap-1"
             >
               View All <ArrowRight className="h-4 w-4" />
             </Link>
           )}
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted">
+        <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-line">
           {filteredVendors.map((vendor) => (
             <Link
               key={vendor.id}
               href={`/vendors/${vendor.slug}`}
               className="flex-none w-64 group"
             >
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted mb-3">
+              <div className="relative aspect-[4/3] rounded-md overflow-hidden bg-blue-wash mb-3 border-2 border-ink">
                 {vendor.coverImage ? (
                   <Image
                     src={vendor.coverImage}
@@ -141,16 +148,16 @@ export function RelatedVendors({
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/10" />
+                  <PaintedScene seed={seedOf(vendor.id)} />
                 )}
               </div>
-              <h3 className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+              <h3 className="font-medium text-sm group-hover:text-blue transition-colors truncate">
                 {vendor.name}
               </h3>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+              <div className="flex items-center gap-2 text-xs text-ink-soft mt-1">
                 {vendor.rating && (
                   <span className="flex items-center gap-0.5">
-                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    <Star className="h-3 w-3 fill-gold text-gold" />
                     {vendor.rating.toFixed(1)}
                     {vendor.reviewCount && <span>({vendor.reviewCount})</span>}
                   </span>
@@ -165,16 +172,16 @@ export function RelatedVendors({
   }
 
   return (
-    <section className="py-8 border-t">
+    <section className="py-8 border-t-2 border-dashed border-line">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-serif font-semibold">{title}</h2>
-          {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
+          <h2 className="font-display text-xl font-semibold">{title}</h2>
+          {subtitle && <p className="text-sm text-ink-soft mt-1">{subtitle}</p>}
         </div>
         {showViewAll && (
           <Link
             href={viewAllHref}
-            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+            className="text-sm font-bold text-blue hover:underline inline-flex items-center gap-1"
           >
             View All <ArrowRight className="h-4 w-4" />
           </Link>
@@ -186,11 +193,10 @@ export function RelatedVendors({
             key={vendor.id}
             href={`/vendors/${vendor.slug}`}
             className={cn(
-              'group block rounded-xl border bg-card overflow-hidden',
-              'hover:border-primary hover:shadow-lg transition-all duration-200'
+              skPaper({ className: 'group block overflow-hidden p-0 transition-transform duration-200 hover:-translate-y-1' })
             )}
           >
-            <div className="relative aspect-[4/3] bg-muted">
+            <div className="relative aspect-[4/3] bg-blue-wash">
               {vendor.coverImage ? (
                 <Image
                   src={vendor.coverImage}
@@ -199,22 +205,22 @@ export function RelatedVendors({
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               ) : (
-                <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/10" />
+                <PaintedScene seed={seedOf(vendor.id)} />
               )}
               {vendor.priceRange && (
-                <span className="absolute top-2 right-2 bg-background/90 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs font-medium">
+                <span className="absolute top-2 right-2 sk-chip !px-2 !py-1 !text-xs">
                   {vendor.priceRange}
                 </span>
               )}
             </div>
             <div className="p-4">
-              <h3 className="font-medium group-hover:text-primary transition-colors truncate">
+              <h3 className="font-medium group-hover:text-blue transition-colors truncate">
                 {vendor.name}
               </h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-2 text-sm text-ink-soft mt-1">
                 {vendor.rating && (
                   <span className="flex items-center gap-0.5">
-                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                    <Star className="h-3.5 w-3.5 fill-gold text-gold" />
                     {vendor.rating.toFixed(1)}
                     {vendor.reviewCount && (
                       <span className="text-xs">({vendor.reviewCount})</span>
@@ -229,7 +235,7 @@ export function RelatedVendors({
                 )}
               </div>
               {vendor.category?.name && (
-                <span className="inline-block mt-2 text-xs bg-muted rounded-full px-2 py-0.5">
+                <span className="sk-chip mt-2 !text-xs">
                   {vendor.category.name}
                 </span>
               )}

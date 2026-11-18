@@ -3,10 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Lock, Zap, CreditCard, AlertTriangle, Crown, Sparkles, ArrowRight, X } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Chip, Paper, SketchButton } from '@/components/sketch'
 import {
   Dialog,
   DialogContent,
@@ -109,17 +106,17 @@ const FEATURE_DESCRIPTIONS: Record<string, { name: string; description: string }
 const USER_TIER_INFO: Record<UserPlanTier, { name: string; color: string; icon: typeof Crown }> = {
   FREE: {
     name: 'Free',
-    color: 'text-muted-foreground',
+    color: 'text-ink-soft',
     icon: Lock,
   },
   BASIC: {
     name: 'Basic',
-    color: 'text-blue-600',
+    color: 'text-blue',
     icon: Zap,
   },
   PREMIUM: {
     name: 'Premium',
-    color: 'text-amber-600',
+    color: 'text-gold',
     icon: Crown,
   },
 }
@@ -127,22 +124,22 @@ const USER_TIER_INFO: Record<UserPlanTier, { name: string; color: string; icon: 
 const VENDOR_TIER_INFO: Record<PlanTier, { name: string; color: string; icon: typeof Crown }> = {
   FREE: {
     name: 'Free',
-    color: 'text-muted-foreground',
+    color: 'text-ink-soft',
     icon: Lock,
   },
   STARTER: {
     name: 'Starter',
-    color: 'text-green-600',
+    color: 'text-leaf-deep',
     icon: Zap,
   },
   PROFESSIONAL: {
     name: 'Professional',
-    color: 'text-blue-600',
+    color: 'text-blue',
     icon: Sparkles,
   },
   ENTERPRISE: {
     name: 'Enterprise',
-    color: 'text-purple-600',
+    color: 'text-rose',
     icon: Crown,
   },
 }
@@ -254,7 +251,7 @@ export function UpgradePrompt({
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full bg-primary/10",
+                "flex h-10 w-10 items-center justify-center rounded-full bg-blue-wash border-2 border-ink",
                 requiredTierInfo.color
               )}>
                 <requiredTierInfo.icon className="h-5 w-5" />
@@ -267,34 +264,34 @@ export function UpgradePrompt({
           </DialogHeader>
 
           <div className="py-4">
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center justify-between rounded-md border-2 border-dashed border-line p-4">
               <div className="flex items-center gap-3">
-                <Badge variant="outline" className={currentTierInfo.color}>
+                <Chip className={cn('inline-flex items-center', currentTierInfo.color)}>
                   <currentTierInfo.icon className="mr-1 h-3 w-3" />
                   {currentTierInfo.name}
-                </Badge>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                <Badge className={cn("bg-primary", requiredTierInfo.color)}>
+                </Chip>
+                <ArrowRight className="h-4 w-4 text-ink-soft" />
+                <Chip className={cn('inline-flex items-center bg-blue-wash', requiredTierInfo.color)}>
                   <requiredTierInfo.icon className="mr-1 h-3 w-3" />
                   {requiredTierInfo.name}
-                </Badge>
+                </Chip>
               </div>
             </div>
 
             {featureInfo && (
-              <div className="mt-4 rounded-lg bg-muted/50 p-4">
+              <div className="mt-4 rounded-md bg-blue-wash p-4">
                 <h4 className="text-sm font-medium">What you will get:</h4>
-                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <ul className="mt-2 space-y-1 text-sm text-ink-soft">
                   <li className="flex items-center gap-2">
-                    <Sparkles className="h-3 w-3 text-primary" />
+                    <Sparkles className="h-3 w-3 text-blue" />
                     {featureInfo.description}
                   </li>
                   <li className="flex items-center gap-2">
-                    <Sparkles className="h-3 w-3 text-primary" />
+                    <Sparkles className="h-3 w-3 text-blue" />
                     All {currentTierInfo.name} features included
                   </li>
                   <li className="flex items-center gap-2">
-                    <Sparkles className="h-3 w-3 text-primary" />
+                    <Sparkles className="h-3 w-3 text-blue" />
                     Priority support
                   </li>
                 </ul>
@@ -303,15 +300,15 @@ export function UpgradePrompt({
           </div>
 
           <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            <SketchButton variant="line" onClick={() => handleOpenChange(false)}>
               Maybe Later
-            </Button>
-            <Button onClick={handleUpgrade} asChild>
+            </SketchButton>
+            <SketchButton onClick={handleUpgrade} asChild>
               <Link href="/pricing">
                 <CreditCard className="mr-2 h-4 w-4" />
                 View Plans
               </Link>
-            </Button>
+            </SketchButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -320,66 +317,66 @@ export function UpgradePrompt({
 
   if (variant === 'banner') {
     return (
-      <Alert className={cn("relative", className)}>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle className="flex items-center gap-2">
+      <Paper alt className={cn("relative px-5 py-4", className)} role="alert">
+        <AlertTriangle className="text-gold mb-2 h-4 w-4" />
+        <div className="font-display flex items-center gap-2 font-semibold">
           {displayTitle}
-          <Badge variant="outline" className={requiredTierInfo.color}>
+          <Chip className={cn('inline-flex items-center', requiredTierInfo.color)}>
             <requiredTierInfo.icon className="mr-1 h-3 w-3" />
             {requiredTierInfo.name}
-          </Badge>
-        </AlertTitle>
-        <AlertDescription className="mt-2 flex items-center justify-between">
+          </Chip>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-sm">
           <span>{displayDescription}</span>
-          <Button size="sm" onClick={handleUpgrade} asChild className="ml-4 shrink-0">
+          <SketchButton size="sm" onClick={handleUpgrade} asChild className="ml-4 shrink-0">
             <Link href="/pricing">
               Upgrade
               <ArrowRight className="ml-1 h-3 w-3" />
             </Link>
-          </Button>
-        </AlertDescription>
-      </Alert>
+          </SketchButton>
+        </div>
+      </Paper>
     )
   }
 
   // Default: inline variant
   return (
-    <Card className={cn("w-full", className)}>
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Lock className="h-6 w-6 text-primary" />
+    <Paper className={cn("w-full space-y-4 px-5 py-6", className)}>
+      <div className="text-center">
+        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-blue-wash border-2 border-ink">
+          <Lock className="h-6 w-6 text-blue" />
         </div>
-        <CardTitle className="text-lg">{displayTitle}</CardTitle>
-        <CardDescription>{displayDescription}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        <h3 className="font-display text-lg font-semibold">{displayTitle}</h3>
+        <p className="text-ink-soft mt-1 text-sm">{displayDescription}</p>
+      </div>
+      <div className="space-y-4">
         <div className="flex items-center justify-center gap-3">
-          <Badge variant="outline" className={currentTierInfo.color}>
+          <Chip className={cn('inline-flex items-center', currentTierInfo.color)}>
             <currentTierInfo.icon className="mr-1 h-3 w-3" />
             Current: {currentTierInfo.name}
-          </Badge>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          <Badge className={cn("bg-primary/90", requiredTierInfo.color)}>
+          </Chip>
+          <ArrowRight className="h-4 w-4 text-ink-soft" />
+          <Chip className={cn('inline-flex items-center bg-blue-wash', requiredTierInfo.color)}>
             <requiredTierInfo.icon className="mr-1 h-3 w-3" />
             Requires: {requiredTierInfo.name}
-          </Badge>
+          </Chip>
         </div>
 
         {featureInfo && (
-          <div className="rounded-lg bg-muted/50 p-3 text-center text-sm text-muted-foreground">
+          <div className="rounded-md bg-blue-wash p-3 text-center text-sm text-ink-soft">
             {featureInfo.description}
           </div>
         )}
-      </CardContent>
-      <CardFooter className="justify-center">
-        <Button onClick={handleUpgrade} asChild>
+      </div>
+      <div className="flex justify-center">
+        <SketchButton onClick={handleUpgrade} asChild>
           <Link href="/pricing">
             <CreditCard className="mr-2 h-4 w-4" />
             View Pricing Plans
           </Link>
-        </Button>
-      </CardFooter>
-    </Card>
+        </SketchButton>
+      </div>
+    </Paper>
   )
 }
 
@@ -440,7 +437,7 @@ export function VendorUpgradePrompt({
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full bg-primary/10",
+                "flex h-10 w-10 items-center justify-center rounded-full bg-blue-wash border-2 border-ink",
                 requiredTierInfo.color
               )}>
                 <requiredTierInfo.icon className="h-5 w-5" />
@@ -453,31 +450,31 @@ export function VendorUpgradePrompt({
           </DialogHeader>
 
           <div className="py-4">
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center justify-between rounded-md border-2 border-dashed border-line p-4">
               <div className="flex items-center gap-3">
-                <Badge variant="outline" className={currentTierInfo.color}>
+                <Chip className={cn('inline-flex items-center', currentTierInfo.color)}>
                   <currentTierInfo.icon className="mr-1 h-3 w-3" />
                   {currentTierInfo.name}
-                </Badge>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                <Badge className={cn("bg-primary", requiredTierInfo.color)}>
+                </Chip>
+                <ArrowRight className="h-4 w-4 text-ink-soft" />
+                <Chip className={cn('inline-flex items-center bg-blue-wash', requiredTierInfo.color)}>
                   <requiredTierInfo.icon className="mr-1 h-3 w-3" />
                   {requiredTierInfo.name}
-                </Badge>
+                </Chip>
               </div>
             </div>
           </div>
 
           <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            <SketchButton variant="line" onClick={() => handleOpenChange(false)}>
               Maybe Later
-            </Button>
-            <Button onClick={handleUpgrade} asChild>
+            </SketchButton>
+            <SketchButton onClick={handleUpgrade} asChild>
               <Link href="/vendor/pricing">
                 <CreditCard className="mr-2 h-4 w-4" />
                 View Plans
               </Link>
-            </Button>
+            </SketchButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -486,59 +483,59 @@ export function VendorUpgradePrompt({
 
   if (variant === 'banner') {
     return (
-      <Alert className={cn("relative", className)}>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle className="flex items-center gap-2">
+      <Paper alt className={cn("relative px-5 py-4", className)} role="alert">
+        <AlertTriangle className="text-gold mb-2 h-4 w-4" />
+        <div className="font-display flex items-center gap-2 font-semibold">
           {displayTitle}
-          <Badge variant="outline" className={requiredTierInfo.color}>
+          <Chip className={cn('inline-flex items-center', requiredTierInfo.color)}>
             <requiredTierInfo.icon className="mr-1 h-3 w-3" />
             {requiredTierInfo.name}
-          </Badge>
-        </AlertTitle>
-        <AlertDescription className="mt-2 flex items-center justify-between">
+          </Chip>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-sm">
           <span>{displayDescription}</span>
-          <Button size="sm" onClick={handleUpgrade} asChild className="ml-4 shrink-0">
+          <SketchButton size="sm" onClick={handleUpgrade} asChild className="ml-4 shrink-0">
             <Link href="/vendor/pricing">
               Upgrade
               <ArrowRight className="ml-1 h-3 w-3" />
             </Link>
-          </Button>
-        </AlertDescription>
-      </Alert>
+          </SketchButton>
+        </div>
+      </Paper>
     )
   }
 
   // Default: inline variant
   return (
-    <Card className={cn("w-full", className)}>
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Lock className="h-6 w-6 text-primary" />
+    <Paper className={cn("w-full space-y-4 px-5 py-6", className)}>
+      <div className="text-center">
+        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-blue-wash border-2 border-ink">
+          <Lock className="h-6 w-6 text-blue" />
         </div>
-        <CardTitle className="text-lg">{displayTitle}</CardTitle>
-        <CardDescription>{displayDescription}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        <h3 className="font-display text-lg font-semibold">{displayTitle}</h3>
+        <p className="text-ink-soft mt-1 text-sm">{displayDescription}</p>
+      </div>
+      <div className="space-y-4">
         <div className="flex items-center justify-center gap-3">
-          <Badge variant="outline" className={currentTierInfo.color}>
+          <Chip className={cn('inline-flex items-center', currentTierInfo.color)}>
             <currentTierInfo.icon className="mr-1 h-3 w-3" />
             Current: {currentTierInfo.name}
-          </Badge>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          <Badge className={cn("bg-primary/90", requiredTierInfo.color)}>
+          </Chip>
+          <ArrowRight className="h-4 w-4 text-ink-soft" />
+          <Chip className={cn('inline-flex items-center bg-blue-wash', requiredTierInfo.color)}>
             <requiredTierInfo.icon className="mr-1 h-3 w-3" />
             Requires: {requiredTierInfo.name}
-          </Badge>
+          </Chip>
         </div>
-      </CardContent>
-      <CardFooter className="justify-center">
-        <Button onClick={handleUpgrade} asChild>
+      </div>
+      <div className="flex justify-center">
+        <SketchButton onClick={handleUpgrade} asChild>
           <Link href="/vendor/pricing">
             <CreditCard className="mr-2 h-4 w-4" />
             View Pricing Plans
           </Link>
-        </Button>
-      </CardFooter>
-    </Card>
+        </SketchButton>
+      </div>
+    </Paper>
   )
 }

@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { SketchButton } from '@/components/sketch'
 
 // Common wedding vendor categories
 export const VENDOR_CATEGORIES = [
@@ -69,15 +69,15 @@ export function CategoryFilterChips({
     <div className={cn('relative', className)}>
       {/* Left scroll button */}
       {showLeftArrow && (
-        <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-r from-background via-background to-transparent pr-4">
-          <Button
+        <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-r from-paper via-paper to-transparent pr-4">
+          <SketchButton
             variant="ghost"
             size="icon"
             onClick={() => scroll('left')}
-            className="h-8 w-8"
+            aria-label="Scroll categories left"
           >
             <ChevronLeft className="h-4 w-4" />
-          </Button>
+          </SketchButton>
         </div>
       )}
 
@@ -97,11 +97,10 @@ export function CategoryFilterChips({
               key={category.id}
               onClick={() => onCategoryChange(category.id === 'all' ? '' : category.id)}
               className={cn(
-                'flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors',
-                'border hover:bg-accent hover:text-accent-foreground',
+                'sk-chip flex-shrink-0 cursor-pointer !px-4 !py-2 !text-sm transition-colors',
                 isSelected
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-foreground border-border'
+                  ? 'bg-blue text-on-blue'
+                  : 'hover:bg-blue-wash'
               )}
             >
               {category.name}
@@ -112,15 +111,15 @@ export function CategoryFilterChips({
 
       {/* Right scroll button */}
       {showRightArrow && (
-        <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-l from-background via-background to-transparent pl-4">
-          <Button
+        <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center bg-gradient-to-l from-paper via-paper to-transparent pl-4">
+          <SketchButton
             variant="ghost"
             size="icon"
             onClick={() => scroll('right')}
-            className="h-8 w-8"
+            aria-label="Scroll categories right"
           >
             <ChevronRight className="h-4 w-4" />
-          </Button>
+          </SketchButton>
         </div>
       )}
     </div>

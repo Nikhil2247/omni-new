@@ -258,7 +258,7 @@ export default function GuestUploadPage() {
         <div className="space-y-4" aria-busy="true">
           <Skeleton className="mx-auto h-12 w-12 rounded-full" />
           <Skeleton className="mx-auto h-6 w-48" />
-          <Skeleton className="h-[200px] w-full rounded-2xl" />
+          <Skeleton className="h-[200px] w-full rounded-[18px]" />
         </div>
       </SkContainer>
     )
@@ -383,7 +383,7 @@ export default function GuestUploadPage() {
 
       {/* Mobile: Upload Modal */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="bg-card max-w-[calc(100%-2rem)] rounded-2xl border-0 p-0 sm:hidden">
+        <DialogContent className="bg-card max-w-[calc(100%-2rem)] rounded-[18px] border-0 p-0 sm:hidden">
           <div className="flex items-center justify-between px-5 pt-5">
             <div className="flex items-center gap-2">
               <Camera className="text-blue h-4 w-4" aria-hidden="true" />

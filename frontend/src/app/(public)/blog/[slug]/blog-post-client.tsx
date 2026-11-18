@@ -316,7 +316,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
           <div className="flex-1 min-w-0">
             {/* Featured Image */}
             {featuredImageUrl && (
-              <div className="mb-12 overflow-hidden rounded-2xl border shadow-lg">
+              <div className="sk-paper mb-12 overflow-hidden p-1.5">
                 <AspectRatio ratio={16 / 9}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <NextImage
@@ -345,7 +345,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
 
             {/* Mobile TOC */}
             {headings.length > 0 && (
-              <div className="hidden md:block xl:hidden mb-8 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4">
+              <div className="hidden md:block xl:hidden sk-paper mb-8 p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <BookOpen className="h-4 w-4 text-primary" />
                   <h3 className="font-semibold text-sm">Table of Contents</h3>
@@ -402,7 +402,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
             <aside className="hidden xl:block w-72 shrink-0 relative">
               <div className="sticky top-24 flex flex-col gap-4 max-h-[calc(100vh-7rem)]">
                 {/* TOC card — fills remaining space, nav scrolls */}
-                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm flex flex-col min-h-0 flex-1 overflow-hidden">
+                <div className="sk-paper p-6 flex flex-col min-h-0 flex-1 overflow-hidden">
                   <div className="flex items-center gap-2 mb-4 shrink-0">
                     <BookOpen className="h-5 w-5 text-primary" />
                     <h3 className="font-semibold text-sm uppercase tracking-wide">Table of Contents</h3>
@@ -419,8 +419,8 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
                           heading.level === 2 && 'pl-4',
                           heading.level === 3 && 'pl-6 text-xs',
                           activeId === heading.id
-                            ? 'bg-primary/10 text-primary font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            ? 'bg-blue-wash text-blue font-medium'
+                            : 'text-ink-soft hover:text-ink hover:bg-blue-wash/50'
                         )}
                       >
                         {heading.text}
@@ -430,7 +430,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
                 </div>
 
                 {/* Share + Stats — pinned at bottom, don't grow */}
-                <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 shadow-sm shrink-0">
+                <div className="sk-paper p-6 shrink-0">
                   <h4 className="font-semibold text-sm mb-3">Share this article</h4>
                   <Button
                     variant="outline"

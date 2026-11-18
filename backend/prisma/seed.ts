@@ -52,6 +52,7 @@ import { seedSubscriptionPlans } from './seeds/subscription-plans.seed'
 import { seedFeatureFlags } from './seeds/feature-flags.seed'
 import { seedEventCredits } from './seeds/event-credits.seed'
 import { seedEInviteTemplates } from './seeds/einvite-templates.seed'
+import { seedVibeQuizImages } from './seeds/vibe-quiz-images.seed'
 import { randomUUID } from 'crypto'
 
 // Initialize Prisma with adapter
@@ -1752,39 +1753,7 @@ async function main() {
   // ============================================================================
   console.log('🎨 Creating vibe quiz images...')
 
-  const vibeCategories = ['Decor', 'Venue', 'Flowers', 'Attire', 'Table Setting', 'Invitation']
-  const vibeStyles = ['Royal', 'Boho', 'Modern', 'Rustic', 'Classic', 'Minimalist', 'Romantic', 'Tropical']
-
-  const vibeImages = [
-    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600',
-    'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600',
-    'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600',
-    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600',
-    'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?w=600',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600',
-    'https://images.unsplash.com/photo-1519741497674-611481863552?w=600',
-    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600',
-    'https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=600',
-    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=600',
-  ]
-
-  for (let i = 0; i < 20; i++) {
-    const category = vibeCategories[i % vibeCategories.length]
-    const style = vibeStyles[i % vibeStyles.length]
-    const imageUrl = vibeImages[i % vibeImages.length]
-
-    await prisma.vibeQuizImage.create({
-      data: {
-        url: imageUrl,
-        thumbnailUrl: imageUrl.replace('w=600', 'w=300'),
-        category,
-        style,
-        tags: [style.toLowerCase(), category.toLowerCase(), 'wedding'],
-        isActive: true,
-        sortOrder: i,
-      },
-    })
-  }
+  await seedVibeQuizImages(prisma)
 
   // Create a vibe quiz result for one planner
   const vibeQuizImages = await prisma.vibeQuizImage.findMany({ take: 6 })
