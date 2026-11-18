@@ -1,19 +1,23 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import * as React from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { LogOut, Menu, Moon, PanelLeft, PanelLeftClose, Search, Settings, Sun, User } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { useSidebarStore } from '@/store/sidebar-store';
 import { Role, ROLE_LABELS, ROLES } from '@/config/roles';
 import { getSettingsPath } from '@/lib/utils/permissions';
+import { Button } from '@/components/ui/button';
 import {
-  Settings,
-  LogOut,
-  User,
-  Menu,
-  Moon,
-  Sun,
-} from 'lucide-react';
-import { useState, useEffect } from 'react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { NotificationPopover } from '@/components/features/notifications/notification-popover';
 
 function getProfilePath(userRole: Role | undefined): string {
@@ -39,134 +43,138 @@ function getProfilePath(userRole: Role | undefined): string {
   }
 }
 
-export function Header() {
+const titleCase = (s: string) => s.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+interface HeaderProps {
+  onOpenSearch?: () => void;
+}
+
+export function Header({ onOpenSearch }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout, isAuthenticated, hasHydrated } = useAuthStore();
-  const { toggle } = useSidebarStore();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const { toggle, isCollapsed, toggleCollapsed } = useSidebarStore();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
 
   const userRole = user?.role as Role;
   const roleLabel = userRole ? ROLE_LABELS[userRole] : '';
   const settingsPath = getSettingsPath(userRole);
   const profilePath = getProfilePath(userRole);
+  const isDark = mounted && resolvedTheme === 'dark';
 
-  useEffect(() => {
-    // Check initial theme
-    setIsDark(document.documentElement.classList.contains('dark'));
-  }, []);
+  // Breadcrumb from the URL: /ops/events/123 -> Ops / Events / 123 (dynamic ids stay as-is).
+  const segments = pathname.split('/').filter(Boolean);
+  const crumbs = segments.map((seg, i) => ({ label: titleCase(seg), href: '/' + segments.slice(0, i + 1).join('/') }));
 
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
 
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle('dark');
-  };
-
   return (
-    <header className="z-30 flex h-12 shrink-0 items-center gap-3 border-b bg-card px-3 sm:px-4">
-      {/* Mobile menu button */}
-      <button
-        onClick={toggle}
-        className="rounded-md p-1.5 hover:bg-accent transition-colors md:hidden"
-        aria-label="Toggle menu"
+    <header className="bg-background z-30 flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:px-5">
+      {/* Mobile: open drawer */}
+      <Button variant="ghost" size="icon" className="md:hidden" onClick={toggle} aria-label="Open menu">
+        <Menu />
+      </Button>
+      {/* Desktop: collapse / expand */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="hidden md:inline-flex"
+        onClick={toggleCollapsed}
+        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        <Menu className="h-4 w-4" />
-      </button>
+        {isCollapsed ? <PanelLeft /> : <PanelLeftClose />}
+      </Button>
 
-      {/* Spacer */}
+      {/* Breadcrumb */}
+      <nav aria-label="Breadcrumb" className="text-muted-foreground hidden min-w-0 items-center gap-1.5 text-sm sm:flex">
+        {crumbs.map((c, i) => {
+          const last = i === crumbs.length - 1;
+          return (
+            <React.Fragment key={c.href}>
+              {i > 0 && <span aria-hidden>/</span>}
+              {last ? (
+                <span className="text-foreground truncate font-medium" aria-current="page">
+                  {c.label}
+                </span>
+              ) : (
+                <Link href={c.href} className="hover:text-foreground truncate">
+                  {c.label}
+                </Link>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </nav>
+
       <div className="flex-1" />
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 sm:gap-2">
-        {/* Theme toggle */}
+      {/* Search trigger */}
+      {onOpenSearch && (
         <button
-          onClick={toggleTheme}
-          className="rounded-md p-1.5 hover:bg-accent transition-colors"
-          aria-label="Toggle theme"
+          type="button"
+          onClick={onOpenSearch}
+          className="bg-card text-muted-foreground hover:bg-accent hidden h-8 w-64 items-center gap-2 rounded-md border px-2.5 text-sm md:flex"
         >
-          {isDark ? (
-            <Sun className="h-4 w-4 text-yellow-500" />
-          ) : (
-            <Moon className="h-4 w-4 text-primary" />
-          )}
+          <Search className="size-4" aria-hidden />
+          <span className="flex-1 text-left">Search…</span>
+          <kbd className="bg-muted rounded px-1.5 py-0.5 text-[11px] font-medium">Ctrl K</kbd>
         </button>
+      )}
+      {onOpenSearch && (
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={onOpenSearch} aria-label="Search">
+          <Search />
+        </Button>
+      )}
 
-        {/* Notifications */}
-        <NotificationPopover />
+      {/* Notifications */}
+      <NotificationPopover />
 
-        {/* User menu */}
-        {hasHydrated && isAuthenticated && (
-          <div className="relative">
+      {/* Theme */}
+      <Button variant="ghost" size="icon" onClick={() => setTheme(isDark ? 'light' : 'dark')} aria-label="Toggle theme">
+        {isDark ? <Sun /> : <Moon />}
+      </Button>
+
+      {/* Account */}
+      {hasHydrated && isAuthenticated && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 rounded-md p-1 hover:bg-accent transition-colors"
+              type="button"
+              aria-label="Account menu"
+              className="hover:bg-accent focus-visible:ring-ring/50 flex items-center gap-2 rounded-md p-1 outline-none focus-visible:ring-[3px]"
             >
-              <div className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+              <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-full text-xs font-semibold">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div className="hidden text-left lg:block">
-                <p className="text-[13px] leading-tight font-medium">{user?.name}</p>
-                <p className="text-[11px] leading-tight text-muted-foreground">{roleLabel}</p>
-              </div>
+              </span>
             </button>
-
-            {/* Dropdown menu */}
-            {showUserMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowUserMenu(false)}
-                />
-                <div className="absolute right-0 top-full z-50 mt-1.5 w-60 rounded-md border bg-popover shadow-md animate-in fade-in-0 zoom-in-95 slide-in-from-top-2">
-                  <div className="border-b px-3 py-2">
-                    <p className="text-sm font-medium">{user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
-                    <p className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                      {roleLabel}
-                    </p>
-                  </div>
-                  <div className="py-1">
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        router.push(profilePath);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-1.5 text-[13px] hover:bg-accent transition-colors"
-                    >
-                      <User className="h-4 w-4" />
-                      Profile
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        router.push(settingsPath);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-1.5 text-[13px] hover:bg-accent transition-colors"
-                    >
-                      <Settings className="h-4 w-4" />
-                      Settings
-                    </button>
-                  </div>
-                  <div className="border-t py-1">
-                    <button
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-2.5 px-3 py-1.5 text-[13px] text-destructive hover:bg-accent transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Logout
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuLabel className="font-normal">
+              <p className="truncate text-sm font-medium">{user?.name}</p>
+              <p className="text-muted-foreground truncate text-xs">{user?.email}</p>
+              {roleLabel && (
+                <p className="bg-primary/10 text-primary mt-1.5 inline-flex rounded-full px-2 py-0.5 text-xs font-medium">{roleLabel}</p>
+              )}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => router.push(profilePath)}>
+              <User /> Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => router.push(settingsPath)}>
+              <Settings /> Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
+              <LogOut /> Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </header>
   );
 }

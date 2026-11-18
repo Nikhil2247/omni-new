@@ -8,7 +8,7 @@ import {
   StatusBadge,
   TwoLineCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 export function OpsDisputesList() {
   const router = useRouter()

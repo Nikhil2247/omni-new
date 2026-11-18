@@ -19,7 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useOpsDashboardMetrics } from '@/hooks/queries/use-ops-dashboard';
-import { PageHeader, StatCard as KpiCard } from '@/components/dashboard';
+import { PageHeader, StatCard as KpiCard } from '@/components/dash';
 import {
   useOpsActiveEvents,
   useOpsOperationalTasks,
@@ -400,9 +400,9 @@ function StatCard({
       label={title}
       value={value}
       icon={icon}
-      accent={urgent ? 'text-orange-500' : undefined}
+      accent={urgent ? 'text-warning' : undefined}
       hint={subtitle}
-      className={urgent ? 'border-orange-500' : undefined}
+      className={urgent ? 'border-warning/40' : undefined}
     />
   );
 }
@@ -439,9 +439,9 @@ function EventItem({
   requirementsFilled: number;
 }) {
   const statusConfig = {
-    planning: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', label: 'Planning' },
-    in_progress: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: 'In Progress' },
-    completed: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Completed' },
+    planning: { color: 'bg-primary/10 text-primary', label: 'Planning' },
+    in_progress: { color: 'bg-warning/10 text-warning', label: 'In Progress' },
+    completed: { color: 'bg-success/10 text-success', label: 'Completed' },
   };
 
   const progress = requirements > 0 ? (requirementsFilled / requirements) * 100 : 0;
@@ -516,9 +516,9 @@ function AssistantItem({
   status: 'active' | 'field' | 'offline';
 }) {
   const statusColors = {
-    active: 'bg-green-500',
-    field: 'bg-blue-500',
-    offline: 'bg-gray-400',
+    active: 'bg-success',
+    field: 'bg-primary',
+    offline: 'bg-muted-foreground/30',
   };
 
   return (
@@ -556,16 +556,16 @@ function AgreementItem({
   sentAt: string;
 }) {
   const statusConfig = {
-    pending: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', icon: Clock },
-    accepted: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', icon: CheckCircle2 },
-    declined: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', icon: AlertTriangle },
+    pending: { color: 'bg-warning/10 text-warning', icon: Clock },
+    accepted: { color: 'bg-success/10 text-success', icon: CheckCircle2 },
+    declined: { color: 'bg-destructive/10 text-destructive', icon: AlertTriangle },
   };
   const StatusIcon = statusConfig[status].icon;
 
   return (
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center gap-3">
-        <StatusIcon className={`h-4 w-4 ${status === 'pending' ? 'text-yellow-600' : status === 'accepted' ? 'text-green-600' : 'text-red-600'}`} />
+        <StatusIcon className={`h-4 w-4 ${status === 'pending' ? 'text-warning' : status === 'accepted' ? 'text-success' : 'text-destructive'}`} />
         <div>
           <p className="text-sm font-medium">{vendor}</p>
           <p className="text-xs text-muted-foreground">{event}</p>
@@ -637,21 +637,21 @@ function BudgetCard({
     <div className="rounded-md border p-3">
       <p className="mb-2 font-medium">{event}</p>
       <div className="mb-2 flex h-3 overflow-hidden rounded-full bg-muted">
-        <div className="bg-green-500" style={{ width: `${spentPercent}%` }} />
-        <div className="bg-yellow-500" style={{ width: `${committedPercent}%` }} />
+        <div className="bg-success" style={{ width: `${spentPercent}%` }} />
+        <div className="bg-warning" style={{ width: `${committedPercent}%` }} />
       </div>
       <div className="grid grid-cols-3 gap-2 text-xs">
         <div>
           <p className="text-muted-foreground">Spent</p>
-          <p className="font-medium text-green-600">${spent.toLocaleString()}</p>
+          <p className="font-medium text-success">${spent.toLocaleString()}</p>
         </div>
         <div>
           <p className="text-muted-foreground">Committed</p>
-          <p className="font-medium text-yellow-600">${committed.toLocaleString()}</p>
+          <p className="font-medium text-warning">${committed.toLocaleString()}</p>
         </div>
         <div>
           <p className="text-muted-foreground">Remaining</p>
-          <p className={`font-medium ${remaining < 0 ? 'text-red-600' : ''}`}>
+          <p className={`font-medium ${remaining < 0 ? 'text-destructive' : ''}`}>
             ${remaining.toLocaleString()}
           </p>
         </div>

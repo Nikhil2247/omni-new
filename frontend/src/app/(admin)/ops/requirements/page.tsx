@@ -20,7 +20,7 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from "@/components/dashboard";
+} from "@/components/dash";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -429,11 +429,11 @@ export default function OpsRequirementsPage() {
                   )}
 
                   {requirements.approvalStatus === "PENDING" && requirements.approvalToken && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                    <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
                       <div className="flex items-start gap-2">
-                        <AlertCircle className="mt-0.5 h-4 w-4 text-amber-600" />
+                        <AlertCircle className="mt-0.5 h-4 w-4 text-warning" />
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                          <p className="text-sm font-medium text-warning">
                             Awaiting Client Approval - sent on{" "}
                             {requirements.sentToClientAt
                               ? new Date(requirements.sentToClientAt).toLocaleDateString()
@@ -443,7 +443,7 @@ export default function OpsRequirementsPage() {
                             <Input
                               readOnly
                               value={getApprovalLink() || ""}
-                              className="h-8 bg-white text-xs dark:bg-slate-800"
+                              className="h-8 bg-white text-xs"
                             />
                             <Button size="sm" variant="outline" className="h-8" onClick={copyApprovalLink}>
                               <Copy className="h-4 w-4" />
@@ -463,9 +463,9 @@ export default function OpsRequirementsPage() {
                   )}
 
                   {requirements.approvalStatus === "APPROVED" && (
-                    <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm dark:border-green-800 dark:bg-green-900/20">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <span className="font-medium text-green-800 dark:text-green-200">
+                    <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      <span className="font-medium text-success">
                         Approved by Client on{" "}
                         {requirements.clientApprovedAt
                           ? new Date(requirements.clientApprovedAt).toLocaleDateString()
@@ -475,10 +475,10 @@ export default function OpsRequirementsPage() {
                   )}
 
                   {requirements.approvalStatus === "REJECTED" && (
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm dark:border-red-800 dark:bg-red-900/20">
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
                       <div className="flex items-center gap-2">
-                        <XCircle className="h-4 w-4 text-red-600" />
-                        <span className="font-medium text-red-800 dark:text-red-200">
+                        <XCircle className="h-4 w-4 text-destructive" />
+                        <span className="font-medium text-destructive">
                           Rejected by Client on{" "}
                           {requirements.clientRejectedAt
                             ? new Date(requirements.clientRejectedAt).toLocaleDateString()
@@ -486,7 +486,7 @@ export default function OpsRequirementsPage() {
                         </span>
                       </div>
                       {requirements.rejectionReason && (
-                        <p className="mt-1 text-red-600 dark:text-red-400">
+                        <p className="mt-1 text-destructive">
                           Reason: {requirements.rejectionReason}
                         </p>
                       )}
@@ -507,13 +507,13 @@ export default function OpsRequirementsPage() {
                   label="Pending"
                   value={requirements.items?.filter((i) => i.status === "PENDING").length || 0}
                   icon={Clock}
-                  accent="text-yellow-600"
+                  accent="text-warning"
                 />
                 <StatCard
                   label="Fulfilled"
                   value={requirements.items?.filter((i) => i.status === "FULFILLED").length || 0}
                   icon={CheckCircle}
-                  accent="text-green-600"
+                  accent="text-success"
                 />
                 <StatCard
                   label="Est. Total"
@@ -826,7 +826,7 @@ export default function OpsRequirementsPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Estimated Total</span>
-                <span className="font-bold text-green-600">
+                <span className="font-bold text-success">
                   {requirements?.items
                     ?.reduce((sum, i) => sum + (Number(i.estimatedBudget) || 0), 0)
                     .toLocaleString("en-IN")}{" "}

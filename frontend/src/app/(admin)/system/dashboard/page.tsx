@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dash'
 import { cn } from '@/lib/utils'
 
 export default function SystemDashboardPage() {
@@ -256,9 +256,9 @@ function QuickStat({
       <div className="flex items-center gap-3">
         <div
           className={cn('flex h-8 w-8 items-center justify-center rounded-lg', `bg-${color}/10`)}
-          style={{ backgroundColor: `hsl(var(--${color}) / 0.1)` }}
+          style={{ backgroundColor: `color-mix(in srgb, var(--${color}) 10%, transparent)` }}
         >
-          <Icon className="h-4 w-4" style={{ color: `hsl(var(--${color}))` }} />
+          <Icon className="h-4 w-4" style={{ color: `var(--${color})` }} />
         </div>
         <span className="text-sm text-muted-foreground">{label}</span>
       </div>
@@ -293,7 +293,7 @@ function EngagementGauge({
         <div
           className={cn(
             'h-2 rounded-full transition-all',
-            isAboveTarget ? 'bg-green-500' : 'bg-amber-500'
+            isAboveTarget ? 'bg-success' : 'bg-warning'
           )}
           style={{ width: `${Math.min(value, 100)}%` }}
         />
@@ -333,16 +333,16 @@ function HealthRing({ value }: { value: number }) {
   const strokeDashoffset = circumference - (value / 100) * circumference
 
   const getColor = (val: number) => {
-    if (val >= 90) return 'hsl(142 76% 36%)'
-    if (val >= 75) return 'hsl(47 96% 53%)'
-    return 'hsl(351 84% 48%)'
+    if (val >= 90) return 'var(--success)'
+    if (val >= 75) return 'var(--warning)'
+    return 'var(--destructive)'
   }
 
   return (
     <div className="relative">
       <svg height={radius * 2} width={radius * 2}>
         <circle
-          stroke="hsl(var(--muted))"
+          stroke="var(--muted)"
           fill="transparent"
           strokeWidth={stroke}
           r={normalizedRadius}

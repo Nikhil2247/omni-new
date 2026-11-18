@@ -17,7 +17,7 @@ import {
 } from '@/hooks/queries/use-business'
 import { useCategories, useCities } from '@/hooks/queries/use-lookups'
 import { Button } from '@/components/ui/button'
-import { ConfirmDialog } from '@/components/dashboard'
+import { ConfirmDialog } from '@/components/dash'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -73,12 +73,12 @@ import { getMinioViewUrl } from '@/lib/utils/minio'
 import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common'
 
 const statusConfig: Record<VendorStatus, { label: string; color: string; icon: ElementType }> = {
-  DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: Edit },
-  UNCLAIMED: { label: 'Unclaimed', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: UserX },
-  PENDING_REVIEW: { label: 'Pending Review', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Clock },
-  ACTIVE: { label: 'Active', color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle },
-  SUSPENDED: { label: 'Suspended', color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle },
-  ARCHIVED: { label: 'Archived', color: 'bg-gray-100 text-gray-700 border-gray-200', icon: Archive },
+  DRAFT: { label: 'Draft', color: 'bg-muted text-foreground border-border', icon: Edit },
+  UNCLAIMED: { label: 'Unclaimed', color: 'bg-primary/10 text-primary border-primary/40', icon: UserX },
+  PENDING_REVIEW: { label: 'Pending Review', color: 'bg-warning/10 text-warning border-warning/40', icon: Clock },
+  ACTIVE: { label: 'Active', color: 'bg-success/10 text-success border-success/40', icon: CheckCircle },
+  SUSPENDED: { label: 'Suspended', color: 'bg-destructive/10 text-destructive border-destructive/40', icon: XCircle },
+  ARCHIVED: { label: 'Archived', color: 'bg-muted text-foreground border-border', icon: Archive },
 }
 
 const slugifyBusinessName = (value: string) =>
@@ -1253,7 +1253,7 @@ export default function BusinessProfilePage() {
               </Button>
               {managePhotoFile ? <span className="text-xs text-muted-foreground">{managePhotoFile.name}</span> : null}
               {profile.profilePhotoUrl && (
-                <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setConfirmMediaDelete('photo')} disabled={deletePhoto.isPending}>
+                <Button variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setConfirmMediaDelete('photo')} disabled={deletePhoto.isPending}>
                   {deletePhoto.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
               )}
@@ -1266,7 +1266,7 @@ export default function BusinessProfilePage() {
               </Button>
               {manageBannerFile ? <span className="text-xs text-muted-foreground">{manageBannerFile.name}</span> : null}
               {profile.bannerImageUrl && (
-                <Button variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setConfirmMediaDelete('banner')} disabled={deleteBanner.isPending}>
+                <Button variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setConfirmMediaDelete('banner')} disabled={deleteBanner.isPending}>
                   {deleteBanner.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
               )}

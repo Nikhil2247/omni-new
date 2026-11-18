@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { User, Bell, Shield } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
 import { useUmami } from '@/hooks/use-umami'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 
 export default function AdminSettingsPage() {
   const { track } = useUmami()
@@ -23,7 +23,7 @@ export default function AdminSettingsPage() {
           description="Update your personal details and account information."
           href="/admin/settings/profile"
           icon={User}
-          iconColor="text-blue-500"
+          iconColor="text-primary"
         />
         
         <SettingsCard
@@ -31,7 +31,7 @@ export default function AdminSettingsPage() {
           description="Manage notification preferences for admin alerts."
           href="/admin/settings/notifications"
           icon={Bell}
-          iconColor="text-amber-500"
+          iconColor="text-warning"
         />
         
         <SettingsCard
@@ -39,7 +39,7 @@ export default function AdminSettingsPage() {
           description="Manage sessions, password, and two-factor authentication."
           href="/admin/settings/security"
           icon={Shield}
-          iconColor="text-green-500"
+          iconColor="text-success"
         />
       </div>
     </div>

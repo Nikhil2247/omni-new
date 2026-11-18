@@ -21,7 +21,7 @@ import { FileUpload } from '@/components/ui/file-upload'
 import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { marketingService } from '@/lib/api/services/marketing.service'
 import { getMinioViewUrl } from '@/lib/utils/minio'
-import { ConfirmDialog, PageHeader } from '@/components/dashboard'
+import { ConfirmDialog, PageHeader } from '@/components/dash'
 
 export default function MarketingContentDetailPage() {
   const params = useParams()

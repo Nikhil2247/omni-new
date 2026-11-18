@@ -8,7 +8,7 @@ import {
   useUpdateFeatureFlag,
 } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
-import { ConfirmDialog, PageHeader } from '@/components/dashboard'
+import { ConfirmDialog, PageHeader } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -27,10 +27,10 @@ const CATEGORIES: { value: FeatureFlagCategory | 'all'; label: string }[] = [
 ]
 
 const CATEGORY_COLORS: Record<FeatureFlagCategory, string> = {
-  marketing: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-  vendor: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-  user: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-  system: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+  marketing: 'bg-primary/10 text-primary',
+  vendor: 'bg-primary/10 text-primary',
+  user: 'bg-success/10 text-success',
+  system: 'bg-warning/10 text-warning',
 }
 
 interface CategorySectionProps {
@@ -125,7 +125,7 @@ function CategorySection({
                   <div className="flex items-center gap-3 shrink-0">
                     <span
                       className={`text-xs font-medium ${
-                        flag.enabled ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                        flag.enabled ? 'text-success' : 'text-muted-foreground'
                       }`}
                     >
                       {flag.enabled ? 'Enabled' : 'Disabled'}

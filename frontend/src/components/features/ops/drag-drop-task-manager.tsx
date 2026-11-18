@@ -45,7 +45,7 @@ import {
   Search,
   Filter,
 } from 'lucide-react'
-import { ConfirmDialog, FilterSelect, StatCard, StatGrid, useConfirmAction } from '@/components/dashboard'
+import { ConfirmDialog, FilterSelect, StatCard, StatGrid, useConfirmAction } from '@/components/dash'
 
 // ============================================================================
 // TYPES & INTERFACES

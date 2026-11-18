@@ -20,7 +20,7 @@ import {
   TwoLineCell,
   UserCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {

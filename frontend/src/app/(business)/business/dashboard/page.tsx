@@ -17,7 +17,7 @@ import { useCampaigns, useAdCreditBalance, useVendorSubscription } from '@/hooks
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -118,7 +118,7 @@ export default function BusinessDashboardPage() {
         <PageHeader title={`Welcome, ${user?.name || 'Vendor'}!`} />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+            <AlertTriangle className="mx-auto h-8 w-8 text-warning mb-2" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-1 text-sm">
               Create your business profile to receive agreements and manage your tasks.
@@ -145,7 +145,7 @@ export default function BusinessDashboardPage() {
             </Badge>
           )}
           {profile.status !== 'ACTIVE' && (
-            <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+            <Badge variant="outline" className="text-warning border-warning/40">
               <AlertTriangle className="mr-1 h-3 w-3" />
               {profile.status === 'PENDING_REVIEW' ? 'Pending Verification' : 'Profile Incomplete'}
             </Badge>
@@ -156,21 +156,21 @@ export default function BusinessDashboardPage() {
 
       {/* Overdue Tasks Alert - Show prominently at top */}
       {overdueTasks.length > 0 && (
-        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900">
+        <Card className="border-destructive/40 bg-destructive/10">
           <CardContent className="py-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-1.5 bg-red-100 dark:bg-red-900/50 rounded-full">
-                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <div className="p-1.5 bg-destructive/10 rounded-full">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
                 </div>
                 <div>
-                  <p className="font-semibold text-red-800 dark:text-red-200">
+                  <p className="font-semibold text-destructive">
                     {overdueTasks.length} Overdue Task{overdueTasks.length > 1 ? 's' : ''}
                   </p>
                 </div>
               </div>
               <Link href="/business/tasks?filter=overdue">
-                <Button variant="outline" size="sm" className="border-red-300 text-red-700 hover:bg-red-100">
+                <Button variant="outline" size="sm" className="border-destructive/40 text-destructive hover:bg-destructive/10">
                   View Tasks
                 </Button>
               </Link>
@@ -205,7 +205,7 @@ export default function BusinessDashboardPage() {
             value={totalLeads}
             icon={Users}
             highlight={newLeads > 0 ? `${newLeads} new` : undefined}
-            highlightColor="text-green-600"
+            highlightColor="text-success"
           />
           <StatCard
             title="Active Agreements"
@@ -542,7 +542,7 @@ function StatCard({
           )}
         </div>
         {hasTrend && (
-          <p className={`mt-1 flex items-center gap-1 text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`mt-1 flex items-center gap-1 text-xs ${isPositive ? 'text-success' : 'text-destructive'}`}>
             {isPositive ? (
               <TrendingUp className="h-3 w-3" />
             ) : (
@@ -666,7 +666,7 @@ function ActionItem({
       {count > 0 && (
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
           highlight
-            ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+            ? 'bg-success/10 text-success'
             : 'bg-primary/10 text-primary'
         }`}>
           {count}
@@ -690,11 +690,11 @@ function TaskItem({
 
   return (
     <div className="flex items-center gap-3">
-      <div className={`h-2 w-2 rounded-full flex-shrink-0 ${isOverdue ? 'bg-red-500' : 'bg-primary'}`} />
+      <div className={`h-2 w-2 rounded-full flex-shrink-0 ${isOverdue ? 'bg-destructive' : 'bg-primary'}`} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{title}</p>
         {dueDate && (
-          <p className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-red-600' : 'text-muted-foreground'}`}>
+          <p className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-destructive' : 'text-muted-foreground'}`}>
             <Clock className="h-3 w-3" />
             {isOverdue
               ? `Overdue by ${formatDistanceToNow(new Date(dueDate))}`
@@ -754,7 +754,7 @@ function RatingCard({
       <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground">Average Rating</p>
-          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+          <Star className="h-4 w-4 text-warning fill-warning" />
         </div>
         <div className="flex items-baseline gap-2 mt-1">
           <p className="text-xl font-bold">{rating.toFixed(1)}</p>
@@ -762,7 +762,7 @@ function RatingCard({
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
                 key={i}
-                className={`h-3 w-3 ${i < Math.round(rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                className={`h-3 w-3 ${i < Math.round(rating) ? 'fill-warning text-warning' : 'text-muted-foreground'}`}
               />
             ))}
           </div>
@@ -796,7 +796,7 @@ function ReviewCard({
           {Array.from({ length: 5 }).map((_, i) => (
             <Star
               key={i}
-              className={`h-3.5 w-3.5 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+              className={`h-3.5 w-3.5 ${i < rating ? 'fill-warning text-warning' : 'text-muted-foreground'}`}
             />
           ))}
         </div>

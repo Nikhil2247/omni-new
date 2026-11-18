@@ -5,7 +5,7 @@ import { FileText } from 'lucide-react'
 import { useAdminAudit } from '@/hooks/queries/use-admin'
 import { useUmami } from '@/hooks/use-umami'
 import { Input } from '@/components/ui/input'
-import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dash'
 
 export default function SystemAuditPage() {
   const { track } = useUmami()

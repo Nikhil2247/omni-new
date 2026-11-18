@@ -37,7 +37,7 @@ import {
   Eye,
   Printer,
 } from 'lucide-react'
-import { DataTable, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dashboard'
+import { DataTable, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dash'
 import { QuotationPreviewDialog } from './quotation-preview-dialog'
 import type { QuotationTemplateData } from './quotation-template'
 

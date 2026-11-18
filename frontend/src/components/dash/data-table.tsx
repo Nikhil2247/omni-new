@@ -12,6 +12,7 @@ import {
   Inbox,
   Search,
 } from 'lucide-react';
+import { EmptyState, ErrorState } from './empty-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -60,6 +61,10 @@ export interface DataTableProps<T> {
   columns: DataColumn<T>[];
   rowKey: (row: T) => string;
   isLoading?: boolean;
+  /** Show the error state (with Retry when `onRetry` is given) instead of rows. */
+  isError?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
 
   /** Toolbar search box (controlled by the page so it can drive server queries). */
   search?: { value: string; onChange: (v: string) => void; placeholder?: string };
@@ -119,6 +124,9 @@ export function DataTable<T>({
   columns,
   rowKey,
   isLoading,
+  isError,
+  errorMessage,
+  onRetry,
   search,
   filters,
   toolbarRight,
@@ -235,7 +243,7 @@ export function DataTable<T>({
 
   return (
     <div
-      className={cn('bg-card flex flex-col overflow-hidden rounded-lg border', className)}
+      className={cn('bg-card flex flex-col overflow-hidden rounded-md border', className)}
       style={{ maxHeight }}
     >
       {hasToolbar && (
@@ -306,7 +314,7 @@ export function DataTable<T>({
                   <input
                     type="checkbox"
                     aria-label="Select all"
-                    className="size-4 accent-[var(--blue)]"
+                    className="size-4 accent-primary"
                     checked={allOnPage}
                     ref={(el) => {
                       if (el) el.indeterminate = !allOnPage && someOnPage;
@@ -357,19 +365,25 @@ export function DataTable<T>({
           </thead>
           <tbody>
             {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="h-11">
+              Array.from({ length: 9 }).map((_, i) => (
+                <tr key={i} className="h-10">
                   <td colSpan={colSpan} className="px-3">
                     <div className="bg-muted h-4 animate-pulse rounded" style={{ width: `${70 + ((i * 7) % 25)}%` }} />
                   </td>
                 </tr>
               ))
+            ) : isError ? (
+              <tr>
+                <td colSpan={colSpan}>
+                  <ErrorState message={errorMessage} onRetry={onRetry} />
+                </td>
+              </tr>
             ) : pageRows.length === 0 ? (
               <tr>
-                <td colSpan={colSpan} className="py-10 text-center">
-                  <EmptyIcon className="text-muted-foreground/60 mx-auto mb-2 size-7" />
-                  <p className="text-muted-foreground text-sm">{emptyTitle}</p>
-                  {emptyAction ? <div className="mt-3">{emptyAction}</div> : null}
+                <td colSpan={colSpan}>
+                  <EmptyState title={emptyTitle} icon={EmptyIcon}>
+                    {emptyAction}
+                  </EmptyState>
                 </td>
               </tr>
             ) : (
@@ -380,7 +394,7 @@ export function DataTable<T>({
                   <tr
                     key={key}
                     data-selected={selected}
-                    className={cn('h-11 transition-colors', onRowClick && 'cursor-pointer')}
+                    className={cn('h-10 transition-colors', onRowClick && 'cursor-pointer')}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
                     {selectable && (
@@ -388,7 +402,7 @@ export function DataTable<T>({
                         <input
                           type="checkbox"
                           aria-label="Select row"
-                          className="size-4 accent-[var(--blue)]"
+                          className="size-4 accent-primary"
                           checked={selected}
                           onChange={(e) => setSel(e.target.checked ? [...sel, key] : sel.filter((k) => k !== key))}
                         />

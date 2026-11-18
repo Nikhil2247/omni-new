@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell } from '@/components/dashboard'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell } from '@/components/dash'
 import {
   Dialog,
   DialogContent,
@@ -52,13 +52,13 @@ const LEAD_STATUSES = [
 ]
 
 const statusConfig: Record<string, { bg: string; text: string; icon: typeof Clock }> = {
-  NEW: { bg: 'bg-blue-500/10', text: 'text-blue-700', icon: Inbox },
-  CONTACTED: { bg: 'bg-yellow-500/10', text: 'text-yellow-700', icon: MessageSquare },
-  QUALIFIED: { bg: 'bg-purple-500/10', text: 'text-purple-700', icon: TrendingUp },
-  PROPOSAL_SENT: { bg: 'bg-indigo-500/10', text: 'text-indigo-700', icon: Mail },
-  NEGOTIATING: { bg: 'bg-orange-500/10', text: 'text-orange-700', icon: Clock },
-  WON: { bg: 'bg-green-500/10', text: 'text-green-700', icon: CheckCircle2 },
-  LOST: { bg: 'bg-red-500/10', text: 'text-red-700', icon: AlertCircle },
+  NEW: { bg: 'bg-primary/10', text: 'text-primary', icon: Inbox },
+  CONTACTED: { bg: 'bg-warning/10', text: 'text-warning', icon: MessageSquare },
+  QUALIFIED: { bg: 'bg-primary/10', text: 'text-primary', icon: TrendingUp },
+  PROPOSAL_SENT: { bg: 'bg-primary/10', text: 'text-primary', icon: Mail },
+  NEGOTIATING: { bg: 'bg-warning/10', text: 'text-warning', icon: Clock },
+  WON: { bg: 'bg-success/10', text: 'text-success', icon: CheckCircle2 },
+  LOST: { bg: 'bg-destructive/10', text: 'text-destructive', icon: AlertCircle },
 }
 
 const getPlannerName = (lead: BusinessLead) => {
@@ -233,7 +233,7 @@ function LeadsPageContent() {
               {leads.length} Total Leads
             </Badge>
             {statusCounts['NEW'] > 0 && (
-              <Badge className="bg-blue-500 text-xs text-white">{statusCounts['NEW']} New</Badge>
+              <Badge className="bg-primary text-xs text-white">{statusCounts['NEW']} New</Badge>
             )}
           </>
         }

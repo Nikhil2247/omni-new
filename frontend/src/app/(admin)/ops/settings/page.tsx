@@ -1,6 +1,6 @@
 'use client'
 
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { User, Bell, Shield } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
 
@@ -15,7 +15,7 @@ export default function OpsSettingsPage() {
           description="Update your personal details and account information."
           href="/ops/settings/profile"
           icon={User}
-          iconColor="text-blue-500"
+          iconColor="text-primary"
         />
         
         <SettingsCard
@@ -23,7 +23,7 @@ export default function OpsSettingsPage() {
           description="Manage notification preferences for operations alerts."
           href="/ops/settings/notifications"
           icon={Bell}
-          iconColor="text-amber-500"
+          iconColor="text-warning"
         />
         
         <SettingsCard
@@ -31,7 +31,7 @@ export default function OpsSettingsPage() {
           description="Manage sessions, password, and two-factor authentication."
           href="/ops/settings/security"
           icon={Shield}
-          iconColor="text-green-500"
+          iconColor="text-success"
         />
       </div>
     </div>

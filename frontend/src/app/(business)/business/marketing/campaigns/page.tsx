@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell } from '@/components/dashboard';
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell } from '@/components/dash';
 import {
   Plus,
   Play,

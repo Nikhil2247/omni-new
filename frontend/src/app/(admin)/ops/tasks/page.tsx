@@ -22,7 +22,7 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 const priorityConfig: Record<string, { label: string }> = {
   URGENT: { label: 'Urgent' },
@@ -146,10 +146,10 @@ export default function OpsTasksPage() {
       <PageHeader title="Operational Tasks" />
 
       <StatGrid>
-        <StatCard label="Total Tasks" value={tasks?.length || 0} icon={ListTodo} accent="text-blue-600" />
-        <StatCard label="Pending" value={pendingCount} icon={Clock} accent="text-yellow-600" />
-        <StatCard label="In Progress" value={inProgressCount} icon={PlayCircle} accent="text-purple-600" />
-        <StatCard label="Overdue" value={overdueCount} icon={AlertTriangle} accent="text-red-600" />
+        <StatCard label="Total Tasks" value={tasks?.length || 0} icon={ListTodo} accent="text-primary" />
+        <StatCard label="Pending" value={pendingCount} icon={Clock} accent="text-warning" />
+        <StatCard label="In Progress" value={inProgressCount} icon={PlayCircle} accent="text-primary" />
+        <StatCard label="Overdue" value={overdueCount} icon={AlertTriangle} accent="text-destructive" />
       </StatGrid>
 
       <DataTable

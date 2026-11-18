@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { User, Bell, Shield, CreditCard } from 'lucide-react'
 import { SettingsCard } from '@/components/settings/settings-card'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { useUmami } from '@/hooks/use-umami'
 
 export default function BusinessSettingsPage() {
@@ -23,7 +23,7 @@ export default function BusinessSettingsPage() {
           description="Update your personal details and account information."
           href="/business/settings/profile"
           icon={User}
-          iconColor="text-blue-500"
+          iconColor="text-primary"
         />
         
         <SettingsCard
@@ -31,7 +31,7 @@ export default function BusinessSettingsPage() {
           description="Manage notification preferences for business updates."
           href="/business/settings/notifications"
           icon={Bell}
-          iconColor="text-amber-500"
+          iconColor="text-warning"
         />
         
         <SettingsCard
@@ -39,7 +39,7 @@ export default function BusinessSettingsPage() {
           description="Manage sessions, password, and two-factor authentication."
           href="/business/settings/security"
           icon={Shield}
-          iconColor="text-green-500"
+          iconColor="text-success"
         />
 
         <SettingsCard
@@ -47,7 +47,7 @@ export default function BusinessSettingsPage() {
           description="Manage your plan, ad credits, usage, and billing."
           href="/business/settings/subscription"
           icon={CreditCard}
-          iconColor="text-purple-500"
+          iconColor="text-primary"
         />
       </div>
     </div>

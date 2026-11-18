@@ -12,7 +12,7 @@ import {
   StatusBadge,
   UserCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 export default function OpsAssistantsPage() {
   const { data: response, isLoading } = useOpsAssistants()
@@ -75,12 +75,12 @@ export default function OpsAssistantsPage() {
 
       <StatGrid className="lg:grid-cols-3">
         <StatCard label="Total Assistants" value={members.length} icon={Users} accent="text-primary" />
-        <StatCard label="Total Tasks Assigned" value={total} icon={CheckSquare} accent="text-blue-600" />
+        <StatCard label="Total Tasks Assigned" value={total} icon={CheckSquare} accent="text-primary" />
         <StatCard
           label="Avg per Assistant"
           value={members.length > 0 ? Math.round(total / members.length) : 0}
           icon={CheckSquare}
-          accent="text-green-600"
+          accent="text-success"
         />
       </StatGrid>
 

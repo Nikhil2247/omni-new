@@ -31,7 +31,7 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 import {
   Dialog,
   DialogContent,
@@ -237,12 +237,12 @@ export default function AdminClaimsPage() {
       />
 
       <StatGrid className="md:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Pending" value={counts?.pending ?? 0} icon={Clock} accent="text-gray-600" />
-        <StatCard label="Verification Sent" value={counts?.verificationSent ?? 0} icon={FileCheck} accent="text-yellow-600" />
-        <StatCard label="Verified" value={counts?.verified ?? 0} icon={ShieldCheck} accent="text-blue-600" />
-        <StatCard label="Approved" value={counts?.approved ?? 0} icon={CheckCircle} accent="text-green-600" />
-        <StatCard label="Rejected" value={counts?.rejected ?? 0} icon={XCircle} accent="text-red-600" />
-        <StatCard label="Expired" value={counts?.expired ?? 0} icon={Clock} accent="text-gray-500" />
+        <StatCard label="Pending" value={counts?.pending ?? 0} icon={Clock} accent="text-muted-foreground" />
+        <StatCard label="Verification Sent" value={counts?.verificationSent ?? 0} icon={FileCheck} accent="text-warning" />
+        <StatCard label="Verified" value={counts?.verified ?? 0} icon={ShieldCheck} accent="text-primary" />
+        <StatCard label="Approved" value={counts?.approved ?? 0} icon={CheckCircle} accent="text-success" />
+        <StatCard label="Rejected" value={counts?.rejected ?? 0} icon={XCircle} accent="text-destructive" />
+        <StatCard label="Expired" value={counts?.expired ?? 0} icon={Clock} accent="text-muted-foreground" />
       </StatGrid>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as StatusFilter)}>
@@ -251,7 +251,7 @@ export default function AdminClaimsPage() {
           <TabsTrigger value="PENDING" className="relative">
             Pending
             {(counts?.pending ?? 0) > 0 && (
-              <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gray-500 px-1 text-[10px] font-medium text-white">
+              <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-muted-foreground/30 px-1 text-[10px] font-medium text-white">
                 {counts?.pending}
               </span>
             )}
@@ -259,7 +259,7 @@ export default function AdminClaimsPage() {
           <TabsTrigger value="VERIFIED" className="relative">
             Verified
             {(counts?.verified ?? 0) > 0 && (
-              <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-medium text-white">
+              <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-white">
                 {counts?.verified}
               </span>
             )}
@@ -395,8 +395,8 @@ export default function AdminClaimsPage() {
               )}
 
               {selectedClaim.status === 'APPROVED' && (
-                <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
-                  <Label className="text-green-700">Approved</Label>
+                <div className="rounded-lg border border-success/40 bg-success/10 p-3">
+                  <Label className="text-success">Approved</Label>
                   {selectedClaim.reviewedAt && (
                     <p className="text-sm text-muted-foreground">
                       Approved on {formatDate(selectedClaim.reviewedAt)}
@@ -432,17 +432,17 @@ export default function AdminClaimsPage() {
                                 <span>({(doc.fileSize / 1024).toFixed(1)} KB)</span>
                               )}
                               {doc.status === 'VERIFIED' && (
-                                <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/20">
+                                <Badge variant="outline" className="bg-success/10 text-success border-success/40">
                                   Verified
                                 </Badge>
                               )}
                               {doc.status === 'REJECTED' && (
-                                <Badge variant="outline" className="bg-red-500/10 text-red-700 border-red-500/20">
+                                <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/40">
                                   Rejected
                                 </Badge>
                               )}
                               {doc.status === 'PENDING' && (
-                                <Badge variant="outline" className="bg-gray-500/10 text-gray-700 border-gray-500/20">
+                                <Badge variant="outline" className="bg-muted-foreground/10 text-foreground border-border">
                                   Pending
                                 </Badge>
                               )}

@@ -44,7 +44,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ConfirmDialog, useConfirmAction } from '@/components/dashboard'
+import { ConfirmDialog, useConfirmAction } from '@/components/dash'
 import {
   useCreateQuotation,
   useUpdateQuotation,

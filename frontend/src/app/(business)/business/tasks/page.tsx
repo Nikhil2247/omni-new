@@ -6,7 +6,7 @@ import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessTasks, useUpdateTaskStatus, useSubmitTaskProof } from '@/hooks/queries/use-business'
 import { VendorFeatureGate } from '@/components/common/vendor-feature-gate'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, StatCard, StatGrid } from '@/components/dashboard'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, StatCard, StatGrid } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -35,19 +35,19 @@ import {
 import type { BusinessTask } from '@/lib/api/types/business.types'
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PENDING: { label: 'Pending', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
-  ASSIGNED: { label: 'Assigned', color: 'bg-blue-100 text-blue-700', icon: CheckSquare },
-  IN_PROGRESS: { label: 'In Progress', color: 'bg-purple-100 text-purple-700', icon: PlayCircle },
-  PROOF_SUBMITTED: { label: 'Proof Submitted', color: 'bg-indigo-100 text-indigo-700', icon: Upload },
-  COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  CANCELLED: { label: 'Cancelled', color: 'bg-gray-100 text-gray-700', icon: XCircle },
+  PENDING: { label: 'Pending', color: 'bg-warning/10 text-warning', icon: Clock },
+  ASSIGNED: { label: 'Assigned', color: 'bg-primary/10 text-primary', icon: CheckSquare },
+  IN_PROGRESS: { label: 'In Progress', color: 'bg-primary/10 text-primary', icon: PlayCircle },
+  PROOF_SUBMITTED: { label: 'Proof Submitted', color: 'bg-primary/10 text-primary', icon: Upload },
+  COMPLETED: { label: 'Completed', color: 'bg-success/10 text-success', icon: CheckCircle },
+  CANCELLED: { label: 'Cancelled', color: 'bg-muted text-foreground', icon: XCircle },
 }
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
-  URGENT: { label: 'Urgent', color: 'bg-red-100 text-red-700' },
-  HIGH: { label: 'High', color: 'bg-orange-100 text-orange-700' },
-  NORMAL: { label: 'Normal', color: 'bg-blue-100 text-blue-700' },
-  LOW: { label: 'Low', color: 'bg-gray-100 text-gray-700' },
+  URGENT: { label: 'Urgent', color: 'bg-destructive/10 text-destructive' },
+  HIGH: { label: 'High', color: 'bg-warning/10 text-warning' },
+  NORMAL: { label: 'Normal', color: 'bg-primary/10 text-primary' },
+  LOW: { label: 'Low', color: 'bg-muted text-foreground' },
 }
 
 function TasksPageContent() {
@@ -133,7 +133,7 @@ function TasksPageContent() {
         <PageHeader title="Assigned Tasks" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+            <AlertTriangle className="mx-auto h-8 w-8 text-warning mb-2" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first.
@@ -153,9 +153,9 @@ function TasksPageContent() {
 
       <StatGrid>
         <StatCard label="Total Tasks" value={totalTasks} icon={CheckSquare} />
-        <StatCard label="Pending" value={pendingTasks} icon={Clock} accent="text-yellow-600" />
-        <StatCard label="Completed" value={completedTasks} icon={CheckCircle} accent="text-green-600" />
-        <StatCard label="Overdue" value={overdueTasks} icon={AlertTriangle} accent="text-red-600" />
+        <StatCard label="Pending" value={pendingTasks} icon={Clock} accent="text-warning" />
+        <StatCard label="Completed" value={completedTasks} icon={CheckCircle} accent="text-success" />
+        <StatCard label="Overdue" value={overdueTasks} icon={AlertTriangle} accent="text-destructive" />
       </StatGrid>
 
       <DataTable<BusinessTask>
@@ -204,7 +204,7 @@ function TasksPageContent() {
               const overdue =
                 t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'COMPLETED' && t.status !== 'CANCELLED'
               return t.dueDate ? (
-                <span className={overdue ? 'text-sm font-medium text-red-600' : 'text-sm'}>
+                <span className={overdue ? 'text-sm font-medium text-destructive' : 'text-sm'}>
                   {format(new Date(t.dueDate), 'MMM d, yyyy')}
                 </span>
               ) : (
@@ -323,18 +323,18 @@ function TasksPageContent() {
                 <h4 className="font-medium mb-2">Timeline</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <div className="w-2 h-2 rounded-full bg-primary" />
                     <span>Created: {format(new Date(selectedTask.createdAt), 'MMM d, yyyy')}</span>
                   </div>
                   {selectedTask.startedAt && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-purple-500" />
+                      <div className="w-2 h-2 rounded-full bg-primary" />
                       <span>Started: {format(new Date(selectedTask.startedAt), 'MMM d, yyyy')}</span>
                     </div>
                   )}
                   {selectedTask.completedAt && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <div className="w-2 h-2 rounded-full bg-success" />
                       <span>Completed: {format(new Date(selectedTask.completedAt), 'MMM d, yyyy')}</span>
                     </div>
                   )}

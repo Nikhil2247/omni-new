@@ -20,7 +20,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader, StatCard, StatGrid, StatusBadge, type StatusTone } from '@/components/dashboard'
+import { PageHeader, StatCard, StatGrid, StatusBadge, type StatusTone } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { useOpsDashboardMetrics } from '@/hooks/queries/use-ops-dashboard'
@@ -28,23 +28,23 @@ import { useOpsDashboardMetrics } from '@/hooks/queries/use-ops-dashboard'
 function getEventStatusColor(status: string): string {
   switch (status) {
     case 'NEW':
-      return 'bg-blue-500'
+      return 'bg-primary'
     case 'ASSIGNED':
-      return 'bg-purple-500'
+      return 'bg-primary'
     case 'REQUIREMENTS_SET':
-      return 'bg-indigo-500'
+      return 'bg-primary'
     case 'VENDOR_SOURCING':
-      return 'bg-orange-500'
+      return 'bg-warning'
     case 'CONTRACTS_LOCKED':
-      return 'bg-teal-500'
+      return 'bg-success'
     case 'EXECUTION':
-      return 'bg-yellow-500'
+      return 'bg-warning'
     case 'COMPLETED':
-      return 'bg-green-500'
+      return 'bg-success'
     case 'CANCELLED':
-      return 'bg-red-500'
+      return 'bg-destructive'
     default:
-      return 'bg-gray-500'
+      return 'bg-muted-foreground/30'
   }
 }
 
@@ -128,14 +128,14 @@ export default function OpsReportsPage() {
               label="Task Completion"
               value={`${taskCompletionRate}%`}
               icon={CheckCircle}
-              accent="text-green-600"
+              accent="text-success"
               hint={`${metrics.tasks.completed} of ${metrics.tasks.totalAssigned} tasks`}
             />
             <StatCard
               label="Overdue Tasks"
               value={metrics.tasks.overdue}
               icon={AlertTriangle}
-              accent="text-red-600"
+              accent="text-destructive"
               hint={
                 metrics.tasks.overdue > 0 ? (
                   <Link href="/ops/tasks?status=overdue" className="text-primary hover:underline">
@@ -148,7 +148,7 @@ export default function OpsReportsPage() {
               label="KYC Approval Rate"
               value={`${kycApprovalRate}%`}
               icon={ShieldCheck}
-              accent="text-blue-600"
+              accent="text-primary"
               hint={`${metrics.kyc.approved} approved vendors`}
             />
           </StatGrid>
@@ -182,7 +182,7 @@ export default function OpsReportsPage() {
                               <span className="text-muted-foreground">({percentage}%)</span>
                             </div>
                           </div>
-                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                             <div
                               className={`h-full ${getEventStatusColor(status)} transition-all`}
                               style={{ width: `${percentage}%` }}
@@ -211,10 +211,10 @@ export default function OpsReportsPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-2 p-3">
-                {statusRow(<Clock className="h-4 w-4 text-yellow-500" />, 'Pending', metrics.kyc.pending, 'warning')}
-                {statusRow(<FileText className="h-4 w-4 text-blue-500" />, 'Under Review', metrics.kyc.underReview, 'info')}
-                {statusRow(<CheckCircle className="h-4 w-4 text-green-500" />, 'Approved', metrics.kyc.approved, 'success')}
-                {statusRow(<XCircle className="h-4 w-4 text-red-500" />, 'Rejected', metrics.kyc.rejected, 'danger')}
+                {statusRow(<Clock className="h-4 w-4 text-warning" />, 'Pending', metrics.kyc.pending, 'warning')}
+                {statusRow(<FileText className="h-4 w-4 text-primary" />, 'Under Review', metrics.kyc.underReview, 'info')}
+                {statusRow(<CheckCircle className="h-4 w-4 text-success" />, 'Approved', metrics.kyc.approved, 'success')}
+                {statusRow(<XCircle className="h-4 w-4 text-destructive" />, 'Rejected', metrics.kyc.rejected, 'danger')}
               </CardContent>
             </Card>
 
@@ -232,9 +232,9 @@ export default function OpsReportsPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-2 p-3">
-                {statusRow(<AlertTriangle className="h-4 w-4 text-red-500" />, 'Open', metrics.disputes.open, 'danger')}
-                {statusRow(<FileText className="h-4 w-4 text-orange-500" />, 'Investigating', metrics.disputes.investigating, 'warning')}
-                {statusRow(<CheckCircle className="h-4 w-4 text-green-500" />, 'Resolved', metrics.disputes.resolved, 'success')}
+                {statusRow(<AlertTriangle className="h-4 w-4 text-destructive" />, 'Open', metrics.disputes.open, 'danger')}
+                {statusRow(<FileText className="h-4 w-4 text-warning" />, 'Investigating', metrics.disputes.investigating, 'warning')}
+                {statusRow(<CheckCircle className="h-4 w-4 text-success" />, 'Resolved', metrics.disputes.resolved, 'success')}
                 <Progress value={disputeResolutionRate} className="h-2" />
               </CardContent>
             </Card>
@@ -259,8 +259,8 @@ export default function OpsReportsPage() {
             <CardContent className="space-y-3 p-3">
               <StatGrid className="grid-cols-3 lg:grid-cols-3">
                 <StatCard label="Total Tasks" value={metrics.tasks.totalAssigned} accent="text-primary" />
-                <StatCard label="Completed" value={metrics.tasks.completed} accent="text-green-600" />
-                <StatCard label="Overdue" value={metrics.tasks.overdue} accent="text-red-600" />
+                <StatCard label="Completed" value={metrics.tasks.completed} accent="text-success" />
+                <StatCard label="Overdue" value={metrics.tasks.overdue} accent="text-destructive" />
               </StatGrid>
               <div>
                 <div className="mb-1 flex items-center justify-between text-xs">

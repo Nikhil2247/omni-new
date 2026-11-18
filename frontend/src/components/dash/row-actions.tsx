@@ -44,7 +44,7 @@ export function RowActions({ actions, className }: { actions: RowAction[]; class
     >
       {visible.map((a) => {
         const Icon = a.icon;
-        const cls = cn(BTN, a.danger && 'text-red-600 hover:bg-red-500/10 hover:text-red-700');
+        const cls = cn(BTN, a.danger && 'text-destructive hover:bg-destructive/10 hover:text-destructive');
         const inner = <Icon aria-hidden />;
         const trigger =
           a.href && !a.disabled ? (

@@ -1,4 +1,4 @@
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { OpsSupportList } from '@/components/features/ops'
 
 export default function OpsSupportDetailPage() {

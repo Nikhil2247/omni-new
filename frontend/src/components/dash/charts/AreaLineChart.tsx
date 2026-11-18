@@ -74,7 +74,7 @@ export function AreaLineChart({
               </linearGradient>
             ))}
           </defs>
-          {showGrid && <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />}
+          {showGrid && <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />}
           <XAxis
             dataKey={xAxisKey}
             tickLine={false}
@@ -88,7 +88,7 @@ export function AreaLineChart({
               return value
             }}
             fontSize={12}
-            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fill: 'var(--muted-foreground)' }}
           />
           <YAxis
             tickLine={false}
@@ -100,12 +100,12 @@ export function AreaLineChart({
               return value
             }}
             fontSize={12}
-            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fill: 'var(--muted-foreground)' }}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: 'hsl(var(--background))',
-              border: '1px solid hsl(var(--border))',
+              backgroundColor: 'var(--background)',
+              border: '1px solid var(--border)',
               borderRadius: '8px',
               fontSize: '12px',
             }}
@@ -129,7 +129,7 @@ export function AreaLineChart({
               height={36}
               formatter={(value, entry) => {
                 const dataKey = dataKeys.find(dk => dk.key === entry.dataKey)
-                return <span style={{ color: 'hsl(var(--foreground))', fontSize: '12px' }}>{dataKey?.label || value}</span>
+                return <span style={{ color: 'var(--foreground)', fontSize: '12px' }}>{dataKey?.label || value}</span>
               }}
             />
           )}

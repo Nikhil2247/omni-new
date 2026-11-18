@@ -17,7 +17,7 @@ import {
   AlertCircle,
   Printer,
 } from 'lucide-react'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, StatCard, StatGrid, type DataColumn } from '@/components/dashboard'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, StatCard, StatGrid, type DataColumn } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -357,11 +357,11 @@ export default function OpsQuotationsPage() {
       />
 
       <StatGrid className="lg:grid-cols-5">
-        <StatCard label="Total" value={stats.total} icon={FileText} accent="text-blue-600" />
-        <StatCard label="Draft" value={stats.draft} icon={Clock} accent="text-gray-600" />
-        <StatCard label="Sent" value={stats.sent} icon={Send} accent="text-blue-600" />
-        <StatCard label="Accepted" value={stats.accepted} icon={CheckCircle} accent="text-green-600" />
-        <StatCard label="Rejected" value={stats.rejected} icon={XCircle} accent="text-red-600" />
+        <StatCard label="Total" value={stats.total} icon={FileText} accent="text-primary" />
+        <StatCard label="Draft" value={stats.draft} icon={Clock} accent="text-muted-foreground" />
+        <StatCard label="Sent" value={stats.sent} icon={Send} accent="text-primary" />
+        <StatCard label="Accepted" value={stats.accepted} icon={CheckCircle} accent="text-success" />
+        <StatCard label="Rejected" value={stats.rejected} icon={XCircle} accent="text-destructive" />
       </StatGrid>
 
       {error ? (
@@ -518,7 +518,7 @@ export default function OpsQuotationsPage() {
                   </div>
                 )}
                 {selectedQuotation.discount && (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-success">
                     <span>Discount</span>
                     <span>-{formatCurrency(selectedQuotation.discount, selectedQuotation.currency)}</span>
                   </div>

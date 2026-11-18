@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { PageHeader, DataTable, StatusBadge } from '@/components/dashboard'
+import { PageHeader, DataTable, StatusBadge } from '@/components/dash'
 import {
   ShieldCheck,
   ShieldX,
@@ -47,12 +47,12 @@ import {
 import type { OpsKycDocument } from '@/lib/api/types/ops.types'
 
 const kycStatusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  NOT_STARTED: { label: 'Not Started', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20', icon: Clock },
-  PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: Clock },
-  SUBMITTED: { label: 'Submitted', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20', icon: FileCheck },
-  UNDER_REVIEW: { label: 'Under Review', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20', icon: Eye },
-  APPROVED: { label: 'Approved', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: ShieldCheck },
-  REJECTED: { label: 'Rejected', color: 'bg-red-500/10 text-red-700 border-red-500/20', icon: ShieldX },
+  NOT_STARTED: { label: 'Not Started', color: 'bg-muted-foreground/10 text-foreground border-border', icon: Clock },
+  PENDING: { label: 'Pending', color: 'bg-warning/10 text-warning border-warning/40', icon: Clock },
+  SUBMITTED: { label: 'Submitted', color: 'bg-primary/10 text-primary border-primary/40', icon: FileCheck },
+  UNDER_REVIEW: { label: 'Under Review', color: 'bg-primary/10 text-primary border-primary/40', icon: Eye },
+  APPROVED: { label: 'Approved', color: 'bg-success/10 text-success border-success/40', icon: ShieldCheck },
+  REJECTED: { label: 'Rejected', color: 'bg-destructive/10 text-destructive border-destructive/40', icon: ShieldX },
 }
 
 const docTypeConfig: Record<string, { label: string; icon: React.ElementType; required: boolean }> = {
@@ -65,18 +65,18 @@ const docTypeConfig: Record<string, { label: string; icon: React.ElementType; re
 }
 
 const docStatusConfig: Record<string, { label: string; color: string }> = {
-  PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  VERIFIED: { label: 'Verified', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  REJECTED: { label: 'Rejected', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
+  PENDING: { label: 'Pending', color: 'bg-warning/10 text-warning border-warning/40' },
+  VERIFIED: { label: 'Verified', color: 'bg-success/10 text-success border-success/40' },
+  REJECTED: { label: 'Rejected', color: 'bg-destructive/10 text-destructive border-destructive/40' },
 }
 
 const contractStatusConfig: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: 'Draft', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
-  PENDING_SIGNATURE: { label: 'Pending Signature', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  ACTIVE: { label: 'Active', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  SUSPENDED: { label: 'Suspended', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  TERMINATED: { label: 'Terminated', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
-  EXPIRED: { label: 'Expired', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
+  DRAFT: { label: 'Draft', color: 'bg-muted-foreground/10 text-foreground border-border' },
+  PENDING_SIGNATURE: { label: 'Pending Signature', color: 'bg-warning/10 text-warning border-warning/40' },
+  ACTIVE: { label: 'Active', color: 'bg-success/10 text-success border-success/40' },
+  SUSPENDED: { label: 'Suspended', color: 'bg-warning/10 text-warning border-warning/40' },
+  TERMINATED: { label: 'Terminated', color: 'bg-destructive/10 text-destructive border-destructive/40' },
+  EXPIRED: { label: 'Expired', color: 'bg-muted-foreground/10 text-foreground border-border' },
 }
 
 const consentTypeLabels: Record<string, string> = {
@@ -205,8 +205,8 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                     key={key}
                     variant="outline"
                     className={step.completed
-                      ? 'bg-green-500/10 text-green-700 border-green-500/20'
-                      : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                      ? 'bg-success/10 text-success border-success/40'
+                      : 'bg-muted-foreground/10 text-muted-foreground border-border'
                     }
                   >
                     {step.completed ? (
@@ -242,7 +242,7 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                 <Button
                   onClick={handleApprove}
                   disabled={approveKyc.isPending}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-success hover:bg-success"
                 >
                   {approveKyc.isPending ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -261,13 +261,13 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
               </>
             )}
             {kyc.status === 'APPROVED' && (
-              <div className="flex items-center gap-2 text-green-600">
+              <div className="flex items-center gap-2 text-success">
                 <ShieldCheck className="h-5 w-5" />
                 <span className="font-medium">KYC Verified</span>
               </div>
             )}
             {kyc.status === 'REJECTED' && (
-              <div className="flex items-center gap-2 text-red-600">
+              <div className="flex items-center gap-2 text-destructive">
                 <ShieldX className="h-5 w-5" />
                 <span className="font-medium">KYC Rejected</span>
               </div>
@@ -406,9 +406,9 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                     </div>
                   )}
                   {kyc.rejectionReason && (
-                    <div className="md:col-span-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-600 font-medium">Rejection Reason</p>
-                      <p className="text-red-700 mt-1">{kyc.rejectionReason}</p>
+                    <div className="md:col-span-2 p-3 bg-destructive/10 border border-destructive/40 rounded-lg">
+                      <p className="text-sm text-destructive font-medium">Rejection Reason</p>
+                      <p className="text-destructive mt-1">{kyc.rejectionReason}</p>
                     </div>
                   )}
                 </div>
@@ -507,9 +507,9 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                     <div key={type} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         {status.hasConsent ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          <CheckCircle2 className="h-5 w-5 text-success" />
                         ) : (
-                          <XCircle className="h-5 w-5 text-gray-400" />
+                          <XCircle className="h-5 w-5 text-muted-foreground" />
                         )}
                         <div>
                           <p className="font-medium">{consentTypeLabels[type] || type}</p>
@@ -525,8 +525,8 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                         <Badge
                           variant="outline"
                           className={status.hasConsent
-                            ? 'bg-green-500/10 text-green-700 border-green-500/20'
-                            : 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                            ? 'bg-success/10 text-success border-success/40'
+                            : 'bg-muted-foreground/10 text-muted-foreground border-border'
                           }
                         >
                           {status.hasConsent ? 'Consented' : 'Not Consented'}
@@ -606,18 +606,18 @@ export function OpsKycDetails({ kycId }: { kycId: string }) {
                   <div className="flex items-center gap-3">
                     <Badge
                       variant="outline"
-                      className={contractStatusConfig[onboardingData.contract.status || '']?.color || 'bg-gray-500/10 text-gray-700 border-gray-500/20'}
+                      className={contractStatusConfig[onboardingData.contract.status || '']?.color || 'bg-muted-foreground/10 text-foreground border-border'}
                     >
                       {contractStatusConfig[onboardingData.contract.status || '']?.label || onboardingData.contract.status || 'Unknown'}
                     </Badge>
                     {onboardingData.contract.signedByVendor && (
-                      <div className="flex items-center gap-1 text-green-600">
+                      <div className="flex items-center gap-1 text-success">
                         <CheckCircle2 className="h-4 w-4" />
                         <span className="text-sm">Signed by Vendor</span>
                       </div>
                     )}
                     {onboardingData.contract.signedByPlatform && (
-                      <div className="flex items-center gap-1 text-green-600">
+                      <div className="flex items-center gap-1 text-success">
                         <CheckCircle2 className="h-4 w-4" />
                         <span className="text-sm">Signed by Platform</span>
                       </div>

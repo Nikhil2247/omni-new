@@ -46,17 +46,17 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 import type { LeadResponse } from '@/lib/api/types/lead.types'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  NEW: { label: 'New', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
-  CONTACTED: { label: 'Contacted', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  QUALIFIED: { label: 'Qualified', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20' },
-  PROPOSAL_SENT: { label: 'Proposal Sent', color: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20' },
-  NEGOTIATING: { label: 'Negotiating', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  WON: { label: 'Won', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  LOST: { label: 'Lost', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
+  NEW: { label: 'New', color: 'bg-primary/10 text-primary border-primary/40' },
+  CONTACTED: { label: 'Contacted', color: 'bg-warning/10 text-warning border-warning/40' },
+  QUALIFIED: { label: 'Qualified', color: 'bg-primary/10 text-primary border-primary/40' },
+  PROPOSAL_SENT: { label: 'Proposal Sent', color: 'bg-primary/10 text-primary border-primary/40' },
+  NEGOTIATING: { label: 'Negotiating', color: 'bg-warning/10 text-warning border-warning/40' },
+  WON: { label: 'Won', color: 'bg-success/10 text-success border-success/40' },
+  LOST: { label: 'Lost', color: 'bg-destructive/10 text-destructive border-destructive/40' },
 }
 
 const sourceConfig: Record<string, { label: string }> = {
@@ -262,10 +262,10 @@ export default function OpsLeadsPage() {
       />
 
       <StatGrid>
-        <StatCard label="New Leads" value={newCount} icon={AlertCircle} accent="text-blue-600" />
-        <StatCard label="Contacted" value={contactedCount} icon={Phone} accent="text-yellow-600" />
-        <StatCard label="Qualified" value={qualifiedCount} icon={MessageSquare} accent="text-purple-600" />
-        <StatCard label="Won (Converted)" value={wonCount} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="New Leads" value={newCount} icon={AlertCircle} accent="text-primary" />
+        <StatCard label="Contacted" value={contactedCount} icon={Phone} accent="text-warning" />
+        <StatCard label="Qualified" value={qualifiedCount} icon={MessageSquare} accent="text-primary" />
+        <StatCard label="Won (Converted)" value={wonCount} icon={CheckCircle} accent="text-success" />
       </StatGrid>
 
       <DataTable
@@ -403,7 +403,7 @@ export default function OpsLeadsPage() {
             <Button
               onClick={handleConvert}
               disabled={convertLead.isPending}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-success hover:bg-success"
             >
               {convertLead.isPending ? 'Converting...' : 'Convert to Event'}
             </Button>

@@ -52,7 +52,7 @@ import {
   StatusBadge,
   TwoLineCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 const STATUS_CONFIG: Record<string, { label: string }> = {
   PENDING: { label: 'Pending' },
@@ -340,9 +340,9 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
     <div className="space-y-3">
       <StatGrid>
         <StatCard label="Total Tasks" value={totalTasks} icon={ListTodo} />
-        <StatCard label="Completed" value={completedTasks} icon={CheckCircle2} accent="text-green-600" />
-        <StatCard label="In Progress" value={inProgressTasks} icon={Play} accent="text-yellow-600" />
-        <StatCard label="Overdue" value={overdueTasks} icon={AlertCircle} accent="text-red-600" />
+        <StatCard label="Completed" value={completedTasks} icon={CheckCircle2} accent="text-success" />
+        <StatCard label="In Progress" value={inProgressTasks} icon={Play} accent="text-warning" />
+        <StatCard label="Overdue" value={overdueTasks} icon={AlertCircle} accent="text-destructive" />
       </StatGrid>
 
       <DataTable
@@ -642,7 +642,7 @@ export function OpsTasksList({ activeEventId, showCreateButton = true }: OpsTask
                 <Button
                   type="button"
                   variant={reviewForm.approved ? 'default' : 'outline'}
-                  className={reviewForm.approved ? 'bg-green-600 hover:bg-green-700' : ''}
+                  className={reviewForm.approved ? 'bg-success hover:bg-success' : ''}
                   onClick={() => setReviewForm({ ...reviewForm, approved: true })}
                 >
                   <ThumbsUp className="mr-2 h-4 w-4" />

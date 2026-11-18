@@ -118,7 +118,7 @@ export function PauseSubscriptionModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Pause className="h-5 w-5 text-amber-500" />
+            <Pause className="h-5 w-5 text-warning" />
             Pause Subscription
           </DialogTitle>
           <DialogDescription>
@@ -185,14 +185,14 @@ export function PauseSubscriptionModal({
           </div>
 
           {/* Resume Date Info */}
-          <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 p-4">
+          <div className="rounded-lg border bg-warning/10 p-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-amber-500" />
-              <span className="font-medium text-amber-700 dark:text-amber-300">
+              <Calendar className="h-4 w-4 text-warning" />
+              <span className="font-medium text-warning">
                 Expected Resume Date
               </span>
             </div>
-            <p className="text-amber-600 dark:text-amber-400 mt-1">
+            <p className="text-warning mt-1">
               {formatDate(resumeDate.toISOString())}
             </p>
           </div>
@@ -205,7 +205,7 @@ export function PauseSubscriptionModal({
           <Button
             onClick={handlePause}
             disabled={isLoading}
-            className="bg-amber-500 hover:bg-amber-600 text-white"
+            className="bg-warning hover:bg-warning text-white"
           >
             {isLoading ? (
               <>

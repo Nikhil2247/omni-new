@@ -64,7 +64,7 @@ export function CopyCell({ value }: { value?: string | null }) {
           });
         }}
       >
-        {copied ? <Check className="size-3.5 text-green-600" /> : <Copy className="size-3.5" />}
+        {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
       </button>
     </span>
   );

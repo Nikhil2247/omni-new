@@ -1,4 +1,4 @@
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { OpsEventDetails } from '@/components/features/ops'
 
 export default function OpsEventOverviewPage({ params }: { params: { eventId: string } }) {

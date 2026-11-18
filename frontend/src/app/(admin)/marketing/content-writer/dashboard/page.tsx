@@ -7,7 +7,7 @@ import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { Button } from '@/components/ui/button'
-import { DataTable, PageHeader, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dash'
 
 export default function ContentWriterDashboardPage() {
   const [currentPage, setCurrentPage] = useState(1)

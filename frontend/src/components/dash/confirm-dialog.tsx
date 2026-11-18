@@ -54,15 +54,15 @@ export function ConfirmDialog({
   return (
     <AlertDialogPrimitive.Root open={open} onOpenChange={(o) => !pending && onOpenChange(o)}>
       <AlertDialogPrimitive.Portal>
-        <AlertDialogPrimitive.Overlay className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-[#10173a]/45" />
+        <AlertDialogPrimitive.Overlay className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-foreground/45" />
         <AlertDialogPrimitive.Content
-          className="bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border p-4 shadow-xl outline-none sm:max-w-sm"
+          className="bg-card data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-md border p-4 shadow-lg outline-none sm:max-w-sm"
         >
           <div className="flex items-start gap-3">
             <div
               className={cn(
                 'flex size-9 shrink-0 items-center justify-center rounded-full',
-                tone === 'danger' ? 'bg-red-500/10 text-red-600' : 'bg-primary/10 text-primary'
+                tone === 'danger' ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
               )}
             >
               <AlertTriangle className="size-4" />
@@ -87,8 +87,8 @@ export function ConfirmDialog({
               onClick={handleConfirm}
               disabled={pending}
               className={cn(
-                'inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-white transition-colors disabled:opacity-60',
-                tone === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'
+                'inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-destructive-foreground transition-colors disabled:opacity-60',
+                tone === 'danger' ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary text-primary-foreground hover:bg-primary/90'
               )}
             >
               {pending && <Loader2 className="size-3.5 animate-spin" />}

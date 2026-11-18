@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import {
   Database,
   HardDrive,
@@ -64,9 +64,9 @@ function CircularProgress({
   const offset = circumference - (value / 100) * circumference
 
   const getColor = (val: number) => {
-    if (val >= 80) return { text: 'text-green-500', stroke: '#22c55e' }
-    if (val >= 50) return { text: 'text-yellow-500', stroke: '#eab308' }
-    return { text: 'text-red-500', stroke: '#ef4444' }
+    if (val >= 80) return { text: 'text-success', stroke: 'var(--success)' }
+    if (val >= 50) return { text: 'text-warning', stroke: 'var(--warning)' }
+    return { text: 'text-destructive', stroke: 'var(--destructive)' }
   }
 
   const colors = getColor(value)
@@ -211,24 +211,24 @@ export default function SystemHealthPage() {
       {/* Overall Status Banner */}
       <Card className={cn(
         'border',
-        overallStatus === 'healthy' && 'border-green-500/50 bg-green-500/5',
-        overallStatus === 'degraded' && 'border-yellow-500/50 bg-yellow-500/5',
-        overallStatus === 'error' && 'border-red-500/50 bg-red-500/5',
-        overallStatus === 'unknown' && 'border-gray-400/50 bg-gray-400/5'
+        overallStatus === 'healthy' && 'border-success/40 bg-success/5',
+        overallStatus === 'degraded' && 'border-warning/40 bg-warning/5',
+        overallStatus === 'error' && 'border-destructive/40 bg-destructive/5',
+        overallStatus === 'unknown' && 'border-border bg-muted-foreground/5'
       )}>
         <CardContent className="flex flex-col items-center justify-between gap-3 py-3 md:flex-row">
           <div className="flex items-center gap-3">
             <div className={cn(
               'flex h-10 w-10 items-center justify-center rounded-full',
-              overallStatus === 'healthy' && 'bg-green-500/20',
-              overallStatus === 'degraded' && 'bg-yellow-500/20',
-              overallStatus === 'error' && 'bg-red-500/20',
-              overallStatus === 'unknown' && 'bg-gray-400/20'
+              overallStatus === 'healthy' && 'bg-success/20',
+              overallStatus === 'degraded' && 'bg-warning/20',
+              overallStatus === 'error' && 'bg-destructive/20',
+              overallStatus === 'unknown' && 'bg-muted-foreground/20'
             )}>
-              {overallStatus === 'healthy' && <CheckCircle2 className="h-5 w-5 text-green-500" />}
-              {overallStatus === 'degraded' && <AlertCircle className="h-5 w-5 text-yellow-500" />}
-              {overallStatus === 'error' && <XCircle className="h-5 w-5 text-red-500" />}
-              {overallStatus === 'unknown' && <AlertCircle className="h-5 w-5 text-gray-400" />}
+              {overallStatus === 'healthy' && <CheckCircle2 className="h-5 w-5 text-success" />}
+              {overallStatus === 'degraded' && <AlertCircle className="h-5 w-5 text-warning" />}
+              {overallStatus === 'error' && <XCircle className="h-5 w-5 text-destructive" />}
+              {overallStatus === 'unknown' && <AlertCircle className="h-5 w-5 text-muted-foreground" />}
             </div>
             <div>
               <h2 className="text-lg font-bold capitalize">{overallStatus === 'unknown' ? 'Checking...' : overallStatus}</h2>
@@ -239,9 +239,9 @@ export default function SystemHealthPage() {
             <div className="text-center">
               <p className={cn(
                 'text-2xl font-bold',
-                healthPercent >= 80 && 'text-green-500',
-                healthPercent >= 50 && healthPercent < 80 && 'text-yellow-500',
-                healthPercent < 50 && 'text-red-500'
+                healthPercent >= 80 && 'text-success',
+                healthPercent >= 50 && healthPercent < 80 && 'text-warning',
+                healthPercent < 50 && 'text-destructive'
               )}>{healthPercent}%</p>
               <p className="text-xs text-muted-foreground">Health Score</p>
             </div>
@@ -261,9 +261,9 @@ export default function SystemHealthPage() {
                 <div className="text-center">
                   <p className={cn(
                     'text-lg font-semibold',
-                    avgLatency < 50 && 'text-green-500',
-                    avgLatency >= 50 && avgLatency < 200 && 'text-yellow-500',
-                    avgLatency >= 200 && 'text-red-500'
+                    avgLatency < 50 && 'text-success',
+                    avgLatency >= 50 && avgLatency < 200 && 'text-warning',
+                    avgLatency >= 200 && 'text-destructive'
                   )}>{avgLatency}ms</p>
                   <p className="text-xs text-muted-foreground">Avg Latency</p>
                 </div>
@@ -315,10 +315,10 @@ export default function SystemHealthPage() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         'flex h-8 w-8 items-center justify-center rounded-lg',
-                        status === 'healthy' && 'bg-green-500/10 text-green-600',
-                        status === 'degraded' && 'bg-yellow-500/10 text-yellow-600',
-                        status === 'error' && 'bg-red-500/10 text-red-600',
-                        status === 'unknown' && 'bg-gray-500/10 text-gray-600'
+                        status === 'healthy' && 'bg-success/10 text-success',
+                        status === 'degraded' && 'bg-warning/10 text-warning',
+                        status === 'error' && 'bg-destructive/10 text-destructive',
+                        status === 'unknown' && 'bg-muted-foreground/10 text-muted-foreground'
                       )}>
                         <Icon className="h-4 w-4" />
                       </div>
@@ -335,9 +335,9 @@ export default function SystemHealthPage() {
                       <span className={cn(
                         'font-mono font-medium',
                         !latency && 'text-muted-foreground',
-                        latency && latency < 50 && 'text-green-600',
-                        latency && latency >= 50 && latency < 200 && 'text-yellow-600',
-                        latency && latency >= 200 && 'text-red-600'
+                        latency && latency < 50 && 'text-success',
+                        latency && latency >= 50 && latency < 200 && 'text-warning',
+                        latency && latency >= 200 && 'text-destructive'
                       )}>
                         {latency ? `${latency}ms` : 'N/A'}
                       </span>
@@ -347,15 +347,15 @@ export default function SystemHealthPage() {
                         <span className="text-muted-foreground">Connected</span>
                         <span className="flex items-center gap-1">
                           {(service as any).details.connected ? (
-                            <><Wifi className="h-3 w-3 text-green-500" /><span className="text-green-600">Yes</span></>
+                            <><Wifi className="h-3 w-3 text-success" /><span className="text-success">Yes</span></>
                           ) : (
-                            <><WifiOff className="h-3 w-3 text-red-500" /><span className="text-red-600">No</span></>
+                            <><WifiOff className="h-3 w-3 text-destructive" /><span className="text-destructive">No</span></>
                           )}
                         </span>
                       </div>
                     )}
                     {(service as any)?.error && (
-                      <div className="mt-2 rounded bg-red-500/10 p-2 text-xs text-red-600">
+                      <div className="mt-2 rounded bg-destructive/10 p-2 text-xs text-destructive">
                         {(service as any).error}
                       </div>
                     )}
@@ -387,9 +387,9 @@ export default function SystemHealthPage() {
                     <span className={cn(
                       'font-mono font-medium',
                       latency === 0 && 'text-muted-foreground',
-                      latency > 0 && latency < 50 && 'text-green-600',
-                      latency >= 50 && latency < 200 && 'text-yellow-600',
-                      latency >= 200 && 'text-red-600'
+                      latency > 0 && latency < 50 && 'text-success',
+                      latency >= 50 && latency < 200 && 'text-warning',
+                      latency >= 200 && 'text-destructive'
                     )}>
                       {latency > 0 ? `${latency}ms` : 'N/A'}
                     </span>
@@ -399,9 +399,9 @@ export default function SystemHealthPage() {
                       className={cn(
                         'h-full transition-all duration-500',
                         latency === 0 && 'bg-muted-foreground/30',
-                        latency > 0 && latency < 50 && 'bg-green-500',
-                        latency >= 50 && latency < 200 && 'bg-yellow-500',
-                        latency >= 200 && 'bg-red-500'
+                        latency > 0 && latency < 50 && 'bg-success',
+                        latency >= 50 && latency < 200 && 'bg-warning',
+                        latency >= 200 && 'bg-destructive'
                       )}
                       style={{ width: latency > 0 ? `${Math.min((latency / 500) * 100, 100)}%` : '5%' }}
                     />
@@ -469,17 +469,17 @@ function StatusBadge({ status }: { status: 'healthy' | 'degraded' | 'error' | 'u
   return (
     <Badge variant="outline" className={cn(
       'capitalize',
-      status === 'healthy' && 'border-green-500 bg-green-500/10 text-green-600',
-      status === 'degraded' && 'border-yellow-500 bg-yellow-500/10 text-yellow-600',
-      status === 'error' && 'border-red-500 bg-red-500/10 text-red-600',
-      status === 'unknown' && 'border-gray-400 bg-gray-400/10 text-gray-600'
+      status === 'healthy' && 'border-success/40 bg-success/10 text-success',
+      status === 'degraded' && 'border-warning/40 bg-warning/10 text-warning',
+      status === 'error' && 'border-destructive/40 bg-destructive/10 text-destructive',
+      status === 'unknown' && 'border-border bg-muted-foreground/10 text-muted-foreground'
     )}>
       <span className={cn(
         'mr-1.5 inline-block h-2 w-2 rounded-full',
-        status === 'healthy' && 'animate-pulse bg-green-500',
-        status === 'degraded' && 'animate-pulse bg-yellow-500',
-        status === 'error' && 'bg-red-500',
-        status === 'unknown' && 'bg-gray-400'
+        status === 'healthy' && 'animate-pulse bg-success',
+        status === 'degraded' && 'animate-pulse bg-warning',
+        status === 'error' && 'bg-destructive',
+        status === 'unknown' && 'bg-muted-foreground/30'
       )} />
       {status}
     </Badge>
@@ -508,9 +508,9 @@ function MemoryCard({ label, value, percent, description, icon }: {
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div className={cn(
           'h-full',
-          percent < 50 && 'bg-green-500',
-          percent >= 50 && percent < 75 && 'bg-yellow-500',
-          percent >= 75 && 'bg-red-500'
+          percent < 50 && 'bg-success',
+          percent >= 50 && percent < 75 && 'bg-warning',
+          percent >= 75 && 'bg-destructive'
         )} style={{ width: `${percent}%` }} />
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{description}</p>

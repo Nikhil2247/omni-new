@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
-import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dash'
 
 export default function MarketingPagesContentPage() {
   const [currentPage, setCurrentPage] = useState(1)

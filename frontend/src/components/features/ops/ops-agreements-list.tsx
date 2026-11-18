@@ -52,7 +52,7 @@ import {
   StatusBadge,
   TwoLineCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 const STATUS_CONFIG: Record<string, { label: string }> = {
   DRAFT: { label: 'Draft' },
@@ -279,9 +279,9 @@ export function OpsAgreementsList({ activeEventId, showCreateButton = true }: Op
     <div className="space-y-3">
       <StatGrid>
         <StatCard label="Total Agreements" value={data?.length || 0} icon={FileText} />
-        <StatCard label="Locked" value={lockedCount} icon={CheckCircle2} accent="text-green-600" />
-        <StatCard label="Total Value" value={`$${totalAgreed.toLocaleString()}`} icon={DollarSign} accent="text-blue-600" />
-        <StatCard label="Advance Paid" value={`$${totalAdvance.toLocaleString()}`} icon={DollarSign} accent="text-orange-600" />
+        <StatCard label="Locked" value={lockedCount} icon={CheckCircle2} accent="text-success" />
+        <StatCard label="Total Value" value={`$${totalAgreed.toLocaleString()}`} icon={DollarSign} accent="text-primary" />
+        <StatCard label="Advance Paid" value={`$${totalAdvance.toLocaleString()}`} icon={DollarSign} accent="text-warning" />
       </StatGrid>
 
       <DataTable

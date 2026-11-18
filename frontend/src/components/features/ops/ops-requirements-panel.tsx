@@ -45,7 +45,7 @@ import {
   StatusBadge,
   TwoLineCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 const CATEGORIES = [
   'Photography',
@@ -258,8 +258,8 @@ export function OpsRequirementsPanel({ activeEventId, showCreateSheet = true }: 
     <div className="space-y-3">
       <StatGrid className="lg:grid-cols-3">
         <StatCard label="Total Items" value={data.items?.length || 0} icon={Package} />
-        <StatCard label="Fulfilled" value={fulfilledCount} icon={CheckCircle2} accent="text-green-600" />
-        <StatCard label="Est. Total" value={`$${totalEstimatedBudget.toLocaleString()}`} icon={DollarSign} accent="text-blue-600" />
+        <StatCard label="Fulfilled" value={fulfilledCount} icon={CheckCircle2} accent="text-success" />
+        <StatCard label="Est. Total" value={`$${totalEstimatedBudget.toLocaleString()}`} icon={DollarSign} accent="text-primary" />
       </StatGrid>
 
       {data.notes && (

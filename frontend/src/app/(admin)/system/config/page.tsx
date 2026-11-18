@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 

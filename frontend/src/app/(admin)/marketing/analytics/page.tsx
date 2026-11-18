@@ -6,7 +6,7 @@ import { ROLES } from '@/config/roles'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { useUmami } from '@/hooks/use-umami'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PageHeader, StatCard, StatGrid } from '@/components/dashboard'
+import { PageHeader, StatCard, StatGrid } from '@/components/dash'
 import { FileText, CheckCircle2, FilePen } from 'lucide-react'
 
 export default function MarketingAnalyticsPage() {
@@ -31,8 +31,8 @@ export default function MarketingAnalyticsPage() {
       ) : (
         <StatGrid className="lg:grid-cols-3">
           <StatCard label="Total posts" value={totalPosts} icon={FileText} />
-          <StatCard label="Published" value={published} icon={CheckCircle2} accent="text-green-600" />
-          <StatCard label="Drafts" value={drafts} icon={FilePen} accent="text-amber-600" />
+          <StatCard label="Published" value={published} icon={CheckCircle2} accent="text-success" />
+          <StatCard label="Drafts" value={drafts} icon={FilePen} accent="text-warning" />
         </StatGrid>
       )}
     </div>

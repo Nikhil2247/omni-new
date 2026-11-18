@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
-import { ConfirmDialog, PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dashboard'
+import { ConfirmDialog, PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dash'
 
 const editableStatuses = new Set(['DRAFT', 'SCHEDULED'])
 

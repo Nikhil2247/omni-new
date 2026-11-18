@@ -18,7 +18,7 @@ import {
 } from '@/hooks/queries/use-ops'
 import { useOpsQuotations } from '@/hooks/queries/use-quotations'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DataTable, PageHeader, StatCard, StatGrid, StatusBadge, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatCard, StatGrid, StatusBadge, type DataColumn } from '@/components/dash'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -409,7 +409,7 @@ export default function OpsEventDetailPage() {
               disabled={updateStatus.isPending}
               size="sm"
               variant="outline"
-              className="text-green-600 border-green-600 hover:bg-green-50"
+              className="text-success border-success/40 hover:bg-success/10"
             >
               {updateStatus.isPending ? (
                 <Loader2 className="mr-2 h-3 w-3 animate-spin" />
@@ -536,7 +536,7 @@ export default function OpsEventDetailPage() {
           label="Remaining"
           value={`₹${remaining.toLocaleString()}`}
           icon={Receipt}
-          accent={remaining < 0 ? 'text-red-600' : undefined}
+          accent={remaining < 0 ? 'text-destructive' : undefined}
         />
       </StatGrid>
 
@@ -641,7 +641,7 @@ export default function OpsEventDetailPage() {
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all rounded-full ${
-                        spendPercentage > 90 ? 'bg-red-500' : spendPercentage > 70 ? 'bg-yellow-500' : 'bg-primary'
+                        spendPercentage > 90 ? 'bg-destructive' : spendPercentage > 70 ? 'bg-warning' : 'bg-primary'
                       }`}
                       style={{ width: `${Math.min(spendPercentage, 100)}%` }}
                     />
@@ -659,7 +659,7 @@ export default function OpsEventDetailPage() {
                   </div>
                   <div className="flex justify-between pt-2 border-t">
                     <span className="text-sm text-muted-foreground">Remaining</span>
-                    <span className={`font-semibold ${remaining < 0 ? 'text-red-600' : ''}`}>
+                    <span className={`font-semibold ${remaining < 0 ? 'text-destructive' : ''}`}>
                       ₹{remaining.toLocaleString()}
                     </span>
                   </div>
@@ -678,10 +678,10 @@ export default function OpsEventDetailPage() {
                   <CardTitle className="text-sm">Requirements Sheet</CardTitle>
                   {requirements?.approvalStatus && (
                     <Badge variant="outline" className={
-                      requirements.approvalStatus === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                      requirements.approvalStatus === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                      requirements.approvalStatus === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                      'bg-gray-100 text-gray-700'
+                      requirements.approvalStatus === 'APPROVED' ? 'bg-success/10 text-success' :
+                      requirements.approvalStatus === 'PENDING' ? 'bg-warning/10 text-warning' :
+                      requirements.approvalStatus === 'REJECTED' ? 'bg-destructive/10 text-destructive' :
+                      'bg-muted text-foreground'
                     }>
                       {requirements.approvalStatus === 'APPROVED' ? 'Client Approved' :
                        requirements.approvalStatus === 'PENDING' ? 'Awaiting Approval' :
@@ -718,11 +718,11 @@ export default function OpsEventDetailPage() {
             <CardContent className="p-3">
               {/* Approval Link Info */}
               {requirements?.approvalStatus === 'PENDING' && requirements?.approvalToken && (
-                <div className="mb-2 p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div className="mb-2 p-2.5 bg-warning/10 border border-warning/40 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-amber-600" />
-                      <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      <Clock className="h-4 w-4 text-warning" />
+                      <span className="text-sm font-medium text-warning">
                         Awaiting client approval
                       </span>
                     </div>
@@ -740,26 +740,26 @@ export default function OpsEventDetailPage() {
                 </div>
               )}
               {requirements?.approvalStatus === 'APPROVED' && (
-                <div className="mb-2 p-2.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="mb-2 p-2.5 bg-success/10 border border-success/40 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                    <CheckCircle className="h-4 w-4 text-success" />
+                    <span className="text-sm font-medium text-success">
                       Client approved on {requirements.clientApprovedAt ? new Date(requirements.clientApprovedAt).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
                 </div>
               )}
               {requirements?.approvalStatus === 'REJECTED' && (
-                <div className="mb-2 p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="mb-2 p-2.5 bg-destructive/10 border border-destructive/40 rounded-lg">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="text-sm font-medium text-red-800 dark:text-red-200">
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                      <span className="text-sm font-medium text-destructive">
                         Client rejected on {requirements.clientRejectedAt ? new Date(requirements.clientRejectedAt).toLocaleDateString() : 'N/A'}
                       </span>
                     </div>
                     {requirements.rejectionReason && (
-                      <p className="text-sm text-red-600 dark:text-red-400 ml-6">
+                      <p className="text-sm text-destructive ml-6">
                         Reason: {requirements.rejectionReason}
                       </p>
                     )}

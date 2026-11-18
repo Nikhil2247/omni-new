@@ -1,64 +1,83 @@
 'use client';
 
-import { useLayoutEffect } from 'react';
-import { cn } from '@/lib/utils';
-import { useSidebarStore } from '@/store/sidebar-store';
+import * as React from 'react';
+import { Inter } from 'next/font/google';
+import { useSidebarStore, SIDEBAR_STORAGE_KEY } from '@/store/sidebar-store';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
+import { CommandPalette } from './command-palette';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import '@/app/dashboard.css';
+
+// Loaded here (not in the root layout) so public pages never pay for it. The class carrying the
+// variable is put on <html> while a dashboard is mounted, so Radix portals get the font too.
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter-dash', display: 'swap' });
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { isCollapsed, isOpen, close } = useSidebarStore();
+  const [paletteOpen, setPaletteOpen] = React.useState(false);
 
-  // Scope the dashboard skin (src/app/dashboard.css) to dashboards only. It sits on <html> so it also
-  // reaches Radix portals (dialogs, selects). Removed on unmount, so public pages are never affected.
-  useLayoutEffect(() => {
+  // Scope the dashboard skin (src/app/dashboard.css) to dashboards only. Applied before paint and
+  // removed on unmount, so public pages are never affected.
+  React.useLayoutEffect(() => {
     const root = document.documentElement;
     root.setAttribute('data-area', 'dashboard');
-    return () => root.removeAttribute('data-area');
+    root.classList.add(inter.variable);
+    return () => {
+      root.removeAttribute('data-area');
+      root.classList.remove(inter.variable);
+    };
+  }, []);
+
+  // Restore persisted sidebar state; first visit defaults to collapsed on narrow screens.
+  React.useEffect(() => {
+    let firstVisit = true;
+    try {
+      firstVisit = localStorage.getItem(SIDEBAR_STORAGE_KEY) === null;
+    } catch {
+      /* ignore */
+    }
+    void useSidebarStore.persist.rehydrate();
+    if (firstVisit && window.innerWidth < 1100) useSidebarStore.getState().setCollapsed(true);
+  }, []);
+
+  // Ctrl/Cmd+K opens the command palette.
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   return (
     <AuthGuard>
       <TooltipProvider delayDuration={200}>
-        <div className="relative h-screen overflow-hidden bg-background">
-          {/* Mobile overlay */}
-          {isOpen && (
-            <div
-              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
-              onClick={close}
-              aria-hidden="true"
-            />
-          )}
+        <div data-dash-root className="bg-background text-foreground flex h-screen overflow-hidden">
+          <a
+            href="#dash-main"
+            className="bg-primary text-primary-foreground sr-only z-[60] rounded-md px-3 py-2 text-sm focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+          >
+            Skip to content
+          </a>
 
-          {/* Sidebar - hidden on mobile, shown on desktop */}
           <Sidebar />
 
-          {/* Main content area */}
-          <div
-            className={cn(
-              'flex h-screen flex-col transition-all duration-200 ease-in-out',
-              'md:ml-14 lg:ml-60',
-              isCollapsed ? 'lg:ml-14' : 'lg:ml-60'
-            )}
-          >
-            {/* Header */}
-            <Header />
-
-            {/* Page content */}
-            <main className="min-h-0 flex-1 overflow-y-auto p-2 sm:p-3">
-              <div className="mx-auto max-w-9xl space-y-3">
-                {children}
-              </div>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <Header onOpenSearch={() => setPaletteOpen(true)} />
+            <main id="dash-main" className="min-h-0 flex-1 overflow-auto p-3 sm:p-4 2xl:p-6">
+              <div className="mx-auto flex min-h-full w-full max-w-9xl flex-col gap-3">{children}</div>
             </main>
           </div>
         </div>
+        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       </TooltipProvider>
     </AuthGuard>
   );

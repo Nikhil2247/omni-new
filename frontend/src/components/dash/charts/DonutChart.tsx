@@ -23,12 +23,12 @@ export interface DonutChartProps {
 }
 
 const defaultColors = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(var(--muted-foreground))',
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
+  'var(--muted-foreground)',
 ]
 
 export function DonutChart({
@@ -77,8 +77,8 @@ export function DonutChart({
         <PieChart>
           <Tooltip
             contentStyle={{
-              backgroundColor: 'hsl(var(--background))',
-              border: '1px solid hsl(var(--border))',
+              backgroundColor: 'var(--background)',
+              border: '1px solid var(--border)',
               borderRadius: '8px',
               fontSize: '12px',
             }}
@@ -96,7 +96,7 @@ export function DonutChart({
             innerRadius={innerRadius}
             outerRadius={outerRadius}
             strokeWidth={2}
-            stroke="hsl(var(--background))"
+            stroke="var(--background)"
           >
             {data.map((entry, index) => (
               <Cell

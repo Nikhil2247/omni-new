@@ -46,7 +46,7 @@ import type {
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import type { PaymentRecord } from '@/lib/api/types/payment.types'
-import { PageHeader, DataTable, StatusBadge, TwoLineCell } from '@/components/dashboard'
+import { PageHeader, DataTable, StatusBadge, TwoLineCell } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -393,7 +393,7 @@ export default function VendorSubscriptionSettingsPage() {
                         .map((feature) => (
                           <div key={feature.id} className="flex items-center justify-between text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-3 w-3 text-green-500" />
+                              <CheckCircle2 className="h-3 w-3 text-success" />
                               <span>{feature.featureName}</span>
                             </div>
                             <span className="text-xs">
@@ -504,8 +504,8 @@ export default function VendorSubscriptionSettingsPage() {
             ) : adCredits ? (
               <>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                    <Coins className="h-6 w-6 text-amber-600" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-warning/10">
+                    <Coins className="h-6 w-6 text-warning" />
                   </div>
                   <div>
                     <p className="text-2xl font-semibold">{adCredits.balance.toLocaleString()}</p>
@@ -562,7 +562,7 @@ export default function VendorSubscriptionSettingsPage() {
                 className="h-auto py-4 flex flex-col items-center gap-2"
                 onClick={() => setUpgradeModalOpen(true)}
               >
-                <ArrowUp className="h-5 w-5 text-green-500" />
+                <ArrowUp className="h-5 w-5 text-success" />
                 <span>Upgrade Plan</span>
               </Button>
             )}
@@ -573,7 +573,7 @@ export default function VendorSubscriptionSettingsPage() {
                 className="h-auto py-4 flex flex-col items-center gap-2"
                 onClick={() => setDowngradeModalOpen(true)}
               >
-                <ArrowDown className="h-5 w-5 text-amber-500" />
+                <ArrowDown className="h-5 w-5 text-warning" />
                 <span>Downgrade Plan</span>
               </Button>
             )}
@@ -584,7 +584,7 @@ export default function VendorSubscriptionSettingsPage() {
                 className="h-auto py-4 flex flex-col items-center gap-2"
                 onClick={() => setPauseModalOpen(true)}
               >
-                <Pause className="h-5 w-5 text-blue-500" />
+                <Pause className="h-5 w-5 text-primary" />
                 <span>Pause Subscription</span>
               </Button>
             )}
@@ -599,7 +599,7 @@ export default function VendorSubscriptionSettingsPage() {
                 {resumeMutation.isPending ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Play className="h-5 w-5 text-green-500" />
+                  <Play className="h-5 w-5 text-success" />
                 )}
                 <span>Resume Subscription</span>
               </Button>
@@ -653,15 +653,15 @@ export default function VendorSubscriptionSettingsPage() {
                           isAtLimit
                             ? 'bg-destructive'
                             : isNearLimit
-                            ? 'bg-amber-500'
+                            ? 'bg-warning'
                             : undefined
                         }
                       />
                     )}
-                    <p className={`text-xs ${isAtLimit ? 'text-destructive' : isNearLimit ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                    <p className={`text-xs ${isAtLimit ? 'text-destructive' : isNearLimit ? 'text-warning' : 'text-muted-foreground'}`}>
                       {feature.isUnlimited ? (
                         <span className="flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          <CheckCircle2 className="h-3 w-3 text-success" />
                           Unlimited
                         </span>
                       ) : (

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { MessagingWorkspace } from '@/components/features/messaging/messaging-workspace'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { trackDashboard } from '@/lib/analytics/umami'
 
 export default function BusinessMessagesPage() {

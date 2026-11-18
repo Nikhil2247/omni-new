@@ -15,7 +15,7 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 import { useOpsAllInvoices, useMarkInvoicePaid, useDeleteInvoice } from '@/hooks/queries/use-ops'
 import type { OpsInvoice } from '@/lib/api/types/ops.types'
 import { QuotationPreviewDialog } from '@/components/features/ops/quotation-preview-dialog'
@@ -240,9 +240,9 @@ export default function OpsInvoicesPage() {
 
       <StatGrid className="lg:grid-cols-5">
         <StatCard label="Total Invoices" value={totalInvoices} icon={FileText} />
-        <StatCard label="Pending" value={stats.pending} icon={Clock} accent="text-yellow-600" />
-        <StatCard label="Paid" value={stats.paid} icon={CheckCircle} accent="text-green-600" />
-        <StatCard label="Overdue" value={stats.overdue} icon={AlertCircle} accent="text-red-600" />
+        <StatCard label="Pending" value={stats.pending} icon={Clock} accent="text-warning" />
+        <StatCard label="Paid" value={stats.paid} icon={CheckCircle} accent="text-success" />
+        <StatCard label="Overdue" value={stats.overdue} icon={AlertCircle} accent="text-destructive" />
         <StatCard
           label="Total Value"
           value={formatCurrency(stats.totalAmount)}
@@ -411,7 +411,7 @@ export default function OpsInvoicesPage() {
             <Button
               onClick={handleMarkPaid}
               disabled={markPaidMutation.isPending}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-success hover:bg-success"
             >
               {markPaidMutation.isPending ? (
                 <>

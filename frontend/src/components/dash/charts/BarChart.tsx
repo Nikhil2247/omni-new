@@ -22,11 +22,11 @@ export interface BarChartProps {
 }
 
 const defaultColors = [
-  'hsl(var(--primary))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
 ]
 
 export function BarChart({
@@ -90,7 +90,7 @@ export function BarChart({
                 axisLine={false}
                 tickMargin={8}
                 fontSize={12}
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'var(--muted-foreground)' }}
               />
               <YAxis
                 tickLine={false}
@@ -98,7 +98,7 @@ export function BarChart({
                 tickMargin={8}
                 tickFormatter={(value) => valueFormatter(value)}
                 fontSize={12}
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'var(--muted-foreground)' }}
               />
               <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                 {chartData.map((entry, index) => (
@@ -118,7 +118,7 @@ export function BarChart({
                 tickMargin={8}
                 tickFormatter={(value) => valueFormatter(value)}
                 fontSize={12}
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'var(--muted-foreground)' }}
               />
               <YAxis
                 type="category"
@@ -128,7 +128,7 @@ export function BarChart({
                 tickMargin={8}
                 width={80}
                 fontSize={12}
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'var(--muted-foreground)' }}
               />
               <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
                 {chartData.map((entry, index) => (
@@ -143,12 +143,12 @@ export function BarChart({
 
           <Tooltip
             contentStyle={{
-              backgroundColor: 'hsl(var(--background))',
-              border: '1px solid hsl(var(--border))',
+              backgroundColor: 'var(--background)',
+              border: '1px solid var(--border)',
               borderRadius: '8px',
               fontSize: '12px',
             }}
-            cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
+            cursor={{ fill: 'var(--muted)', opacity: 0.3 }}
             formatter={(value: number) => [valueFormatter(value), 'Value']}
           />
         </RechartsBarChart>

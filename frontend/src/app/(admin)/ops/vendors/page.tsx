@@ -24,13 +24,13 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  ACTIVE: { label: 'Active', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  PENDING_VERIFICATION: { label: 'Pending Verification', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  SUSPENDED: { label: 'Suspended', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
-  INACTIVE: { label: 'Inactive', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
+  ACTIVE: { label: 'Active', color: 'bg-success/10 text-success border-success/40' },
+  PENDING_VERIFICATION: { label: 'Pending Verification', color: 'bg-warning/10 text-warning border-warning/40' },
+  SUSPENDED: { label: 'Suspended', color: 'bg-destructive/10 text-destructive border-destructive/40' },
+  INACTIVE: { label: 'Inactive', color: 'bg-muted-foreground/10 text-foreground border-border' },
 }
 
 export default function OpsVendorsPage() {
@@ -83,7 +83,7 @@ export default function OpsVendorsPage() {
       label: 'Verification',
       cell: (v) =>
         v.verifiedAt ? (
-          <span className="flex items-center gap-1 text-xs text-green-600">
+          <span className="flex items-center gap-1 text-xs text-success">
             <ShieldCheck className="h-3.5 w-3.5" />
             Verified
           </span>
@@ -126,10 +126,10 @@ export default function OpsVendorsPage() {
       <PageHeader title="Vendors" />
 
       <StatGrid>
-        <StatCard label="Total Vendors" value={vendors?.length || 0} icon={Store} accent="text-blue-600" />
-        <StatCard label="Active" value={activeCount} icon={CheckCircle2} accent="text-green-600" />
-        <StatCard label="Pending Verification" value={pendingCount} icon={Clock} accent="text-yellow-600" />
-        <StatCard label="Verified" value={verifiedCount} icon={ShieldCheck} accent="text-purple-600" />
+        <StatCard label="Total Vendors" value={vendors?.length || 0} icon={Store} accent="text-primary" />
+        <StatCard label="Active" value={activeCount} icon={CheckCircle2} accent="text-success" />
+        <StatCard label="Pending Verification" value={pendingCount} icon={Clock} accent="text-warning" />
+        <StatCard label="Verified" value={verifiedCount} icon={ShieldCheck} accent="text-primary" />
       </StatGrid>
 
       <DataTable

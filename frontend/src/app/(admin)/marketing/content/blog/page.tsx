@@ -5,7 +5,7 @@ import { Pencil } from 'lucide-react'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { BlogHealthIndicator } from '@/components/marketing/blog-health-indicator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DataTable, PageHeader, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dash'
 import type { BlogStatus } from '@/lib/api/types/marketing.types'
 
 type StatusFilter = Extract<BlogStatus, 'DRAFT' | 'PUBLISHED'>

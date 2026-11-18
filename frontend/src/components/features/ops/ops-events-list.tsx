@@ -16,7 +16,7 @@ import {
   TwoLineCell,
   type DataColumn,
   type StatusTone,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 const STATUS_OPTIONS = [
   { value: 'NEW', label: 'New' },
@@ -139,9 +139,9 @@ export function OpsEventsList() {
     <div className="space-y-3">
       <StatGrid>
         <StatCard label="Total Events" value={totalEvents} icon={PartyPopper} accent="text-primary" />
-        <StatCard label="Active" value={activeEvents} icon={Clock} accent="text-blue-600" />
-        <StatCard label="Completed" value={statusStats['COMPLETED'] || 0} icon={CheckCircle2} accent="text-green-600" />
-        <StatCard label="In Execution" value={statusStats['EXECUTION'] || 0} icon={AlertTriangle} accent="text-cyan-600" />
+        <StatCard label="Active" value={activeEvents} icon={Clock} accent="text-primary" />
+        <StatCard label="Completed" value={statusStats['COMPLETED'] || 0} icon={CheckCircle2} accent="text-success" />
+        <StatCard label="In Execution" value={statusStats['EXECUTION'] || 0} icon={AlertTriangle} accent="text-info" />
       </StatGrid>
 
       <DataTable
