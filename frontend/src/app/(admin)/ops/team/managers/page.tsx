@@ -12,7 +12,7 @@ import {
   StatusBadge,
   UserCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 export default function OpsManagersPage() {
   const { data: response, isLoading } = useOpsManagers()
@@ -75,12 +75,12 @@ export default function OpsManagersPage() {
 
       <StatGrid className="lg:grid-cols-3">
         <StatCard label="Total Managers" value={members.length} icon={Users} accent="text-primary" />
-        <StatCard label="Total Events Managed" value={total} icon={Calendar} accent="text-blue-600" />
+        <StatCard label="Total Events Managed" value={total} icon={Calendar} accent="text-primary" />
         <StatCard
           label="Avg per Manager"
           value={members.length > 0 ? Math.round(total / members.length) : 0}
           icon={Calendar}
-          accent="text-green-600"
+          accent="text-success"
         />
       </StatGrid>
 

@@ -35,7 +35,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
 import { useMarkInvoicePaid } from '@/hooks/queries/use-ops'
-import { PageHeader, DataTable, StatusBadge, type DataColumn } from '@/components/dashboard'
+import { PageHeader, DataTable, StatusBadge, type DataColumn } from '@/components/dash'
 import { QuotationPreviewDialog } from '@/components/features/ops/quotation-preview-dialog'
 import type { QuotationTemplateData } from '@/components/features/ops/quotation-template'
 
@@ -66,11 +66,11 @@ interface InvoiceDetail {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: { label: 'Pending', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: <Clock className="h-4 w-4" /> },
-  PARTIALLY_PAID: { label: 'Partially Paid', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20', icon: <CreditCard className="h-4 w-4" /> },
-  PAID: { label: 'Paid', color: 'bg-green-500/10 text-green-700 border-green-500/20', icon: <CheckCircle className="h-4 w-4" /> },
-  OVERDUE: { label: 'Overdue', color: 'bg-red-500/10 text-red-700 border-red-500/20', icon: <AlertCircle className="h-4 w-4" /> },
-  CANCELLED: { label: 'Cancelled', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20', icon: <AlertCircle className="h-4 w-4" /> },
+  PENDING: { label: 'Pending', color: 'bg-warning/10 text-warning border-warning/40', icon: <Clock className="h-4 w-4" /> },
+  PARTIALLY_PAID: { label: 'Partially Paid', color: 'bg-primary/10 text-primary border-primary/40', icon: <CreditCard className="h-4 w-4" /> },
+  PAID: { label: 'Paid', color: 'bg-success/10 text-success border-success/40', icon: <CheckCircle className="h-4 w-4" /> },
+  OVERDUE: { label: 'Overdue', color: 'bg-destructive/10 text-destructive border-destructive/40', icon: <AlertCircle className="h-4 w-4" /> },
+  CANCELLED: { label: 'Cancelled', color: 'bg-muted-foreground/10 text-foreground border-border', icon: <AlertCircle className="h-4 w-4" /> },
 }
 
 function formatCurrency(amount: number | string | null | undefined, currency = 'INR'): string {
@@ -180,7 +180,7 @@ export default function InvoiceDetailPage() {
             {canMarkPaid && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                  <Button size="sm" className="bg-success hover:bg-success">
                     <CreditCard className="mr-1 h-4 w-4" />
                     Mark as Paid
                   </Button>
@@ -196,7 +196,7 @@ export default function InvoiceDetailPage() {
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleMarkPaid}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-success hover:bg-success"
                       disabled={markPaid.isPending}
                     >
                       {markPaid.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -222,7 +222,7 @@ export default function InvoiceDetailPage() {
           <CardContent className="space-y-1 p-3">
             <div className="flex justify-between items-center py-2 border-b">
               <span className="text-muted-foreground">Amount</span>
-              <span className="text-lg font-bold text-green-600">{formatCurrency(amount, invoice.currency)}</span>
+              <span className="text-lg font-bold text-success">{formatCurrency(amount, invoice.currency)}</span>
             </div>
             <div className="flex justify-between items-center py-1">
               <span className="text-muted-foreground">Invoice Number</span>
@@ -245,7 +245,7 @@ export default function InvoiceDetailPage() {
             {invoice.paidAt && (
               <div className="flex justify-between items-center py-1">
                 <span className="text-muted-foreground">Paid Date</span>
-                <span className="font-medium text-green-600">{format(new Date(invoice.paidAt), 'PPP')}</span>
+                <span className="font-medium text-success">{format(new Date(invoice.paidAt), 'PPP')}</span>
               </div>
             )}
           </CardContent>

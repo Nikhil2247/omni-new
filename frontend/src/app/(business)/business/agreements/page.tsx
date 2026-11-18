@@ -10,7 +10,7 @@ import {
   useDeclineAgreement,
 } from '@/hooks/queries/use-business'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, StatCard, StatGrid } from '@/components/dashboard'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, StatCard, StatGrid } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -51,13 +51,13 @@ import {
 import type { BusinessAgreement } from '@/lib/api/types/business.types'
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700', icon: FileText },
-  SENT: { label: 'Sent', color: 'bg-blue-100 text-blue-700', icon: Send },
-  ACCEPTED: { label: 'Accepted', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  DECLINED: { label: 'Declined', color: 'bg-red-100 text-red-700', icon: XCircle },
-  CONTRACT_LOCKED: { label: 'Contract Locked', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle },
-  COMPLETED: { label: 'Completed', color: 'bg-purple-100 text-purple-700', icon: CheckCircle },
-  CANCELLED: { label: 'Cancelled', color: 'bg-gray-100 text-gray-700', icon: XCircle },
+  DRAFT: { label: 'Draft', color: 'bg-muted text-foreground', icon: FileText },
+  SENT: { label: 'Sent', color: 'bg-primary/10 text-primary', icon: Send },
+  ACCEPTED: { label: 'Accepted', color: 'bg-success/10 text-success', icon: CheckCircle },
+  DECLINED: { label: 'Declined', color: 'bg-destructive/10 text-destructive', icon: XCircle },
+  CONTRACT_LOCKED: { label: 'Contract Locked', color: 'bg-success/10 text-success', icon: CheckCircle },
+  COMPLETED: { label: 'Completed', color: 'bg-primary/10 text-primary', icon: CheckCircle },
+  CANCELLED: { label: 'Cancelled', color: 'bg-muted text-foreground', icon: XCircle },
 }
 
 export default function BusinessAgreementsPage() {
@@ -146,7 +146,7 @@ export default function BusinessAgreementsPage() {
         <PageHeader title="Vendor Agreements" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto h-8 w-8 text-yellow-500 mb-2" />
+            <AlertTriangle className="mx-auto h-8 w-8 text-warning mb-2" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first.
@@ -166,8 +166,8 @@ export default function BusinessAgreementsPage() {
 
       <StatGrid>
         <StatCard label="Total Agreements" value={totalAgreements} icon={Handshake} />
-        <StatCard label="Active" value={activeAgreements} icon={CheckCircle} accent="text-green-600" />
-        <StatCard label="Awaiting Response" value={pendingAgreements} icon={Clock} accent="text-yellow-600" />
+        <StatCard label="Active" value={activeAgreements} icon={CheckCircle} accent="text-success" />
+        <StatCard label="Awaiting Response" value={pendingAgreements} icon={Clock} accent="text-warning" />
         <StatCard label="Total Value" value={formatCurrency(totalValue)} icon={DollarSign} />
       </StatGrid>
 
@@ -325,19 +325,19 @@ export default function BusinessAgreementsPage() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Advance Paid</p>
-                    <p className="font-semibold text-lg text-green-600">{formatCurrency(selectedAgreement.advancePaid)}</p>
+                    <p className="font-semibold text-lg text-success">{formatCurrency(selectedAgreement.advancePaid)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Balance Due</p>
-                    <p className="font-semibold text-lg text-orange-600">{formatCurrency(selectedAgreement.balanceDue)}</p>
+                    <p className="font-semibold text-lg text-warning">{formatCurrency(selectedAgreement.balanceDue)}</p>
                   </div>
                 </div>
               </div>
 
               {selectedAgreement.declineReason && (
                 <div className="border-t pt-4">
-                  <h4 className="font-medium mb-2 text-red-600">Decline Reason</h4>
-                  <p className="text-sm bg-red-50 p-3 rounded-md">{selectedAgreement.declineReason}</p>
+                  <h4 className="font-medium mb-2 text-destructive">Decline Reason</h4>
+                  <p className="text-sm bg-destructive/10 p-3 rounded-md">{selectedAgreement.declineReason}</p>
                 </div>
               )}
 
@@ -345,24 +345,24 @@ export default function BusinessAgreementsPage() {
                 <h4 className="font-medium mb-2">Timeline</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <div className="w-2 h-2 rounded-full bg-primary" />
                     <span>Created: {format(new Date(selectedAgreement.createdAt), 'MMM d, yyyy')}</span>
                   </div>
                   {selectedAgreement.sentAt && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                      <div className="w-2 h-2 rounded-full bg-primary" />
                       <span>Sent: {format(new Date(selectedAgreement.sentAt), 'MMM d, yyyy')}</span>
                     </div>
                   )}
                   {selectedAgreement.acceptedAt && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <div className="w-2 h-2 rounded-full bg-success" />
                       <span>Accepted: {format(new Date(selectedAgreement.acceptedAt), 'MMM d, yyyy')}</span>
                     </div>
                   )}
                   {selectedAgreement.declinedAt && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                      <div className="w-2 h-2 rounded-full bg-destructive" />
                       <span>Declined: {format(new Date(selectedAgreement.declinedAt), 'MMM d, yyyy')}</span>
                     </div>
                   )}
@@ -372,7 +372,7 @@ export default function BusinessAgreementsPage() {
               {canAcceptOrDecline(selectedAgreement.status) && (
                 <div className="border-t pt-4 flex gap-2">
                   <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    className="flex-1 bg-success hover:bg-success"
                     onClick={() => setShowAcceptConfirm(true)}
                   >
                     <ThumbsUp className="mr-2 h-4 w-4" />
@@ -380,7 +380,7 @@ export default function BusinessAgreementsPage() {
                   </Button>
                   <Button
                     variant="outline"
-                    className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
+                    className="flex-1 text-destructive border-destructive/40 hover:bg-destructive/10"
                     onClick={() => setShowDeclineDialog(true)}
                   >
                     <ThumbsDown className="mr-2 h-4 w-4" />
@@ -407,7 +407,7 @@ export default function BusinessAgreementsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-success hover:bg-success"
               onClick={handleAccept}
               disabled={acceptAgreement.isPending}
             >

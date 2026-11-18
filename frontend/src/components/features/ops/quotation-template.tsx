@@ -91,7 +91,7 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
               }}
             />
             <p className="text-xs font-semibold">Event Management Platform</p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-muted-foreground">
               All types of vendors and services related to your event are provided here
             </p>
           </div>
@@ -127,8 +127,8 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
             )}
             <p className="font-semibold mb-1">Issued to:</p>
             <p>{data.clientName}</p>
-            {data.clientEmail && <p className="text-xs text-gray-600">{data.clientEmail}</p>}
-            {data.clientPhone && <p className="text-xs text-gray-600">{data.clientPhone}</p>}
+            {data.clientEmail && <p className="text-xs text-muted-foreground">{data.clientEmail}</p>}
+            {data.clientPhone && <p className="text-xs text-muted-foreground">{data.clientPhone}</p>}
           </div>
           <div>
             <p className="font-semibold mb-1">Vendor name:</p>
@@ -143,16 +143,16 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
         </div>
 
         {/* Items Table */}
-        <table className="w-full mb-4 border-collapse border border-gray-300">
+        <table className="w-full mb-4 border-collapse border border-border">
           <thead>
             <tr className="bg-black text-white">
-              <th className="text-left px-3 py-2 text-sm font-semibold border-r border-gray-400">
+              <th className="text-left px-3 py-2 text-sm font-semibold border-r border-border">
                 SERVICE
               </th>
-              <th className="text-center px-3 py-2 text-sm font-semibold border-r border-gray-400 w-20">
+              <th className="text-center px-3 py-2 text-sm font-semibold border-r border-border w-20">
                 QTY
               </th>
-              <th className="text-right px-3 py-2 text-sm font-semibold border-r border-gray-400 w-28">
+              <th className="text-right px-3 py-2 text-sm font-semibold border-r border-border w-28">
                 PRICE
               </th>
               <th className="text-right px-3 py-2 text-sm font-semibold w-28">TOTAL</th>
@@ -160,12 +160,12 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
           </thead>
           <tbody>
             {data.items.map((item, index) => (
-              <tr key={index} className="border-b border-gray-300">
-                <td className="px-3 py-3 text-xs border-r border-gray-300">{item.description}</td>
-                <td className="px-3 py-3 text-center text-sm border-r border-gray-300">
+              <tr key={index} className="border-b border-border">
+                <td className="px-3 py-3 text-xs border-r border-border">{item.description}</td>
+                <td className="px-3 py-3 text-center text-sm border-r border-border">
                   {item.quantity}
                 </td>
-                <td className="px-3 py-3 text-right text-sm border-r border-gray-300">
+                <td className="px-3 py-3 text-right text-sm border-r border-border">
                   {formatCurrency(item.rate)}
                 </td>
                 <td className="px-3 py-3 text-right text-sm font-medium">
@@ -177,21 +177,21 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
             {/* Empty rows for visual consistency (minimum 3 items) */}
             {data.items.length < 3 &&
               Array.from({ length: 3 - data.items.length }).map((_, i) => (
-                <tr key={`empty-${i}`} className="border-b border-gray-300">
-                  <td className="px-3 py-3 text-xs border-r border-gray-300">&nbsp;</td>
-                  <td className="px-3 py-3 text-center text-sm border-r border-gray-300">&nbsp;</td>
-                  <td className="px-3 py-3 text-right text-sm border-r border-gray-300">&nbsp;</td>
+                <tr key={`empty-${i}`} className="border-b border-border">
+                  <td className="px-3 py-3 text-xs border-r border-border">&nbsp;</td>
+                  <td className="px-3 py-3 text-center text-sm border-r border-border">&nbsp;</td>
+                  <td className="px-3 py-3 text-right text-sm border-r border-border">&nbsp;</td>
                   <td className="px-3 py-3 text-right text-sm">&nbsp;</td>
                 </tr>
               ))}
 
             {/* Site Charges */}
             {data.siteCharges !== undefined && data.siteCharges > 0 && (
-              <tr className="border-b border-gray-300">
-                <td colSpan={2} className="px-3 py-2 text-sm border-r border-gray-300">
+              <tr className="border-b border-border">
+                <td colSpan={2} className="px-3 py-2 text-sm border-r border-border">
                   Site Charges
                 </td>
-                <td className="px-3 py-2 text-right text-sm border-r border-gray-300">
+                <td className="px-3 py-2 text-right text-sm border-r border-border">
                   {formatCurrency(data.siteCharges)}
                 </td>
                 <td className="px-3 py-2 text-right text-sm font-medium">
@@ -201,8 +201,8 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
             )}
 
             {/* Subtotal */}
-            <tr className="border-b border-gray-300 bg-gray-100">
-              <td colSpan={3} className="px-3 py-2 text-right font-bold border-r border-gray-300">
+            <tr className="border-b border-border bg-muted">
+              <td colSpan={3} className="px-3 py-2 text-right font-bold border-r border-border">
                 SUBTOTAL
               </td>
               <td className="px-3 py-2 text-right font-bold">{formatCurrency(data.subtotal)}</td>
@@ -210,8 +210,8 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
 
             {/* Tax */}
             {data.taxAmount !== undefined && data.taxAmount !== null && data.taxAmount > 0 && (
-              <tr className="border-b border-gray-300">
-                <td colSpan={3} className="px-3 py-2 text-right font-semibold border-r border-gray-300">
+              <tr className="border-b border-border">
+                <td colSpan={3} className="px-3 py-2 text-right font-semibold border-r border-border">
                   TAX ({data.taxRate || 0}%)
                 </td>
                 <td className="px-3 py-2 text-right font-semibold">
@@ -222,12 +222,12 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
 
             {/* Discount */}
             {data.discount !== undefined && data.discount > 0 && (
-              <tr className="border-b border-gray-300">
-                <td colSpan={3} className="px-3 py-2 text-right font-semibold border-r border-gray-300">
+              <tr className="border-b border-border">
+                <td colSpan={3} className="px-3 py-2 text-right font-semibold border-r border-border">
                   DISCOUNT{' '}
                   {data.discountType === 'PERCENTAGE' ? `(${data.discount}%)` : ''}
                 </td>
-                <td className="px-3 py-2 text-right font-semibold text-green-600">
+                <td className="px-3 py-2 text-right font-semibold text-success">
                   -{formatCurrency(
                     data.discountType === 'PERCENTAGE'
                       ? (data.subtotal * data.discount) / 100
@@ -238,8 +238,8 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
             )}
 
             {/* Grand Total */}
-            <tr className="bg-black text-white border-b border-gray-300">
-              <td colSpan={3} className="px-3 py-3 text-right font-bold border-r border-gray-400">
+            <tr className="bg-black text-white border-b border-border">
+              <td colSpan={3} className="px-3 py-3 text-right font-bold border-r border-border">
                 GRAND TOTAL
               </td>
               <td className="px-3 py-3 text-right font-bold">{formatCurrency(data.grandTotal)}</td>
@@ -247,16 +247,16 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
 
             {/* Payment Info */}
             {data.tokenMoneyPaid !== undefined && (
-              <tr className="border-b border-gray-300">
-                <td colSpan={3} className="px-3 py-2 text-right border-r border-gray-300">
+              <tr className="border-b border-border">
+                <td colSpan={3} className="px-3 py-2 text-right border-r border-border">
                   TOKEN MONEY PAID
                 </td>
                 <td className="px-3 py-2 text-right">{formatCurrency(data.tokenMoneyPaid)}</td>
               </tr>
             )}
             {data.secondInstallment !== undefined && (
-              <tr className="border-b border-gray-300">
-                <td colSpan={3} className="px-3 py-2 text-right border-r border-gray-300">
+              <tr className="border-b border-border">
+                <td colSpan={3} className="px-3 py-2 text-right border-r border-border">
                   SECOND INSTALLMENT
                 </td>
                 <td className="px-3 py-2 text-right">{formatCurrency(data.secondInstallment)}</td>
@@ -267,24 +267,24 @@ export const QuotationTemplate = forwardRef<HTMLDivElement, QuotationTemplatePro
 
         {/* Notes Section */}
         {(data.notes || data.termsAndConditions) && (
-          <div className="mb-4 p-4 bg-gray-50 rounded border border-gray-200">
+          <div className="mb-4 p-4 bg-muted rounded border border-border">
             {data.notes && (
               <div className="mb-3">
                 <p className="font-bold text-sm mb-1">Notes:</p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{data.notes}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{data.notes}</p>
               </div>
             )}
             {data.termsAndConditions && (
               <div>
                 <p className="font-bold text-sm mb-1">Terms & Conditions:</p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{data.termsAndConditions}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{data.termsAndConditions}</p>
               </div>
             )}
           </div>
         )}
 
         {/* Bank Details */}
-        <div className="mb-4 mt-6 p-5 bg-gray-50 rounded">
+        <div className="mb-4 mt-6 p-5 bg-muted rounded">
           <p className="font-bold text-sm mb-3">Company Bank Detail:</p>
           <p className="text-sm mb-2">Bank Name: {data.bankName || 'HDFC BANK'}</p>
           <p className="text-sm mb-2">Account No: {data.accountNumber || '50100570331614'}</p>

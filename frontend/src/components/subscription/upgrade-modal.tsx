@@ -195,7 +195,7 @@ export function UpgradeModal({
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ArrowUp className="h-5 w-5 text-green-500" />
+            <ArrowUp className="h-5 w-5 text-success" />
             Upgrade Your Plan
           </DialogTitle>
           <DialogDescription>
@@ -320,7 +320,7 @@ export function UpgradeModal({
                             key={feature.key}
                             className="flex items-center gap-2 text-sm"
                           >
-                            <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            <Check className="h-4 w-4 text-success flex-shrink-0" />
                             <span className="text-muted-foreground">
                               {feature.name}
                             </span>
@@ -345,8 +345,8 @@ export function UpgradeModal({
           {selectedPlan && selectedPrice && (
             <>
               <Separator />
-              <div className="rounded-lg border bg-green-50 dark:bg-green-950/20 p-4">
-                <h4 className="font-medium text-green-700 dark:text-green-300 mb-2">
+              <div className="rounded-lg border bg-success/10 p-4">
+                <h4 className="font-medium text-success mb-2">
                   Upgrade Summary
                 </h4>
                 <div className="space-y-2 text-sm">
@@ -360,7 +360,7 @@ export function UpgradeModal({
                     </span>
                   </div>
                   {priceDifference > 0 && (
-                    <div className="flex justify-between text-green-600 dark:text-green-400">
+                    <div className="flex justify-between text-success">
                       <span>Price difference</span>
                       <span className="font-medium">
                         +{formatCurrency(priceDifference, selectedPrice.currency)}

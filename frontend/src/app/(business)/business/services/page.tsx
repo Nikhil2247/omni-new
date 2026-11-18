@@ -55,7 +55,7 @@ import type {
   UpdateServiceRequest,
   CreateServiceItemRequest,
 } from "@/lib/api/types/business.types";
-import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell } from "@/components/dashboard";
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell } from "@/components/dash";
 import { ServiceItemsForm } from "@/components/features/services/service-items-form";
 
 const PRICE_UNITS = [
@@ -332,7 +332,7 @@ export default function BusinessServicesPage() {
         <PageHeader title="Services" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-yellow-500" />
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-warning" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first before adding services.

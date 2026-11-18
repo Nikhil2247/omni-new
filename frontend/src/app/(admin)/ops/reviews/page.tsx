@@ -22,7 +22,7 @@ import {
   TwoLineCell,
   UserCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -48,7 +48,7 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={star}
           className={`h-4 w-4 ${
-            star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+            star <= rating ? 'fill-warning text-warning' : 'text-muted-foreground'
           }`}
         />
       ))}
@@ -222,11 +222,11 @@ export default function OpsReviewsPage() {
       <PageHeader title="Reviews & Feedback" />
 
       <StatGrid className="lg:grid-cols-5">
-        <StatCard label="Completed Events" value={stats.completedEvents} icon={CheckCircle} accent="text-purple-600" />
-        <StatCard label="Total Reviews" value={stats.total} icon={MessageSquare} accent="text-blue-600" />
-        <StatCard label="Avg Rating" value={stats.avgRating.toFixed(1)} icon={Star} accent="text-yellow-600" />
-        <StatCard label="Positive (4-5★)" value={stats.positive} icon={ThumbsUp} accent="text-green-600" />
-        <StatCard label="Pending Review" value={stats.pending} icon={AlertCircle} accent="text-orange-600" />
+        <StatCard label="Completed Events" value={stats.completedEvents} icon={CheckCircle} accent="text-primary" />
+        <StatCard label="Total Reviews" value={stats.total} icon={MessageSquare} accent="text-primary" />
+        <StatCard label="Avg Rating" value={stats.avgRating.toFixed(1)} icon={Star} accent="text-warning" />
+        <StatCard label="Positive (4-5★)" value={stats.positive} icon={ThumbsUp} accent="text-success" />
+        <StatCard label="Pending Review" value={stats.pending} icon={AlertCircle} accent="text-warning" />
       </StatGrid>
 
       {/* Completed Events Pending Review */}
@@ -313,7 +313,7 @@ export default function OpsReviewsPage() {
                   </>
                 )}
                 {selectedReview.status === 'APPROVED' && (
-                  <p className="text-sm text-green-600 flex items-center">
+                  <p className="text-sm text-success flex items-center">
                     <CheckCircle className="mr-2 h-4 w-4" />
                     This review has been approved and is visible to users
                   </p>

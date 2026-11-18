@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessReviews, useRespondToReview } from '@/hooks/queries/use-business'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell } from '@/components/dashboard'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -95,7 +95,7 @@ export default function BusinessReviewsPage() {
         <PageHeader title="Reviews" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-yellow-500" />
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-warning" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Please create your business profile to view reviews.
@@ -147,7 +147,7 @@ export default function BusinessReviewsPage() {
             exportValue: (r) => r.rating,
             cell: (r) => (
               <span className="inline-flex items-center gap-1 text-sm">
-                <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
+                <Star className="h-3.5 w-3.5 fill-warning text-warning" />
                 {r.rating}/5
               </span>
             ),
@@ -209,8 +209,8 @@ export default function BusinessReviewsPage() {
                         key={i}
                         className={`h-4 w-4 ${
                           i < selectedReview.rating
-                            ? 'text-yellow-500 fill-yellow-500'
-                            : 'text-gray-300'
+                            ? 'text-warning fill-warning'
+                            : 'text-muted-foreground'
                         }`}
                       />
                     ))}

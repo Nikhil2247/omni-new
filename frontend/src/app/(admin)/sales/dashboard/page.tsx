@@ -15,7 +15,7 @@ import {
   Briefcase,
   UserPlus,
 } from 'lucide-react';
-import { PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dashboard';
+import { PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dash';
 
 export default function SalesDashboardPage() {
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function SalesDashboardPage() {
                   <span>42 / 50</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full w-[84%] rounded-full bg-green-500" />
+                  <div className="h-full w-[84%] rounded-full bg-success" />
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">84% achieved</p>
               </div>
@@ -251,7 +251,7 @@ export default function SalesDashboardPage() {
 
 function TrendHint({ trend, up, comparison }: { trend: string; up: boolean; comparison: string }) {
   return (
-    <span className={`flex items-center gap-1 ${up ? 'text-green-600' : 'text-red-600'}`}>
+    <span className={`flex items-center gap-1 ${up ? 'text-success' : 'text-destructive'}`}>
       {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
       {trend} {comparison}
     </span>
@@ -270,12 +270,12 @@ function PipelineStage({
   color: string;
 }) {
   const colorClasses: Record<string, string> = {
-    blue: 'bg-blue-500',
-    purple: 'bg-purple-500',
-    yellow: 'bg-yellow-500',
-    orange: 'bg-orange-500',
-    pink: 'bg-pink-500',
-    green: 'bg-green-500',
+    blue: 'bg-primary',
+    purple: 'bg-primary',
+    yellow: 'bg-warning',
+    orange: 'bg-warning',
+    pink: 'bg-primary',
+    green: 'bg-success',
   };
 
   return (
@@ -399,10 +399,10 @@ function ActivityCard({
   time: string;
 }) {
   const typeConfig = {
-    deal_won: { icon: CheckCircle2, color: 'text-green-600' },
-    meeting: { icon: Calendar, color: 'text-blue-600' },
-    lead: { icon: UserPlus, color: 'text-purple-600' },
-    proposal: { icon: Mail, color: 'text-orange-600' },
+    deal_won: { icon: CheckCircle2, color: 'text-success' },
+    meeting: { icon: Calendar, color: 'text-primary' },
+    lead: { icon: UserPlus, color: 'text-primary' },
+    proposal: { icon: Mail, color: 'text-warning' },
   };
   const Icon = typeConfig[type].icon;
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/auth-store';
-import { PageHeader, StatCard as KpiCard } from '@/components/dashboard';
+import { PageHeader, StatCard as KpiCard } from '@/components/dash';
 import {
   CheckSquare,
   Clock,
@@ -166,9 +166,9 @@ export function OpsAssistantDashboard() {
         {/* Today's Tasks */}
         <div className="lg:col-span-2 space-y-3">
           {/* Urgent Tasks */}
-          <div className="rounded-lg border border-orange-500 bg-card p-3">
+          <div className="rounded-lg border border-warning/40 bg-card p-3">
             <div className="mb-2 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <AlertTriangle className="h-5 w-5 text-warning" />
               <h2 className="text-sm font-semibold">Urgent Tasks</h2>
             </div>
             <div className="space-y-3">
@@ -351,10 +351,10 @@ function StatCard({
   color: 'yellow' | 'blue' | 'green' | 'purple';
 }) {
   const colorClasses = {
-    yellow: 'text-yellow-600',
-    blue: 'text-blue-600',
-    green: 'text-green-600',
-    purple: 'text-purple-600',
+    yellow: 'text-warning',
+    blue: 'text-primary',
+    green: 'text-success',
+    purple: 'text-primary',
   };
 
   return <KpiCard label={title} value={value} icon={icon} accent={colorClasses[color]} />;
@@ -438,7 +438,7 @@ function TaskCard({
           </div>
         </div>
         {priority === 'urgent' && (
-          <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800 dark:bg-red-900 dark:text-red-200">
+          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
             Urgent
           </span>
         )}
@@ -481,9 +481,9 @@ function SubmittedTask({
   status: 'pending' | 'approved' | 'rejected';
 }) {
   const statusConfig = {
-    pending: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: 'Pending Review' },
-    approved: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Approved' },
-    rejected: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', label: 'Rejected' },
+    pending: { color: 'bg-warning/10 text-warning', label: 'Pending Review' },
+    approved: { color: 'bg-success/10 text-success', label: 'Approved' },
+    rejected: { color: 'bg-destructive/10 text-destructive', label: 'Rejected' },
   };
 
   return (

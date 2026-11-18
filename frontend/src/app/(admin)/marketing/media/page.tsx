@@ -5,7 +5,7 @@ import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
 import { useMarketingMedia } from '@/hooks/queries/use-marketing'
 import { useUmami } from '@/hooks/use-umami'
-import { DataTable, PageHeader, TwoLineCell, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, TwoLineCell, type DataColumn } from '@/components/dash'
 
 type Asset = NonNullable<ReturnType<typeof useMarketingMedia>['data']>[number]
 

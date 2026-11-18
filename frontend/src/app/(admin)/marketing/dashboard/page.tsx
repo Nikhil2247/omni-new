@@ -9,7 +9,7 @@ import { useBlogPosts, useMarketingCampaigns, useMarketingMedia, useMarketingPro
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { FileText, Image, Eye, Megaphone, PenLine, BarChart3 } from 'lucide-react'
-import { PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dashboard'
+import { PageHeader, StatCard, StatGrid, StatusBadge } from '@/components/dash'
 
 export default function MarketingDashboardPage() {
 

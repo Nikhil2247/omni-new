@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PageHeader, DataTable, StatusBadge, TwoLineCell, StatCard, StatGrid } from '@/components/dashboard';
+import { PageHeader, DataTable, StatusBadge, TwoLineCell, StatCard, StatGrid } from '@/components/dash';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -48,18 +48,18 @@ import { toast } from 'sonner';
 
 // Status badge colors for payments
 const statusColors: Record<string, string> = {
-  SUCCEEDED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  PROCESSING: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  FAILED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  REFUNDED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  SUCCEEDED: 'bg-success/10 text-success',
+  PENDING: 'bg-warning/10 text-warning',
+  PROCESSING: 'bg-primary/10 text-primary',
+  FAILED: 'bg-destructive/10 text-destructive',
+  REFUNDED: 'bg-primary/10 text-primary',
 };
 
 // Status badge colors for invoices
 const invoiceStatusColors: Record<string, string> = {
-  PAID: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  OPEN: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  VOIDED: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
+  PAID: 'bg-success/10 text-success',
+  OPEN: 'bg-warning/10 text-warning',
+  VOIDED: 'bg-muted text-foreground',
 };
 
 // Format currency with proper locale
@@ -232,8 +232,8 @@ export default function BusinessBillingPage() {
       <Card>
         <CardContent className="flex items-center justify-between gap-3 p-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-              <Coins className="h-4 w-4 text-amber-600" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-warning/10">
+              <Coins className="h-4 w-4 text-warning" />
             </div>
             <div>
               {adCreditsLoading ? (

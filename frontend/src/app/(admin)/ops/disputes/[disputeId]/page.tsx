@@ -1,4 +1,4 @@
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { OpsDisputeDetails } from '@/components/features/ops'
 
 export default function OpsDisputeDetailPage({ params }: { params: { disputeId: string } }) {

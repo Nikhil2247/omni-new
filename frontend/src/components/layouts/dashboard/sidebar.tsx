@@ -72,7 +72,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [--scroll-thumb:rgb(255_255_255/0.25)] [--scroll-thumb-hover:rgb(255_255_255/0.4)]">
+        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [--scroll-thumb:color-mix(in_srgb,var(--sidebar-foreground)_30%,transparent)] [--scroll-thumb-hover:color-mix(in_srgb,var(--sidebar-foreground)_50%,transparent)]">
           {navigation.map((group, i) => (
             <NavGroupBlock
               key={group.title}

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Users } from 'lucide-react'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
-import { DataTable, PageHeader, StatusBadge, UserCell, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, UserCell, type DataColumn } from '@/components/dash'
 
 export default function SystemCustomerUsersPage() {
   const [query, setQuery] = useState('')

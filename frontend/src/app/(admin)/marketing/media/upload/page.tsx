@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 
 export default function MarketingMediaUploadPage() {
   return (

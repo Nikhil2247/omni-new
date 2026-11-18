@@ -3,12 +3,12 @@
 import Link from 'next/link'
 import { User, Bell, Shield } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 
 const items: { title: string; href: string; icon: LucideIcon; iconColor: string }[] = [
-  { title: 'Profile', href: '/marketing/settings/profile', icon: User, iconColor: 'text-blue-500' },
-  { title: 'Notifications', href: '/marketing/settings/notifications', icon: Bell, iconColor: 'text-amber-500' },
-  { title: 'Security', href: '/marketing/settings/security', icon: Shield, iconColor: 'text-green-500' },
+  { title: 'Profile', href: '/marketing/settings/profile', icon: User, iconColor: 'text-primary' },
+  { title: 'Notifications', href: '/marketing/settings/notifications', icon: Bell, iconColor: 'text-warning' },
+  { title: 'Security', href: '/marketing/settings/security', icon: Shield, iconColor: 'text-success' },
 ]
 
 export default function MarketingSettingsPage() {

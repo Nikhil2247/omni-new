@@ -22,18 +22,18 @@ export function BlogHealthIndicator({ post }: BlogHealthIndicatorProps) {
         className="h-1.5"
         indicatorClassName={
           health.score >= 90
-            ? 'bg-emerald-500'
+            ? 'bg-success'
             : health.score >= 75
-              ? 'bg-sky-500'
+              ? 'bg-info'
               : health.score >= 55
-                ? 'bg-amber-500'
-                : 'bg-rose-500'
+                ? 'bg-warning'
+                : 'bg-destructive'
         }
       />
       {missingPreview ? (
         <p className="line-clamp-1 text-[11px] text-muted-foreground">Missing: {missingPreview}</p>
       ) : (
-        <p className="text-[11px] text-emerald-600">Ready for publishing</p>
+        <p className="text-[11px] text-success">Ready for publishing</p>
       )}
     </div>
   )

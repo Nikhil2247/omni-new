@@ -10,7 +10,7 @@ import { useAuthStore } from '@/store/auth-store'
 import { ROLES } from '@/config/roles'
 import { Button } from '@/components/ui/button'
 import { BlogHealthIndicator } from '@/components/marketing/blog-health-indicator'
-import { DataTable, FilterSelect, PageHeader, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dashboard'
+import { DataTable, FilterSelect, PageHeader, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dash'
 import type { BlogStatus } from '@/lib/api/types/marketing.types'
 
 export default function MarketingContentPage() {

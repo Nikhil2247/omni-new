@@ -65,36 +65,36 @@ const campaignTypes = [
     name: 'Profile Boost',
     description: 'Increase your profile visibility in search results and get more inquiries',
     icon: TrendingUp,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
-    borderColor: 'border-blue-200',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/40',
   },
   {
     id: 'ALBUM_PROMOTION',
     name: 'Album Promotion',
     description: 'Showcase your best work to more event planners looking for vendors',
     icon: Image,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
-    borderColor: 'border-purple-200',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/40',
   },
   {
     id: 'BANNER_AD',
     name: 'Banner Ad',
     description: 'Display eye-catching banner ads across the platform',
     icon: Megaphone,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100',
-    borderColor: 'border-orange-200',
+    color: 'text-warning',
+    bgColor: 'bg-warning/10',
+    borderColor: 'border-warning/40',
   },
   {
     id: 'FEATURED_LISTING',
     name: 'Featured Listing',
     description: 'Get premium placement on homepage and category pages',
     icon: Star,
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100',
-    borderColor: 'border-yellow-200',
+    color: 'text-warning',
+    bgColor: 'bg-warning/10',
+    borderColor: 'border-warning/40',
   },
 ];
 
@@ -558,7 +558,7 @@ export default function NewCampaignPage() {
                           <span className="text-muted-foreground">Your Balance</span>
                           <span className={cn(
                             'font-semibold',
-                            hasInsufficientCredits ? 'text-red-600' : 'text-green-600'
+                            hasInsufficientCredits ? 'text-destructive' : 'text-success'
                           )}>
                             {availableCredits.toLocaleString()} credits
                           </span>
@@ -566,8 +566,8 @@ export default function NewCampaignPage() {
                       </div>
 
                       {hasInsufficientCredits && (
-                        <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-100">
-                          <p className="text-sm text-red-700 mb-2">
+                        <div className="mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/40">
+                          <p className="text-sm text-destructive mb-2">
                             Insufficient credits for this campaign.
                           </p>
                           <Link

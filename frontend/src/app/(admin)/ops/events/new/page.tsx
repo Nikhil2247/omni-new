@@ -1,4 +1,4 @@
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { CreateEventForm } from '@/components/forms/ops'
 
 export default function OpsEventCreatePage() {

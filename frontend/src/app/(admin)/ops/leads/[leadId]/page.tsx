@@ -12,7 +12,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader, StatusBadge } from '@/components/dashboard'
+import { PageHeader, StatusBadge } from '@/components/dash'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -205,7 +205,7 @@ export default function LeadDetailPage() {
           <>
             <StatusBadge status={lead.status}>{status.label}</StatusBadge>
             {canConvert && (
-              <Button size="sm" onClick={openConvertDialog} className="bg-green-600 hover:bg-green-700">
+              <Button size="sm" onClick={openConvertDialog} className="bg-success hover:bg-success">
                 <ArrowRightCircle className="h-4 w-4 mr-1" />
                 Convert to Event
               </Button>
@@ -417,7 +417,7 @@ export default function LeadDetailPage() {
             <CardContent className="p-3">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 mt-2 rounded-full bg-blue-500" />
+                  <div className="w-2 h-2 mt-2 rounded-full bg-primary" />
                   <div>
                     <p className="text-sm font-medium">Lead Created</p>
                     <p className="text-xs text-muted-foreground">
@@ -428,7 +428,7 @@ export default function LeadDetailPage() {
 
                 {lead.respondedAt && (
                   <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-yellow-500" />
+                    <div className="w-2 h-2 mt-2 rounded-full bg-warning" />
                     <div>
                       <p className="text-sm font-medium">First Response</p>
                       <p className="text-xs text-muted-foreground">
@@ -440,7 +440,7 @@ export default function LeadDetailPage() {
 
                 {lead.convertedAt && (
                   <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-green-500" />
+                    <div className="w-2 h-2 mt-2 rounded-full bg-success" />
                     <div>
                       <p className="text-sm font-medium">Converted to Event</p>
                       <p className="text-xs text-muted-foreground">
@@ -468,7 +468,7 @@ export default function LeadDetailPage() {
                 <CardTitle className="text-sm">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 p-3">
-                <Button onClick={openConvertDialog} className="w-full bg-green-600 hover:bg-green-700">
+                <Button onClick={openConvertDialog} className="w-full bg-success hover:bg-success">
                   <ArrowRightCircle className="h-4 w-4 mr-2" />
                   Convert to Event
                 </Button>
@@ -576,7 +576,7 @@ export default function LeadDetailPage() {
             <Button
               onClick={handleConvert}
               disabled={convertLead.isPending}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-success hover:bg-success"
             >
               {convertLead.isPending ? 'Converting...' : 'Convert to Event'}
             </Button>

@@ -27,7 +27,7 @@ import {
   StatusBadge,
   TwoLineCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -243,9 +243,9 @@ export default function AdminCampaignsPage() {
       />
 
       <StatGrid>
-        <StatCard label="Pending Approval" value={counts?.PENDING_APPROVAL ?? 0} icon={Clock} accent="text-yellow-600" />
-        <StatCard label="Active Campaigns" value={counts?.ACTIVE ?? 0} icon={CheckCircle} accent="text-green-600" />
-        <StatCard label="Rejected" value={counts?.REJECTED ?? 0} icon={XCircle} accent="text-red-600" />
+        <StatCard label="Pending Approval" value={counts?.PENDING_APPROVAL ?? 0} icon={Clock} accent="text-warning" />
+        <StatCard label="Active Campaigns" value={counts?.ACTIVE ?? 0} icon={CheckCircle} accent="text-success" />
+        <StatCard label="Rejected" value={counts?.REJECTED ?? 0} icon={XCircle} accent="text-destructive" />
         <StatCard label="Total Campaigns" value={counts?.TOTAL ?? 0} icon={Megaphone} />
       </StatGrid>
 
@@ -254,7 +254,7 @@ export default function AdminCampaignsPage() {
           <TabsTrigger value="pending" className="relative">
             Pending Approval
             {(counts?.PENDING_APPROVAL ?? 0) > 0 && (
-              <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-xs font-medium text-white">
+              <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-warning text-xs font-medium text-white">
                 {counts?.PENDING_APPROVAL}
               </span>
             )}
@@ -431,8 +431,8 @@ export default function AdminCampaignsPage() {
               )}
 
               {selectedCampaign.status === 'APPROVED' && selectedCampaign.approvedBy && (
-                <div className="rounded-lg border border-green-500/50 bg-green-500/10 p-3">
-                  <Label className="text-green-700">Approved</Label>
+                <div className="rounded-lg border border-success/40 bg-success/10 p-3">
+                  <Label className="text-success">Approved</Label>
                   <p className="text-sm text-muted-foreground">
                     Approved by {selectedCampaign.approvedBy.firstName || selectedCampaign.approvedBy.email}{' '}
                     on {selectedCampaign.approvedAt ? formatDate(selectedCampaign.approvedAt) : 'N/A'}

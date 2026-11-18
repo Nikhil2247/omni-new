@@ -13,7 +13,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ConfirmDialog, PageHeader, useConfirmAction } from '@/components/dashboard'
+import { ConfirmDialog, PageHeader, useConfirmAction } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -744,7 +744,7 @@ export default function ManualDocumentPage() {
                     <span>{formatCurrency(subtotal)}</span>
                   </div>
                   {discountAmount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
+                    <div className="flex justify-between text-sm text-success">
                       <span>Discount</span>
                       <span>-{formatCurrency(discountAmount)}</span>
                     </div>

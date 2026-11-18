@@ -52,7 +52,7 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 const statusConfig: Record<string, { label: string }> = {
   DRAFT: { label: 'Draft' },
@@ -258,7 +258,7 @@ export default function OpsAgreementsPage() {
       label: 'Advance',
       align: 'right',
       hideBelow: 'md',
-      cell: (a) => <span className="text-green-600">{formatCurrency(a.advancePaid)}</span>,
+      cell: (a) => <span className="text-success">{formatCurrency(a.advancePaid)}</span>,
       sortValue: (a) => Number(a.advancePaid) || 0,
     },
     {
@@ -267,7 +267,7 @@ export default function OpsAgreementsPage() {
       label: 'Balance',
       align: 'right',
       hideBelow: 'md',
-      cell: (a) => <span className="text-orange-600">{formatCurrency(a.balanceDue)}</span>,
+      cell: (a) => <span className="text-warning">{formatCurrency(a.balanceDue)}</span>,
       sortValue: (a) => Number(a.balanceDue) || 0,
     },
     {
@@ -334,9 +334,9 @@ export default function OpsAgreementsPage() {
             <>
               <StatGrid>
                 <StatCard label="Total Agreed" value={formatCurrency(totalAgreed)} icon={DollarSign} />
-                <StatCard label="Total Paid" value={formatCurrency(totalPaid)} icon={CheckCircle} accent="text-green-600" />
-                <StatCard label="Accepted" value={acceptedCount} icon={FileText} accent="text-emerald-600" />
-                <StatCard label="Pending" value={pendingCount} icon={Clock} accent="text-yellow-600" />
+                <StatCard label="Total Paid" value={formatCurrency(totalPaid)} icon={CheckCircle} accent="text-success" />
+                <StatCard label="Accepted" value={acceptedCount} icon={FileText} accent="text-success" />
+                <StatCard label="Pending" value={pendingCount} icon={Clock} accent="text-warning" />
               </StatGrid>
 
               <DataTable

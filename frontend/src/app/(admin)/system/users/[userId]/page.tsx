@@ -40,7 +40,7 @@ import {
   DataTable,
   PageHeader,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 import { Skeleton } from '@/components/ui/skeleton'
 
 type UserSession = NonNullable<AdminUser['sessions']>[number]
@@ -189,11 +189,11 @@ export default function SystemUserDetailPage() {
                   </Badge>
                 )}
                 {user.emailVerified ? (
-                  <Badge variant="outline" className="gap-1 text-xs text-emerald-600 border-emerald-200">
+                  <Badge variant="outline" className="gap-1 text-xs text-success border-success/40">
                     <CheckCircle2 className="h-3 w-3" />Email verified
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="gap-1 text-xs text-amber-600 border-amber-200">
+                  <Badge variant="outline" className="gap-1 text-xs text-warning border-warning/40">
                     <XCircle className="h-3 w-3" />Unverified
                   </Badge>
                 )}
@@ -345,16 +345,16 @@ export default function SystemUserDetailPage() {
             </DetailRow>
             <DetailRow label="Email verified">
               {user.emailVerified
-                ? <span className="flex items-center gap-1 text-emerald-600"><CheckCircle2 className="h-3.5 w-3.5" />Yes</span>
-                : <span className="flex items-center gap-1 text-amber-600"><XCircle className="h-3.5 w-3.5" />No</span>}
+                ? <span className="flex items-center gap-1 text-success"><CheckCircle2 className="h-3.5 w-3.5" />Yes</span>
+                : <span className="flex items-center gap-1 text-warning"><XCircle className="h-3.5 w-3.5" />No</span>}
             </DetailRow>
             <DetailRow label="2FA">
               {user.twoFactorEnabled
-                ? <span className="flex items-center gap-1 text-emerald-600"><ShieldCheck className="h-3.5 w-3.5" />Enabled</span>
+                ? <span className="flex items-center gap-1 text-success"><ShieldCheck className="h-3.5 w-3.5" />Enabled</span>
                 : <span className="flex items-center gap-1 text-muted-foreground"><ShieldOff className="h-3.5 w-3.5" />Disabled</span>}
             </DetailRow>
             <DetailRow label="Onboarding">
-              <span className={user.hasCompletedOnboarding ? 'text-emerald-600' : 'text-amber-600'}>
+              <span className={user.hasCompletedOnboarding ? 'text-success' : 'text-warning'}>
                 {user.hasCompletedOnboarding ? 'Complete' : 'Pending'}
               </span>
             </DetailRow>

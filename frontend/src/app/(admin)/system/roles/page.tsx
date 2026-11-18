@@ -7,7 +7,7 @@ import { useUmami } from '@/hooks/use-umami'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dash'
 
 export default function SystemRolesPage() {
   const { data, isLoading } = useAdminRoles()

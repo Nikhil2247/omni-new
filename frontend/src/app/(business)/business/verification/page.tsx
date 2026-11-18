@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader, DataTable, StatusBadge, TwoLineCell } from '@/components/dashboard'
+import { PageHeader, DataTable, StatusBadge, TwoLineCell } from '@/components/dash'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -48,47 +48,47 @@ import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common'
 const kycStatusConfig: Record<KYCStatus, { label: string; color: string; icon: typeof Clock; description: string }> = {
   PENDING: {
     label: 'Pending',
-    color: 'bg-gray-100 text-gray-700 border-gray-200',
+    color: 'bg-muted text-foreground border-border',
     icon: Clock,
     description: 'Complete your business details and upload required documents',
   },
   SUBMITTED: {
     label: 'Submitted',
-    color: 'bg-blue-100 text-blue-700 border-blue-200',
+    color: 'bg-primary/10 text-primary border-primary/40',
     icon: Clock,
     description: 'Your verification is in queue for review',
   },
   UNDER_REVIEW: {
     label: 'Under Review',
-    color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    color: 'bg-warning/10 text-warning border-warning/40',
     icon: Eye,
     description: 'Our team is reviewing your documents',
   },
   APPROVED: {
     label: 'Approved',
-    color: 'bg-green-100 text-green-700 border-green-200',
+    color: 'bg-success/10 text-success border-success/40',
     icon: CheckCircle,
     description: 'Your account is verified!',
   },
   REJECTED: {
     label: 'Rejected',
-    color: 'bg-red-100 text-red-700 border-red-200',
+    color: 'bg-destructive/10 text-destructive border-destructive/40',
     icon: XCircle,
     description: 'Please review the feedback and resubmit',
   },
   EXPIRED: {
     label: 'Expired',
-    color: 'bg-orange-100 text-orange-700 border-orange-200',
+    color: 'bg-warning/10 text-warning border-warning/40',
     icon: AlertTriangle,
     description: 'Your verification has expired. Please resubmit documents.',
   },
 }
 
 const documentStatusConfig: Record<DocumentStatus, { label: string; color: string }> = {
-  PENDING: { label: 'Pending Review', color: 'bg-gray-100 text-gray-700' },
-  VERIFIED: { label: 'Verified', color: 'bg-green-100 text-green-700' },
-  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
-  EXPIRED: { label: 'Expired', color: 'bg-orange-100 text-orange-700' },
+  PENDING: { label: 'Pending Review', color: 'bg-muted text-foreground' },
+  VERIFIED: { label: 'Verified', color: 'bg-success/10 text-success' },
+  REJECTED: { label: 'Rejected', color: 'bg-destructive/10 text-destructive' },
+  EXPIRED: { label: 'Expired', color: 'bg-warning/10 text-warning' },
 }
 
 const businessTypes = [
@@ -265,8 +265,8 @@ export default function VerificationPage() {
               </div>
               <p className="text-muted-foreground mt-1">{statusInfo.description}</p>
               {kyc?.rejectionReason && status === 'REJECTED' && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700">
+                <div className="mt-3 p-3 bg-destructive/10 border border-destructive/40 rounded-lg">
+                  <p className="text-sm text-destructive">
                     <strong>Rejection Reason:</strong> {kyc.rejectionReason}
                   </p>
                 </div>
@@ -278,7 +278,7 @@ export default function VerificationPage() {
               )}
             </div>
             {status === 'APPROVED' && (
-              <ShieldCheck className="h-8 w-8 text-green-500" />
+              <ShieldCheck className="h-8 w-8 text-success" />
             )}
           </div>
         </CardContent>
@@ -372,13 +372,13 @@ export default function VerificationPage() {
                   <div
                     key={docType.type}
                     className={`flex items-center gap-2 p-3 rounded-lg border ${
-                      isUploaded ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+                      isUploaded ? 'bg-success/10 border-success/40' : 'bg-muted border-border'
                     }`}
                   >
                     {isUploaded ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <CheckCircle className="h-5 w-5 text-success" />
                     ) : (
-                      <AlertCircle className="h-5 w-5 text-gray-400" />
+                      <AlertCircle className="h-5 w-5 text-muted-foreground" />
                     )}
                     <div className="flex-1">
                       <p className="font-medium text-sm">{docType.name}</p>
@@ -430,8 +430,8 @@ export default function VerificationPage() {
                   isDragActive
                     ? 'border-primary bg-primary/5'
                     : selectedDocType
-                    ? 'border-gray-300 hover:border-primary cursor-pointer'
-                    : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                    ? 'border-border hover:border-primary cursor-pointer'
+                    : 'border-border bg-muted cursor-not-allowed'
                 }`}
               >
                 <input {...getInputProps()} />

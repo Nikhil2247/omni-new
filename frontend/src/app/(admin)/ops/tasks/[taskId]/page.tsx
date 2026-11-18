@@ -14,7 +14,7 @@ import {
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ConfirmDialog, PageHeader, StatusBadge } from '@/components/dashboard'
+import { ConfirmDialog, PageHeader, StatusBadge } from '@/components/dash'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -271,7 +271,7 @@ export default function TaskDetailPage() {
                   <p className="text-sm text-muted-foreground">Due Date</p>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <p className={`font-medium ${isOverdue ? 'text-red-600' : ''}`}>
+                    <p className={`font-medium ${isOverdue ? 'text-destructive' : ''}`}>
                       {dueDate ? dueDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'No due date'}
                     </p>
                   </div>
@@ -312,8 +312,8 @@ export default function TaskDetailPage() {
             <CardContent className="p-3">
               {task.proofUrl || task.proofSubmittedAt ? (
                 <div className="space-y-3">
-                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <div className="flex items-center gap-2 text-green-700 mb-2">
+                  <div className="p-3 rounded-lg bg-success/10 border border-success/40">
+                    <div className="flex items-center gap-2 text-success mb-2">
                       <CheckCircle className="h-5 w-5" />
                       <span className="font-medium">Proof Submitted</span>
                     </div>
@@ -372,7 +372,7 @@ export default function TaskDetailPage() {
                 </Button>
               )}
               {task.status === 'PROOF_SUBMITTED' && (
-                <Button className="w-full bg-green-600 hover:bg-green-700" onClick={openReviewDialog}>
+                <Button className="w-full bg-success hover:bg-success" onClick={openReviewDialog}>
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Review & Approve
                 </Button>
@@ -421,7 +421,7 @@ export default function TaskDetailPage() {
             <CardContent className="p-3">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 mt-2 rounded-full bg-blue-500" />
+                  <div className="w-2 h-2 mt-2 rounded-full bg-primary" />
                   <div>
                     <p className="text-sm font-medium">Created</p>
                     <p className="text-xs text-muted-foreground">{task.createdAt ? new Date(task.createdAt).toLocaleString() : 'N/A'}</p>
@@ -429,7 +429,7 @@ export default function TaskDetailPage() {
                 </div>
                 {task.startedAt && (
                   <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-purple-500" />
+                    <div className="w-2 h-2 mt-2 rounded-full bg-primary" />
                     <div>
                       <p className="text-sm font-medium">Started</p>
                       <p className="text-xs text-muted-foreground">{new Date(task.startedAt).toLocaleString()}</p>
@@ -438,7 +438,7 @@ export default function TaskDetailPage() {
                 )}
                 {task.proofSubmittedAt && (
                   <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-indigo-500" />
+                    <div className="w-2 h-2 mt-2 rounded-full bg-primary" />
                     <div>
                       <p className="text-sm font-medium">Proof Submitted</p>
                       <p className="text-xs text-muted-foreground">{new Date(task.proofSubmittedAt).toLocaleString()}</p>
@@ -447,7 +447,7 @@ export default function TaskDetailPage() {
                 )}
                 {task.completedAt && (
                   <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 mt-2 rounded-full bg-green-500" />
+                    <div className="w-2 h-2 mt-2 rounded-full bg-success" />
                     <div>
                       <p className="text-sm font-medium">Completed</p>
                       <p className="text-xs text-muted-foreground">{new Date(task.completedAt).toLocaleString()}</p>
@@ -516,7 +516,7 @@ export default function TaskDetailPage() {
           <DialogFooter className="flex gap-2">
             <Button variant="outline" onClick={() => setReviewDialogOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleRejectTask}>Reject</Button>
-            <Button className="bg-green-600 hover:bg-green-700" onClick={handleApproveTask}>Approve</Button>
+            <Button className="bg-success hover:bg-success" onClick={handleApproveTask}>Approve</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

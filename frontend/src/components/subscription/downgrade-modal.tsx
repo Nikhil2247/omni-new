@@ -219,7 +219,7 @@ export function DowngradeModal({
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ArrowDown className="h-5 w-5 text-amber-500" />
+            <ArrowDown className="h-5 w-5 text-warning" />
             Downgrade Your Plan
           </DialogTitle>
           <DialogDescription>
@@ -229,12 +229,12 @@ export function DowngradeModal({
 
         <div className="space-y-6 py-4">
           {/* Warning Alert */}
-          <Alert variant="destructive" className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <AlertTitle className="text-amber-700 dark:text-amber-400">
+          <Alert variant="destructive" className="border-warning/40 bg-warning/10">
+            <AlertTriangle className="h-4 w-4 text-warning" />
+            <AlertTitle className="text-warning">
               Feature Loss Warning
             </AlertTitle>
-            <AlertDescription className="text-amber-600 dark:text-amber-300">
+            <AlertDescription className="text-warning">
               Downgrading will reduce your access to certain features. Please review the changes carefully.
             </AlertDescription>
           </Alert>
@@ -300,8 +300,8 @@ export function DowngradeModal({
                     onClick={() => handleSelectPlan(plan.id)}
                     className={`relative rounded-lg border-2 p-4 cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20'
-                        : 'border-border hover:border-amber-500/50'
+                        ? 'border-warning/40 bg-warning/10'
+                        : 'border-border hover:border-warning/40'
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -318,7 +318,7 @@ export function DowngradeModal({
                       </div>
                       <div className="text-right">
                         {isFree ? (
-                          <p className="text-2xl font-bold text-green-600">Free</p>
+                          <p className="text-2xl font-bold text-success">Free</p>
                         ) : price ? (
                           <>
                             <p className="text-2xl font-bold">
@@ -346,7 +346,7 @@ export function DowngradeModal({
                             key={feature.key}
                             className="flex items-center gap-2 text-sm"
                           >
-                            <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            <Check className="h-4 w-4 text-success flex-shrink-0" />
                             <span className="text-muted-foreground">
                               {feature.name}
                             </span>
@@ -356,7 +356,7 @@ export function DowngradeModal({
 
                     {isSelected && (
                       <div className="absolute top-4 right-4">
-                        <div className="rounded-full bg-amber-500 p-1">
+                        <div className="rounded-full bg-warning p-1">
                           <Check className="h-4 w-4 text-white" />
                         </div>
                       </div>
@@ -371,8 +371,8 @@ export function DowngradeModal({
           {selectedPlan && lostFeatures.length > 0 && (
             <>
               <Separator />
-              <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20 p-4">
-                <h4 className="font-medium text-red-700 dark:text-red-300 mb-2 flex items-center gap-2">
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+                <h4 className="font-medium text-destructive mb-2 flex items-center gap-2">
                   <X className="h-4 w-4" />
                   Features You Will Lose
                 </h4>
@@ -380,14 +380,14 @@ export function DowngradeModal({
                   {lostFeatures.slice(0, 6).map((feature) => (
                     <div
                       key={feature.featureKey}
-                      className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400"
+                      className="flex items-center gap-2 text-sm text-destructive"
                     >
                       <X className="h-4 w-4 flex-shrink-0" />
                       <span>{feature.featureName}</span>
                     </div>
                   ))}
                   {lostFeatures.length > 6 && (
-                    <p className="text-sm text-red-500 dark:text-red-400 mt-1">
+                    <p className="text-sm text-destructive mt-1">
                       And {lostFeatures.length - 6} more features...
                     </p>
                   )}

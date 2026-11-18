@@ -25,7 +25,7 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 import {
   ShieldCheck,
   ShieldX,
@@ -280,10 +280,10 @@ export default function OpsKycPage() {
         title="KYC Verification"
         actions={
           isConnected ? (
-            <div className="flex items-center gap-1.5 text-xs text-green-600">
+            <div className="flex items-center gap-1.5 text-xs text-success">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success/30 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
               </span>
               Live updates
             </div>
@@ -292,10 +292,10 @@ export default function OpsKycPage() {
       />
 
       <StatGrid>
-        <StatCard label="Pending Review" value={pendingCount} icon={ShieldAlert} accent="text-yellow-600" />
-        <StatCard label="Under Review" value={underReviewCount} icon={Eye} accent="text-purple-600" />
-        <StatCard label="Approved" value={approvedCount} icon={ShieldCheck} accent="text-green-600" />
-        <StatCard label="Total" value={kycList?.length || 0} icon={Store} accent="text-blue-600" />
+        <StatCard label="Pending Review" value={pendingCount} icon={ShieldAlert} accent="text-warning" />
+        <StatCard label="Under Review" value={underReviewCount} icon={Eye} accent="text-primary" />
+        <StatCard label="Approved" value={approvedCount} icon={ShieldCheck} accent="text-success" />
+        <StatCard label="Total" value={kycList?.length || 0} icon={Store} accent="text-primary" />
       </StatGrid>
 
       <DataTable

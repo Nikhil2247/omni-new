@@ -9,7 +9,7 @@ import {
   StatusBadge,
   TwoLineCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 export function OpsVendorsList() {
   const router = useRouter()
@@ -41,7 +41,7 @@ export function OpsVendorsList() {
       label: 'Verification',
       cell: (v) =>
         v.verifiedAt ? (
-          <span className="flex items-center gap-1 text-xs text-green-600">
+          <span className="flex items-center gap-1 text-xs text-success">
             <ShieldCheck className="h-3.5 w-3.5" />
             Verified
           </span>

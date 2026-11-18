@@ -11,7 +11,7 @@ import {
   StatusBadge,
   UserCell,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 export default function AdminUsersPage() {
   const [query, setQuery] = useState('')

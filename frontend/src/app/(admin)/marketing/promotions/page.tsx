@@ -1,7 +1,7 @@
 'use client'
 
 import { useMarketingPromotions } from '@/hooks/queries/use-marketing'
-import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dash'
 
 type Promotion = NonNullable<ReturnType<typeof useMarketingPromotions>['data']>[number]
 

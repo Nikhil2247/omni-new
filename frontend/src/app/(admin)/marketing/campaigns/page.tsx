@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { DataTable, FilterSelect, PageHeader, StatCard, StatGrid, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dashboard'
+import { DataTable, FilterSelect, PageHeader, StatCard, StatGrid, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dash'
 import type { MarketingCampaign, MarketingCampaignStatus, MarketingCampaignType } from '@/lib/api/types/marketing.types'
 
 const campaignTypeLabels: Record<MarketingCampaignType, string> = {
@@ -166,8 +166,8 @@ export default function MarketingCampaignsPage() {
 
       <StatGrid>
         <StatCard label="Visible campaigns" value={summary.total} icon={Megaphone} />
-        <StatCard label="Active now" value={summary.active} icon={Play} accent="text-green-600" />
-        <StatCard label="Paused" value={summary.paused} icon={Pause} accent="text-amber-600" />
+        <StatCard label="Active now" value={summary.active} icon={Play} accent="text-success" />
+        <StatCard label="Paused" value={summary.paused} icon={Pause} accent="text-warning" />
         <StatCard label="Spend / budget" value={`${summary.totalSpend} / ${summary.totalBudget}`} icon={Wallet} />
       </StatGrid>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useMarketingCategories } from '@/hooks/queries/use-marketing'
-import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dash'
 
 type Category = NonNullable<ReturnType<typeof useMarketingCategories>['data']>[number]
 

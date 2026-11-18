@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog, StatCard, StatGrid } from '@/components/dashboard';
+import { ConfirmDialog, StatCard, StatGrid } from '@/components/dash';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft,
@@ -42,12 +42,12 @@ function formatNumber(num: number): string {
 }
 
 const statusColors: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-800',
-  SCHEDULED: 'bg-blue-100 text-blue-800',
-  ACTIVE: 'bg-green-100 text-green-800',
-  PAUSED: 'bg-yellow-100 text-yellow-800',
-  COMPLETED: 'bg-purple-100 text-purple-800',
-  CANCELLED: 'bg-red-100 text-red-800',
+  DRAFT: 'bg-muted text-foreground',
+  SCHEDULED: 'bg-primary/10 text-primary',
+  ACTIVE: 'bg-success/10 text-success',
+  PAUSED: 'bg-warning/10 text-warning',
+  COMPLETED: 'bg-primary/10 text-primary',
+  CANCELLED: 'bg-destructive/10 text-destructive',
 };
 
 const typeLabels: Record<string, string> = {

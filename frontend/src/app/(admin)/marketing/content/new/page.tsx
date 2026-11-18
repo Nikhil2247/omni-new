@@ -20,7 +20,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor'
 import { marketingService } from '@/lib/api/services/marketing.service'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { FileText, Image, Settings, Tags } from 'lucide-react'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 
 const slugify = (value: string) =>
   value

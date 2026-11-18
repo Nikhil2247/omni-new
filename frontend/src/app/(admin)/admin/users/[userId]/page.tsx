@@ -12,7 +12,7 @@ import {
   useUpdateUserStatus,
 } from '@/hooks/queries/use-admin'
 import { Badge } from '@/components/ui/badge'
-import { ConfirmDialog, PageHeader } from '@/components/dashboard'
+import { ConfirmDialog, PageHeader } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'

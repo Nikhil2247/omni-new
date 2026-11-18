@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PageHeader, DataTable, FilterSelect, StatCard, StatGrid } from '@/components/dashboard';
+import { PageHeader, DataTable, FilterSelect, StatCard, StatGrid } from '@/components/dash';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -42,12 +42,12 @@ function formatCurrency(amount: number, currency: string = 'INR'): string {
 }
 
 const transactionTypeConfig: Record<CreditTransactionType, { icon: typeof Gift; color: string; label: string }> = {
-  SUBSCRIPTION_GRANT: { icon: Gift, color: 'text-green-600', label: 'Plan Grant' },
-  PURCHASE: { icon: ShoppingCart, color: 'text-blue-600', label: 'Purchase' },
-  CAMPAIGN_SPEND: { icon: TrendingDown, color: 'text-red-600', label: 'Campaign Spend' },
-  REFUND: { icon: ArrowUpRight, color: 'text-green-600', label: 'Refund' },
-  ADJUSTMENT: { icon: Receipt, color: 'text-purple-600', label: 'Adjustment' },
-  EXPIRY: { icon: ArrowDownRight, color: 'text-orange-600', label: 'Expired' },
+  SUBSCRIPTION_GRANT: { icon: Gift, color: 'text-success', label: 'Plan Grant' },
+  PURCHASE: { icon: ShoppingCart, color: 'text-primary', label: 'Purchase' },
+  CAMPAIGN_SPEND: { icon: TrendingDown, color: 'text-destructive', label: 'Campaign Spend' },
+  REFUND: { icon: ArrowUpRight, color: 'text-success', label: 'Refund' },
+  ADJUSTMENT: { icon: Receipt, color: 'text-primary', label: 'Adjustment' },
+  EXPIRY: { icon: ArrowDownRight, color: 'text-warning', label: 'Expired' },
 };
 
 export default function AdCreditsPage() {
@@ -178,7 +178,7 @@ export default function AdCreditsPage() {
             sortValue: (t) => t.type,
             exportValue: (t) => transactionTypeConfig[t.type]?.label ?? t.type,
             cell: (t) => {
-              const config = transactionTypeConfig[t.type] || { icon: Receipt, color: 'text-gray-600', label: t.type };
+              const config = transactionTypeConfig[t.type] || { icon: Receipt, color: 'text-muted-foreground', label: t.type };
               const Icon = config.icon;
               return (
                 <div className="flex items-center gap-2 text-sm">
@@ -206,7 +206,7 @@ export default function AdCreditsPage() {
             cell: (t) => {
               const isCredit = ['SUBSCRIPTION_GRANT', 'PURCHASE', 'REFUND'].includes(t.type);
               return (
-                <span className={`text-sm font-medium ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`text-sm font-medium ${isCredit ? 'text-success' : 'text-destructive'}`}>
                   {isCredit ? '+' : '-'}
                   {formatNumber(Math.abs(t.amount))}
                 </span>

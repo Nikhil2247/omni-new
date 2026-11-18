@@ -116,7 +116,7 @@ export function PurchaseCreditsModal({ isOpen, onClose }: PurchaseCreditsModalPr
                     </Badge>
                   )}
                   {pkg.savings > 0 && !pkg.popular && (
-                    <Badge variant="secondary" className="absolute -top-2 right-1 text-[10px] px-1.5 py-0 h-4 bg-green-100 text-green-700">
+                    <Badge variant="secondary" className="absolute -top-2 right-1 text-[10px] px-1.5 py-0 h-4 bg-success/10 text-success">
                       -{pkg.savings}%
                     </Badge>
                   )}

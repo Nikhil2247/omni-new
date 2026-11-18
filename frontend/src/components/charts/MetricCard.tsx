@@ -54,10 +54,10 @@ export function MetricCard({
             {change !== undefined && (
               <div className="mt-2 flex items-center gap-1">
                 {isPositive && (
-                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <TrendingUp className="h-4 w-4 text-success" />
                 )}
                 {isNegative && (
-                  <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <TrendingDown className="h-4 w-4 text-destructive" />
                 )}
                 {isNeutral && (
                   <Minus className="h-4 w-4 text-muted-foreground" />
@@ -65,8 +65,8 @@ export function MetricCard({
                 <span
                   className={cn(
                     'text-sm font-medium',
-                    isPositive && 'text-green-600 dark:text-green-400',
-                    isNegative && 'text-red-600 dark:text-red-400',
+                    isPositive && 'text-success',
+                    isNegative && 'text-destructive',
                     isNeutral && 'text-muted-foreground'
                   )}
                 >

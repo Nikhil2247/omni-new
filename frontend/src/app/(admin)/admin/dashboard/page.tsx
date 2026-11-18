@@ -5,7 +5,7 @@ import { subDays, startOfDay, endOfDay } from 'date-fns'
 import { useAdminDashboard } from '@/hooks/queries/use-admin'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { Badge } from '@/components/ui/badge'
-import { PageHeader, StatCard, StatGrid } from '@/components/dashboard'
+import { PageHeader, StatCard, StatGrid } from '@/components/dash'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -24,7 +24,7 @@ import {
   BarChart,
   DateRangeSelector,
   DateRangeValue,
-} from '@/components/charts'
+} from '@/components/dash/charts'
 
 export default function AdminDashboardPage() {
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function AdminDashboardPage() {
     return data.vendorMetrics.topPerformers.slice(0, 6).map((v, i) => ({
       name: v.vendorName || v.businessName || `Vendor ${i + 1}`,
       value: v.performanceScore || v.totalLeadsReceived || v.totalProfileViews || 0,
-      fill: i === 0 ? 'hsl(var(--primary))' : undefined,
+      fill: i === 0 ? 'var(--primary)' : undefined,
     }))
   }, [data?.vendorMetrics?.topPerformers])
 
@@ -138,8 +138,8 @@ export default function AdminDashboardPage() {
               title="Engagement Trends"
               data={trendChartData}
               dataKeys={[
-                { key: 'activeUsers', label: 'Active Users', color: 'hsl(var(--primary))' },
-                { key: 'sessions', label: 'Sessions', color: 'hsl(var(--chart-2))' },
+                { key: 'activeUsers', label: 'Active Users', color: 'var(--primary)' },
+                { key: 'sessions', label: 'Sessions', color: 'var(--chart-2)' },
               ]}
               height={240}
             />
@@ -188,8 +188,8 @@ export default function AdminDashboardPage() {
                   />
                   <defs>
                     <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(280 70% 50%)" />
+                      <stop offset="0%" stopColor="var(--primary)" />
+                      <stop offset="100%" stopColor="var(--chart-3)" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -261,36 +261,36 @@ export default function AdminDashboardPage() {
               label="Daily Active Users"
               value={userMetrics.dau}
               max={userMetrics.mau || 100}
-              color="bg-violet-500"
+              color="bg-primary"
             />
             <EngagementRow
               label="Weekly Active Users"
               value={userMetrics.wau}
               max={userMetrics.mau || 100}
-              color="bg-purple-500"
+              color="bg-primary"
             />
             <EngagementRow
               label="Monthly Active Users"
               value={userMetrics.mau}
               max={userMetrics.mau || 100}
-              color="bg-indigo-500"
+              color="bg-primary"
             />
 
             <div className="mt-3 grid grid-cols-3 gap-3 pt-3 border-t">
               <div className="text-center">
-                <p className="text-xl font-bold text-violet-600 dark:text-violet-400">
+                <p className="text-xl font-bold text-primary">
                   {userMetrics.dau}
                 </p>
                 <p className="text-xs text-muted-foreground">DAU</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                <p className="text-xl font-bold text-primary">
                   {userMetrics.wau}
                 </p>
                 <p className="text-xs text-muted-foreground">WAU</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                <p className="text-xl font-bold text-primary">
                   {userMetrics.mau}
                 </p>
                 <p className="text-xs text-muted-foreground">MAU</p>
@@ -321,11 +321,11 @@ export default function AdminDashboardPage() {
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-full font-bold text-white ${
                         index === 0
-                          ? 'bg-gradient-to-br from-yellow-400 to-orange-500'
+                          ? 'bg-gradient-to-br from-warning/30 to-warning'
                           : index === 1
-                          ? 'bg-gradient-to-br from-gray-300 to-gray-400'
+                          ? 'bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/30'
                           : index === 2
-                          ? 'bg-gradient-to-br from-amber-600 to-amber-700'
+                          ? 'bg-gradient-to-br from-warning to-warning'
                           : 'bg-muted text-muted-foreground'
                       }`}
                     >
@@ -376,7 +376,7 @@ function GrowthCard({
           </div>
           <span
             className={`text-xs font-medium ${
-              isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              isPositive ? 'text-success' : 'text-destructive'
             }`}
           >
             {isPositive ? '+' : ''}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useOpsDashboardMetrics } from '@/hooks/queries/use-ops-dashboard'
-import { StatCard, StatGrid } from '@/components/dashboard'
+import { StatCard, StatGrid } from '@/components/dash'
 
 export function OpsReportsOverview() {
   const { data, isLoading, error } = useOpsDashboardMetrics()

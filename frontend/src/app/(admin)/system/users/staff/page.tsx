@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Users } from 'lucide-react'
 import { ROLE_GROUPS } from '@/config/roles'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
-import { DataTable, PageHeader, StatusBadge, UserCell, type DataColumn } from '@/components/dashboard'
+import { DataTable, PageHeader, StatusBadge, UserCell, type DataColumn } from '@/components/dash'
 import type { AdminUser } from '@/lib/api/types/admin.types'
 
 export default function SystemStaffUsersPage() {

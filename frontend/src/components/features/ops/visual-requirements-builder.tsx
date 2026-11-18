@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/dialog'
 import { Plus, Trash2, GripVertical, Loader2, FileText, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
-import { ConfirmDialog, useConfirmAction } from '@/components/dashboard'
+import { ConfirmDialog, useConfirmAction } from '@/components/dash'
 
 interface VisualRequirementsBuilderProps {
   activeEventId: string

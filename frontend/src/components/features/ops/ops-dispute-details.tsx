@@ -59,7 +59,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
         {data.description && (
           <div>
             <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              <AlertTriangle className="h-4 w-4 text-warning" />
               Description
             </h3>
             <p className="text-sm text-muted-foreground">{data.description}</p>
@@ -69,7 +69,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
         {data.resolution && (
           <div>
             <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle className="h-4 w-4 text-success" />
               Resolution
             </h3>
             <p className="text-sm text-muted-foreground">{data.resolution}</p>
@@ -91,7 +91,7 @@ export function OpsDisputeDetails({ disputeId }: { disputeId: string }) {
 
           {data.resolvedAt && (
             <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-success" />
               <div>
                 <p className="text-sm font-medium">Resolved</p>
                 <p className="text-sm text-muted-foreground">

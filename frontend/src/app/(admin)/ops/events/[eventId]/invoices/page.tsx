@@ -1,6 +1,6 @@
 'use client'
 
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 import { useParams, useSearchParams } from 'next/navigation'
 import { OpsInvoicesList } from '@/components/features/ops'
 

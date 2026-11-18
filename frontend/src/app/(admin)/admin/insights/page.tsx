@@ -37,10 +37,10 @@ import {
 import {
   DateRangeSelector,
   type DateRangeValue,
-} from '@/components/charts'
+} from '@/components/dash/charts'
 import { subDays, startOfDay, endOfDay } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { PageHeader } from '@/components/dashboard'
+import { PageHeader } from '@/components/dash'
 
 export default function AdminInsightsPage() {
   const { data: counts, isLoading: countsLoading, refetch: refetchCounts } = usePlatformCounts()
@@ -263,9 +263,9 @@ function EngagementMetrics({ counts }: { counts: any }) {
 
 function UserMetrics({ counts }: { counts: any }) {
   const userStatusData = [
-    { name: 'Active', value: counts.activeUsers || 0, color: 'hsl(var(--chart-1))' },
-    { name: 'Pending', value: counts.pendingUsers || 0, color: 'hsl(var(--chart-2))' },
-    { name: 'Verified', value: counts.verifiedUsers || 0, color: 'hsl(var(--chart-3))' },
+    { name: 'Active', value: counts.activeUsers || 0, color: 'var(--chart-1)' },
+    { name: 'Pending', value: counts.pendingUsers || 0, color: 'var(--chart-2)' },
+    { name: 'Verified', value: counts.verifiedUsers || 0, color: 'var(--chart-3)' },
   ]
 
   const activePercentage = counts.totalUsers > 0 ? (counts.activeUsers / counts.totalUsers) * 100 : 0
@@ -314,19 +314,19 @@ function UserMetrics({ counts }: { counts: any }) {
               label="Active Users"
               value={counts.activeUsers}
               total={counts.totalUsers}
-              color="bg-green-500"
+              color="bg-success"
             />
             <UserProgressBar
               label="Verified Users"
               value={counts.verifiedUsers}
               total={counts.totalUsers}
-              color="bg-blue-500"
+              color="bg-primary"
             />
             <UserProgressBar
               label="Pending Users"
               value={counts.pendingUsers}
               total={counts.totalUsers}
-              color="bg-yellow-500"
+              color="bg-warning"
             />
           </div>
         </CardContent>
@@ -380,19 +380,19 @@ function VendorMetrics({ counts }: { counts: any }) {
               label="Active Vendors"
               value={counts.activeVendors}
               total={counts.totalVendors}
-              color="bg-green-500"
+              color="bg-success"
             />
             <UserProgressBar
               label="Verified Vendors"
               value={counts.verifiedVendors}
               total={counts.totalVendors}
-              color="bg-blue-500"
+              color="bg-primary"
             />
             <UserProgressBar
               label="Pending Vendors"
               value={counts.pendingVendors}
               total={counts.totalVendors}
-              color="bg-yellow-500"
+              color="bg-warning"
             />
           </div>
         </CardContent>
@@ -447,19 +447,19 @@ function LeadMetrics({ counts }: { counts: any }) {
               label="New Leads"
               value={counts.newLeads}
               total={counts.totalLeads}
-              color="bg-blue-500"
+              color="bg-primary"
             />
             <FunnelProgressBar
               label="Contacted Leads"
               value={counts.contactedLeads}
               total={counts.totalLeads}
-              color="bg-purple-500"
+              color="bg-primary"
             />
             <FunnelProgressBar
               label="Converted Leads"
               value={counts.convertedLeads}
               total={counts.totalLeads}
-              color="bg-green-500"
+              color="bg-success"
             />
           </div>
         </CardContent>
@@ -618,11 +618,11 @@ function StatCard({
   color?: 'blue' | 'purple' | 'green' | 'orange' | 'yellow'
 }) {
   const colorClasses = {
-    blue: 'bg-blue-500/10 text-blue-500',
-    purple: 'bg-purple-500/10 text-purple-500',
-    green: 'bg-green-500/10 text-green-500',
-    orange: 'bg-orange-500/10 text-orange-500',
-    yellow: 'bg-yellow-500/10 text-yellow-500',
+    blue: 'bg-primary/10 text-primary',
+    purple: 'bg-primary/10 text-primary',
+    green: 'bg-success/10 text-success',
+    orange: 'bg-warning/10 text-warning',
+    yellow: 'bg-warning/10 text-warning',
   }
 
   return (
@@ -641,11 +641,11 @@ function StatCard({
         {trend !== undefined && trend !== null && (
           <div className="mt-4 flex items-center gap-2">
             {trend >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <TrendingUp className="h-4 w-4 text-success" />
             ) : (
-              <TrendingDown className="h-4 w-4 text-red-500" />
+              <TrendingDown className="h-4 w-4 text-destructive" />
             )}
-            <span className={cn('text-sm font-medium', trend >= 0 ? 'text-green-500' : 'text-red-500')}>
+            <span className={cn('text-sm font-medium', trend >= 0 ? 'text-success' : 'text-destructive')}>
               {Math.abs(trend).toFixed(1)}%
             </span>
             <span className="text-xs text-muted-foreground">vs last period</span>

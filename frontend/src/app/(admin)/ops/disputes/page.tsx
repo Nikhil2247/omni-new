@@ -24,7 +24,7 @@ import {
   StatCard,
   StatGrid,
   type DataColumn,
-} from '@/components/dashboard'
+} from '@/components/dash'
 
 const statusConfig: Record<string, { label: string }> = {
   OPEN: { label: 'Open' },
@@ -160,9 +160,9 @@ export default function OpsDisputesPage() {
       <PageHeader title="Disputes" />
 
       <StatGrid className="lg:grid-cols-3">
-        <StatCard label="Open" value={openCount} icon={AlertTriangle} accent="text-red-600" />
-        <StatCard label="Investigating" value={investigatingCount} icon={Eye} accent="text-yellow-600" />
-        <StatCard label="Resolved" value={resolvedCount} icon={CheckCircle} accent="text-green-600" />
+        <StatCard label="Open" value={openCount} icon={AlertTriangle} accent="text-destructive" />
+        <StatCard label="Investigating" value={investigatingCount} icon={Eye} accent="text-warning" />
+        <StatCard label="Resolved" value={resolvedCount} icon={CheckCircle} accent="text-success" />
       </StatGrid>
 
       <DataTable

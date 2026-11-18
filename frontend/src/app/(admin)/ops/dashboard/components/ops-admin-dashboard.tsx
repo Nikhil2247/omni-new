@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useOpsLeads } from '@/hooks/queries/use-leads';
-import { PageHeader, StatCard as KpiCard } from '@/components/dashboard';
+import { PageHeader, StatCard as KpiCard } from '@/components/dash';
 import { useOpsActiveEvents, useOpsOperationalTasks, useOpsManagers, useOpsAssistants } from '@/hooks/queries/use-ops';
 
 /**
@@ -218,7 +218,7 @@ export function OpsAdminDashboard() {
         <div className="rounded-lg border bg-card p-3">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold">Unassigned Events</h2>
-            <span className="rounded-full bg-orange-100 px-2 py-1 text-xs text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+            <span className="rounded-full bg-warning/10 px-2 py-1 text-xs text-warning">
               {unassignedEvents} pending
             </span>
           </div>
@@ -337,9 +337,9 @@ function StatCard({
       label={title}
       value={value}
       icon={icon}
-      accent={urgent ? 'text-orange-500' : undefined}
-      hint={<span className={trendUp ? 'text-green-600' : urgent ? 'text-orange-500' : undefined}>{trend}</span>}
-      className={urgent ? 'border-orange-500' : undefined}
+      accent={urgent ? 'text-warning' : undefined}
+      hint={<span className={trendUp ? 'text-success' : urgent ? 'text-warning' : undefined}>{trend}</span>}
+      className={urgent ? 'border-warning/40' : undefined}
     />
   );
 }
@@ -358,10 +358,10 @@ function LeadItem({
   status: 'new' | 'contacted' | 'qualified' | 'converted';
 }) {
   const statusConfig = {
-    new: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', label: 'New' },
-    contacted: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', label: 'Contacted' },
-    qualified: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', label: 'Qualified' },
-    converted: { color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200', label: 'Converted' },
+    new: { color: 'bg-primary/10 text-primary', label: 'New' },
+    contacted: { color: 'bg-warning/10 text-warning', label: 'Contacted' },
+    qualified: { color: 'bg-success/10 text-success', label: 'Qualified' },
+    converted: { color: 'bg-primary/10 text-primary', label: 'Converted' },
   };
 
   const config = statusConfig[status] || statusConfig.new;
@@ -369,7 +369,7 @@ function LeadItem({
   return (
     <div className="flex items-center justify-between rounded-md border p-3">
       <div className="flex items-center gap-3">
-        <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
+        <input type="checkbox" className="h-4 w-4 rounded border-border" />
         <div>
           <p className="font-medium">{name}</p>
           <p className="text-sm text-muted-foreground">
@@ -393,7 +393,7 @@ function TeamStatItem({ label, count, active }: { label: string; count: number; 
       <span className="text-sm">{label}</span>
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">{count}</span>
-        <span className="text-xs text-green-600">({active} active)</span>
+        <span className="text-xs text-success">({active} active)</span>
       </div>
     </div>
   );
@@ -463,15 +463,15 @@ function TaskItem({
   priority: string;
 }) {
   const priorityColors: Record<string, string> = {
-    HIGH: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    MEDIUM: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    LOW: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    HIGH: 'bg-destructive/10 text-destructive',
+    MEDIUM: 'bg-warning/10 text-warning',
+    LOW: 'bg-success/10 text-success',
   };
 
   const statusColors: Record<string, string> = {
-    PENDING: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-    IN_PROGRESS: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    COMPLETED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    PENDING: 'bg-muted text-foreground',
+    IN_PROGRESS: 'bg-primary/10 text-primary',
+    COMPLETED: 'bg-success/10 text-success',
   };
 
   return (
@@ -511,7 +511,7 @@ function ManagerItem({
       </div>
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{events} events</span>
-        <span className="text-xs font-medium text-green-600">{completion}%</span>
+        <span className="text-xs font-medium text-success">{completion}%</span>
       </div>
     </div>
   );
