@@ -15,29 +15,6 @@ import { SendToGuestsDialog } from '@/components/features/einvite/send-to-guests
 import { Skeleton } from '@/components/ui/skeleton'
 import { Paper, Stamp } from '@/components/sketch'
 import { toast } from 'sonner'
-import type { EInviteCategory } from '@/lib/api/types/einvite.types'
-
-/** Picks which template group to show first, from the event type (a string or an object with a name). */
-function categoryForEvent(eventType: unknown): EInviteCategory | undefined {
-  const raw =
-    typeof eventType === 'string'
-      ? eventType
-      : typeof eventType === 'object' && eventType !== null
-        ? String((eventType as { name?: unknown; code?: unknown }).code ?? (eventType as { name?: unknown }).name ?? '')
-        : ''
-  const key = raw.toUpperCase().replace(/[^A-Z]+/g, '_')
-  const map: Array<[string, EInviteCategory]> = [
-    ['WEDDING', 'WEDDING'],
-    ['ENGAGEMENT', 'ENGAGEMENT'],
-    ['BIRTHDAY', 'BIRTHDAY'],
-    ['BABY', 'BABY_SHOWER'],
-    ['ANNIVERSARY', 'ANNIVERSARY'],
-    ['CORPORATE', 'CORPORATE'],
-    ['HOUSEWARMING', 'HOUSEWARMING'],
-    ['GRADUATION', 'GRADUATION'],
-  ]
-  return map.find(([k]) => key.includes(k))?.[1]
-}
 
 interface EInvitePanelProps {
   eventId: string
@@ -53,8 +30,8 @@ export function EInvitePanel({ eventId }: EInvitePanelProps) {
   const { data: einvite, isLoading: einviteLoading, error: einviteError } = useEInviteByEvent(eventId)
 
   // Fetch templates - determine category based on event type
-  const templateCategory = categoryForEvent(event?.eventType)
-  const { data: templates, isLoading: templatesLoading } = useEInviteTemplates(templateCategory)
+  // Always load every template (no ?category= filter): the editor groups them itself.
+  const { data: templates, isLoading: templatesLoading } = useEInviteTemplates()
 
   // Mutations
   const createEInvite = useCreateEInvite()

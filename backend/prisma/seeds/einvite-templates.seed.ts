@@ -396,8 +396,8 @@ function paintedArch(p: Palette, cx: number, top: number, bottom: number, w: num
     return pts;
   };
   const out: Obj[] = [poly(outline(0, 0), { fill: p.sky })];
-  out.push(dot(cx + r * 0.42, top + r * 0.75, 52, p.gold, 0.22));
-  out.push(dot(cx + r * 0.42, top + r * 0.75, 30, p.gold, 0.95));
+  out.push(dot(cx + r * 0.45, top + r * 0.4, 52, p.gold, 0.22));
+  out.push(dot(cx + r * 0.45, top + r * 0.4, 30, p.gold, 0.95));
   if (withHills) {
     const hill = (base: number, amp: number, phase: number, fill: string, op: number): Obj => {
       const pts: Pt[] = [];
@@ -503,7 +503,7 @@ function textBlock(p: Palette, c: Copy, ys: Ys, namesSize = 62, lineWidth = 420)
 // ----------------------------------------------------------------------------
 // Layouts
 // ----------------------------------------------------------------------------
-type Layout = 'bunting' | 'mandala' | 'arch' | 'wreath';
+type Layout = 'bunting' | 'mandala' | 'arch' | 'wreath' | 'garland' | 'vinebor';
 
 function buildLayout(layout: Layout, p: Palette, c: Copy): Obj[] {
   const bg: Obj[] = [rect(CX, H / 2, W, H, p.paper)];
@@ -550,6 +550,33 @@ function buildLayout(layout: Layout, p: Palette, c: Copy): Obj[] {
     ];
   }
 
+  if (layout === 'garland') {
+    return [
+      ...bg,
+      ...washes(p, [[70, 360, 110, 'wash'], [550, 560, 120, 'leafLight'], [300, 780, 110, 'rose']]),
+      ...garland(p, -10, 34, 610, 34, 46, 30),
+      ...garland(p, -10, 34, 610, 34, 88, 30),
+      ...vine(p, [26, 796], [70, 700], [34, 610], 9, 32),
+      ...vine(p, [574, 796], [530, 700], [566, 610], 9, 32),
+      brush(p, CX, 300, 450, 90, 21, p.wash, 0.5),
+      ...textBlock(p, c, { label: 206, names: 300, line: 402, date: 502, time: 540, venue: 606, address: 640 }),
+      ...dots(p, 200, 400, 460),
+    ];
+  }
+
+  if (layout === 'vinebor') {
+    return [
+      ...bg,
+      ...washes(p, [[300, 400, 190, 'wash'], [70, 130, 80, 'gold'], [540, 690, 90, 'rose']]),
+      ...vine(p, [46, 772], [-26, 420], [46, 38], 17, 36),
+      ...vine(p, [554, 772], [626, 420], [554, 38], 17, 36),
+      ...dots(p, 236, 364, 96),
+      brush(p, CX, 292, 360, 88, 29, p.gold, 0.4),
+      ...textBlock(p, c, { label: 178, names: 292, line: 392, date: 494, time: 532, venue: 598, address: 632 }, 56, 340),
+      ...dots(p, 200, 400, 452, p.rose),
+    ];
+  }
+
   // wreath
   return [
     ...bg,
@@ -582,24 +609,36 @@ const DEFINITIONS: TemplateDefinition[] = [
   { name: 'Leaf Wreath', category: EInviteCategory.WEDDING, layout: 'wreath', palette: 'sage', copy: 'wedding', isPremium: false },
   { name: 'Blush Garden', category: EInviteCategory.WEDDING, layout: 'bunting', palette: 'blush', copy: 'wedding', isPremium: true },
   { name: 'Midnight Mandala', category: EInviteCategory.WEDDING, layout: 'mandala', palette: 'midnight', copy: 'wedding', isPremium: true },
+  { name: 'Marigold Garland', category: EInviteCategory.WEDDING, layout: 'garland', palette: 'marigold', copy: 'wedding', isPremium: false },
+  { name: 'Sage Vine Border', category: EInviteCategory.WEDDING, layout: 'vinebor', palette: 'sage', copy: 'wedding', isPremium: false },
+  { name: 'Cobalt Vines', category: EInviteCategory.WEDDING, layout: 'vinebor', palette: 'cobalt', copy: 'wedding', isPremium: false },
   // Engagement
   { name: 'Rose Arch', category: EInviteCategory.ENGAGEMENT, layout: 'arch', palette: 'blush', copy: 'engagement', isPremium: false },
   { name: 'Garden Bunting', category: EInviteCategory.ENGAGEMENT, layout: 'bunting', palette: 'sage', copy: 'engagement', isPremium: false },
+  { name: 'Marigold Wreath', category: EInviteCategory.ENGAGEMENT, layout: 'wreath', palette: 'marigold', copy: 'engagement', isPremium: false },
   // Birthday
   { name: 'Party Bunting', category: EInviteCategory.BIRTHDAY, layout: 'bunting', palette: 'marigold', copy: 'birthday', isPremium: false },
   { name: 'Birthday Wreath', category: EInviteCategory.BIRTHDAY, layout: 'wreath', palette: 'cobalt', copy: 'birthday', isPremium: false },
+  { name: 'Birthday Garland', category: EInviteCategory.BIRTHDAY, layout: 'garland', palette: 'blush', copy: 'birthday', isPremium: false },
+  { name: 'Sunny Vines', category: EInviteCategory.BIRTHDAY, layout: 'vinebor', palette: 'marigold', copy: 'birthday', isPremium: false },
   // Baby shower
   { name: 'Little One Wreath', category: EInviteCategory.BABY_SHOWER, layout: 'wreath', palette: 'blush', copy: 'baby', isPremium: false },
+  { name: 'Baby Bunting', category: EInviteCategory.BABY_SHOWER, layout: 'bunting', palette: 'cobalt', copy: 'baby', isPremium: false },
   // Anniversary
   { name: 'Golden Years Mandala', category: EInviteCategory.ANNIVERSARY, layout: 'mandala', palette: 'marigold', copy: 'anniversary', isPremium: false },
+  { name: 'Midnight Garland', category: EInviteCategory.ANNIVERSARY, layout: 'garland', palette: 'midnight', copy: 'anniversary', isPremium: true },
   // Corporate
   { name: 'Midnight Arch', category: EInviteCategory.CORPORATE, layout: 'arch', palette: 'midnight', copy: 'corporate', isPremium: false },
+  { name: 'Greenroom Vines', category: EInviteCategory.CORPORATE, layout: 'vinebor', palette: 'sage', copy: 'corporate', isPremium: false },
   // Housewarming
   { name: 'New Home Bunting', category: EInviteCategory.HOUSEWARMING, layout: 'bunting', palette: 'sage', copy: 'housewarming', isPremium: false },
+  { name: 'Home Wreath', category: EInviteCategory.HOUSEWARMING, layout: 'wreath', palette: 'marigold', copy: 'housewarming', isPremium: false },
   // Graduation
   { name: 'Graduate Arch', category: EInviteCategory.GRADUATION, layout: 'arch', palette: 'cobalt', copy: 'graduation', isPremium: false },
+  { name: 'Graduate Bunting', category: EInviteCategory.GRADUATION, layout: 'bunting', palette: 'cobalt', copy: 'graduation', isPremium: false },
   // Other
   { name: 'Celebration Mandala', category: EInviteCategory.OTHER, layout: 'mandala', palette: 'cobalt', copy: 'other', isPremium: false },
+  { name: 'Festival Garland', category: EInviteCategory.OTHER, layout: 'garland', palette: 'marigold', copy: 'other', isPremium: false },
 ];
 
 function buildTemplate(def: TemplateDefinition, index: number) {
