@@ -87,7 +87,7 @@ function AnimatedCard({ children, index }: { children: React.ReactNode; index: n
   return (
     <motion.div
       ref={ref}
-      className="sk-tilt-host"
+      className="sk-tilt-host min-w-0"
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={isInView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.95 }}
       transition={{

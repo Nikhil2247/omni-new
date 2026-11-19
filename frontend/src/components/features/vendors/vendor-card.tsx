@@ -187,7 +187,7 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
         onKeyDown={handleCardKeyDown}
         aria-label={`Open ${vendor.businessName || 'vendor'} profile`}
         className={cn(
-          'sk-vcard sk-paper group flex cursor-pointer flex-col gap-3 p-2.5 pb-4',
+          'sk-vcard sk-paper group flex h-full min-w-0 cursor-pointer flex-col gap-3 overflow-hidden p-2.5 pb-4',
           isBoosted && 'outline-gold outline-2 outline-offset-4 outline-dashed',
           className
         )}
@@ -275,8 +275,8 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
         </div>
 
         {/* Details */}
-        <div className="grid gap-1.5 px-2">
-          <div className="flex items-start justify-between gap-2">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 px-2">
+          <div className="flex min-w-0 items-start justify-between gap-2">
             <h3 className="font-display group-hover:text-blue line-clamp-1 min-w-0 flex-1 text-[1.3rem] leading-tight font-semibold transition-colors">
               {vendor.businessName || 'Unnamed Vendor'}
             </h3>
@@ -287,13 +287,13 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
               </span>
             )}
           </div>
-          <p className="text-ink-soft flex items-center gap-1 text-[0.9rem]">
-            {categoryLabel ? <span>{categoryLabel}</span> : null}
+          <p className="text-ink-soft flex min-w-0 items-center gap-1 text-[0.9rem]">
+            {categoryLabel ? <span className="shrink-0">{categoryLabel}</span> : null}
             {categoryLabel ? <span aria-hidden>·</span> : null}
             <MapPin className="size-3 shrink-0" />
-            <span className="truncate">{formatAddress(vendor)}</span>
+            <span className="min-w-0 truncate">{formatAddress(vendor)}</span>
           </p>
-          <p className="line-clamp-2 text-[0.94rem]">
+          <p className="line-clamp-2 min-w-0 text-[0.94rem] break-words">
             {vendor.tagline || vendor.description || 'Professional service provider committed to making your event exceptional.'}
           </p>
           <div className="border-line mt-1 flex items-baseline justify-between gap-2 border-t-2 border-dashed pt-2.5">
