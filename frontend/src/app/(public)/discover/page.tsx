@@ -10,7 +10,7 @@ import { trackDashboard } from '@/lib/analytics/umami'
 import { MasonryGrid } from '@/components/features/vendors/masonry-grid'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { PageLoader } from '@/components/common/page-loader'
 import { Search } from 'lucide-react'
 import { Brush, Eyebrow, Ico, ICONS, Paper } from '@/components/sketch'
 
@@ -142,25 +142,7 @@ function InspirationGrid({
   }, [mediaLoading, isFetching, hasNextPage, hasReachedEnd])
 
   if (mediaLoading && page === 1) {
-    const heights = [280, 320, 240, 360, 300, 260, 340, 280, 320, 380, 260, 300]
-    return (
-      <div className="columns-1 min-[480px]:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-1.5 sm:gap-2">
-        {heights.map((height, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: i * 0.04 }}
-            className="break-inside-avoid mb-1.5 sm:mb-2"
-          >
-            <Skeleton
-              className="w-full rounded-xl sm:rounded-2xl"
-              style={{ height: `${height}px` }}
-            />
-          </motion.div>
-        ))}
-      </div>
-    )
+    return <PageLoader label="Loading inspiration" />
   }
 
   if (allMedia.length === 0) {

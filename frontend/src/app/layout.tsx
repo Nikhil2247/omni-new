@@ -20,9 +20,18 @@ const body = Karla({
 const display = Fraunces({
   subsets: ["latin"],
   variable: "--nf-display",
-  style: ["normal", "italic"],
   axes: ["opsz"],
   display: "swap",
+});
+
+// Italic is used by a single testimonial quote far below the fold, so it is not preloaded (saves ~70 KB on the critical path).
+const displayItalic = Fraunces({
+  subsets: ["latin"],
+  variable: "--nf-display-italic",
+  style: ["italic"],
+  axes: ["opsz"],
+  display: "swap",
+  preload: false,
 });
 
 const hand = Caveat({
@@ -134,9 +143,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Structured Data */}
         <JsonLd data={[createOrganizationSchema(), createWebsiteSchema()]} />
 
-        {/* Preconnect to external domains for performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* DNS Prefetch for external resources */}
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
         {/* Umami self-hosted server – swap with your actual server URL */}
@@ -147,7 +153,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         )}
       </head>
-      <body className={`${body.variable} ${display.variable} ${hand.variable} font-sans antialiased`}>
+      <body className={`${body.variable} ${display.variable} ${displayItalic.variable} ${hand.variable} font-sans antialiased`}>
         <SketchFilters />
         <ErrorBoundaryWrapper>
           <Providers>

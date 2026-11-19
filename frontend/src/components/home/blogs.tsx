@@ -11,7 +11,7 @@ export function TopBlogs() {
   if (isLoading || blogs.length === 0) return null
 
   return (
-    <section id="home-blog" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
+    <section data-reveal id="home-blog" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
       <SecHead
         eyebrow="Latest Articles"
         title={<>Top Wedding <Brush gold>Blogs</Brush></>}

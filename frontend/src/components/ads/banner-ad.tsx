@@ -1,12 +1,12 @@
 'use client'
 
+import { optimizeImageUrl } from '@/lib/utils/cloudinary'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { useBannerAds, useRecordBannerClick } from '@/hooks/queries/use-ads'
 import { cn } from '@/lib/utils'
 import { getMinioViewUrl } from '@/lib/utils/minio'
-import { Skeleton } from '@/components/ui/skeleton'
 import { skBtn, skPaper } from '@/components/sketch'
 import type { BannerAd as BannerAdType, BannerPlacement } from '@/lib/api/types/ads.types'
 
@@ -29,7 +29,7 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
   // Use actual API fields with fallbacks for legacy structure
   const title = banner.businessName || banner.title || 'Sponsored'
   const subtitle = banner.tagline || banner.subtitle
-  const imageUrl = getMinioViewUrl(banner.bannerImageUrl || banner.imageUrl)
+  const imageUrl = optimizeImageUrl(getMinioViewUrl(banner.bannerImageUrl || banner.imageUrl), 1280)
   const vendorLink = banner.slug ? `/vendors/${banner.slug}` : (banner.ctaLink || '#')
   const handleClick = () => {
     if (banner.campaignId) {
@@ -196,26 +196,6 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
   )
 }
 
-function BannerSkeleton({ variant }: { variant: 'default' | 'compact' | 'large' }) {
-  if (variant === 'large') {
-    return (
-      <Skeleton className="w-full h-64 rounded-[18px]" />
-    )
-  }
-
-  return (
-    <div className="sk-paper flex items-center gap-4 p-4">
-      <Skeleton className="w-16 h-16 rounded-xl shrink-0" />
-      <div className="flex-1 space-y-2">
-        <Skeleton className="h-3 w-16" />
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-      </div>
-      <Skeleton className="h-9 w-20" />
-    </div>
-  )
-}
-
 export function BannerAd({
   placement = 'homepage',
   categoryId,
@@ -224,15 +204,10 @@ export function BannerAd({
 }: BannerAdProps) {
   const { data: banners, isLoading, error } = useBannerAds(placement, categoryId, 1)
 
-  if (error || (!isLoading && (!banners || banners.length === 0))) {
+  if (isLoading || error || !banners || banners.length === 0) {
     return null
   }
 
-  if (isLoading) {
-    return <BannerSkeleton variant={variant} />
-  }
-
-  if (!banners || banners.length === 0) return null
   const banner = banners[0]
 
   return (
@@ -257,19 +232,15 @@ export function BannerAdsCarousel({
 }: BannerAdsCarouselProps) {
   const { data: banners, isLoading, error } = useBannerAds(placement, categoryId, limit)
 
-  if (error || (!isLoading && (!banners || banners.length === 0))) {
+  if (isLoading || error || !banners || banners.length === 0) {
     return null
   }
 
   return (
     <div className={cn('space-y-4', className)}>
-      {isLoading
-        ? Array.from({ length: limit }).map((_, i) => (
-            <BannerSkeleton key={i} variant={variant} />
-          ))
-        : banners?.map((banner) => (
-            <SingleBanner key={banner.campaignId} banner={banner} variant={variant} />
-          ))}
+      {banners.map((banner) => (
+        <SingleBanner key={banner.campaignId} banner={banner} variant={variant} />
+      ))}
     </div>
   )
 }

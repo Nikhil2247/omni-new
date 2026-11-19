@@ -23,6 +23,10 @@ export const API_ENDPOINTS = {
     HEALTH_READY: '/public/health/ready',
     HEALTH_LIVE: '/public/health/live',
     SYSTEM_STATUS: '/public/system/status',
+    LOOKUPS: {
+      EVENT_TYPES: '/public/lookups/event-types',
+      CITIES: '/public/lookups/cities',
+    },
     FEATURES: {
       ENABLED: '/public/features',
       ALL: '/public/features/all',

@@ -18,7 +18,7 @@ const STEPS = [
 export function TrustSection() {
   const hasQuotes = TESTIMONIALS.length > 0
   return (
-    <section id="proof" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
+    <section data-reveal id="proof" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
       <SecHead eyebrow="Trust" center title={<>Book with <Brush>confidence</Brush></>}>
         Every vendor goes through a verification process, and reviews come from real couples who have worked with them.
       </SecHead>
@@ -58,7 +58,7 @@ export function TrustSection() {
                 <span className="text-blue-wash font-display absolute top-2 right-5 text-[3.4rem] leading-none font-bold" aria-hidden>
                   “
                 </span>
-                <q className="font-display block pr-8 text-[1.22rem] leading-[1.45] font-medium italic [quotes:none] max-sm:text-[1.08rem]">{t.quote}</q>
+                <q className="font-[family-name:var(--nf-display-italic),Georgia,serif] block pr-8 text-[1.22rem] leading-[1.45] font-medium italic [quotes:none] max-sm:text-[1.08rem]">{t.quote}</q>
                 <div className="mt-4 flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
                   <span className="sk-hand text-[1.4rem]">
                     {t.name}, {t.city}

@@ -13,7 +13,7 @@ export function ToolsShowcase() {
   const tool = PLANNING_TOOLS[index]
 
   return (
-    <section id="free-tools" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
+    <section data-reveal id="free-tools" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
       <SecHead eyebrow="Free Tools" center title={<>Planning Tools to Keep You <Brush gold>Organized</Brush></>}>
         Powerful, easy-to-use tools to plan every aspect of your event
       </SecHead>

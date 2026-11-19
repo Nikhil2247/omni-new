@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useFeaturedListings, useRecordBoostImpression, useRecordBoostClick } from '@/hooks/queries/use-ads'
 import { cn } from '@/lib/utils'
-import { ListSectionHead, skPaper } from '@/components/sketch'
+import { ListSectionHead } from '@/components/sketch'
 import { VendorCard } from '@/components/features/vendors/vendor-card'
 import type { FeaturedListing } from '@/lib/api/types/ads.types'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
@@ -58,16 +58,6 @@ function FeaturedVendorCard({ listing }: { listing: FeaturedListing }) {
   )
 }
 
-function FeaturedVendorSkeleton() {
-  return (
-    <div className={`${skPaper()} animate-pulse p-2.5`}>
-      <div className="bg-muted aspect-[4/3] rounded-md" />
-      <div className="bg-muted mt-3 h-3 w-2/3 rounded" />
-      <div className="bg-muted mt-2 h-3 w-full rounded" />
-    </div>
-  )
-}
-
 export function FeaturedVendors({
   limit = 8,
   title = 'Featured Vendors',
@@ -77,7 +67,7 @@ export function FeaturedVendors({
 }: FeaturedVendorsProps) {
   const { data: listings, isLoading, error } = useFeaturedListings(limit)
 
-  if (error || (!isLoading && (!listings || listings.length === 0))) {
+  if (isLoading || error || !listings || listings.length === 0) {
     return null
   }
 
@@ -91,9 +81,7 @@ export function FeaturedVendors({
         cta={showViewAll ? 'View All Vendors →' : undefined}
       />
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading
-          ? Array.from({ length: limit }).map((_, i) => <FeaturedVendorSkeleton key={i} />)
-          : listings?.map((listing) => <FeaturedVendorCard key={listing.campaignId} listing={listing} />)}
+        {listings.map((listing) => <FeaturedVendorCard key={listing.campaignId} listing={listing} />)}
       </div>
     </section>
   )

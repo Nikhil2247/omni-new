@@ -62,7 +62,7 @@ export function SketchFooter() {
           </div>
           {columns.map((col) => (
             <div key={col.title}>
-              <h4 className="sk-eyebrow mb-3">{col.title}</h4>
+              <p className="sk-eyebrow mb-3">{col.title}</p>
               {col.links.map((l) => (
                 <Link key={l.href} href={l.href} className="hover:text-blue block py-[3px] text-[0.95rem]">
                   {l.label}

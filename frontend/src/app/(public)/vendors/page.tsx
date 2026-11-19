@@ -10,7 +10,7 @@ import { usePublicVendors, useFeaturedVendors } from "@/hooks/queries/use-public
 import { VendorCard } from "@/components/features/vendors/vendor-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageLoader } from "@/components/common/page-loader";
 import {
   Select,
   SelectContent,
@@ -189,20 +189,7 @@ function VendorResults({
   const displayVendors = allVendors.length ? allVendors : vendorsData?.data || [];
 
   if (vendorsLoading && page === 1) {
-    return (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <Skeleton className="aspect-4/5 rounded-2xl" />
-          </motion.div>
-        ))}
-      </div>
-    );
+    return <PageLoader label="Loading vendors" />;
   }
 
   if (displayVendors.length === 0) {

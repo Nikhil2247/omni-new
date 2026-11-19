@@ -29,7 +29,7 @@ import { ClaimStatusBanner } from '@/components/vendors/claim-status-banner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Skeleton } from '@/components/ui/skeleton'
+import { PageLoader } from '@/components/common/page-loader'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -512,7 +512,7 @@ export default function VendorPageClient({
   }
 
   if (isLoading) {
-    return <VendorDetailSkeleton />
+    return <PageLoader label="Loading vendor" />
   }
 
   if (error || !vendor) {
@@ -1844,57 +1844,3 @@ export default function VendorPageClient({
   )
 }
 
-function VendorDetailSkeleton() {
-  return (
-    <main className="min-h-screen">
-      <div className="mx-auto max-w-5xl">
-        {/* Banner Skeleton */}
-        <Skeleton className="h-40 w-full rounded-b-lg md:h-60" />
-
-        <div className="px-4 md:px-6">
-          {/* Avatar + Actions row */}
-          <div className="flex items-end justify-between">
-            <Skeleton className="-mt-13 h-26 w-26 rounded-full border-4 border-background md:-mt-18 md:h-36 md:w-36" />
-            <div className="flex gap-2 pb-3">
-              <Skeleton className="h-9 w-24" />
-              <Skeleton className="h-9 w-20" />
-            </div>
-          </div>
-
-          {/* Profile info */}
-          <div className="mt-3 space-y-2 pb-6">
-            <Skeleton className="h-7 w-52" />
-            <Skeleton className="h-4 w-64" />
-            <Skeleton className="h-4 w-40" />
-            <div className="flex gap-4 pt-1">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-4 w-20" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-5xl px-4">
-        {/* Tabs Skeleton */}
-        <div className="border-t py-3">
-          <div className="flex justify-center gap-8">
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-5 w-24" />
-            <Skeleton className="h-5 w-24" />
-          </div>
-        </div>
-
-        {/* Content Skeleton */}
-        <div className="py-6">
-          <div className="grid grid-cols-3 gap-1 md:gap-4">
-            {[...Array(9)].map((_, i) => (
-              <Skeleton key={i} className="aspect-square" />
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
-  )
-}

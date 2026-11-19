@@ -57,7 +57,7 @@ export function StartPlanning() {
   }, [measure])
 
   return (
-    <section id="services" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
+    <section data-reveal id="services" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
       <SecHead eyebrow="Start Planning" center title={<>Everything You Need to Plan Your <Brush>Dream Event</Brush></>}>
         Omnicassion is your all-in-one event planning platform. From finding verified vendors to managing your budget,
         we provide every tool and resource you need to create unforgettable celebrations.

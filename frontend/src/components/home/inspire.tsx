@@ -11,7 +11,7 @@ const PHOTOS: Record<string, string> = {
 
 export function InspireSection() {
   return (
-    <section id="inspire" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
+    <section data-reveal id="inspire" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
       <SecHead eyebrow="Get Inspired" center title={<>Explore Ideas for Your <Brush>Event</Brush></>}>
         Browse through stunning photos, trending styles, and creative ideas
       </SecHead>

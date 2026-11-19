@@ -1,5 +1,6 @@
 'use client'
 
+import { optimizeImageUrl } from '@/lib/utils/cloudinary'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -195,11 +196,10 @@ export function VendorCard({ vendor, className = '' }: VendorCardProps) {
         <div className="bg-sky1 relative aspect-[4/3] overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px]">
           {vendor.profilePhotoUrl ? (
             <Image
-              src={vendor.profilePhotoUrl}
+              src={optimizeImageUrl(vendor.profilePhotoUrl, 640)}
               alt={vendor.businessName || 'Vendor'}
               fill
-              unoptimized={true}
-              priority={true}
+              unoptimized
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             />

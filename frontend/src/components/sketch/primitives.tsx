@@ -129,15 +129,19 @@ export function BrushBar({
   value,
   tone = 'blue',
   className,
+  label = 'Progress',
 }: {
   value: number
   tone?: 'blue' | 'green' | 'gold'
   className?: string
+  /** Accessible name for screen readers. */
+  label?: string
 }) {
   return (
     <div
       className={cn('sk-bar', tone === 'green' && 'sk-bar--green', tone === 'gold' && 'sk-bar--gold', className)}
       role="progressbar"
+      aria-label={label}
       aria-valuenow={Math.round(value)}
       aria-valuemin={0}
       aria-valuemax={100}

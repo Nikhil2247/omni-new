@@ -557,7 +557,7 @@ export default function PricingPage() {
               <Link href="/support">Contact Sales</Link>
             </SketchButton>
             <SketchButton asChild variant="line">
-              <Link href="/for-vendors">Learn More</Link>
+              <Link href="/for-vendors">See how vendors join</Link>
             </SketchButton>
           </div>
         </div>

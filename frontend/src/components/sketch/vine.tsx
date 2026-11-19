@@ -68,8 +68,14 @@ export function Vine({
     }
   }
   return (
-    <svg className={className} style={{ overflow: 'visible', ...style }} viewBox={viewBox} aria-hidden="true">
-      <g className={sway ? 'sk-sway' : undefined} filter="url(#sk-rough)">
+    <svg
+      className={[className, sway ? 'sk-sway' : ''].filter(Boolean).join(' ')}
+      style={{ overflow: 'visible', ...style }}
+      viewBox={viewBox}
+      aria-hidden="true"
+    >
+      {/* The filter stays on this inner group; the sway moves the whole <svg> so the filter is rasterised once, not every frame. */}
+      <g filter="url(#sk-rough)">
         <path d={d} fill="none" style={{ stroke: 'var(--leaf-deep)' }} strokeWidth={2.6} strokeLinecap="round" />
         {parts}
       </g>

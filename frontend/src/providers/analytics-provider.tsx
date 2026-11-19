@@ -19,6 +19,7 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import Script from 'next/script';
 import { GA_MEASUREMENT_ID, GOOGLE_ADS_ID } from '@/lib/analytics/gtag';
 
@@ -39,7 +40,32 @@ const gaEnabled =
   process.env.NODE_ENV === 'production' ||
   process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
 
+/**
+ * Third-party tags (GA, Google Ads, AdSense) cost ~600 KB and ~800 ms of main-thread time.
+ * Load them on the first user interaction, or after a short delay if the visitor just reads.
+ */
+const THIRD_PARTY_DELAY_MS = 6000;
+function useThirdPartyReady() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const events = ['pointerdown', 'keydown', 'scroll', 'touchstart'] as const;
+    const go = () => {
+      setReady(true);
+      events.forEach((e) => window.removeEventListener(e, go));
+      clearTimeout(timer);
+    };
+    const timer = setTimeout(go, THIRD_PARTY_DELAY_MS);
+    events.forEach((e) => window.addEventListener(e, go, { passive: true, once: true }));
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, go));
+    };
+  }, []);
+  return ready;
+}
+
 export function AnalyticsProvider() {
+  const thirdPartyReady = useThirdPartyReady();
   return (
     <>
       {/* ── Umami (self-hosted, privacy-first) ─────────────────────────────── */}
@@ -60,7 +86,7 @@ export function AnalyticsProvider() {
       )}
 
       {/* ── Google Analytics ─────────────────────────────────────────────────── */}
-      {gaEnabled && (
+      {gaEnabled && thirdPartyReady && (
         <>
           <Script
             strategy="lazyOnload"

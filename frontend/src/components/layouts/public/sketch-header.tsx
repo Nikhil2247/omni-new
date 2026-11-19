@@ -173,12 +173,13 @@ export function SketchHeader() {
 
       {/* ---------- desktop actions ---------- */}
       <div className="hidden items-center gap-2.5 md:flex">
-        {hasHydrated && !isAuthenticated ? (
+        {/* Rendered (but hidden) before hydration so the header does not shift when auth state loads. */}
+        {!authed ? (
           <>
-            <Link href="/login" className={skBtn('ghost', 'sm')}>
+            <Link href="/login" className={cn(skBtn('ghost', 'sm'), !hasHydrated && 'invisible')} aria-hidden={!hasHydrated} tabIndex={hasHydrated ? undefined : -1}>
               Login
             </Link>
-            <Link href="/register" className={skBtn('solid', 'sm')}>
+            <Link href="/register" className={cn(skBtn('solid', 'sm'), !hasHydrated && 'invisible')} aria-hidden={!hasHydrated} tabIndex={hasHydrated ? undefined : -1}>
               Sign Up
             </Link>
           </>
@@ -229,8 +230,8 @@ export function SketchHeader() {
 
       {/* ---------- mobile bar: logo, sign up / bell, menu ---------- */}
       <div className="flex items-center gap-2 md:hidden">
-        {hasHydrated && !isAuthenticated ? (
-          <Link href="/register" className={skBtn('solid', 'sm')}>
+        {!authed ? (
+          <Link href="/register" className={cn(skBtn('solid', 'sm'), !hasHydrated && 'invisible')} aria-hidden={!hasHydrated} tabIndex={hasHydrated ? undefined : -1}>
             Sign Up
           </Link>
         ) : null}

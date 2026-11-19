@@ -4,7 +4,7 @@ import { HOME_FAQS } from './content'
 /** Frequently asked questions as hand-drawn accordions (native <details>, no JavaScript needed). */
 export function FaqSection({ items = HOME_FAQS }: { items?: Array<{ question: string; answer: string }> }) {
   return (
-    <section id="faq" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
+    <section data-reveal id="faq" className="mx-auto w-full max-w-[1440px] px-4 py-11 md:py-16">
       <SecHead eyebrow="FAQ" center title={<>Got <Brush>Questions?</Brush> We&apos;ve Got Answers</>} />
       <div className="mx-auto max-w-[780px]">
         {items.map((f, i) => (

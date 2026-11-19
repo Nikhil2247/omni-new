@@ -54,14 +54,14 @@ const normalizeCategories = (categories: CategoryLookup[]) =>
 export const lookupService = {
   async getEventTypes() {
     const response = await apiClient.get<EventTypeLookup[]>(
-      API_ENDPOINTS.USER.LOOKUPS.EVENT_TYPES,
+      API_ENDPOINTS.PUBLIC.LOOKUPS.EVENT_TYPES,
     )
     return extractArray<EventTypeLookup>(response.data, 'eventTypes')
   },
 
   async getCities() {
     const response = await apiClient.get<CityLookup[]>(
-      API_ENDPOINTS.USER.LOOKUPS.CITIES,
+      API_ENDPOINTS.PUBLIC.LOOKUPS.CITIES,
     )
     return extractArray<CityLookup>(response.data, 'cities')
   },

@@ -445,7 +445,7 @@
   width: 270px;
   height: 220px;
   left: -90px;
-  top: 14%;
+  top: 9rem;
   background: var(--blue-wash);
 }
 .sk-bgfx .b2 {
@@ -476,7 +476,7 @@
   width: 310px;
   height: 210px;
   left: 36%;
-  top: 4%;
+  top: 3rem;
   background: var(--blue-wash);
   opacity: 0.16;
 }
@@ -508,6 +508,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .sk-sway {
     transform-origin: 50% 100%;
+    will-change: transform;
     animation: sk-sway 7s ease-in-out infinite alternate;
   }
   @keyframes sk-sway {

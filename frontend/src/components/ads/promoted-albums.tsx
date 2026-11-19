@@ -1,5 +1,6 @@
 'use client'
 
+import { optimizeImageUrl } from '@/lib/utils/cloudinary'
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -51,7 +52,7 @@ function AlbumCard({ album }: AlbumCardProps) {
       <div className="bg-sky1 relative aspect-[4/3] overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px]">
         {album.coverImageUrl ? (
           <Image
-            src={album.coverImageUrl}
+            src={optimizeImageUrl(album.coverImageUrl, 640)}
             alt={album.title || 'Album'}
             fill
             unoptimized
@@ -84,16 +85,6 @@ function AlbumCard({ album }: AlbumCardProps) {
   )
 }
 
-function AlbumSkeleton() {
-  return (
-    <div className={`${skPaper()} animate-pulse p-2.5`}>
-      <div className="bg-muted aspect-[4/3] rounded-md" />
-      <div className="bg-muted mt-3 h-3 w-2/3 rounded" />
-      <div className="bg-muted mt-2 h-3 w-1/2 rounded" />
-    </div>
-  )
-}
-
 export function PromotedAlbums({
   limit = 6,
   title = 'Discover Amazing Work',
@@ -103,7 +94,7 @@ export function PromotedAlbums({
 }: PromotedAlbumsProps) {
   const { data: albums, isLoading, error } = usePromotedAlbums(limit)
 
-  if (error || (!isLoading && (!albums || albums.length === 0))) {
+  if (isLoading || error || !albums || albums.length === 0) {
     return null
   }
 
@@ -117,9 +108,7 @@ export function PromotedAlbums({
         cta={showViewAll ? 'Explore Discover →' : undefined}
       />
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading
-          ? Array.from({ length: limit }).map((_, i) => <AlbumSkeleton key={i} />)
-          : albums?.map((album) => <AlbumCard key={album.campaignId} album={album} />)}
+        {albums.map((album) => <AlbumCard key={album.campaignId} album={album} />)}
       </div>
     </section>
   )

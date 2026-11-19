@@ -1,3 +1,5 @@
+import { preload } from 'react-dom'
+import { ScrollEffects } from '@/components/common/scroll-effects'
 import { PublicLayout } from '@/components/layouts/public'
 import { BuntingBand } from '@/components/sketch'
 import { HeroSection } from '@/components/home/hero'
@@ -13,8 +15,11 @@ import { VendorCta } from '@/components/home/vendor-cta'
 import { SponsoredBanner, BoostedVendors, PromotedAlbumsSection } from '@/components/home/ads'
 
 export default function Home() {
+  // The hero art is an SVG <image>, which the browser only discovers late; fetch it early so it does not pop in.
+  preload('/images/home/hero.webp', { as: 'image', fetchPriority: 'high' })
   return (
     <PublicLayout>
+      <ScrollEffects />
       <HeroSection />
       <BuntingBand />
       <CategoryTiles />
