@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { NotificationPopover } from '@/components/features/notifications/notification-popover'
+import dynamic from 'next/dynamic'
 import { useAuthStore } from '@/store/auth-store'
 import { useLogout } from '@/hooks/use-auth'
 import { useMounted } from '@/hooks/use-mounted'
@@ -27,6 +27,12 @@ import type { Role } from '@/config/roles'
 import { getSettingsPath } from '@/lib/utils/permissions'
 import { MyToolsPanel } from './my-tools'
 import { useMyTools } from './use-my-tools'
+
+// Signed-in only; loaded lazily so socket.io stays out of the logged-out bundle.
+const NotificationPopover = dynamic(
+  () => import('@/components/features/notifications/notification-popover').then((m) => m.NotificationPopover),
+  { ssr: false },
+)
 
 const GUEST_TOOLS = [
   { href: '/event-budget-calculator', label: 'Budget Calculator' },

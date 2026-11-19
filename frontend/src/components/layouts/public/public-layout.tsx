@@ -2,12 +2,18 @@
 
 import { usePathname } from 'next/navigation'
 import { BottomNav } from '@/components/ui/bottom-nav'
-import { ChatbotWidget } from '@/components/features/chatbot/chatbot-widget'
+import dynamic from 'next/dynamic'
 import { BgFx, CornerMandala } from '@/components/sketch'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth-store'
 import { SketchHeader } from './sketch-header'
 import { SketchFooter } from './sketch-footer'
+
+// Loaded after the page is interactive so framer-motion / markdown stay out of the initial bundle.
+const ChatbotWidget = dynamic(
+  () => import('@/components/features/chatbot/chatbot-widget').then((m) => m.ChatbotWidget),
+  { ssr: false },
+)
 
 interface PublicLayoutProps {
   children: React.ReactNode

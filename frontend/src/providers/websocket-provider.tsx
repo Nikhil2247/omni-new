@@ -6,9 +6,13 @@
 
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 import { useAuthStore } from '@/store/auth-store'
-import { NotificationClient, Notification, KycEvent, KycEventCallback } from '@/lib/websocket/notification-client'
+import type { Notification, KycEvent, KycEventCallback } from '@/lib/websocket/notification-client'
+
+// socket.io is only needed for signed-in users, so the client is loaded on demand and never ships to logged-out visitors.
+type NotificationClientType = typeof import('@/lib/websocket/notification-client').NotificationClient
+const loadClient = () => import('@/lib/websocket/notification-client').then((m) => m.NotificationClient)
 import { toast } from 'sonner'
 
 interface WebSocketContextValue {
@@ -42,51 +46,69 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
 
+  const clientRef = useRef<NotificationClientType | null>(null)
+
+  // Run fn once the client is available (immediately if already loaded).
+  const withClient = (fn: (c: NotificationClientType) => void) => {
+    if (clientRef.current) fn(clientRef.current)
+    else loadClient().then((c) => { clientRef.current = c; fn(c) })
+  }
+
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
-      // Disconnect if not authenticated
-      NotificationClient.disconnect()
+      // Disconnect if a client was ever loaded; otherwise there is nothing to do.
+      clientRef.current?.disconnect()
       setIsConnected(false)
       return
     }
 
-    // Initialize notification client
-    NotificationClient.initialize(accessToken)
+    let cancelled = false
+    let unsubscribe = () => {}
+    let checkConnection: ReturnType<typeof setInterval> | undefined
 
-    // Subscribe to notifications
-    const unsubscribe = NotificationClient.onNotification((notification) => {
-      setNotifications((prev) => [notification, ...prev])
-      
-      // Show toast notification
-      if (notification.priority === 'high' || notification.priority === 'urgent') {
-        toast.error(notification.title, {
-          description: notification.message,
-          action: notification.actionUrl ? {
-            label: 'View',
-            onClick: () => window.location.href = notification.actionUrl!,
-          } : undefined,
-        })
-      } else {
-        toast.info(notification.title, {
-          description: notification.message,
-        })
-      }
+    loadClient().then((NotificationClient) => {
+      if (cancelled) return
+      clientRef.current = NotificationClient
+
+      // Initialize notification client
+      NotificationClient.initialize(accessToken)
+
+      // Subscribe to notifications
+      unsubscribe = NotificationClient.onNotification((notification) => {
+        setNotifications((prev) => [notification, ...prev])
+
+        // Show toast notification
+        if (notification.priority === 'high' || notification.priority === 'urgent') {
+          toast.error(notification.title, {
+            description: notification.message,
+            action: notification.actionUrl ? {
+              label: 'View',
+              onClick: () => window.location.href = notification.actionUrl!,
+            } : undefined,
+          })
+        } else {
+          toast.info(notification.title, {
+            description: notification.message,
+          })
+        }
+      })
+
+      // Update connection status
+      checkConnection = setInterval(() => {
+        setIsConnected(NotificationClient.isConnected())
+      }, 1000)
     })
 
-    // Update connection status
-    const checkConnection = setInterval(() => {
-      setIsConnected(NotificationClient.isConnected())
-    }, 1000)
-
     return () => {
+      cancelled = true
       unsubscribe()
-      clearInterval(checkConnection)
-      NotificationClient.disconnect()
+      if (checkConnection) clearInterval(checkConnection)
+      clientRef.current?.disconnect()
     }
   }, [isAuthenticated, accessToken])
 
   const markAsRead = (notificationIds: string[]) => {
-    NotificationClient.markAsRead(notificationIds)
+    withClient((c) => c.markAsRead(notificationIds))
     setNotifications((prev) =>
       prev.map((n) =>
         notificationIds.includes(n.id) ? { ...n, read: true } : n
@@ -95,23 +117,31 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   }
 
   const subscribeToEvent = (eventId: string) => {
-    NotificationClient.subscribeToEvent(eventId)
+    withClient((c) => c.subscribeToEvent(eventId))
   }
 
   const unsubscribeFromEvent = (eventId: string) => {
-    NotificationClient.unsubscribeFromEvent(eventId)
+    withClient((c) => c.unsubscribeFromEvent(eventId))
   }
 
   const subscribeToOpsKyc = () => {
-    NotificationClient.subscribeToOpsKyc()
+    withClient((c) => c.subscribeToOpsKyc())
   }
 
   const unsubscribeFromOpsKyc = () => {
-    NotificationClient.unsubscribeFromOpsKyc()
+    withClient((c) => c.unsubscribeFromOpsKyc())
   }
 
   const onKycEvent = (callback: KycEventCallback) => {
-    return NotificationClient.onKycEvent(callback)
+    let unsub = () => {}
+    let cancelled = false
+    withClient((c) => {
+      if (!cancelled) unsub = c.onKycEvent(callback)
+    })
+    return () => {
+      cancelled = true
+      unsub()
+    }
   }
 
   return (

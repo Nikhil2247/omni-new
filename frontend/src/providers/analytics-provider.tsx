@@ -63,12 +63,12 @@ export function AnalyticsProvider() {
       {gaEnabled && (
         <>
           <Script
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
           />
           <Script
             id="google-analytics"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
@@ -86,7 +86,7 @@ export function AnalyticsProvider() {
           />
           <Script
             id="google-adsense"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             async
             crossOrigin="anonymous"
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}

@@ -7,15 +7,14 @@ import { useAuthStore } from '@/store/auth-store'
 import { useSystemStatus } from '@/hooks/queries/use-public'
 import { ROLES } from '@/config/roles'
 import { Wrench } from 'lucide-react'
-import { SplashScreen } from '@/components/common/splash-screen'
 
 interface MaintenanceGuardProps {
   children: React.ReactNode
 }
 
 export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
-  const { user, hasHydrated, logout } = useAuthStore()
-  const { data, isLoading } = useSystemStatus()
+  const { user, logout } = useAuthStore()
+  const { data } = useSystemStatus()
 
   const userRoles = useMemo(() => {
     if (!user) return []
@@ -25,10 +24,15 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
   const isSystemAdmin = userRoles.includes(ROLES.ADMIN_SYSTEM)
   const maintenanceMode = Boolean(data?.maintenanceMode)
 
-  if (!hasHydrated || (isLoading && !data)) {
-    return <MaintenanceLoading />
-  }
+  useEffect(() => {
+    if (!maintenanceMode || isSystemAdmin) return
+    if (user) {
+      logout()
+    }
+  }, [isSystemAdmin, logout, maintenanceMode, user])
 
+  // Render the page immediately: it is server-rendered, so it paints without waiting on JS or this API call.
+  // Only swap in the maintenance screen once the status confirms it.
   if (!maintenanceMode) {
     return children
   }
@@ -49,13 +53,6 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
       </div>
     )
   }
-
-  useEffect(() => {
-    if (!maintenanceMode || isSystemAdmin) return
-    if (user) {
-      logout()
-    }
-  }, [isSystemAdmin, logout, maintenanceMode, user])
 
   return <MaintenanceScreen supportEmail={data?.supportEmail ?? undefined} />
 }
@@ -103,8 +100,4 @@ function MaintenanceScreen({ supportEmail }: { supportEmail?: string }) {
       </div>
     </div>
   )
-}
-
-function MaintenanceLoading() {
-  return <SplashScreen />
 }
