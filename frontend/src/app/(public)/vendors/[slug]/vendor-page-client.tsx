@@ -1,5 +1,6 @@
 'use client'
 
+import { imageDelivery } from '@/lib/utils/cloudinary'
 import { PaintedScene, SketchButton, Vine } from '@/components/sketch'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -607,7 +608,8 @@ export default function VendorPageClient({
               src={vendor.bannerImageUrl}
               alt={`${vendor.businessName} banner`}
               fill
-              unoptimized={true}
+              {...imageDelivery(vendor.bannerImageUrl)}
+              sizes="100vw"
               priority={true}
               className="object-cover"
             />
@@ -632,7 +634,8 @@ export default function VendorPageClient({
                       src={vendor.profilePhotoUrl}
                       alt={vendor.businessName || ''}
                       fill
-                      unoptimized={true}
+                      {...imageDelivery(vendor.profilePhotoUrl)}
+                      sizes="144px"
                       priority={true}
                       className="object-cover"
                     />
@@ -856,7 +859,7 @@ export default function VendorPageClient({
                     {featuredPortfolios.length > 0 && (
                       <div>
                         <div className="mb-4 flex items-center justify-between">
-                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Featured Albums</h3>
+                          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Featured Albums</h2>
                           {featuredPortfolios.length > 1 && (
                             <span className="text-xs text-muted-foreground sm:hidden">
                               Swipe to see more
@@ -866,7 +869,7 @@ export default function VendorPageClient({
                         <Carousel
                           opts={{
                             align: 'start',
-                            loop: featuredPortfolios.length > 2,
+                            loop: featuredPortfolios.length > 4,
                           }}
                           className="w-full"
                         >
@@ -877,7 +880,7 @@ export default function VendorPageClient({
                               const coverImage = albumMedia[0]
 
                               return (
-                                <CarouselItem key={portfolio.id} className="pl-2 md:pl-4 basis-[65%] sm:basis-1/2 lg:basis-1/3">
+                                <CarouselItem key={portfolio.id} className="pl-2 md:pl-4 basis-[45%] sm:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                                   <motion.button
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -891,9 +894,9 @@ export default function VendorPageClient({
                                         src={coverImage.cdnUrl || coverImage.url}
                                         alt={coverImage.altText || portfolio.title || 'Album'}
                                         fill
-                                        unoptimized={true}
+                                        {...imageDelivery(coverImage.cdnUrl || coverImage.url)}
                                         loading={idx < 2 ? 'eager' : 'lazy'}
-                                        sizes="(max-width: 640px) 65vw, (max-width: 1024px) 50vw, 33vw"
+                                        sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 20vw"
                                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                                       />
                                       {/* Photo count overlay */}
@@ -911,12 +914,12 @@ export default function VendorPageClient({
                                       </div>
                                     </div>
                                     {/* Album Info */}
-                                    <div className="p-2.5 sm:p-4">
-                                      <h3 className="font-semibold text-foreground line-clamp-1 text-xs sm:text-base">
+                                    <div className="p-2 sm:p-3">
+                                      <h3 className="font-semibold text-foreground line-clamp-1 text-xs sm:text-sm">
                                         {portfolio.title || 'Portfolio'}
                                       </h3>
                                       {portfolio.description && (
-                                        <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-sm text-muted-foreground line-clamp-1 sm:line-clamp-2">
+                                        <p className="mt-0.5 text-[10px] sm:text-xs text-muted-foreground line-clamp-1">
                                           {portfolio.description}
                                         </p>
                                       )}
@@ -936,20 +939,20 @@ export default function VendorPageClient({
                       </div>
                     )}
 
-                    {/* All Photos - 3 column grid, max 15 images */}
+                    {/* All Photos - compact grid, max 18 images */}
                     {allMedia.length > 0 && (
                       <div>
                         <div className="mb-4 flex items-center justify-between">
-                          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">All Photos</h3>
-                          {allMedia.length > 15 && (
+                          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">All Photos</h2>
+                          {allMedia.length > 18 && (
                             <Button variant="ghost" size="sm" onClick={() => setGalleryPanelOpen(true)}>
                               View all {allMedia.length} photos
                               <ChevronRight className="ml-1 h-4 w-4" />
                             </Button>
                           )}
                         </div>
-                        <div className="grid grid-cols-4 gap-2">
-                          {allMedia.slice(0, 16).map((media, idx) => {
+                        <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 lg:grid-cols-6">
+                          {allMedia.slice(0, 18).map((media, idx) => {
                             return (
                               <motion.button
                                 key={media.id}
@@ -966,9 +969,9 @@ export default function VendorPageClient({
                                   src={media.cdnUrl || media.url}
                                   alt={media.altText || 'Photo'}
                                   fill
-                                  unoptimized={true}
+                                  {...imageDelivery(media.cdnUrl || media.url)}
                                   loading={idx < 4 ? 'eager' : 'lazy'}
-                                  sizes="(max-width: 640px) 25vw, 20vw"
+                                  sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 17vw"
                                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                                 {media.type === 'VIDEO' && (
@@ -1636,7 +1639,7 @@ export default function VendorPageClient({
                     src={media.cdnUrl || media.url}
                     alt={media.altText || 'Portfolio'}
                     fill
-                    unoptimized={true}
+                    {...imageDelivery(media.cdnUrl || media.url)}
                     sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, (max-width: 1280px) 16vw, 12vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-110"
                   />
@@ -1711,7 +1714,7 @@ export default function VendorPageClient({
                       src={media.cdnUrl || media.url}
                       alt={media.altText || selectedAlbum?.title || 'Photo'}
                       fill
-                      unoptimized={true}
+                      {...imageDelivery(media.cdnUrl || media.url)}
                       sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
                       priority={idx < 6}
                       className="object-cover transition-transform duration-300 group-hover:scale-110"
@@ -1807,7 +1810,7 @@ export default function VendorPageClient({
                   alt="Portfolio"
                   width={1200}
                   height={800}
-                  unoptimized={true}
+                  {...imageDelivery(allMedia[lightboxIndex]?.cdnUrl || allMedia[lightboxIndex]?.url || '')}
                   priority={true}
                   className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
                 />

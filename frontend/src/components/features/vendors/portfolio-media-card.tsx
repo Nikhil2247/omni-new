@@ -1,5 +1,6 @@
 'use client'
 
+import { imageDelivery } from '@/lib/utils/cloudinary'
 import Link from 'next/link'
 import NextImage from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -14,6 +15,7 @@ import { useAddWishlistItem, useCreateWishlist, useWishlistMine, wishlistKeys } 
 import { useMediaItemTags } from '@/hooks/queries/use-media-tags'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { cn } from '@/lib/utils'
+import { cardAspect, cropScale } from '@/lib/utils/masonry'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 
@@ -113,15 +115,18 @@ export function PortfolioMediaCard({ item, priority = false, isBoosted = false }
         className="block w-full text-left"
         aria-label={`Preview ${item.vendor.businessName || 'vendor'} portfolio`}
       >
-        <NextImage
-          src={imageUrl}
-          alt={item.altText || item.vendor.businessName || 'Portfolio image'}
-          width={1200}
-          height={900}
-          unoptimized={true}
-          priority={priority}
-          className="h-auto w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {/* The card reserves its shape up front (no layout shift) and crops the photo to fill it. */}
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio: `1 / ${cardAspect(item)}` }}>
+          <NextImage
+            src={imageUrl}
+            alt={item.altText || item.vendor.businessName || 'Portfolio image'}
+            fill
+            sizes={`(max-width: 767px) calc(50vw * ${cropScale(item).toFixed(2)}), (max-width: 1023px) calc(34vw * ${cropScale(item).toFixed(2)}), (max-width: 1279px) calc(25vw * ${cropScale(item).toFixed(2)}), (max-width: 1535px) calc(20vw * ${cropScale(item).toFixed(2)}), calc(17vw * ${cropScale(item).toFixed(2)})`}
+            {...imageDelivery(imageUrl)}
+            priority={priority}
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
       </button>
       
       {/* Heart button — always visible, top-right corner */}
@@ -193,7 +198,7 @@ export function PortfolioMediaCard({ item, priority = false, isBoosted = false }
               alt={item.altText || item.vendor.businessName || 'Portfolio image'}
               width={1600}
               height={1200}
-              unoptimized={true}
+              {...imageDelivery(imageUrl)}
               className="w-full h-auto max-h-[70vh] object-contain"
             />
 

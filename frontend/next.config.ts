@@ -18,7 +18,8 @@ const nextConfig: NextConfig = {
   // Image optimization
   images: {
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+    // Uploaded files get unique keys, so optimized copies can be cached for 30 days.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       {
         protocol: 'https',
@@ -27,6 +28,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'backend.omnicassion.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'omnicassion.s3.ap-south-1.amazonaws.com',
       },
       {
         protocol: 'https',

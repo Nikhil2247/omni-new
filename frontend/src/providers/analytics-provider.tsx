@@ -1,7 +1,7 @@
 /**
  * Analytics Provider
  *
- * Loads Umami analytics (self-hosted) + Google Analytics / Ads.
+ * Loads Umami analytics (self-hosted) + Google Analytics.
  *
  * Umami env vars (add to .env.local):
  *   NEXT_PUBLIC_UMAMI_SCRIPT_URL  – e.g. http://your-server:3000/script.js
@@ -21,9 +21,8 @@
 
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
-import { GA_MEASUREMENT_ID, GOOGLE_ADS_ID } from '@/lib/analytics/gtag';
+import { GA_MEASUREMENT_ID } from '@/lib/analytics/gtag';
 
-const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-4219034590653073';
 
 // ─── Umami configuration ──────────────────────────────────────────────────────
 // Self-hosted Umami: set NEXT_PUBLIC_UMAMI_SCRIPT_URL to your server's script.js
@@ -41,7 +40,7 @@ const gaEnabled =
   process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
 
 /**
- * Third-party tags (GA, Google Ads, AdSense) cost ~600 KB and ~800 ms of main-thread time.
+ * Google Analytics costs ~200 KB and ~200 ms of main-thread time.
  * Load them on the first user interaction, or after a short delay if the visitor just reads.
  */
 const THIRD_PARTY_DELAY_MS = 6000;
@@ -106,16 +105,8 @@ export function AnalyticsProvider() {
                   send_page_view: true,
                   anonymize_ip: true,
                 });
-                gtag('config', '${GOOGLE_ADS_ID}');
               `,
             }}
-          />
-          <Script
-            id="google-adsense"
-            strategy="lazyOnload"
-            async
-            crossOrigin="anonymous"
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
           />
         </>
       )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { optimizeImageUrl } from '@/lib/utils/cloudinary'
+import { imageDelivery } from '@/lib/utils/cloudinary'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowUpRight, Sparkles } from 'lucide-react'
@@ -29,7 +29,7 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
   // Use actual API fields with fallbacks for legacy structure
   const title = banner.businessName || banner.title || 'Sponsored'
   const subtitle = banner.tagline || banner.subtitle
-  const imageUrl = optimizeImageUrl(getMinioViewUrl(banner.bannerImageUrl || banner.imageUrl), 1280)
+  const imageUrl = getMinioViewUrl(banner.bannerImageUrl || banner.imageUrl)
   const vendorLink = banner.slug ? `/vendors/${banner.slug}` : (banner.ctaLink || '#')
   const handleClick = () => {
     if (banner.campaignId) {
@@ -57,7 +57,8 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
                 alt={title}
                 fill
                 className="object-cover"
-                unoptimized
+                {...imageDelivery(imageUrl)}
+                sizes="48px"
               />
             </div>
           )}
@@ -100,7 +101,8 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
               alt={title}
               fill
               className="object-cover opacity-55 transition-transform duration-700 group-hover:scale-[1.02]"
-              unoptimized
+              {...imageDelivery(imageUrl)}
+              sizes="(max-width: 1440px) 100vw, 1440px"
             />
           </div>
         )}
@@ -117,7 +119,8 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
                 alt={title}
                 fill
                 className="object-cover"
-                unoptimized
+                {...imageDelivery(imageUrl)}
+                sizes="128px"
               />
             </div>
           )}
@@ -163,7 +166,8 @@ function SingleBanner({ banner, variant, className }: SingleBannerProps) {
               alt={title}
               fill
               className="object-cover"
-              unoptimized
+              {...imageDelivery(imageUrl)}
+              sizes="80px"
             />
           </div>
         )}

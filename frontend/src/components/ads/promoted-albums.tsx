@@ -1,6 +1,6 @@
 'use client'
 
-import { optimizeImageUrl } from '@/lib/utils/cloudinary'
+import { imageDelivery } from '@/lib/utils/cloudinary'
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -52,10 +52,10 @@ function AlbumCard({ album }: AlbumCardProps) {
       <div className="bg-sky1 relative aspect-[4/3] overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px]">
         {album.coverImageUrl ? (
           <Image
-            src={optimizeImageUrl(album.coverImageUrl, 640)}
+            src={album.coverImageUrl}
             alt={album.title || 'Album'}
             fill
-            unoptimized
+            {...imageDelivery(album.coverImageUrl)}
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />

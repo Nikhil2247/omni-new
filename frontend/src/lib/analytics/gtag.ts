@@ -5,7 +5,6 @@
 
 // Google Analytics 4 Integration
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-66Y82VSR50';
-export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID || 'AW-16748718555';
 
 const hasWindow = () => typeof window !== 'undefined';
 const hasGtag = () => hasWindow() && typeof window.gtag === 'function';
@@ -14,10 +13,6 @@ const hasGtag = () => hasWindow() && typeof window.gtag === 'function';
 export function pageview(url: string) {
   if (hasGtag()) {
     window.gtag('config', GA_MEASUREMENT_ID, {
-      page_path: url,
-    });
-
-    window.gtag('config', GOOGLE_ADS_ID, {
       page_path: url,
     });
   }
@@ -39,16 +34,6 @@ export function event({ action, category, label, value }: {
   }
 }
 
-// Optional Ads conversion helper
-export function conversion(conversionLabel: string, value?: number, currency = 'INR') {
-  if (hasGtag()) {
-    window.gtag('event', 'conversion', {
-      send_to: `${GOOGLE_ADS_ID}/${conversionLabel}`,
-      value,
-      currency,
-    });
-  }
-}
 
 // Track search queries (important for SEO)
 export function trackSearch(searchTerm: string, category?: string) {
