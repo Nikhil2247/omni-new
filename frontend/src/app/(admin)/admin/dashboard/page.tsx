@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
               data={trendChartData}
               dataKeys={[
                 { key: 'activeUsers', label: 'Active Users', color: 'var(--primary)' },
-                { key: 'sessions', label: 'Sessions', color: 'var(--chart-2)' },
+                { key: 'sessions', label: 'Sessions', color: 'var(--muted-foreground)' },
               ]}
               height={240}
             />
@@ -180,18 +180,12 @@ export default function AdminDashboardPage() {
                     cx="64"
                     cy="64"
                     r="56"
-                    stroke="url(#healthGradient)"
+                    stroke="var(--primary)"
                     strokeWidth="10"
                     fill="none"
                     strokeDasharray={`${(healthPercent / 100) * 351.86} 351.86`}
                     strokeLinecap="round"
                   />
-                  <defs>
-                    <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="var(--primary)" />
-                      <stop offset="100%" stopColor="var(--chart-3)" />
-                    </linearGradient>
-                  </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <Zap className="h-6 w-6 text-primary" />
@@ -319,14 +313,8 @@ export default function AdminDashboardPage() {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full font-bold text-white ${
-                        index === 0
-                          ? 'bg-gradient-to-br from-warning/30 to-warning'
-                          : index === 1
-                          ? 'bg-gradient-to-br from-muted-foreground/30 to-muted-foreground/30'
-                          : index === 2
-                          ? 'bg-gradient-to-br from-warning to-warning'
-                          : 'bg-muted text-muted-foreground'
+                      className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ${
+                        index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                       }`}
                     >
                       #{index + 1}
@@ -376,7 +364,7 @@ function GrowthCard({
           </div>
           <span
             className={`text-xs font-medium ${
-              isPositive ? 'text-success' : 'text-destructive'
+              isPositive ? 'text-foreground' : 'text-destructive'
             }`}
           >
             {isPositive ? '+' : ''}

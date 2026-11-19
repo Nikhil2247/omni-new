@@ -4,14 +4,18 @@ import { useState } from 'react'
 import NextImage from 'next/image'
 import { useLogout } from '@/hooks/use-auth'
 import { useChangePassword, useEnable2FA, useVerify2FA, useDisable2FA } from '@/hooks/use-user-settings'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Shield, Key, Smartphone, AlertTriangle } from 'lucide-react'
+import {
+  StatusBadge,
+  SettingsSection,
+  SettingRow,
+  SettingsBlock,
+  DangerZone,
+  SettingsStandaloneTitle,
+} from '@/components/dash'
 import { toast } from 'sonner'
 
 export function SecurityForm() {
@@ -20,7 +24,7 @@ export function SecurityForm() {
   const enable2FA = useEnable2FA()
   const verify2FA = useVerify2FA()
   const disable2FA = useDisable2FA()
-  
+
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -90,28 +94,13 @@ export function SecurityForm() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Security</h1>
-        <p className="text-muted-foreground">Manage your account security settings.</p>
-      </div>
+    <div className="space-y-4">
+      <SettingsStandaloneTitle title="Security" description="Manage your account security settings." />
 
-      {/* Password Change */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Password
-          </CardTitle>
-          <CardDescription>Change your account password</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!showPasswordForm ? (
-            <Button onClick={() => setShowPasswordForm(true)}>
-              Change Password
-            </Button>
-          ) : (
-            <form onSubmit={handlePasswordChange} className="space-y-4">
+      <SettingsSection title="Password" description="Change your account password.">
+        {showPasswordForm ? (
+          <SettingsBlock>
+            <form onSubmit={handlePasswordChange} className="max-w-md space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="currentPassword">Current Password</Label>
                 <Input
@@ -172,28 +161,35 @@ export function SecurityForm() {
                 </Button>
               </div>
             </form>
-          )}
-        </CardContent>
-      </Card>
+          </SettingsBlock>
+        ) : (
+          <SettingRow label="Password" description="Use a strong password you do not use elsewhere.">
+            <Button size="sm" variant="outline" onClick={() => setShowPasswordForm(true)}>
+              Change password
+            </Button>
+          </SettingRow>
+        )}
+      </SettingsSection>
 
-      {/* Two-Factor Authentication */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5" />
-            Two-Factor Authentication
-          </CardTitle>
-          <CardDescription>Add an extra layer of security to your account</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>2FA Status</Label>
-              <p className="text-sm text-muted-foreground">
-                {twoFactorEnabled ? 'Enabled' : 'Disabled'}
-              </p>
-            </div>
+      <SettingsSection
+        title="Two-factor authentication"
+        description="Add an extra layer of security to your account."
+      >
+        <SettingRow
+          label="2FA status"
+          htmlFor="two-factor-switch"
+          description={
+            twoFactorEnabled
+              ? 'Your account is protected. You will need your authenticator app to sign in.'
+              : 'Require a code from an authenticator app when signing in.'
+          }
+        >
+          <div className="flex items-center gap-3">
+            <StatusBadge tone={twoFactorEnabled ? 'success' : 'muted'}>
+              {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+            </StatusBadge>
             <Switch
+              id="two-factor-switch"
               checked={twoFactorEnabled}
               onCheckedChange={(checked) => {
                 if (checked) {
@@ -204,85 +200,65 @@ export function SecurityForm() {
               }}
             />
           </div>
+        </SettingRow>
 
-          {twoFactorEnabled && (
-            <Alert>
-              <Shield className="h-4 w-4" />
-              <AlertDescription>
-                Your account is protected with two-factor authentication. You'll need your
-                authenticator app to sign in.
-              </AlertDescription>
-            </Alert>
-          )}
+        {showTwoFactorSetup && (
+          <SettingsBlock className="space-y-4">
+            <h3 className="text-sm font-medium">Set up two-factor authentication</h3>
+            <ol className="space-y-1.5 text-sm text-muted-foreground">
+              <li>1. Download an authenticator app (Google Authenticator, Authy, etc.)</li>
+              <li>2. Scan the QR code below with your authenticator app</li>
+              <li>3. Enter the 6-digit code to complete setup</li>
+            </ol>
 
-          {showTwoFactorSetup && (
-            <div className="space-y-4 rounded-lg border p-4">
-              <h4 className="font-medium">Setup Two-Factor Authentication</h4>
-              <ol className="space-y-2 text-sm text-muted-foreground">
-                <li>1. Download an authenticator app (Google Authenticator, Authy, etc.)</li>
-                <li>2. Scan the QR code below with your authenticator app</li>
-                <li>3. Enter the 6-digit code to complete setup</li>
-              </ol>
-              
-              {/* TODO: Display QR code from API response */}
-              <div className="flex h-48 items-center justify-center rounded-lg border bg-muted">
-                {qrCode ? (
-                  <NextImage
-                    src={qrCode}
-                    alt="2FA QR Code"
-                    width={192}
-                    height={192}
-                    unoptimized={true}
-                    priority={true}
-                    className="h-full w-auto"
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground">Loading QR code...</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="verificationCode">Verification Code</Label>
-                <Input
-                  id="verificationCode"
-                  placeholder="000000"
-                  maxLength={6}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
+            {/* TODO: Display QR code from API response */}
+            <div className="flex h-48 items-center justify-center rounded-lg border bg-muted/40">
+              {qrCode ? (
+                <NextImage
+                  src={qrCode}
+                  alt="2FA QR Code"
+                  width={192}
+                  height={192}
+                  unoptimized={true}
+                  priority={true}
+                  className="h-full w-auto"
                 />
-              </div>
-
-              <Button onClick={handleVerify2FA} disabled={verify2FA.isPending}>
-                {verify2FA.isPending ? 'Verifying...' : 'Verify & Enable'}
-              </Button>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading QR code...</p>
+              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Session Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Session Management
-          </CardTitle>
-          <CardDescription>Manage your active sessions</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Sign out of this session if you're on a shared device or want to log out remotely.
-          </p>
+            <div className="max-w-xs space-y-2">
+              <Label htmlFor="verificationCode">Verification Code</Label>
+              <Input
+                id="verificationCode"
+                placeholder="000000"
+                maxLength={6}
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+              />
+            </div>
+
+            <Button onClick={handleVerify2FA} disabled={verify2FA.isPending}>
+              {verify2FA.isPending ? 'Verifying...' : 'Verify & Enable'}
+            </Button>
+          </SettingsBlock>
+        )}
+      </SettingsSection>
+
+      <DangerZone title="Sessions" description="Sign out if you are on a shared device or want to log out remotely.">
+        <SettingRow label="Sign out of this session" description="You will need to sign in again to continue.">
           <Button
             type="button"
             variant="destructive"
+            size="sm"
             onClick={() => logout.mutate()}
             disabled={logout.isPending}
           >
-            {logout.isPending ? 'Signing out...' : 'Sign out of this session'}
+            {logout.isPending ? 'Signing out...' : 'Sign out'}
           </Button>
-        </CardContent>
-      </Card>
+        </SettingRow>
+      </DangerZone>
     </div>
   )
 }

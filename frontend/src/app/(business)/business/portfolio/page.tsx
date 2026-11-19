@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { PageHeader, StatCard, StatGrid } from '@/components/dash'
+import { PageHeader, KpiCard, KpiGrid } from '@/components/dash'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -376,7 +376,7 @@ export default function BusinessPortfolioPage() {
         <PageHeader title="Portfolio" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto h-8 w-8 text-warning mb-2" />
+            <AlertTriangle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first before adding portfolio items.
@@ -439,11 +439,11 @@ export default function BusinessPortfolioPage() {
         }
       />
 
-      <StatGrid className="lg:grid-cols-3">
-        <StatCard label="Albums" value={totalAlbums} icon={ImageIcon} />
-        <StatCard label="Featured Albums" value={featuredAlbums.length} icon={Star} accent="text-warning" />
-        <StatCard label="Media Items" value={totalMedia} icon={Video} />
-      </StatGrid>
+      <KpiGrid cols={3}>
+        <KpiCard label="Albums" value={totalAlbums} icon={ImageIcon} />
+        <KpiCard label="Featured Albums" value={featuredAlbums.length} icon={Star} />
+        <KpiCard label="Media Items" value={totalMedia} icon={Video} />
+      </KpiGrid>
 
       {/* Portfolio Content */}
       {portfolioLoading ? (
@@ -1145,7 +1145,7 @@ function AlbumCard({
           </div>
         )}
         {album.isFeatured && (
-          <Badge className="absolute top-2 left-2 h-5 px-1.5 text-[10px] bg-warning hover:bg-warning">
+          <Badge className="absolute top-2 left-2 h-5 px-1.5 text-[10px]">
             <Star className="mr-1 h-2.5 w-2.5" />
             Featured
           </Badge>

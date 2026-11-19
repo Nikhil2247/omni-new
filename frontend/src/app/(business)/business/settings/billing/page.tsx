@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PageHeader, DataTable, StatusBadge, TwoLineCell, StatCard, StatGrid } from '@/components/dash';
+import { PageHeader, DataTable, StatusBadge, TwoLineCell, KpiCard, KpiGrid } from '@/components/dash';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -45,22 +45,6 @@ import { PaymentMethodList, AddPaymentMethodModal } from '@/components/payment';
 import { PaymentRecord } from '@/lib/api/types/payment.types';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-
-// Status badge colors for payments
-const statusColors: Record<string, string> = {
-  SUCCEEDED: 'bg-success/10 text-success',
-  PENDING: 'bg-warning/10 text-warning',
-  PROCESSING: 'bg-primary/10 text-primary',
-  FAILED: 'bg-destructive/10 text-destructive',
-  REFUNDED: 'bg-primary/10 text-primary',
-};
-
-// Status badge colors for invoices
-const invoiceStatusColors: Record<string, string> = {
-  PAID: 'bg-success/10 text-success',
-  OPEN: 'bg-warning/10 text-warning',
-  VOIDED: 'bg-muted text-foreground',
-};
 
 // Format currency with proper locale
 function formatCurrency(amount: number, currency: string = 'INR'): string {
@@ -203,37 +187,41 @@ export default function BusinessBillingPage() {
     <div className="space-y-3">
       <PageHeader title="Billing & Invoices" />
 
-      <StatGrid>
-        <StatCard
+      <KpiGrid>
+        <KpiCard
           label="Total Payments"
           icon={CreditCard}
-          value={isLoading ? <Skeleton className="h-6 w-16" /> : payments?.length || 0}
+          value={payments?.length || 0}
+          loading={isLoading}
         />
-        <StatCard
+        <KpiCard
           label="Total Spent"
           icon={TrendingUp}
-          value={isLoading ? <Skeleton className="h-6 w-16" /> : formatCurrency(totalSpent, 'INR')}
+          value={formatCurrency(totalSpent, 'INR')}
+          loading={isLoading}
         />
-        <StatCard
+        <KpiCard
           label="Subscriptions"
           icon={History}
-          value={isLoading ? <Skeleton className="h-6 w-16" /> : subscriptionPayments}
+          value={subscriptionPayments}
+          loading={isLoading}
           hint="payments"
         />
-        <StatCard
+        <KpiCard
           label="Ad Credits"
           icon={Coins}
-          value={adCreditsLoading ? <Skeleton className="h-6 w-16" /> : adCredits?.balance?.toLocaleString() || 0}
+          value={adCredits?.balance?.toLocaleString() || 0}
+          loading={adCreditsLoading}
           hint="available"
         />
-      </StatGrid>
+      </KpiGrid>
 
       {/* Ad Credits Card */}
       <Card>
         <CardContent className="flex items-center justify-between gap-3 p-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-warning/10">
-              <Coins className="h-4 w-4 text-warning" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+              <Coins className="h-4 w-4 text-primary" />
             </div>
             <div>
               {adCreditsLoading ? (

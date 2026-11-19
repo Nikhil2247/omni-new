@@ -4,14 +4,40 @@ import type { PaginatedResponse } from '../types/common.types'
 import type {
   AdminAuditLog,
   AdminAuditParams,
+  AdminCategory,
+  AdminCategoryInput,
+  AdminCity,
+  AdminCityInput,
+  AdminCityListParams,
+  AdminCountry,
+  AdminCountryInput,
   AdminDashboard,
   AdminRole,
+  AdminState,
+  AdminStateInput,
   AdminUser,
   AdminUserListParams,
+  AdminVendor,
+  AdminVendorListParams,
+  AdminVendorStats,
   FeatureFlag,
   SystemConfigState,
   SystemHealthState,
 } from '../types/admin.types'
+
+/**
+ * Lists arrive as `[...]`, `{ data: [...] }` or `{ success, data: [...] }` depending on the endpoint.
+ * Always give pages a real array so `.map` / `.filter` can never throw.
+ */
+function unwrapList<T>(payload: unknown): T[] {
+  if (Array.isArray(payload)) return payload as T[]
+  const inner = (payload as { data?: unknown } | null | undefined)?.data
+  if (Array.isArray(inner)) return inner as T[]
+  const nested = (inner as { data?: unknown; items?: unknown } | null | undefined)
+  if (Array.isArray(nested?.data)) return nested.data as T[]
+  if (Array.isArray(nested?.items)) return nested.items as T[]
+  return []
+}
 
 export const adminService = {
   listUsers: async (params: AdminUserListParams = {}): Promise<PaginatedResponse<AdminUser>> => {
@@ -37,7 +63,103 @@ export const adminService = {
   },
   listUserSessions: async (id: string) => {
     const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.USER_SESSIONS(id))
+    // The API wraps responses as { success, data: [...] }. The page needs the array itself; returning the
+    // wrapper made `sessions.map is not a function` crash the user detail page.
+    return unwrapList<Record<string, unknown>>(data)
+  },
+  deleteUser: async (id: string) => {
+    const { data } = await apiClient.delete(API_ENDPOINTS.ADMIN.USER_BY_ID(id))
     return data
+  },
+
+  // ── Vendors ──
+  listVendors: async (params: AdminVendorListParams = {}): Promise<PaginatedResponse<AdminVendor>> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.VENDORS, { params })
+    return data
+  },
+  getVendorStats: async (): Promise<AdminVendorStats> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.VENDORS_STATS)
+    return data?.data ?? data
+  },
+  updateVendorStatus: async (id: string, status: string) => {
+    const { data } = await apiClient.patch(API_ENDPOINTS.ADMIN.VENDOR_STATUS(id), { status })
+    return data?.data ?? data
+  },
+  deleteVendor: async (id: string, permanent = false) => {
+    const { data } = await apiClient.delete(API_ENDPOINTS.ADMIN.VENDOR_BY_ID(id), {
+      params: permanent ? { permanent: 'true' } : undefined,
+    })
+    return data?.data ?? data
+  },
+
+  // ── Categories ──
+  listCategories: async (): Promise<AdminCategory[]> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.CATEGORIES)
+    return unwrapList<AdminCategory>(data)
+  },
+  createCategory: async (payload: AdminCategoryInput) => {
+    const { data } = await apiClient.post(API_ENDPOINTS.ADMIN.CATEGORIES, payload)
+    return data?.data ?? data
+  },
+  updateCategory: async (id: string, payload: Partial<AdminCategoryInput>) => {
+    const { data } = await apiClient.patch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id), payload)
+    return data?.data ?? data
+  },
+  deleteCategory: async (id: string) => {
+    const { data } = await apiClient.delete(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id))
+    return data?.data ?? data
+  },
+
+  // ── Locations ──
+  listCountries: async (): Promise<AdminCountry[]> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.LOCATIONS.COUNTRIES)
+    return unwrapList<AdminCountry>(data)
+  },
+  createCountry: async (payload: AdminCountryInput) => {
+    const { data } = await apiClient.post(API_ENDPOINTS.ADMIN.LOCATIONS.COUNTRIES, payload)
+    return data?.data ?? data
+  },
+  updateCountry: async (id: string, payload: Partial<AdminCountryInput>) => {
+    const { data } = await apiClient.patch(API_ENDPOINTS.ADMIN.LOCATIONS.COUNTRY(id), payload)
+    return data?.data ?? data
+  },
+  deleteCountry: async (id: string) => {
+    const { data } = await apiClient.delete(API_ENDPOINTS.ADMIN.LOCATIONS.COUNTRY(id))
+    return data?.data ?? data
+  },
+  listStates: async (countryId?: string): Promise<AdminState[]> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.LOCATIONS.STATES, {
+      params: countryId ? { countryId } : undefined,
+    })
+    return unwrapList<AdminState>(data)
+  },
+  createState: async (payload: AdminStateInput) => {
+    const { data } = await apiClient.post(API_ENDPOINTS.ADMIN.LOCATIONS.STATES, payload)
+    return data?.data ?? data
+  },
+  updateState: async (id: string, payload: Partial<AdminStateInput>) => {
+    const { data } = await apiClient.patch(API_ENDPOINTS.ADMIN.LOCATIONS.STATE(id), payload)
+    return data?.data ?? data
+  },
+  deleteState: async (id: string) => {
+    const { data } = await apiClient.delete(API_ENDPOINTS.ADMIN.LOCATIONS.STATE(id))
+    return data?.data ?? data
+  },
+  listCities: async (params: AdminCityListParams = {}): Promise<PaginatedResponse<AdminCity>> => {
+    const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.LOCATIONS.CITIES, { params })
+    return data
+  },
+  createCity: async (payload: AdminCityInput) => {
+    const { data } = await apiClient.post(API_ENDPOINTS.ADMIN.LOCATIONS.CITIES, payload)
+    return data?.data ?? data
+  },
+  updateCity: async (id: string, payload: Partial<AdminCityInput>) => {
+    const { data } = await apiClient.patch(API_ENDPOINTS.ADMIN.LOCATIONS.CITY(id), payload)
+    return data?.data ?? data
+  },
+  deleteCity: async (id: string) => {
+    const { data } = await apiClient.delete(API_ENDPOINTS.ADMIN.LOCATIONS.CITY(id))
+    return data?.data ?? data
   },
   revokeUserSession: async (id: string, sessionId: string) => {
     const { data } = await apiClient.delete(API_ENDPOINTS.ADMIN.USER_SESSION(id, sessionId))
@@ -49,10 +171,7 @@ export const adminService = {
   },
   listRoles: async (): Promise<AdminRole[]> => {
     const { data } = await apiClient.get(API_ENDPOINTS.ADMIN.ROLES)
-    if (data && typeof data === 'object' && 'data' in data) {
-      return (data as { data: AdminRole[] }).data
-    }
-    return data
+    return unwrapList<AdminRole>(data)
   },
   createRole: async (payload: Partial<AdminRole>) => {
     const { data } = await apiClient.post(API_ENDPOINTS.ADMIN.ROLES, payload)

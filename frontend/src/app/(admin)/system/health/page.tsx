@@ -3,12 +3,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useSystemHealth } from '@/hooks/queries/use-admin'
 import { useUmami } from '@/hooks/use-umami'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { PageHeader } from '@/components/dash'
+import { PageHeader, StatusBadge as DashStatusBadge } from '@/components/dash'
 import {
   Database,
   HardDrive,
@@ -64,8 +63,7 @@ function CircularProgress({
   const offset = circumference - (value / 100) * circumference
 
   const getColor = (val: number) => {
-    if (val >= 80) return { text: 'text-success', stroke: 'var(--success)' }
-    if (val >= 50) return { text: 'text-warning', stroke: 'var(--warning)' }
+    if (val >= 50) return { text: 'text-foreground', stroke: 'var(--primary)' }
     return { text: 'text-destructive', stroke: 'var(--destructive)' }
   }
 
@@ -209,40 +207,23 @@ export default function SystemHealthPage() {
       />
 
       {/* Overall Status Banner */}
-      <Card className={cn(
-        'border',
-        overallStatus === 'healthy' && 'border-success/40 bg-success/5',
-        overallStatus === 'degraded' && 'border-warning/40 bg-warning/5',
-        overallStatus === 'error' && 'border-destructive/40 bg-destructive/5',
-        overallStatus === 'unknown' && 'border-border bg-muted-foreground/5'
-      )}>
+      <Card>
         <CardContent className="flex flex-col items-center justify-between gap-3 py-3 md:flex-row">
           <div className="flex items-center gap-3">
-            <div className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-full',
-              overallStatus === 'healthy' && 'bg-success/20',
-              overallStatus === 'degraded' && 'bg-warning/20',
-              overallStatus === 'error' && 'bg-destructive/20',
-              overallStatus === 'unknown' && 'bg-muted-foreground/20'
-            )}>
-              {overallStatus === 'healthy' && <CheckCircle2 className="h-5 w-5 text-success" />}
-              {overallStatus === 'degraded' && <AlertCircle className="h-5 w-5 text-warning" />}
-              {overallStatus === 'error' && <XCircle className="h-5 w-5 text-destructive" />}
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              {overallStatus === 'healthy' && <CheckCircle2 className="h-5 w-5" />}
+              {overallStatus === 'degraded' && <AlertCircle className="h-5 w-5" />}
+              {overallStatus === 'error' && <XCircle className="h-5 w-5" />}
               {overallStatus === 'unknown' && <AlertCircle className="h-5 w-5 text-muted-foreground" />}
             </div>
-            <div>
-              <h2 className="text-lg font-bold capitalize">{overallStatus === 'unknown' ? 'Checking...' : overallStatus}</h2>
+            <div className="space-y-1">
+              <StatusBadge status={overallStatus} />
               <p className="text-sm text-muted-foreground">{healthyCount} of {totalServices} services operational</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-center">
-              <p className={cn(
-                'text-2xl font-bold',
-                healthPercent >= 80 && 'text-success',
-                healthPercent >= 50 && healthPercent < 80 && 'text-warning',
-                healthPercent < 50 && 'text-destructive'
-              )}>{healthPercent}%</p>
+              <p className={cn('tabular text-2xl font-semibold', healthPercent < 50 && 'text-destructive')}>{healthPercent}%</p>
               <p className="text-xs text-muted-foreground">Health Score</p>
             </div>
             <div className="h-10 w-px bg-border" />
@@ -259,12 +240,7 @@ export default function SystemHealthPage() {
               <>
                 <div className="h-10 w-px bg-border" />
                 <div className="text-center">
-                  <p className={cn(
-                    'text-lg font-semibold',
-                    avgLatency < 50 && 'text-success',
-                    avgLatency >= 50 && avgLatency < 200 && 'text-warning',
-                    avgLatency >= 200 && 'text-destructive'
-                  )}>{avgLatency}ms</p>
+                  <p className={cn('tabular text-lg font-semibold', avgLatency >= 200 && 'text-destructive')}>{avgLatency}ms</p>
                   <p className="text-xs text-muted-foreground">Avg Latency</p>
                 </div>
               </>
@@ -303,23 +279,11 @@ export default function SystemHealthPage() {
             const latency = (service as any).latency || (service as any).latencyMs
 
             return (
-              <Card key={key} className={cn(
-                'transition-all hover:shadow-md',
-                status === 'healthy' && 'border-l-4 border-l-green-500',
-                status === 'degraded' && 'border-l-4 border-l-yellow-500',
-                status === 'error' && 'border-l-4 border-l-red-500',
-                status === 'unknown' && 'border-l-4 border-l-gray-400'
-              )}>
+              <Card key={key}>
                 <CardContent className="pt-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={cn(
-                        'flex h-8 w-8 items-center justify-center rounded-lg',
-                        status === 'healthy' && 'bg-success/10 text-success',
-                        status === 'degraded' && 'bg-warning/10 text-warning',
-                        status === 'error' && 'bg-destructive/10 text-destructive',
-                        status === 'unknown' && 'bg-muted-foreground/10 text-muted-foreground'
-                      )}>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="h-4 w-4" />
                       </div>
                       <div>
@@ -335,8 +299,6 @@ export default function SystemHealthPage() {
                       <span className={cn(
                         'font-mono font-medium',
                         !latency && 'text-muted-foreground',
-                        latency && latency < 50 && 'text-success',
-                        latency && latency >= 50 && latency < 200 && 'text-warning',
                         latency && latency >= 200 && 'text-destructive'
                       )}>
                         {latency ? `${latency}ms` : 'N/A'}
@@ -347,7 +309,7 @@ export default function SystemHealthPage() {
                         <span className="text-muted-foreground">Connected</span>
                         <span className="flex items-center gap-1">
                           {(service as any).details.connected ? (
-                            <><Wifi className="h-3 w-3 text-success" /><span className="text-success">Yes</span></>
+                            <><Wifi className="h-3 w-3" /><span>Yes</span></>
                           ) : (
                             <><WifiOff className="h-3 w-3 text-destructive" /><span className="text-destructive">No</span></>
                           )}
@@ -387,8 +349,6 @@ export default function SystemHealthPage() {
                     <span className={cn(
                       'font-mono font-medium',
                       latency === 0 && 'text-muted-foreground',
-                      latency > 0 && latency < 50 && 'text-success',
-                      latency >= 50 && latency < 200 && 'text-warning',
                       latency >= 200 && 'text-destructive'
                     )}>
                       {latency > 0 ? `${latency}ms` : 'N/A'}
@@ -399,8 +359,7 @@ export default function SystemHealthPage() {
                       className={cn(
                         'h-full transition-all duration-500',
                         latency === 0 && 'bg-muted-foreground/30',
-                        latency > 0 && latency < 50 && 'bg-success',
-                        latency >= 50 && latency < 200 && 'bg-warning',
+                        latency > 0 && latency < 200 && 'bg-primary',
                         latency >= 200 && 'bg-destructive'
                       )}
                       style={{ width: latency > 0 ? `${Math.min((latency / 500) * 100, 100)}%` : '5%' }}
@@ -421,9 +380,7 @@ export default function SystemHealthPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <InfoRow label="Status" value={
-              <Badge variant={overallStatus === 'healthy' ? 'default' : overallStatus === 'degraded' ? 'secondary' : 'destructive'}>
-                {overallStatus}
-              </Badge>
+<StatusBadge status={overallStatus} />
             } />
             <InfoRow label="Timestamp" value={parsedData.timestamp ? formatTimestamp(parsedData.timestamp) : 'N/A'} />
             <InfoRow label="Version" value={`v${version}`} />
@@ -467,22 +424,9 @@ export default function SystemHealthPage() {
 
 function StatusBadge({ status }: { status: 'healthy' | 'degraded' | 'error' | 'unknown' }) {
   return (
-    <Badge variant="outline" className={cn(
-      'capitalize',
-      status === 'healthy' && 'border-success/40 bg-success/10 text-success',
-      status === 'degraded' && 'border-warning/40 bg-warning/10 text-warning',
-      status === 'error' && 'border-destructive/40 bg-destructive/10 text-destructive',
-      status === 'unknown' && 'border-border bg-muted-foreground/10 text-muted-foreground'
-    )}>
-      <span className={cn(
-        'mr-1.5 inline-block h-2 w-2 rounded-full',
-        status === 'healthy' && 'animate-pulse bg-success',
-        status === 'degraded' && 'animate-pulse bg-warning',
-        status === 'error' && 'bg-destructive',
-        status === 'unknown' && 'bg-muted-foreground/30'
-      )} />
+    <DashStatusBadge tone={status === 'healthy' ? 'success' : status === 'degraded' ? 'warning' : status === 'error' ? 'destructive' : 'muted'} className="capitalize">
       {status}
-    </Badge>
+    </DashStatusBadge>
   )
 }
 
@@ -508,8 +452,7 @@ function MemoryCard({ label, value, percent, description, icon }: {
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div className={cn(
           'h-full',
-          percent < 50 && 'bg-success',
-          percent >= 50 && percent < 75 && 'bg-warning',
+          percent < 75 && 'bg-primary',
           percent >= 75 && 'bg-destructive'
         )} style={{ width: `${percent}%` }} />
       </div>

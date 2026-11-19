@@ -14,8 +14,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { areaOf, isActivePath, isItemActive, useDashboardNav } from './use-dashboard-nav';
 
 const ITEM_BASE =
-  'flex h-10 items-center gap-3 rounded-md px-3 text-[14px] transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-sidebar-ring/50';
-const ITEM_ON = 'bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_var(--sidebar-ring)]';
+  'relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13.5px] transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-sidebar-ring/50';
+const ITEM_ON = 'bg-sidebar-accent font-medium text-sidebar-accent-foreground before:absolute before:-left-3 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-sidebar-ring';
 const ITEM_OFF = 'text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground';
 
 export function Sidebar() {
@@ -72,7 +72,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 [--scroll-thumb:color-mix(in_srgb,var(--sidebar-foreground)_30%,transparent)] [--scroll-thumb-hover:color-mix(in_srgb,var(--sidebar-foreground)_50%,transparent)]">
+        <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-3 [--scroll-thumb:color-mix(in_srgb,var(--sidebar-foreground)_30%,transparent)] [--scroll-thumb-hover:color-mix(in_srgb,var(--sidebar-foreground)_50%,transparent)]">
           {navigation.map((group, i) => (
             <NavGroupBlock
               key={group.title}
@@ -123,7 +123,7 @@ function NavGroupBlock({ group, area, pathname, collapsed, first, onNavigate }: 
   const open = hasActive || (stored ?? true);
 
   const list = (
-    <ul className="space-y-0.5">
+    <ul className="space-y-px">
       {group.items.map((item) => (
         <NavItemRow key={item.href + item.title} item={item} pathname={pathname} collapsed={collapsed} onNavigate={onNavigate} />
       ))}
@@ -131,7 +131,7 @@ function NavGroupBlock({ group, area, pathname, collapsed, first, onNavigate }: 
   );
 
   return (
-    <div className={cn(!first && 'mt-2')}>
+    <div className={cn(!first && 'mt-4')}>
       {/* Collapsed (desktop): icon-only with a separator between groups */}
       <div className="hidden md:block">
         {collapsed ? (
@@ -146,10 +146,10 @@ function NavGroupBlock({ group, area, pathname, collapsed, first, onNavigate }: 
           type="button"
           aria-expanded={open}
           onClick={() => setGroupOpen(key, !open)}
-          className="hover:text-sidebar-primary flex h-11 w-full items-center justify-between px-3 text-[14px] font-medium opacity-90"
+          className="group/hdr hover:text-sidebar-primary mb-1 flex h-7 w-full items-center justify-between px-2.5 text-[11px] font-semibold tracking-wider uppercase opacity-60 transition-opacity hover:opacity-100"
         >
           <span className="truncate">{group.title}</span>
-          <ChevronDown className={cn('size-4 shrink-0 transition-transform duration-200', !open && '-rotate-90')} />
+          <ChevronDown className={cn('size-3.5 shrink-0 transition-all duration-200 md:opacity-0 md:group-hover/hdr:opacity-100', !open && '-rotate-90 md:opacity-100')} />
         </button>
         {open && list}
       </div>
@@ -232,7 +232,7 @@ function NavItemRow({
                         href={child.href}
                         onClick={onNavigate}
                         aria-current={on ? 'page' : undefined}
-                        className={cn(ITEM_BASE, 'h-9 text-[13px]', on ? ITEM_ON : ITEM_OFF)}
+                        className={cn(ITEM_BASE, 'h-8 text-[13px]', on ? ITEM_ON : ITEM_OFF)}
                       >
                         <span className="truncate">{child.title}</span>
                       </Link>

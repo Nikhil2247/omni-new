@@ -154,7 +154,7 @@ export default function MarketingCampaignsPage() {
   ]
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <PageHeader
         title="Campaigns"
         actions={
@@ -166,8 +166,8 @@ export default function MarketingCampaignsPage() {
 
       <StatGrid>
         <StatCard label="Visible campaigns" value={summary.total} icon={Megaphone} />
-        <StatCard label="Active now" value={summary.active} icon={Play} accent="text-success" />
-        <StatCard label="Paused" value={summary.paused} icon={Pause} accent="text-warning" />
+        <StatCard label="Active now" value={summary.active} icon={Play} />
+        <StatCard label="Paused" value={summary.paused} icon={Pause} />
         <StatCard label="Spend / budget" value={`${summary.totalSpend} / ${summary.totalBudget}`} icon={Wallet} />
       </StatGrid>
 

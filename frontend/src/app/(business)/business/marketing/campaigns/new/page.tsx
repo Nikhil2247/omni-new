@@ -83,18 +83,18 @@ const campaignTypes = [
     name: 'Banner Ad',
     description: 'Display eye-catching banner ads across the platform',
     icon: Megaphone,
-    color: 'text-warning',
-    bgColor: 'bg-warning/10',
-    borderColor: 'border-warning/40',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/40',
   },
   {
     id: 'FEATURED_LISTING',
     name: 'Featured Listing',
     description: 'Get premium placement on homepage and category pages',
     icon: Star,
-    color: 'text-warning',
-    bgColor: 'bg-warning/10',
-    borderColor: 'border-warning/40',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/40',
   },
 ];
 
@@ -205,7 +205,7 @@ export default function NewCampaignPage() {
       feature="marketing.campaigns"
       fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
     >
-      <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
+      <div className="min-h-screen bg-muted/20">
         {/* Header */}
         <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="container py-2">
@@ -558,7 +558,7 @@ export default function NewCampaignPage() {
                           <span className="text-muted-foreground">Your Balance</span>
                           <span className={cn(
                             'font-semibold',
-                            hasInsufficientCredits ? 'text-destructive' : 'text-success'
+                            hasInsufficientCredits ? 'text-destructive' : 'text-foreground'
                           )}>
                             {availableCredits.toLocaleString()} credits
                           </span>

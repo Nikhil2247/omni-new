@@ -13,10 +13,10 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, actions, leading, className }: PageHeaderProps) {
   return (
-    <div className={cn('flex min-h-8 shrink-0 flex-wrap items-center justify-between gap-2', className)}>
+    <div className={cn('flex min-h-9 shrink-0 flex-wrap items-center justify-between gap-2', className)}>
       <div className="flex min-w-0 items-center gap-2">
         {leading}
-        <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
+        <h1 className="truncate text-xl font-semibold tracking-tight">{title}</h1>
       </div>
       {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </div>

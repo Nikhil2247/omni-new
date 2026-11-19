@@ -1203,6 +1203,10 @@ async function saveBlogPost(prisma: PrismaClient, post: InternalBlogPost): Promi
         status: post.status,
         readingTime: post.readingTime,
         categoryId: category.id,
+        // The public blog only lists posts whose publishedAt is set and in the past. Keep the original publish
+        // date when there is one; otherwise set it now (this also repairs posts saved earlier without a date).
+        publishedAt:
+          post.status === BlogStatus.PUBLISHED ? (existing.publishedAt ?? new Date()) : existing.publishedAt,
       },
     });
     console.log(`  Updated: ${createdPost.title}`);
@@ -1222,6 +1226,7 @@ async function saveBlogPost(prisma: PrismaClient, post: InternalBlogPost): Promi
         readingTime: post.readingTime,
         categoryId: category.id,
         authorId: post.authorId,
+        publishedAt: post.status === BlogStatus.PUBLISHED ? new Date() : null,
       },
     });
     console.log(`  Created: ${createdPost.title}`);

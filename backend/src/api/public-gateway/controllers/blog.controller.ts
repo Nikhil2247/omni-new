@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import { BlogService } from '../../../domain/content/services/blog.service';
 import {
   BlogStatus,
@@ -30,7 +30,19 @@ export class BlogController {
   @Get('posts/:slug')
   getBySlug(@Param('slug') slug: string) {
     return this.blogService
-      .findBySlug(slug, true)
+      .findBySlug(slug, false)
+      .then(async (post) => {
+        // Only published posts whose publish date has arrived are public. Drafts and scheduled posts must not be
+        // reachable by guessing the URL (they would otherwise be served, and indexed, before they are ready).
+        const live =
+          post.status === BlogStatus.PUBLISHED &&
+          post.publishedAt !== null &&
+          post.publishedAt <= new Date();
+        if (!live) throw new NotFoundException('Blog post not found');
+
+        await this.blogService.findBySlug(slug, true); // count the view for live posts only
+        return post;
+      })
       .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
   }
 

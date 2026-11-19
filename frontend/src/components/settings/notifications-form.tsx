@@ -2,203 +2,102 @@
 
 import { useState } from 'react'
 import { useUpdateNotificationPreferences } from '@/hooks/use-user-settings'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
+import { SettingsSection, SettingRow, SettingsSaveBar, SettingsStandaloneTitle } from '@/components/dash'
+
+const INITIAL_PREFERENCES = {
+  email: {
+    events: true,
+    leads: true,
+    tasks: true,
+    updates: false,
+    marketing: false,
+  },
+  push: {
+    events: true,
+    leads: true,
+    tasks: true,
+    updates: false,
+  },
+  sms: {
+    events: false,
+    leads: false,
+    tasks: false,
+  },
+}
+
+type Preferences = typeof INITIAL_PREFERENCES
+type Channel = 'email' | 'push'
+
+const EMAIL_ROWS: { key: keyof Preferences['email']; label: string; hint: string }[] = [
+  { key: 'events', label: 'Event updates', hint: 'Get notified about event changes' },
+  { key: 'leads', label: 'Lead notifications', hint: 'Get notified about new leads and inquiries' },
+  { key: 'tasks', label: 'Task reminders', hint: 'Get notified about assigned tasks' },
+  { key: 'updates', label: 'Product updates', hint: 'Get notified about new features and updates' },
+  { key: 'marketing', label: 'Marketing emails', hint: 'Receive promotional emails and offers' },
+]
+
+const PUSH_ROWS: { key: keyof Preferences['push']; label: string; hint: string }[] = [
+  { key: 'events', label: 'Event updates', hint: 'Real-time event notifications' },
+  { key: 'leads', label: 'Lead notifications', hint: 'Instant lead alerts' },
+  { key: 'tasks', label: 'Task reminders', hint: 'Task deadline notifications' },
+]
 
 export function NotificationsForm() {
   const updatePreferences = useUpdateNotificationPreferences()
-  const [preferences, setPreferences] = useState({
-    email: {
-      events: true,
-      leads: true,
-      tasks: true,
-      updates: false,
-      marketing: false,
-    },
-    push: {
-      events: true,
-      leads: true,
-      tasks: true,
-      updates: false,
-    },
-    sms: {
-      events: false,
-      leads: false,
-      tasks: false,
-    }
-  })
+  const [preferences, setPreferences] = useState<Preferences>(INITIAL_PREFERENCES)
+  const [saved, setSaved] = useState<Preferences>(INITIAL_PREFERENCES)
+
+  const dirty = JSON.stringify(preferences) !== JSON.stringify(saved)
 
   const handleSave = async () => {
-    updatePreferences.mutate(preferences)
+    const snapshot = preferences
+    updatePreferences.mutate(snapshot, {
+      onSuccess: () => setSaved(snapshot),
+    })
   }
 
+  const toggle = (channel: Channel, key: string, checked: boolean) =>
+    setPreferences({
+      ...preferences,
+      [channel]: { ...preferences[channel], [key]: checked },
+    })
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Notifications</h1>
-        <p className="text-muted-foreground">Manage how you receive notifications.</p>
-      </div>
+    <div className="space-y-4">
+      <SettingsStandaloneTitle title="Notifications" description="Manage how you receive notifications." />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Email Notifications</CardTitle>
-          <CardDescription>Choose what notifications you want to receive via email</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-events">Event Updates</Label>
-              <p className="text-sm text-muted-foreground">Get notified about event changes</p>
-            </div>
+      <SettingsSection title="Email" description="Choose what you want to receive by email.">
+        {EMAIL_ROWS.map((row) => (
+          <SettingRow key={row.key} label={row.label} description={row.hint} htmlFor={`email-${row.key}`}>
             <Switch
-              id="email-events"
-              checked={preferences.email.events}
-              onCheckedChange={(checked) =>
-                setPreferences({
-                  ...preferences,
-                  email: { ...preferences.email, events: checked }
-                })
-              }
+              id={`email-${row.key}`}
+              checked={preferences.email[row.key]}
+              onCheckedChange={(checked) => toggle('email', row.key, checked)}
             />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-leads">Lead Notifications</Label>
-              <p className="text-sm text-muted-foreground">Get notified about new leads and inquiries</p>
-            </div>
-            <Switch
-              id="email-leads"
-              checked={preferences.email.leads}
-              onCheckedChange={(checked) =>
-                setPreferences({
-                  ...preferences,
-                  email: { ...preferences.email, leads: checked }
-                })
-              }
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-tasks">Task Reminders</Label>
-              <p className="text-sm text-muted-foreground">Get notified about assigned tasks</p>
-            </div>
-            <Switch
-              id="email-tasks"
-              checked={preferences.email.tasks}
-              onCheckedChange={(checked) =>
-                setPreferences({
-                  ...preferences,
-                  email: { ...preferences.email, tasks: checked }
-                })
-              }
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-updates">Product Updates</Label>
-              <p className="text-sm text-muted-foreground">Get notified about new features and updates</p>
-            </div>
-            <Switch
-              id="email-updates"
-              checked={preferences.email.updates}
-              onCheckedChange={(checked) =>
-                setPreferences({
-                  ...preferences,
-                  email: { ...preferences.email, updates: checked }
-                })
-              }
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-marketing">Marketing Emails</Label>
-              <p className="text-sm text-muted-foreground">Receive promotional emails and offers</p>
-            </div>
-            <Switch
-              id="email-marketing"
-              checked={preferences.email.marketing}
-              onCheckedChange={(checked) =>
-                setPreferences({
-                  ...preferences,
-                  email: { ...preferences.email, marketing: checked }
-                })
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
+          </SettingRow>
+        ))}
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Push Notifications</CardTitle>
-          <CardDescription>Manage in-app push notifications</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="push-events">Event Updates</Label>
-              <p className="text-sm text-muted-foreground">Real-time event notifications</p>
-            </div>
+      <SettingsSection title="Push" description="In-app push notifications.">
+        {PUSH_ROWS.map((row) => (
+          <SettingRow key={row.key} label={row.label} description={row.hint} htmlFor={`push-${row.key}`}>
             <Switch
-              id="push-events"
-              checked={preferences.push.events}
-              onCheckedChange={(checked) =>
-                setPreferences({
-                  ...preferences,
-                  push: { ...preferences.push, events: checked }
-                })
-              }
+              id={`push-${row.key}`}
+              checked={preferences.push[row.key]}
+              onCheckedChange={(checked) => toggle('push', row.key, checked)}
             />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="push-leads">Lead Notifications</Label>
-              <p className="text-sm text-muted-foreground">Instant lead alerts</p>
-            </div>
-            <Switch
-              id="push-leads"
-              checked={preferences.push.leads}
-              onCheckedChange={(checked) =>
-                setPreferences({
-                  ...preferences,
-                  push: { ...preferences.push, leads: checked }
-                })
-              }
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="push-tasks">Task Reminders</Label>
-              <p className="text-sm text-muted-foreground">Task deadline notifications</p>
-            </div>
-            <Switch
-              id="push-tasks"
-              checked={preferences.push.tasks}
-              onCheckedChange={(checked) =>
-                setPreferences({
-                  ...preferences,
-                  push: { ...preferences.push, tasks: checked }
-                })
-              }
-            />
-          </div>
-        </CardContent>
-      </Card>
+          </SettingRow>
+        ))}
+      </SettingsSection>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={updatePreferences.isPending}>
-          {updatePreferences.isPending ? 'Saving...' : 'Save Preferences'}
-        </Button>
-      </div>
+      <SettingsSaveBar
+        dirty={dirty}
+        saving={updatePreferences.isPending}
+        saveLabel="Save preferences"
+        onSave={handleSave}
+        onReset={() => setPreferences(saved)}
+      />
     </div>
   )
 }

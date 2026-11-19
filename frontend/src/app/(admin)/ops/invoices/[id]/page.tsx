@@ -18,7 +18,6 @@ import {
   Loader2,
   ExternalLink,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -35,7 +34,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/client'
 import { useMarkInvoicePaid } from '@/hooks/queries/use-ops'
-import { PageHeader, DataTable, StatusBadge, type DataColumn } from '@/components/dash'
+import { PageHeader, DataTable, StatusBadge, KpiCard, KpiGrid, Panel, type DataColumn } from '@/components/dash'
 import { QuotationPreviewDialog } from '@/components/features/ops/quotation-preview-dialog'
 import type { QuotationTemplateData } from '@/components/features/ops/quotation-template'
 
@@ -65,12 +64,12 @@ interface InvoiceDetail {
   }
 }
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: { label: 'Pending', color: 'bg-warning/10 text-warning border-warning/40', icon: <Clock className="h-4 w-4" /> },
-  PARTIALLY_PAID: { label: 'Partially Paid', color: 'bg-primary/10 text-primary border-primary/40', icon: <CreditCard className="h-4 w-4" /> },
-  PAID: { label: 'Paid', color: 'bg-success/10 text-success border-success/40', icon: <CheckCircle className="h-4 w-4" /> },
-  OVERDUE: { label: 'Overdue', color: 'bg-destructive/10 text-destructive border-destructive/40', icon: <AlertCircle className="h-4 w-4" /> },
-  CANCELLED: { label: 'Cancelled', color: 'bg-muted-foreground/10 text-foreground border-border', icon: <AlertCircle className="h-4 w-4" /> },
+const STATUS_CONFIG: Record<string, { label: string }> = {
+  PENDING: { label: 'Pending' },
+  PARTIALLY_PAID: { label: 'Partially Paid' },
+  PAID: { label: 'Paid' },
+  OVERDUE: { label: 'Overdue' },
+  CANCELLED: { label: 'Cancelled' },
 }
 
 function formatCurrency(amount: number | string | null | undefined, currency = 'INR'): string {
@@ -164,15 +163,14 @@ export default function InvoiceDetailPage() {
   return (
     <div className="space-y-3">
       <PageHeader
-        title={invoice.invoiceNumber}
+        title={<span className="flex items-center gap-2">{invoice.invoiceNumber}<StatusBadge status={invoice.status}>{statusConfig.label}</StatusBadge></span>}
         leading={
-          <Button variant="ghost" size="icon" className="size-7" onClick={() => router.back()}>
+          <Button variant="ghost" size="icon" className="size-7" onClick={() => router.back()} aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         }
         actions={
           <>
-            <StatusBadge status={invoice.status}>{statusConfig.label}</StatusBadge>
             <Button variant="outline" size="sm" onClick={() => setShowPreviewDialog(true)}>
               <Printer className="mr-1 h-4 w-4" />
               Print / Download
@@ -180,7 +178,7 @@ export default function InvoiceDetailPage() {
             {canMarkPaid && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button size="sm" className="bg-success hover:bg-success">
+                  <Button size="sm">
                     <CreditCard className="mr-1 h-4 w-4" />
                     Mark as Paid
                   </Button>
@@ -194,11 +192,7 @@ export default function InvoiceDetailPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleMarkPaid}
-                      className="bg-success hover:bg-success"
-                      disabled={markPaid.isPending}
-                    >
+                    <AlertDialogAction onClick={handleMarkPaid} disabled={markPaid.isPending}>
                       {markPaid.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Confirm Payment
                     </AlertDialogAction>
@@ -210,104 +204,103 @@ export default function InvoiceDetailPage() {
         }
       />
 
+      <KpiGrid cols={4}>
+        <KpiCard label="Amount" value={formatCurrency(amount, invoice.currency)} icon={DollarSign} hint={statusConfig.label} />
+        <KpiCard
+          label="Agreement value"
+          value={formatCurrency(invoice.vendorAgreement?.agreedAmount, invoice.currency)}
+          icon={Receipt}
+          hint={invoice.vendorAgreement?.vendorName}
+        />
+        <KpiCard label="Issued" value={format(new Date(invoice.issuedAt), 'd MMM yyyy')} icon={Calendar} />
+        <KpiCard
+          label={invoice.paidAt ? 'Paid on' : 'Due'}
+          value={
+            invoice.paidAt
+              ? format(new Date(invoice.paidAt), 'd MMM yyyy')
+              : invoice.dueDate
+                ? format(new Date(invoice.dueDate), 'd MMM yyyy')
+                : '-'
+          }
+          icon={invoice.paidAt ? CheckCircle : Clock}
+        />
+      </KpiGrid>
+
       <div className="grid gap-3 md:grid-cols-2">
-        {/* Invoice Details */}
-        <Card>
-          <CardHeader className="p-3 pb-0">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Receipt className="h-5 w-5" />
-              Invoice Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 p-3">
-            <div className="flex justify-between items-center py-2 border-b">
-              <span className="text-muted-foreground">Amount</span>
-              <span className="text-lg font-bold text-success">{formatCurrency(amount, invoice.currency)}</span>
+        <Panel title="Invoice details" icon={Receipt}>
+          <dl className="divide-border/60 divide-y text-sm">
+            <div className="flex items-center justify-between py-2">
+              <dt className="text-muted-foreground">Invoice number</dt>
+              <dd className="font-medium">{invoice.invoiceNumber}</dd>
             </div>
-            <div className="flex justify-between items-center py-1">
-              <span className="text-muted-foreground">Invoice Number</span>
-              <span className="font-medium">{invoice.invoiceNumber}</span>
+            <div className="flex items-center justify-between py-2">
+              <dt className="text-muted-foreground">Status</dt>
+              <dd><StatusBadge status={invoice.status}>{statusConfig.label}</StatusBadge></dd>
             </div>
-            <div className="flex justify-between items-center py-1">
-              <span className="text-muted-foreground">Status</span>
-              <StatusBadge status={invoice.status}>{statusConfig.label}</StatusBadge>
-            </div>
-            <div className="flex justify-between items-center py-1">
-              <span className="text-muted-foreground">Issued Date</span>
-              <span className="font-medium">{format(new Date(invoice.issuedAt), 'PPP')}</span>
+            <div className="flex items-center justify-between py-2">
+              <dt className="text-muted-foreground">Issued date</dt>
+              <dd className="font-medium">{format(new Date(invoice.issuedAt), 'PPP')}</dd>
             </div>
             {invoice.dueDate && (
-              <div className="flex justify-between items-center py-1">
-                <span className="text-muted-foreground">Due Date</span>
-                <span className="font-medium">{format(new Date(invoice.dueDate), 'PPP')}</span>
+              <div className="flex items-center justify-between py-2">
+                <dt className="text-muted-foreground">Due date</dt>
+                <dd className="font-medium">{format(new Date(invoice.dueDate), 'PPP')}</dd>
               </div>
             )}
             {invoice.paidAt && (
-              <div className="flex justify-between items-center py-1">
-                <span className="text-muted-foreground">Paid Date</span>
-                <span className="font-medium text-success">{format(new Date(invoice.paidAt), 'PPP')}</span>
+              <div className="flex items-center justify-between py-2">
+                <dt className="text-muted-foreground">Paid date</dt>
+                <dd className="font-medium">{format(new Date(invoice.paidAt), 'PPP')}</dd>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </dl>
+        </Panel>
 
-        {/* Vendor & Event Info */}
-        <Card>
-          <CardHeader className="p-3 pb-0">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Building className="h-5 w-5" />
-              Vendor & Event
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 p-3">
-            {invoice.vendorAgreement && (
-              <>
-                <div className="py-2 border-b">
-                  <p className="text-sm text-muted-foreground mb-1">Vendor</p>
-                  <p className="font-semibold">{invoice.vendorAgreement.vendorName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Agreement: {formatCurrency(invoice.vendorAgreement.agreedAmount)}
-                  </p>
-                </div>
-
-                {invoice.vendorAgreement.activeEvent && (
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Event</p>
-                      <Link
-                        href={`/ops/events/${invoice.vendorAgreement.activeEvent.id}`}
-                        className="font-semibold hover:text-primary flex items-center gap-1"
-                      >
-                        {invoice.vendorAgreement.activeEvent.clientName}
-                        <ExternalLink className="h-4 w-4" />
-                      </Link>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {invoice.vendorAgreement.activeEvent.eventType}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{format(new Date(invoice.vendorAgreement.activeEvent.eventDate), 'PPP')}</span>
-                    </div>
-
-                    {invoice.vendorAgreement.activeEvent.venueName && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Building className="h-4 w-4 text-muted-foreground" />
-                        <span>{invoice.vendorAgreement.activeEvent.venueName}</span>
-                      </div>
-                    )}
+        <Panel title="Vendor and event" icon={Building}>
+          {invoice.vendorAgreement ? (
+            <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-muted-foreground text-xs">Vendor</p>
+                <p className="font-semibold">{invoice.vendorAgreement.vendorName}</p>
+                <p className="text-muted-foreground">
+                  Agreement: {formatCurrency(invoice.vendorAgreement.agreedAmount)}
+                </p>
+              </div>
+              {invoice.vendorAgreement.activeEvent && (
+                <div className="space-y-2 border-t pt-3">
+                  <div>
+                    <p className="text-muted-foreground text-xs">Event</p>
+                    <Link
+                      href={`/ops/events/${invoice.vendorAgreement.activeEvent.id}`}
+                      className="text-primary flex items-center gap-1 font-semibold hover:underline"
+                    >
+                      {invoice.vendorAgreement.activeEvent.clientName}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                    <p className="text-muted-foreground capitalize">{invoice.vendorAgreement.activeEvent.eventType}</p>
                   </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="text-muted-foreground h-4 w-4" />
+                    <span>{format(new Date(invoice.vendorAgreement.activeEvent.eventDate), 'PPP')}</span>
+                  </div>
+                  {invoice.vendorAgreement.activeEvent.venueName && (
+                    <div className="flex items-center gap-2">
+                      <Building className="text-muted-foreground h-4 w-4" />
+                      <span>{invoice.vendorAgreement.activeEvent.venueName}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground py-4 text-center text-sm">No agreement linked to this invoice.</p>
+          )}
+        </Panel>
       </div>
 
-      {/* Line Items */}
+      {/* Line items */}
       {invoice.items && invoice.items.length > 0 && (
-        <div className="space-y-1.5">
+        <Panel title="Line items" description={`${invoice.items.length} item${invoice.items.length === 1 ? '' : 's'}`} bodyClassName="px-0 pb-0">
           <DataTable
             data={invoice.items}
             rowKey={(item) => `${item.description}-${item.quantity}-${item.rate}`}
@@ -315,11 +308,11 @@ export default function InvoiceDetailPage() {
             exportFilename="invoice-items"
             columns={itemColumns}
           />
-          <div className="flex justify-end gap-3 px-3 text-sm font-semibold">
+          <div className="flex justify-end gap-3 border-t px-3.5 py-3 text-sm font-semibold">
             <span>Total</span>
-            <span>{formatCurrency(amount, invoice.currency)}</span>
+            <span className="tabular">{formatCurrency(amount, invoice.currency)}</span>
           </div>
-        </div>
+        </Panel>
       )}
 
       {/* Preview Dialog */}

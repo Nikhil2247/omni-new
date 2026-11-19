@@ -1,25 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'next/navigation'
-import {
-  ArrowLeft,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  Laptop,
-  LogIn,
-  LogOut,
-  Mail,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  ShieldOff,
-  UserCog,
-  XCircle,
-} from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { ArrowLeft, Laptop, LogOut, Mail, Shield, ShieldAlert, ShieldCheck, UserCog } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { useDeleteUser } from '@/hooks/queries/use-admin-catalog'
 import {
   useAdminRoles,
   useAdminUser,
@@ -30,19 +16,19 @@ import {
   useUserSessions,
 } from '@/hooks/queries/use-admin'
 import type { AdminUser } from '@/lib/api/types/admin.types'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import {
   ConfirmDialog,
   DataTable,
   PageHeader,
+  Panel,
+  StatusBadge,
   type DataColumn,
 } from '@/components/dash'
 import { Skeleton } from '@/components/ui/skeleton'
-
 type UserSession = NonNullable<AdminUser['sessions']>[number]
 
 export default function SystemUserDetailPage() {
@@ -59,12 +45,15 @@ export default function SystemUserDetailPage() {
   const assignRole = useAssignUserRole(userId ?? '')
   const revokeSession = useRevokeSession(userId ?? '')
   const revokeAll = useRevokeAllSessions(userId ?? '')
+  const deleteUser = useDeleteUser()
+  const router = useRouter()
 
   const [status, setStatus] = useState('')
   const [selectedRole, setSelectedRole] = useState('')
   const [isChangingRole, setIsChangingRole] = useState(false)
   const [confirmStatusOpen, setConfirmStatusOpen] = useState(false)
   const [confirmRevokeAllOpen, setConfirmRevokeAllOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   useEffect(() => {
     if (user?.status) setStatus(user.status)
@@ -151,269 +140,220 @@ export default function SystemUserDetailPage() {
     },
   ]
 
+  const isProtectedAdmin = Boolean(user.userRoles?.some((r) => r.role.name === 'ADMIN_SYSTEM'))
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PageHeader
-        title={formatName(user)}
+        title="User details"
         leading={
           <Button asChild variant="ghost" size="sm" className="-ml-2">
             <Link href="/system/users">
-              <ArrowLeft className="mr-1 h-4 w-4" />Users
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Users
             </Link>
           </Button>
         }
       />
 
-      {/* Profile overview card */}
-      <Card className="overflow-hidden">
-        <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            {/* Avatar */}
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
-              {initials}
-            </div>
-            {/* Name + email + badges */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Mail className="h-3.5 w-3.5" />
-                {user.email}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={statusVariant(user.status)} className="text-xs">
-                  {formatStatus(user.status)}
-                </Badge>
-                {currentRole && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Shield className="mr-1 h-3 w-3" />
-                    {currentRole.role.displayName}
-                  </Badge>
-                )}
-                {user.emailVerified ? (
-                  <Badge variant="outline" className="gap-1 text-xs text-success border-success/40">
-                    <CheckCircle2 className="h-3 w-3" />Email verified
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="gap-1 text-xs text-warning border-warning/40">
-                    <XCircle className="h-3 w-3" />Unverified
-                  </Badge>
-                )}
-              </div>
-            </div>
+      {/* Identity card */}
+      <section className="bg-card rounded-xl border p-4 shadow-xs">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="bg-primary/10 text-primary flex size-14 shrink-0 items-center justify-center rounded-full text-lg font-semibold">
+            {initials}
           </div>
-          {/* Quick stats */}
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="text-center">
-              <p className="text-lg font-semibold">{sessionList.length}</p>
-              <p className="text-xs text-muted-foreground">Active sessions</p>
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="truncate text-lg font-semibold tracking-tight">{formatName(user)}</h2>
+              <StatusBadge status={user.status}>{formatStatus(user.status)}</StatusBadge>
             </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold">{user.twoFactorEnabled ? 'On' : 'Off'}</p>
-              <p className="text-xs text-muted-foreground">2FA</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold">{user.hasCompletedOnboarding ? '✓' : '–'}</p>
-              <p className="text-xs text-muted-foreground">Onboarding</p>
-            </div>
+            <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
+              <Mail className="size-3.5" aria-hidden />
+              <span className="truncate">{user.email}</span>
+            </p>
+            <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
+              <Shield className="size-3.5" aria-hidden />
+              {currentRole ? currentRole.role.displayName : 'No role assigned'}
+            </p>
           </div>
         </div>
-      </Card>
+        <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t pt-4 sm:grid-cols-3 lg:grid-cols-6">
+          <Fact label="Joined" value={formatDateTime(user.createdAt)} />
+          <Fact label="Last login" value={user.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'Never'} />
+          <Fact label="Email" value={user.emailVerified ? 'Verified' : 'Unverified'} />
+          <Fact label="Two-factor" value={user.twoFactorEnabled ? 'Enabled' : 'Disabled'} />
+          <Fact label="Onboarding" value={user.hasCompletedOnboarding ? 'Complete' : 'Pending'} />
+          <Fact label="Active sessions" value={String(sessionList.length)} />
+        </dl>
+      </section>
 
-      {/* Management + Details */}
-      <div className="grid gap-3 lg:grid-cols-3">
-
-        {/* Left: Status + Role management (spans 2 cols) */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCog className="h-4 w-4 text-muted-foreground" />
-              Account management
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-
-            {/* Status section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Account status</p>
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          {/* Roles and access */}
+          <Panel title="Role and access" icon={UserCog} description="Controls what this user can do">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-sm font-medium">Assigned role</Label>
+                  {currentRole ? (
+                    <span className="text-sm">{currentRole.role.displayName}</span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">No role</span>
+                  )}
                 </div>
-                <Badge variant={statusVariant(user.status)}>{formatStatus(user.status)}</Badge>
-              </div>
-              <div className="flex gap-2">
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="SUSPENDED">Suspended</SelectItem>
-                    <SelectItem value="DELETED">Deleted</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={() =>
-                    status === 'SUSPENDED' || status === 'DELETED'
-                      ? setConfirmStatusOpen(true)
-                      : updateStatus.mutate(status)
-                  }
-                  disabled={!status || updateStatus.isPending || status === user.status}
-                >
-                  {updateStatus.isPending ? 'Saving...' : 'Apply'}
-                </Button>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Role section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Assigned role</p>
-                </div>
-                {currentRole ? (
-                  <Badge variant="secondary">
-                    <Shield className="mr-1 h-3 w-3" />
-                    {currentRole.role.displayName}
-                  </Badge>
+                {isChangingRole || !currentRole ? (
+                  <div className="space-y-2">
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={currentRole ? 'Select new role' : 'Assign a role'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {roles
+                          ?.filter((r) => r.id !== currentRole?.role.id)
+                          .map((role) => (
+                            <SelectItem key={role.id} value={role.id}>
+                              {role.displayName}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex gap-2">
+                      <Button onClick={handleRoleSave} disabled={!selectedRole || isSavingRole} className="flex-1">
+                        {isSavingRole ? 'Saving...' : currentRole ? 'Change role' : 'Assign role'}
+                      </Button>
+                      {currentRole && (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setIsChangingRole(false)
+                            setSelectedRole('')
+                          }}
+                          disabled={isSavingRole}
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 ) : (
-                  <span className="text-xs text-muted-foreground">No role</span>
+                  <Button variant="outline" size="sm" onClick={() => setIsChangingRole(true)}>
+                    Change role
+                  </Button>
                 )}
               </div>
 
-              {isChangingRole || !currentRole ? (
-                <div className="space-y-2">
-                  <Select value={selectedRole} onValueChange={setSelectedRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={currentRole ? 'Select new role' : 'Assign a role'} />
+              <Separator />
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Account status</Label>
+                <div className="flex gap-2">
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      {roles
-                        ?.filter((r) => r.id !== currentRole?.role.id)
-                        .map((role) => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.displayName}
-                          </SelectItem>
-                        ))}
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                      <SelectItem value="DELETED">Deleted</SelectItem>
                     </SelectContent>
                   </Select>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleRoleSave}
-                      disabled={!selectedRole || isSavingRole}
-                      className="flex-1"
-                    >
-                      {isSavingRole ? 'Saving...' : currentRole ? 'Change role' : 'Assign role'}
-                    </Button>
-                    {currentRole && (
-                      <Button
-                        variant="outline"
-                        onClick={() => { setIsChangingRole(false); setSelectedRole('') }}
-                        disabled={isSavingRole}
-                      >
-                        Cancel
-                      </Button>
-                    )}
-                  </div>
+                  <Button
+                    onClick={() =>
+                      status === 'SUSPENDED' || status === 'DELETED'
+                        ? setConfirmStatusOpen(true)
+                        : updateStatus.mutate(status)
+                    }
+                    disabled={!status || updateStatus.isPending || status === user.status}
+                  >
+                    {updateStatus.isPending ? 'Saving...' : 'Apply'}
+                  </Button>
                 </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setIsChangingRole(true)}
-                >
-                  Change role
-                </Button>
-              )}
+                <p className="text-muted-foreground text-xs">Suspending or deleting asks for confirmation first.</p>
+              </div>
             </div>
+          </Panel>
 
-          </CardContent>
-        </Card>
+          {/* Sessions / activity */}
+          <DataTable
+            data={sessionList}
+            columns={sessionColumns}
+            rowKey={(session) => session.id}
+            toolbarRight={
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmRevokeAllOpen(true)}
+                disabled={revokeAll.isPending || sessionList.length === 0}
+              >
+                {revokeAll.isPending ? 'Revoking...' : 'Revoke all sessions'}
+              </Button>
+            }
+            rowActions={(session) => [
+              {
+                label: 'Revoke session',
+                icon: LogOut,
+                danger: true,
+                disabled: revokeSession.isPending,
+                onClick: () => revokeSession.mutate(session.id),
+                confirm: {
+                  title: 'Revoke this session?',
+                  description: 'The device will be signed out immediately.',
+                  confirmLabel: 'Revoke',
+                },
+              },
+            ]}
+            emptyTitle="No active sessions"
+            emptyIcon={Laptop}
+          />
+        </div>
 
-        {/* Right: Account details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-              Account details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-0 divide-y text-sm">
-            <DetailRow label="Status">
-              <Badge variant={statusVariant(user.status)} className="text-xs">{formatStatus(user.status)}</Badge>
-            </DetailRow>
-            <DetailRow label="Email verified">
-              {user.emailVerified
-                ? <span className="flex items-center gap-1 text-success"><CheckCircle2 className="h-3.5 w-3.5" />Yes</span>
-                : <span className="flex items-center gap-1 text-warning"><XCircle className="h-3.5 w-3.5" />No</span>}
-            </DetailRow>
-            <DetailRow label="2FA">
-              {user.twoFactorEnabled
-                ? <span className="flex items-center gap-1 text-success"><ShieldCheck className="h-3.5 w-3.5" />Enabled</span>
-                : <span className="flex items-center gap-1 text-muted-foreground"><ShieldOff className="h-3.5 w-3.5" />Disabled</span>}
-            </DetailRow>
-            <DetailRow label="Onboarding">
-              <span className={user.hasCompletedOnboarding ? 'text-success' : 'text-warning'}>
-                {user.hasCompletedOnboarding ? 'Complete' : 'Pending'}
-              </span>
-            </DetailRow>
-            <DetailRow label="Last login">
-              <span className="flex items-center gap-1">
-                <LogIn className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : '—'}
-              </span>
-            </DetailRow>
-            <DetailRow label="Created">
-              <span className="flex items-center gap-1">
-                <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-                {formatDateTime(user.createdAt)}
-              </span>
-            </DetailRow>
-            <DetailRow label="Updated">
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                {formatDateTime(user.updatedAt)}
-              </span>
-            </DetailRow>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Panel title="Account details" icon={ShieldCheck}>
+            <dl className="divide-border/60 divide-y text-sm">
+              <DetailRow label="Status">
+                <StatusBadge status={user.status}>{formatStatus(user.status)}</StatusBadge>
+              </DetailRow>
+              <DetailRow label="Email verified">{user.emailVerified ? 'Yes' : 'No'}</DetailRow>
+              <DetailRow label="Two-factor">{user.twoFactorEnabled ? 'Enabled' : 'Disabled'}</DetailRow>
+              <DetailRow label="Onboarding">{user.hasCompletedOnboarding ? 'Complete' : 'Pending'}</DetailRow>
+              <DetailRow label="Last login">{user.lastLoginAt ? formatDateTime(user.lastLoginAt) : '—'}</DetailRow>
+              <DetailRow label="Created">{formatDateTime(user.createdAt)}</DetailRow>
+              <DetailRow label="Updated">{formatDateTime(user.updatedAt)}</DetailRow>
+            </dl>
+          </Panel>
+
+          <section className="border-destructive/40 bg-card rounded-xl border p-3.5 shadow-xs">
+            <h2 className="text-destructive text-sm font-semibold">Danger zone</h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Deleting disables this account and signs the user out everywhere. Their records are kept for
+              compliance. System administrators cannot be deleted.
+            </p>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="mt-3 w-full"
+              disabled={user.status === 'DELETED' || isProtectedAdmin}
+              onClick={() => setConfirmDeleteOpen(true)}
+            >
+              {user.status === 'DELETED' ? 'Already deleted' : 'Delete user'}
+            </Button>
+          </section>
+        </div>
       </div>
 
-      {/* Sessions */}
-      <DataTable
-        data={sessionList}
-        columns={sessionColumns}
-        rowKey={(session) => session.id}
-        toolbarRight={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setConfirmRevokeAllOpen(true)}
-            disabled={revokeAll.isPending || sessionList.length === 0}
-            className="text-destructive hover:text-destructive"
-          >
-            {revokeAll.isPending ? 'Revoking...' : 'Revoke all sessions'}
-          </Button>
-        }
-        rowActions={(session) => [
-          {
-            label: 'Revoke session',
-            icon: LogOut,
-            danger: true,
-            disabled: revokeSession.isPending,
-            onClick: () => revokeSession.mutate(session.id),
-            confirm: {
-              title: 'Revoke this session?',
-              description: 'The device will be signed out immediately.',
-              confirmLabel: 'Revoke',
-            },
-          },
-        ]}
-        emptyTitle="No active sessions"
-        emptyIcon={Laptop}
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Delete this user?"
+        description="The account is disabled and signed out on every device. This cannot be undone from here."
+        confirmLabel="Delete user"
+        loading={deleteUser.isPending}
+        onConfirm={async () => {
+          await deleteUser.mutateAsync(user.id)
+          router.push('/system/users')
+        }}
       />
-
       <ConfirmDialog
         open={confirmStatusOpen}
         onOpenChange={setConfirmStatusOpen}
@@ -436,11 +376,20 @@ export default function SystemUserDetailPage() {
   )
 }
 
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-muted-foreground text-xs">{label}</dt>
+      <dd className="truncate text-sm font-medium">{value}</dd>
+    </div>
+  )
+}
+
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{children}</span>
+    <div className="flex items-center justify-between gap-3 py-2">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium">{children}</dd>
     </div>
   )
 }
@@ -474,10 +423,4 @@ function formatDateTime(value: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date)
-}
-
-function statusVariant(status: string): 'default' | 'destructive' | 'secondary' {
-  if (status === 'ACTIVE') return 'default'
-  if (status === 'SUSPENDED' || status === 'DELETED') return 'destructive'
-  return 'secondary'
 }

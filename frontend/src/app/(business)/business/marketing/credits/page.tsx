@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { PageHeader, DataTable, FilterSelect, StatCard, StatGrid } from '@/components/dash';
+import { PageHeader, DataTable, FilterSelect, KpiCard, KpiGrid } from '@/components/dash';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Coins,
   Plus,
@@ -41,13 +40,13 @@ function formatCurrency(amount: number, currency: string = 'INR'): string {
   }).format(amount);
 }
 
-const transactionTypeConfig: Record<CreditTransactionType, { icon: typeof Gift; color: string; label: string }> = {
-  SUBSCRIPTION_GRANT: { icon: Gift, color: 'text-success', label: 'Plan Grant' },
-  PURCHASE: { icon: ShoppingCart, color: 'text-primary', label: 'Purchase' },
-  CAMPAIGN_SPEND: { icon: TrendingDown, color: 'text-destructive', label: 'Campaign Spend' },
-  REFUND: { icon: ArrowUpRight, color: 'text-success', label: 'Refund' },
-  ADJUSTMENT: { icon: Receipt, color: 'text-primary', label: 'Adjustment' },
-  EXPIRY: { icon: ArrowDownRight, color: 'text-warning', label: 'Expired' },
+const transactionTypeConfig: Record<CreditTransactionType, { icon: typeof Gift; label: string }> = {
+  SUBSCRIPTION_GRANT: { icon: Gift, label: 'Plan Grant' },
+  PURCHASE: { icon: ShoppingCart, label: 'Purchase' },
+  CAMPAIGN_SPEND: { icon: TrendingDown, label: 'Campaign Spend' },
+  REFUND: { icon: ArrowUpRight, label: 'Refund' },
+  ADJUSTMENT: { icon: Receipt, label: 'Adjustment' },
+  EXPIRY: { icon: ArrowDownRight, label: 'Expired' },
 };
 
 export default function AdCreditsPage() {
@@ -110,20 +109,20 @@ export default function AdCreditsPage() {
         }
       />
 
-      <StatGrid className="lg:grid-cols-3">
-        <StatCard
+      <KpiGrid cols={3}>
+        <KpiCard
           label="Total Balance"
           icon={Coins}
-          accent="text-primary"
-          value={isLoadingBalance ? <Skeleton className="h-6 w-16" /> : formatNumber(balance?.balance || 0)}
+          value={formatNumber(balance?.balance || 0)}
+          loading={isLoadingBalance}
           hint="Purchased credits + monthly plan grants, pooled for campaigns"
         />
-        <StatCard
+        <KpiCard
           label="30-Day Spending"
           icon={TrendingDown}
           value={formatNumber(spending?.totalSpent || 0)}
         />
-        <div className="bg-card flex items-center justify-between gap-2 rounded-lg border px-3 py-2">
+        <div className="bg-card flex items-center justify-between gap-2 rounded-xl border p-3.5 shadow-xs">
           <div className="min-w-0">
             <p className="text-muted-foreground truncate text-xs">Monthly from Plan</p>
             <p className="text-lg leading-tight font-semibold tabular-nums">+{formatNumber(monthlyCredits)}</p>
@@ -144,14 +143,14 @@ export default function AdCreditsPage() {
             </Button>
           )}
         </div>
-      </StatGrid>
+      </KpiGrid>
 
       {spending?.byCampaignType && Object.keys(spending.byCampaignType).length > 0 && (
-        <StatGrid>
+        <KpiGrid>
           {Object.entries(spending.byCampaignType).map(([type, amount]) => (
-            <StatCard key={type} label={type.replace('_', ' ')} value={formatNumber(amount as number)} />
+            <KpiCard key={type} label={type.replace('_', ' ')} value={formatNumber(amount as number)} />
           ))}
-        </StatGrid>
+        </KpiGrid>
       )}
 
       <DataTable<AdCreditTransaction>
@@ -178,11 +177,11 @@ export default function AdCreditsPage() {
             sortValue: (t) => t.type,
             exportValue: (t) => transactionTypeConfig[t.type]?.label ?? t.type,
             cell: (t) => {
-              const config = transactionTypeConfig[t.type] || { icon: Receipt, color: 'text-muted-foreground', label: t.type };
+              const config = transactionTypeConfig[t.type] || { icon: Receipt, label: t.type };
               const Icon = config.icon;
               return (
                 <div className="flex items-center gap-2 text-sm">
-                  <Icon className={`h-4 w-4 ${config.color}`} />
+                  <Icon className="text-muted-foreground h-4 w-4" />
                   <span>{config.label}</span>
                 </div>
               );
@@ -206,7 +205,7 @@ export default function AdCreditsPage() {
             cell: (t) => {
               const isCredit = ['SUBSCRIPTION_GRANT', 'PURCHASE', 'REFUND'].includes(t.type);
               return (
-                <span className={`text-sm font-medium ${isCredit ? 'text-success' : 'text-destructive'}`}>
+                <span className={`text-sm font-medium ${isCredit ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {isCredit ? '+' : '-'}
                   {formatNumber(Math.abs(t.amount))}
                 </span>

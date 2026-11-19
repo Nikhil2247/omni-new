@@ -6,9 +6,8 @@ import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessTasks, useUpdateTaskStatus, useSubmitTaskProof } from '@/hooks/queries/use-business'
 import { VendorFeatureGate } from '@/components/common/vendor-feature-gate'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, StatCard, StatGrid } from '@/components/dash'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, KpiCard, KpiGrid } from '@/components/dash'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import {
   Dialog,
@@ -34,20 +33,20 @@ import {
 } from 'lucide-react'
 import type { BusinessTask } from '@/lib/api/types/business.types'
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PENDING: { label: 'Pending', color: 'bg-warning/10 text-warning', icon: Clock },
-  ASSIGNED: { label: 'Assigned', color: 'bg-primary/10 text-primary', icon: CheckSquare },
-  IN_PROGRESS: { label: 'In Progress', color: 'bg-primary/10 text-primary', icon: PlayCircle },
-  PROOF_SUBMITTED: { label: 'Proof Submitted', color: 'bg-primary/10 text-primary', icon: Upload },
-  COMPLETED: { label: 'Completed', color: 'bg-success/10 text-success', icon: CheckCircle },
-  CANCELLED: { label: 'Cancelled', color: 'bg-muted text-foreground', icon: XCircle },
+const statusConfig: Record<string, { label: string; icon: React.ElementType }> = {
+  PENDING: { label: 'Pending', icon: Clock },
+  ASSIGNED: { label: 'Assigned', icon: CheckSquare },
+  IN_PROGRESS: { label: 'In Progress', icon: PlayCircle },
+  PROOF_SUBMITTED: { label: 'Proof Submitted', icon: Upload },
+  COMPLETED: { label: 'Completed', icon: CheckCircle },
+  CANCELLED: { label: 'Cancelled', icon: XCircle },
 }
 
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  URGENT: { label: 'Urgent', color: 'bg-destructive/10 text-destructive' },
-  HIGH: { label: 'High', color: 'bg-warning/10 text-warning' },
-  NORMAL: { label: 'Normal', color: 'bg-primary/10 text-primary' },
-  LOW: { label: 'Low', color: 'bg-muted text-foreground' },
+const priorityConfig: Record<string, { label: string }> = {
+  URGENT: { label: 'Urgent' },
+  HIGH: { label: 'High' },
+  NORMAL: { label: 'Normal' },
+  LOW: { label: 'Low' },
 }
 
 function TasksPageContent() {
@@ -133,7 +132,7 @@ function TasksPageContent() {
         <PageHeader title="Assigned Tasks" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto h-8 w-8 text-warning mb-2" />
+            <AlertTriangle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first.
@@ -151,12 +150,12 @@ function TasksPageContent() {
     <div className="space-y-3">
       <PageHeader title="Assigned Tasks" />
 
-      <StatGrid>
-        <StatCard label="Total Tasks" value={totalTasks} icon={CheckSquare} />
-        <StatCard label="Pending" value={pendingTasks} icon={Clock} accent="text-warning" />
-        <StatCard label="Completed" value={completedTasks} icon={CheckCircle} accent="text-success" />
-        <StatCard label="Overdue" value={overdueTasks} icon={AlertTriangle} accent="text-destructive" />
-      </StatGrid>
+      <KpiGrid>
+        <KpiCard label="Total tasks" value={totalTasks} icon={CheckSquare} loading={tasksLoading} />
+        <KpiCard label="Pending" value={pendingTasks} icon={Clock} loading={tasksLoading} />
+        <KpiCard label="Completed" value={completedTasks} icon={CheckCircle} loading={tasksLoading} />
+        <KpiCard label="Overdue" value={overdueTasks} icon={AlertTriangle} loading={tasksLoading} />
+      </KpiGrid>
 
       <DataTable<BusinessTask>
         data={filteredTasks}
@@ -260,12 +259,12 @@ function TasksPageContent() {
           {selectedTask && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Badge className={statusConfig[selectedTask.status]?.color || ''}>
-                  {statusConfig[selectedTask.status]?.label || selectedTask.status}
-                </Badge>
-                <Badge variant="outline" className={priorityConfig[selectedTask.priority]?.color || ''}>
-                  {priorityConfig[selectedTask.priority]?.label || selectedTask.priority}
-                </Badge>
+                <StatusBadge status={selectedTask.status}>
+                  {statusConfig[selectedTask.status]?.label}
+                </StatusBadge>
+                <StatusBadge status={selectedTask.priority}>
+                  {priorityConfig[selectedTask.priority]?.label}
+                </StatusBadge>
               </div>
 
               {selectedTask.description && (
@@ -334,7 +333,7 @@ function TasksPageContent() {
                   )}
                   {selectedTask.completedAt && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-success" />
+                      <div className="w-2 h-2 rounded-full bg-primary" />
                       <span>Completed: {format(new Date(selectedTask.completedAt), 'MMM d, yyyy')}</span>
                     </div>
                   )}

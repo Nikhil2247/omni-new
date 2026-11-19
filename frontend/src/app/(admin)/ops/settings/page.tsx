@@ -1,39 +1,20 @@
 'use client'
 
-import { PageHeader } from '@/components/dash'
-import { User, Bell, Shield } from 'lucide-react'
-import { SettingsCard } from '@/components/settings/settings-card'
+import { useEffect } from 'react'
+import { SettingsShell } from '@/components/dash'
+import { ProfileForm } from '@/components/settings/profile-form'
+import { useUmami } from '@/hooks/use-umami'
 
 export default function OpsSettingsPage() {
-  return (
-    <div className="space-y-3">
-      <PageHeader title="Settings" />
+  const { track } = useUmami()
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <SettingsCard
-          title="Profile"
-          description="Update your personal details and account information."
-          href="/ops/settings/profile"
-          icon={User}
-          iconColor="text-primary"
-        />
-        
-        <SettingsCard
-          title="Notifications"
-          description="Manage notification preferences for operations alerts."
-          href="/ops/settings/notifications"
-          icon={Bell}
-          iconColor="text-warning"
-        />
-        
-        <SettingsCard
-          title="Security"
-          description="Manage sessions, password, and two-factor authentication."
-          href="/ops/settings/security"
-          icon={Shield}
-          iconColor="text-success"
-        />
-      </div>
-    </div>
+  useEffect(() => {
+    track('ops:settings:page_view', { section: 'settings_overview' })
+  }, [track])
+
+  return (
+    <SettingsShell basePath="/ops/settings">
+      <ProfileForm />
+    </SettingsShell>
   )
 }

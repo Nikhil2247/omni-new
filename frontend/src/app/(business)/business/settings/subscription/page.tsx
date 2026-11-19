@@ -393,7 +393,7 @@ export default function VendorSubscriptionSettingsPage() {
                         .map((feature) => (
                           <div key={feature.id} className="flex items-center justify-between text-sm text-muted-foreground">
                             <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-3 w-3 text-success" />
+                              <CheckCircle2 className="h-3 w-3 text-primary" />
                               <span>{feature.featureName}</span>
                             </div>
                             <span className="text-xs">
@@ -504,8 +504,8 @@ export default function VendorSubscriptionSettingsPage() {
             ) : adCredits ? (
               <>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-warning/10">
-                    <Coins className="h-6 w-6 text-warning" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <Coins className="h-6 w-6 text-primary" />
                   </div>
                   <div>
                     <p className="text-2xl font-semibold">{adCredits.balance.toLocaleString()}</p>
@@ -562,7 +562,7 @@ export default function VendorSubscriptionSettingsPage() {
                 className="h-auto py-4 flex flex-col items-center gap-2"
                 onClick={() => setUpgradeModalOpen(true)}
               >
-                <ArrowUp className="h-5 w-5 text-success" />
+                <ArrowUp className="h-5 w-5 text-primary" />
                 <span>Upgrade Plan</span>
               </Button>
             )}
@@ -573,7 +573,7 @@ export default function VendorSubscriptionSettingsPage() {
                 className="h-auto py-4 flex flex-col items-center gap-2"
                 onClick={() => setDowngradeModalOpen(true)}
               >
-                <ArrowDown className="h-5 w-5 text-warning" />
+                <ArrowDown className="h-5 w-5 text-muted-foreground" />
                 <span>Downgrade Plan</span>
               </Button>
             )}
@@ -599,7 +599,7 @@ export default function VendorSubscriptionSettingsPage() {
                 {resumeMutation.isPending ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Play className="h-5 w-5 text-success" />
+                  <Play className="h-5 w-5 text-primary" />
                 )}
                 <span>Resume Subscription</span>
               </Button>
@@ -652,16 +652,14 @@ export default function VendorSubscriptionSettingsPage() {
                         indicatorClassName={
                           isAtLimit
                             ? 'bg-destructive'
-                            : isNearLimit
-                            ? 'bg-warning'
                             : undefined
                         }
                       />
                     )}
-                    <p className={`text-xs ${isAtLimit ? 'text-destructive' : isNearLimit ? 'text-warning' : 'text-muted-foreground'}`}>
+                    <p className={`text-xs ${isAtLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
                       {feature.isUnlimited ? (
                         <span className="flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3 text-success" />
+                          <CheckCircle2 className="h-3 w-3 text-primary" />
                           Unlimited
                         </span>
                       ) : (

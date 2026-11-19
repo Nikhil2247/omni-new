@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell } from '@/components/dash';
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, KpiCard, KpiGrid } from '@/components/dash';
 import {
   Plus,
   Play,
@@ -13,6 +13,9 @@ import {
   Eye,
   Edit,
   Target,
+  Megaphone,
+  Eye as EyeIcon,
+  MousePointerClick,
 } from 'lucide-react';
 import { useCampaigns, usePauseCampaign, useResumeCampaign, useStopCampaign, useCancelCampaign } from '@/hooks/queries/use-subscription';
 import type { Campaign } from '@/lib/api/types/subscription.types';
@@ -42,6 +45,10 @@ export default function CampaignsPage() {
   const [search, setSearch] = useState('');
   const { data: allCampaigns, isLoading } = useCampaigns(statusFilter === 'ALL' ? undefined : statusFilter);
   const campaigns = allCampaigns?.filter((c) => !search.trim() || c.name.toLowerCase().includes(search.trim().toLowerCase()));
+  const list = allCampaigns ?? [];
+  const activeCount = list.filter((c) => c.status === 'ACTIVE').length;
+  const totalViews = list.reduce((n, c) => n + (c.impressions || 0), 0);
+  const totalClicks = list.reduce((n, c) => n + (c.clicks || 0), 0);
   const pauseCampaign = usePauseCampaign();
   const resumeCampaign = useResumeCampaign();
   const stopCampaign = useStopCampaign();
@@ -94,6 +101,13 @@ export default function CampaignsPage() {
               </Button>
             }
           />
+
+          <KpiGrid>
+            <KpiCard label="Campaigns" value={list.length} icon={Megaphone} loading={isLoading} />
+            <KpiCard label="Active" value={activeCount} icon={Target} loading={isLoading} />
+            <KpiCard label="Total views" value={formatNumber(totalViews)} icon={EyeIcon} loading={isLoading} />
+            <KpiCard label="Total clicks" value={formatNumber(totalClicks)} icon={MousePointerClick} loading={isLoading} />
+          </KpiGrid>
 
           <DataTable<Campaign>
             data={campaigns}

@@ -55,7 +55,7 @@ import type {
   UpdateServiceRequest,
   CreateServiceItemRequest,
 } from "@/lib/api/types/business.types";
-import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell } from "@/components/dash";
+import { PageHeader, DataTable, FilterSelect, StatusBadge, TwoLineCell, KpiCard, KpiGrid } from "@/components/dash";
 import { ServiceItemsForm } from "@/components/features/services/service-items-form";
 
 const PRICE_UNITS = [
@@ -332,7 +332,7 @@ export default function BusinessServicesPage() {
         <PageHeader title="Services" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-warning" />
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first before adding services.
@@ -363,6 +363,12 @@ export default function BusinessServicesPage() {
           </Button>
         }
       />
+
+      <KpiGrid cols={3}>
+        <KpiCard label="Total services" value={services?.length ?? 0} icon={Package} loading={servicesLoading} />
+        <KpiCard label="Active" value={(services ?? []).filter((s) => s.isActive).length} icon={CheckCircle} loading={servicesLoading} />
+        <KpiCard label="Inactive" value={(services ?? []).filter((s) => !s.isActive).length} icon={XCircle} loading={servicesLoading} />
+      </KpiGrid>
 
       <DataTable<VendorService>
         data={filteredServices}

@@ -139,26 +139,35 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
   useEffect(() => {
     if (headings.length === 0) return
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id)
-          }
-        })
-      },
-      { 
-        rootMargin: '-100px 0px -66% 0px',
-        threshold: 0.5
+    // The active section is the last heading that has scrolled past the top of the viewport. Computed from the
+    // scroll position (not an IntersectionObserver band), so it is always correct, including after quick scrolls.
+    // Elements are looked up on every update, never cached: the article HTML is re-rendered after hydration, which
+    // would leave cached nodes detached (they measure as top = 0, which made the last heading look "active").
+    let ticking = false
+    const update = () => {
+      ticking = false
+      let current = headings[0].id
+      for (const { id } of headings) {
+        const el = document.getElementById(id)
+        if (!el) continue
+        if (el.getBoundingClientRect().top <= 120) current = id
+        else break
       }
-    )
+      setActiveId(current)
+    }
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(update)
+    }
 
-    headings.forEach(({ id }) => {
-      const element = document.getElementById(id)
-      if (element) observer.observe(element)
-    })
-
-    return () => observer.disconnect()
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
   }, [headings])
 
   useEffect(() => {
@@ -236,7 +245,7 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
   const featuredImageUrl = getMinioViewUrl(post.featuredImage) || post.featuredImage
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-clip">
     <>
       {/* Hero Section */}
       <div className="border-line relative overflow-hidden border-b-2 border-dashed">
@@ -310,20 +319,20 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
       </div>
 
       {/* Main Content */}
-      <main className="mx-auto w-full max-w-8xl px-6 py-12 overflow-x-hidden">
+      <main className="mx-auto w-full max-w-8xl px-6 py-12 overflow-x-clip">
         <div className="flex gap-12 items-start">
           {/* Article Content */}
           <div className="flex-1 min-w-0">
             {/* Featured Image */}
             {featuredImageUrl && (
-              <div className="sk-paper mb-12 overflow-hidden p-1.5">
-                <AspectRatio ratio={16 / 9}>
+              <div className="sk-paper mx-auto mb-10 max-w-2xl overflow-hidden p-1.5 lg:mx-0">
+                <AspectRatio ratio={2 / 1}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <NextImage
                     src={featuredImageUrl}
                     alt={post.featuredImageAlt || post.title}
-                    width={1600}
-                    height={900}
+                    width={900}
+                    height={450}
                     unoptimized={true}
                     priority={true}
                     className="h-full w-full object-cover"
@@ -399,8 +408,8 @@ export default function BlogPostClient({ slug, initialPost }: BlogPostClientProp
 
           {/* Table of Contents Sidebar */}
           {headings.length > 0 && (
-            <aside className="hidden xl:block w-72 shrink-0 relative">
-              <div className="sticky top-24 flex flex-col gap-4 max-h-[calc(100vh-7rem)]">
+            <aside className="hidden xl:block w-72 shrink-0 sticky top-24 self-start">
+              <div className="flex flex-col gap-4 max-h-[calc(100vh-7rem)]">
                 {/* TOC card — fills remaining space, nav scrolls */}
                 <div className="sk-paper p-6 flex flex-col min-h-0 flex-1 overflow-hidden">
                   <div className="flex items-center gap-2 mb-4 shrink-0">

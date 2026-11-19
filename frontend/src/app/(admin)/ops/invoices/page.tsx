@@ -12,8 +12,9 @@ import {
   DataTable,
   FilterSelect,
   StatusBadge,
-  StatCard,
-  StatGrid,
+  KpiCard,
+  KpiGrid,
+  TwoLineCell,
   type DataColumn,
 } from '@/components/dash'
 import { useOpsAllInvoices, useMarkInvoicePaid, useDeleteInvoice } from '@/hooks/queries/use-ops'
@@ -78,20 +79,22 @@ export default function OpsInvoicesPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const pending = invoices.filter(i => i.status === 'PENDING').length
-    const paid = invoices.filter(i => i.status === 'PAID').length
-    const overdue = invoices.filter(i => i.status === 'OVERDUE').length
-    const totalAmount = invoices.reduce((sum, i) => {
-      const amt = typeof i.amount === 'string' ? parseFloat(i.amount) : i.amount
-      return sum + (amt || 0)
-    }, 0)
-    const paidAmount = invoices
-      .filter(i => i.status === 'PAID')
-      .reduce((sum, i) => {
-        const amt = typeof i.amount === 'string' ? parseFloat(i.amount) : i.amount
-        return sum + (amt || 0)
-      }, 0)
-    return { pending, paid, overdue, totalAmount, paidAmount }
+    const amt = (i: OpsInvoice) => {
+      const n = typeof i.amount === 'string' ? parseFloat(i.amount) : i.amount
+      return n || 0
+    }
+    const sumBy = (status: string) =>
+      invoices.filter(i => i.status === status).reduce((sum, i) => sum + amt(i), 0)
+    const countBy = (status: string) => invoices.filter(i => i.status === status).length
+    return {
+      pending: countBy('PENDING'),
+      paid: countBy('PAID'),
+      overdue: countBy('OVERDUE'),
+      totalAmount: invoices.reduce((sum, i) => sum + amt(i), 0),
+      paidAmount: sumBy('PAID'),
+      pendingAmount: sumBy('PENDING'),
+      overdueAmount: sumBy('OVERDUE'),
+    }
   }, [invoices])
 
   const handleMarkPaid = async () => {
@@ -152,9 +155,10 @@ export default function OpsInvoicesPage() {
       header: 'Vendor',
       label: 'Vendor',
       cell: (invoice) => (
-        <span className="font-medium">
-          {invoice.vendorAgreement?.vendorProfile?.businessName || invoice.vendorAgreement?.vendorName || '-'}
-        </span>
+        <TwoLineCell
+          title={invoice.vendorAgreement?.vendorProfile?.businessName || invoice.vendorAgreement?.vendorName || '-'}
+          subtitle={invoice.invoiceNumber}
+        />
       ),
       sortValue: (invoice) =>
         invoice.vendorAgreement?.vendorProfile?.businessName || invoice.vendorAgreement?.vendorName,
@@ -238,18 +242,12 @@ export default function OpsInvoicesPage() {
     <div className="space-y-3">
       <PageHeader title="Invoices" />
 
-      <StatGrid className="lg:grid-cols-5">
-        <StatCard label="Total Invoices" value={totalInvoices} icon={FileText} />
-        <StatCard label="Pending" value={stats.pending} icon={Clock} accent="text-warning" />
-        <StatCard label="Paid" value={stats.paid} icon={CheckCircle} accent="text-success" />
-        <StatCard label="Overdue" value={stats.overdue} icon={AlertCircle} accent="text-destructive" />
-        <StatCard
-          label="Total Value"
-          value={formatCurrency(stats.totalAmount)}
-          icon={DollarSign}
-          hint={`Paid: ${formatCurrency(stats.paidAmount)}`}
-        />
-      </StatGrid>
+      <KpiGrid cols={4}>
+        <KpiCard label="Total value" value={formatCurrency(stats.totalAmount)} icon={DollarSign} hint={`${totalInvoices} invoices overall`} />
+        <KpiCard label="Paid" value={formatCurrency(stats.paidAmount)} icon={CheckCircle} hint={`${stats.paid} on this page`} />
+        <KpiCard label="Pending" value={formatCurrency(stats.pendingAmount)} icon={Clock} hint={`${stats.pending} on this page`} />
+        <KpiCard label="Overdue" value={formatCurrency(stats.overdueAmount)} icon={AlertCircle} hint={`${stats.overdue} on this page`} />
+      </KpiGrid>
 
       <DataTable
         data={filteredInvoices}
@@ -340,7 +338,7 @@ export default function OpsInvoicesPage() {
               </div>
 
               <div className="border-t pt-3">
-                <h4 className="font-medium mb-2">Vendor Information</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Vendor Information</h4>
                 <div className="space-y-1 text-sm">
                   <p><span className="text-muted-foreground">Business:</span> {selectedInvoice.vendorAgreement?.vendorProfile?.businessName || '-'}</p>
                   <p><span className="text-muted-foreground">Agreement Vendor:</span> {selectedInvoice.vendorAgreement?.vendorName || '-'}</p>
@@ -350,7 +348,7 @@ export default function OpsInvoicesPage() {
 
               {selectedInvoice.vendorAgreement?.activeEvent && (
                 <div className="border-t pt-3">
-                  <h4 className="font-medium mb-2">Event Information</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Event Information</h4>
                   <div className="space-y-1 text-sm">
                     <p><span className="text-muted-foreground">Client:</span> {selectedInvoice.vendorAgreement.activeEvent.clientName}</p>
                     <p><span className="text-muted-foreground">Event Type:</span> {selectedInvoice.vendorAgreement.activeEvent.eventType}</p>
@@ -362,7 +360,7 @@ export default function OpsInvoicesPage() {
               )}
 
               <div className="border-t pt-3">
-                <h4 className="font-medium mb-2">Timeline</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Timeline</h4>
                 <div className="space-y-1 text-sm">
                   <p><span className="text-muted-foreground">Issued:</span> {selectedInvoice.issuedAt ? format(new Date(selectedInvoice.issuedAt), 'MMMM d, yyyy h:mm a') : '-'}</p>
                   <p><span className="text-muted-foreground">Paid:</span> {selectedInvoice.paidAt ? format(new Date(selectedInvoice.paidAt), 'MMMM d, yyyy h:mm a') : '-'}</p>
@@ -411,7 +409,6 @@ export default function OpsInvoicesPage() {
             <Button
               onClick={handleMarkPaid}
               disabled={markPaidMutation.isPending}
-              className="bg-success hover:bg-success"
             >
               {markPaidMutation.isPending ? (
                 <>

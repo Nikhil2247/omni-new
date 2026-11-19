@@ -29,8 +29,8 @@ const CATEGORIES: { value: FeatureFlagCategory | 'all'; label: string }[] = [
 const CATEGORY_COLORS: Record<FeatureFlagCategory, string> = {
   marketing: 'bg-primary/10 text-primary',
   vendor: 'bg-primary/10 text-primary',
-  user: 'bg-success/10 text-success',
-  system: 'bg-warning/10 text-warning',
+  user: 'bg-primary/10 text-primary',
+  system: 'bg-muted text-muted-foreground',
 }
 
 interface CategorySectionProps {
@@ -125,7 +125,7 @@ function CategorySection({
                   <div className="flex items-center gap-3 shrink-0">
                     <span
                       className={`text-xs font-medium ${
-                        flag.enabled ? 'text-success' : 'text-muted-foreground'
+                        flag.enabled ? 'text-foreground' : 'text-muted-foreground'
                       }`}
                     >
                       {flag.enabled ? 'Enabled' : 'Disabled'}

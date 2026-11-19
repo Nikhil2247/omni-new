@@ -11,12 +11,17 @@ import {
   RotateCcw,
   Receipt,
   FileSpreadsheet,
+  Wallet,
+  Percent,
+  Landmark,
+  StickyNote,
+  Users,
+  Store,
+  ListChecks,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ConfirmDialog, PageHeader, useConfirmAction } from '@/components/dash'
+import { ConfirmDialog, FormField, KpiCard, KpiGrid, PageHeader, Panel, useConfirmAction } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -88,6 +93,11 @@ const initialDocumentData: DocumentData = {
 
 function formatCurrency(amount: number): string {
   return `${amount.toLocaleString('en-IN')} Rs`
+}
+
+/** UI-only currency display (the printable document keeps its own format). */
+function rupees(amount: number): string {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount)
 }
 
 export default function ManualDocumentPage() {
@@ -420,6 +430,10 @@ export default function ManualDocumentPage() {
     track('ops:manual_document:generate', { documentType, documentNumber: data.documentNumber })
   }, [data, documentType, subtotal, discountAmount, taxAmount, grandTotal, track])
 
+  const docLabel = documentType === 'invoice' ? 'invoice' : 'quotation'
+  const missingParties = !data.clientName.trim() || !data.vendorName.trim()
+  const filledItems = data.items.filter((item) => item.description.trim()).length
+
   return (
     <div className="space-y-3">
       <PageHeader
@@ -438,6 +452,13 @@ export default function ManualDocumentPage() {
         }
       />
 
+      <KpiGrid>
+        <KpiCard label="Document" value={documentType === 'invoice' ? 'Invoice' : 'Quotation'} icon={FileText} hint={data.documentNumber || 'No number yet'} />
+        <KpiCard label="Line items" value={filledItems} icon={ListChecks} hint={`${data.items.length} row${data.items.length === 1 ? '' : 's'} in the form`} />
+        <KpiCard label="Grand total" value={rupees(grandTotal)} icon={Wallet} hint={taxAmount > 0 ? `Incl. tax ${rupees(taxAmount)}` : 'No tax applied'} />
+        <KpiCard label="Balance after payments" value={rupees(grandTotal - data.tokenMoneyPaid - data.secondInstallment)} icon={Percent} hint="Total less token and installment" />
+      </KpiGrid>
+
       {/* Document Type Tabs */}
       <Tabs value={documentType} onValueChange={(v) => setDocumentType(v as 'quotation' | 'invoice')}>
         <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -452,75 +473,63 @@ export default function ManualDocumentPage() {
         </TabsList>
 
         <TabsContent value={documentType} className="mt-3">
-          <div className="grid gap-3 lg:grid-cols-2">
-            {/* Left Column - Document Info */}
-            <div className="space-y-3">
-              {/* Document Details */}
-              <Card>
-                <CardHeader className="p-3 pb-0">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <FileText className="h-4 w-4" />
-                    Document Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 p-3">
-                  <div className="flex gap-2">
+          <div className="grid items-start gap-3 lg:grid-cols-3">
+            {/* Left: form sections */}
+            <div className="space-y-3 lg:col-span-2">
+              <Panel title="Document details" description={`Basic details for this ${docLabel}`} icon={FileText}>
+                <div className="space-y-3">
+                  <div className="flex items-end gap-2">
                     <div className="flex-1">
-                      <Label htmlFor="documentNumber">Document Number</Label>
-                      <Input
-                        id="documentNumber"
-                        value={data.documentNumber}
-                        onChange={(e) => updateField('documentNumber', e.target.value)}
-                        placeholder="e.g., OMNI-ABC123"
-                      />
+                      <FormField label="Document number" htmlFor="documentNumber">
+                        <Input
+                          id="documentNumber"
+                          value={data.documentNumber}
+                          onChange={(e) => updateField('documentNumber', e.target.value)}
+                          placeholder="e.g., OMNI-ABC123"
+                        />
+                      </FormField>
                     </div>
-                    <div className="flex items-end">
-                      <Button variant="outline" onClick={generateDocumentNumber} type="button">
-                        Generate
-                      </Button>
-                    </div>
+                    <Button variant="outline" onClick={generateDocumentNumber} type="button">
+                      Generate
+                    </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="dateIssued">Date Issued</Label>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <FormField label="Date issued" htmlFor="dateIssued">
                       <Input
                         id="dateIssued"
                         type="date"
                         value={data.dateIssued}
                         onChange={(e) => updateField('dateIssued', e.target.value)}
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="validUntil">Valid Until</Label>
+                    </FormField>
+                    <FormField label="Valid until" htmlFor="validUntil">
                       <Input
                         id="validUntil"
                         type="date"
                         value={data.validUntil}
                         onChange={(e) => updateField('validUntil', e.target.value)}
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </Panel>
 
-              {/* Client Information */}
-              <Card>
-                <CardHeader className="p-3 pb-0">
-                  <CardTitle className="text-sm">Client Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 p-3">
-                  <div>
-                    <Label htmlFor="clientName">Client Name *</Label>
-                    <Input
-                      id="clientName"
-                      value={data.clientName}
-                      onChange={(e) => updateField('clientName', e.target.value)}
-                      placeholder="Enter client name"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="clientEmail">Email</Label>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Panel title="Client" description="Who the document is issued to" icon={Users}>
+                  <div className="space-y-3">
+                    <FormField
+                      label="Client name *"
+                      htmlFor="clientName"
+                      hint={!data.clientName.trim() ? 'Required for a complete document.' : undefined}
+                    >
+                      <Input
+                        id="clientName"
+                        value={data.clientName}
+                        onChange={(e) => updateField('clientName', e.target.value)}
+                        placeholder="Enter client name"
+                      />
+                    </FormField>
+                    <FormField label="Email" htmlFor="clientEmail">
                       <Input
                         id="clientEmail"
                         type="email"
@@ -528,38 +537,33 @@ export default function ManualDocumentPage() {
                         onChange={(e) => updateField('clientEmail', e.target.value)}
                         placeholder="client@example.com"
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="clientPhone">Phone</Label>
+                    </FormField>
+                    <FormField label="Phone" htmlFor="clientPhone">
                       <Input
                         id="clientPhone"
                         value={data.clientPhone}
                         onChange={(e) => updateField('clientPhone', e.target.value)}
                         placeholder="+91 98765 43210"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </CardContent>
-              </Card>
+                </Panel>
 
-              {/* Vendor Information */}
-              <Card>
-                <CardHeader className="p-3 pb-0">
-                  <CardTitle className="text-sm">Vendor Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 p-3">
-                  <div>
-                    <Label htmlFor="vendorName">Vendor Name *</Label>
-                    <Input
-                      id="vendorName"
-                      value={data.vendorName}
-                      onChange={(e) => updateField('vendorName', e.target.value)}
-                      placeholder="Enter vendor/business name"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="vendorEmail">Email</Label>
+                <Panel title="Vendor" description="Who provides the service" icon={Store}>
+                  <div className="space-y-3">
+                    <FormField
+                      label="Vendor name *"
+                      htmlFor="vendorName"
+                      hint={!data.vendorName.trim() ? 'Required for a complete document.' : undefined}
+                    >
+                      <Input
+                        id="vendorName"
+                        value={data.vendorName}
+                        onChange={(e) => updateField('vendorName', e.target.value)}
+                        placeholder="Enter vendor/business name"
+                      />
+                    </FormField>
+                    <FormField label="Email" htmlFor="vendorEmail">
                       <Input
                         id="vendorEmail"
                         type="email"
@@ -567,46 +571,43 @@ export default function ManualDocumentPage() {
                         onChange={(e) => updateField('vendorEmail', e.target.value)}
                         placeholder="vendor@example.com"
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="vendorPhone">Phone</Label>
+                    </FormField>
+                    <FormField label="Phone" htmlFor="vendorPhone">
                       <Input
                         id="vendorPhone"
                         value={data.vendorPhone}
                         onChange={(e) => updateField('vendorPhone', e.target.value)}
                         placeholder="+91 98765 43210"
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </Panel>
+              </div>
 
-            {/* Right Column - Line Items & Totals */}
-            <div className="space-y-3">
-              {/* Line Items */}
-              <Card>
-                <CardHeader className="p-3 pb-0">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">Line Items</CardTitle>
-                    <Button variant="outline" size="sm" onClick={addLineItem}>
-                      <Plus className="mr-1 h-4 w-4" />
-                      Add Item
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2 p-3">
+              <Panel
+                title="Line items"
+                description="Items without a description are left out of the printed document"
+                icon={ListChecks}
+                headerRight={
+                  <Button variant="outline" size="sm" onClick={addLineItem}>
+                    <Plus className="mr-1 h-4 w-4" />
+                    Add item
+                  </Button>
+                }
+              >
+                <div className="space-y-2">
                   {data.items.map((item, index) => (
-                    <div key={item.id} className="space-y-3 rounded-lg border p-2.5">
+                    <div key={item.id} className="bg-muted/30 space-y-3 rounded-lg border p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
+                        <span className="text-muted-foreground text-xs font-medium">Item {index + 1}</span>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => removeItemAsk.ask(item.id)}
                           title="Remove item"
+                          aria-label="Remove item"
                           disabled={data.items.length === 1}
-                          className="h-8 w-8 p-0 text-destructive"
+                          className="text-destructive size-7 p-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -617,100 +618,84 @@ export default function ManualDocumentPage() {
                         onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
                       />
                       <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <Label className="text-xs">Qty</Label>
+                        <FormField label="Qty">
                           <Input
                             type="number"
                             min="1"
                             value={item.quantity}
                             onChange={(e) => updateLineItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
                           />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Rate</Label>
+                        </FormField>
+                        <FormField label="Rate (₹)">
                           <Input
                             type="number"
                             min="0"
                             value={item.rate}
                             onChange={(e) => updateLineItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
                           />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Amount</Label>
-                          <Input value={formatCurrency(item.amount)} disabled className="bg-muted" />
-                        </div>
+                        </FormField>
+                        <FormField label="Amount">
+                          <Input value={rupees(item.amount)} disabled className="bg-muted" />
+                        </FormField>
                       </div>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </Panel>
 
-              {/* Additional Charges */}
-              <Card>
-                <CardHeader className="p-3 pb-0">
-                  <CardTitle className="text-sm">Additional Charges & Adjustments</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 p-3">
-                  <div>
-                    <Label htmlFor="siteCharges">Site Charges</Label>
-                    <Input
-                      id="siteCharges"
-                      type="number"
-                      min="0"
-                      value={data.siteCharges}
-                      onChange={(e) => updateField('siteCharges', parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="discount">Discount</Label>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Panel title="Charges and adjustments" icon={Percent}>
+                  <div className="space-y-3">
+                    <FormField label="Site charges (₹)" htmlFor="siteCharges">
                       <Input
-                        id="discount"
+                        id="siteCharges"
                         type="number"
                         min="0"
-                        value={data.discount}
-                        onChange={(e) => updateField('discount', parseFloat(e.target.value) || 0)}
+                        value={data.siteCharges}
+                        onChange={(e) => updateField('siteCharges', parseFloat(e.target.value) || 0)}
                       />
+                    </FormField>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField label="Discount" htmlFor="discount">
+                        <Input
+                          id="discount"
+                          type="number"
+                          min="0"
+                          value={data.discount}
+                          onChange={(e) => updateField('discount', parseFloat(e.target.value) || 0)}
+                        />
+                      </FormField>
+                      <FormField label="Discount type" htmlFor="discountType">
+                        <Select
+                          value={data.discountType}
+                          onValueChange={(v) => updateField('discountType', v as 'PERCENTAGE' | 'FIXED')}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="FIXED">Fixed amount</SelectItem>
+                            <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormField>
                     </div>
-                    <div>
-                      <Label htmlFor="discountType">Discount Type</Label>
-                      <Select
-                        value={data.discountType}
-                        onValueChange={(v) => updateField('discountType', v as 'PERCENTAGE' | 'FIXED')}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="FIXED">Fixed Amount</SelectItem>
-                          <SelectItem value="PERCENTAGE">Percentage</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FormField label="Tax rate (%)" htmlFor="taxRate">
+                      <Input
+                        id="taxRate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={data.taxRate}
+                        onChange={(e) => updateField('taxRate', parseFloat(e.target.value) || 0)}
+                      />
+                    </FormField>
                   </div>
-                  <div>
-                    <Label htmlFor="taxRate">Tax Rate (%)</Label>
-                    <Input
-                      id="taxRate"
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={data.taxRate}
-                      onChange={(e) => updateField('taxRate', parseFloat(e.target.value) || 0)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+                </Panel>
 
-              {/* Payment Information */}
-              <Card>
-                <CardHeader className="p-3 pb-0">
-                  <CardTitle className="text-sm">Payment Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 p-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="tokenMoneyPaid">Token Money Paid</Label>
+                <Panel title="Payments received" icon={Wallet}>
+                  <div className="space-y-3">
+                    <FormField label="Token money paid (₹)" htmlFor="tokenMoneyPaid">
                       <Input
                         id="tokenMoneyPaid"
                         type="number"
@@ -718,9 +703,8 @@ export default function ManualDocumentPage() {
                         value={data.tokenMoneyPaid}
                         onChange={(e) => updateField('tokenMoneyPaid', parseFloat(e.target.value) || 0)}
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="secondInstallment">Second Installment</Label>
+                    </FormField>
+                    <FormField label="Second installment (₹)" htmlFor="secondInstallment">
                       <Input
                         id="secondInstallment"
                         type="number"
@@ -728,104 +712,108 @@ export default function ManualDocumentPage() {
                         value={data.secondInstallment}
                         onChange={(e) => updateField('secondInstallment', parseFloat(e.target.value) || 0)}
                       />
-                    </div>
+                    </FormField>
                   </div>
-                </CardContent>
-              </Card>
+                </Panel>
+              </div>
 
-              {/* Summary */}
-              <Card className="bg-muted/50">
-                <CardHeader className="p-3 pb-0">
-                  <CardTitle className="text-sm">Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 p-3">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal</span>
-                    <span>{formatCurrency(subtotal)}</span>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Panel title="Notes and terms" icon={StickyNote}>
+                  <div className="space-y-3">
+                    <FormField label="Notes" htmlFor="notes">
+                      <Textarea
+                        id="notes"
+                        value={data.notes}
+                        onChange={(e) => updateField('notes', e.target.value)}
+                        placeholder="Additional notes for the client..."
+                        rows={3}
+                      />
+                    </FormField>
+                    <FormField label="Terms & conditions" htmlFor="termsAndConditions">
+                      <Textarea
+                        id="termsAndConditions"
+                        value={data.termsAndConditions}
+                        onChange={(e) => updateField('termsAndConditions', e.target.value)}
+                        placeholder="Terms and conditions..."
+                        rows={3}
+                      />
+                    </FormField>
+                  </div>
+                </Panel>
+
+                <Panel title="Bank details" description="Shown on the printed document" icon={Landmark}>
+                  <div className="space-y-3">
+                    <FormField label="Bank name" htmlFor="bankName">
+                      <Input id="bankName" value={data.bankName} onChange={(e) => updateField('bankName', e.target.value)} />
+                    </FormField>
+                    <FormField label="Account number" htmlFor="accountNumber">
+                      <Input
+                        id="accountNumber"
+                        value={data.accountNumber}
+                        onChange={(e) => updateField('accountNumber', e.target.value)}
+                      />
+                    </FormField>
+                    <FormField label="Account name" htmlFor="accountName">
+                      <Input
+                        id="accountName"
+                        value={data.accountName}
+                        onChange={(e) => updateField('accountName', e.target.value)}
+                      />
+                    </FormField>
+                  </div>
+                </Panel>
+              </div>
+            </div>
+
+            {/* Right: sticky summary with the primary action */}
+            <div className="lg:sticky lg:top-3">
+              <Panel title="Summary" description={`${filledItems} item${filledItems === 1 ? '' : 's'}`}>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="tabular">{rupees(subtotal)}</span>
                   </div>
                   {discountAmount > 0 && (
-                    <div className="flex justify-between text-sm text-success">
-                      <span>Discount</span>
-                      <span>-{formatCurrency(discountAmount)}</span>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Discount</span>
+                      <span className="tabular">-{rupees(discountAmount)}</span>
                     </div>
                   )}
                   {taxAmount > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span>Tax ({data.taxRate}%)</span>
-                      <span>{formatCurrency(taxAmount)}</span>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tax ({data.taxRate}%)</span>
+                      <span className="tabular">{rupees(taxAmount)}</span>
                     </div>
                   )}
                   <Separator />
-                  <div className="flex justify-between text-base font-bold">
-                    <span>Grand Total</span>
-                    <span>{formatCurrency(grandTotal)}</span>
+                  <div className="flex justify-between text-base font-semibold">
+                    <span>Grand total</span>
+                    <span className="tabular">{rupees(grandTotal)}</span>
                   </div>
-                </CardContent>
-              </Card>
+                  {data.tokenMoneyPaid > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Token money paid</span>
+                      <span className="tabular">{rupees(data.tokenMoneyPaid)}</span>
+                    </div>
+                  )}
+                  {data.secondInstallment > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Second installment</span>
+                      <span className="tabular">{rupees(data.secondInstallment)}</span>
+                    </div>
+                  )}
+                </div>
+                {missingParties && (
+                  <p className="text-muted-foreground mt-3 text-xs">
+                    Add the client and vendor names so the {docLabel} is complete.
+                  </p>
+                )}
+                <Button className="mt-3 w-full" onClick={openPrintPreview}>
+                  <Printer className="mr-1 h-4 w-4" />
+                  Preview & Print
+                </Button>
+              </Panel>
             </div>
-          </div>
-
-          {/* Notes & Bank Details */}
-          <div className="mt-3 grid gap-3 lg:grid-cols-2">
-            <Card>
-              <CardHeader className="p-3 pb-0">
-                <CardTitle className="text-sm">Notes & Terms</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 p-3">
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    value={data.notes}
-                    onChange={(e) => updateField('notes', e.target.value)}
-                    placeholder="Additional notes for the client..."
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="termsAndConditions">Terms & Conditions</Label>
-                  <Textarea
-                    id="termsAndConditions"
-                    value={data.termsAndConditions}
-                    onChange={(e) => updateField('termsAndConditions', e.target.value)}
-                    placeholder="Terms and conditions..."
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="p-3 pb-0">
-                <CardTitle className="text-sm">Bank Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 p-3">
-                <div>
-                  <Label htmlFor="bankName">Bank Name</Label>
-                  <Input
-                    id="bankName"
-                    value={data.bankName}
-                    onChange={(e) => updateField('bankName', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="accountNumber">Account Number</Label>
-                  <Input
-                    id="accountNumber"
-                    value={data.accountNumber}
-                    onChange={(e) => updateField('accountNumber', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="accountName">Account Name</Label>
-                  <Input
-                    id="accountName"
-                    value={data.accountName}
-                    onChange={(e) => updateField('accountName', e.target.value)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
       </Tabs>

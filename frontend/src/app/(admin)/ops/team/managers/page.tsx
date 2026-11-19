@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useOpsManagers } from '@/hooks/queries/use-ops'
 import { Button } from '@/components/ui/button'
@@ -7,8 +8,8 @@ import { ArrowLeft, Users, Calendar } from 'lucide-react'
 import {
   PageHeader,
   DataTable,
-  StatCard,
-  StatGrid,
+  KpiCard,
+  KpiGrid,
   StatusBadge,
   UserCell,
   type DataColumn,
@@ -17,9 +18,17 @@ import {
 export default function OpsManagersPage() {
   const { data: response, isLoading } = useOpsManagers()
 
+  const [search, setSearch] = useState('')
   const members = response?.data || []
   type Member = (typeof members)[number]
   const total = members.reduce((sum, m) => sum + (m.managedEventsCount || 0), 0)
+
+  const q = search.trim().toLowerCase()
+  const visible = q
+    ? members.filter((m) =>
+        `${m.firstName ?? ''} ${m.lastName ?? ''} ${m.email ?? ''}`.toLowerCase().includes(q)
+      )
+    : members
 
   const columns: DataColumn<Member>[] = [
     {
@@ -55,7 +64,7 @@ export default function OpsManagersPage() {
       id: 'joined',
       header: 'Joined',
       label: 'Joined',
-      cell: (m) => new Date(m.createdAt).toLocaleDateString(),
+      cell: (m) => new Date(m.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       sortValue: (m) => new Date(m.createdAt),
     },
   ]
@@ -73,19 +82,20 @@ export default function OpsManagersPage() {
         }
       />
 
-      <StatGrid className="lg:grid-cols-3">
-        <StatCard label="Total Managers" value={members.length} icon={Users} accent="text-primary" />
-        <StatCard label="Total Events Managed" value={total} icon={Calendar} accent="text-primary" />
-        <StatCard
+      <KpiGrid cols={3}>
+        <KpiCard label="Total Managers" value={members.length} icon={Users} />
+        <KpiCard label="Total Events Managed" value={total} icon={Calendar} />
+        <KpiCard
           label="Avg per Manager"
           value={members.length > 0 ? Math.round(total / members.length) : 0}
           icon={Calendar}
-          accent="text-success"
+         
         />
-      </StatGrid>
+      </KpiGrid>
 
       <DataTable
-        data={members}
+        data={visible}
+        search={{ value: search, onChange: setSearch, placeholder: 'Search by name or email...' }}
         columns={columns}
         rowKey={(m) => m.id}
         isLoading={isLoading}

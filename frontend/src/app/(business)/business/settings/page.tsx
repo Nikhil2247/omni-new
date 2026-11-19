@@ -31,7 +31,7 @@ export default function BusinessSettingsPage() {
           description="Manage notification preferences for business updates."
           href="/business/settings/notifications"
           icon={Bell}
-          iconColor="text-warning"
+          iconColor="text-primary"
         />
         
         <SettingsCard
@@ -39,7 +39,7 @@ export default function BusinessSettingsPage() {
           description="Manage sessions, password, and two-factor authentication."
           href="/business/settings/security"
           icon={Shield}
-          iconColor="text-success"
+          iconColor="text-primary"
         />
 
         <SettingsCard

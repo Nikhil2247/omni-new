@@ -5,8 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog, StatCard, StatGrid } from '@/components/dash';
+import { ConfirmDialog, KpiCard, KpiGrid, PageHeader, Panel, StatusBadge } from '@/components/dash';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft,
@@ -17,7 +16,7 @@ import {
   TrendingUp,
   MousePointerClick,
   Target,
-  DollarSign,
+  Coins,
 } from 'lucide-react';
 import {
   useCampaign,
@@ -41,14 +40,14 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-const statusColors: Record<string, string> = {
-  DRAFT: 'bg-muted text-foreground',
-  SCHEDULED: 'bg-primary/10 text-primary',
-  ACTIVE: 'bg-success/10 text-success',
-  PAUSED: 'bg-warning/10 text-warning',
-  COMPLETED: 'bg-primary/10 text-primary',
-  CANCELLED: 'bg-destructive/10 text-destructive',
-};
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b py-2 text-sm last:border-b-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
 
 const typeLabels: Record<string, string> = {
   PROFILE_BOOST: 'Profile Boost',
@@ -114,8 +113,8 @@ export default function CampaignDetailPage() {
         fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
       >
         <div className="container py-2">
-          <Skeleton className="h-8 w-48 mb-3" />
-          <Skeleton className="h-64 w-full" />
+          <Skeleton className="mb-3 h-8 w-48" />
+          <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       </FeatureFlagGate>
     );
@@ -146,168 +145,124 @@ export default function CampaignDetailPage() {
       feature="marketing.campaigns"
       fallback={<FeatureDisabledMessage feature="Campaigns & Ads" backUrl="/business/marketing/campaigns" backText="Back to Campaigns" />}
     >
-      <div className="container py-2">
-      <Link
-        href="/business/marketing/campaigns"
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-3"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Campaigns
-      </Link>
-
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold">{campaign.name}</h1>
-            <Badge className={statusColors[campaign.status]}>{campaign.status}</Badge>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {campaign.status === 'DRAFT' && (
-            <>
-              <Link href={`/business/marketing/campaigns/${campaign.id}/edit`}>
-                <Button variant="outline">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
+      <div className="space-y-3">
+      <PageHeader
+        leading={
+          <Link
+            href="/business/marketing/campaigns"
+            aria-label="Back to campaigns"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted inline-flex size-8 items-center justify-center rounded-md transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        }
+        title={
+          <span className="flex items-center gap-2">
+            {campaign.name}
+            <StatusBadge status={campaign.status} />
+          </span>
+        }
+        actions={
+          <>
+            {campaign.status === 'DRAFT' && (
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/business/marketing/campaigns/${campaign.id}/edit`}>
+                    <Edit className="mr-1.5 h-4 w-4" />
+                    Edit
+                  </Link>
                 </Button>
-              </Link>
-              <Button onClick={handleStart} disabled={startCampaign.isPending}>
-                <Play className="mr-2 h-4 w-4" />
-                Start Campaign
-              </Button>
-            </>
-          )}
-          {campaign.status === 'ACTIVE' && (
-            <>
-              <Button variant="outline" onClick={handlePause} disabled={pauseCampaign.isPending}>
-                <Pause className="mr-2 h-4 w-4" />
-                Pause
-              </Button>
-              <Button variant="destructive" onClick={() => setStopOpen(true)} disabled={stopCampaign.isPending}>
-                <StopCircle className="mr-2 h-4 w-4" />
-                Stop
-              </Button>
-            </>
-          )}
-          {campaign.status === 'PAUSED' && (
-            <>
-              <Button onClick={handleResume} disabled={resumeCampaign.isPending}>
-                <Play className="mr-2 h-4 w-4" />
-                Resume
-              </Button>
-              <Button variant="destructive" onClick={() => setStopOpen(true)} disabled={stopCampaign.isPending}>
-                <StopCircle className="mr-2 h-4 w-4" />
-                Stop
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
+                <Button size="sm" onClick={handleStart} disabled={startCampaign.isPending}>
+                  <Play className="mr-1.5 h-4 w-4" />
+                  Start campaign
+                </Button>
+              </>
+            )}
+            {campaign.status === 'ACTIVE' && (
+              <>
+                <Button variant="outline" size="sm" onClick={handlePause} disabled={pauseCampaign.isPending}>
+                  <Pause className="mr-1.5 h-4 w-4" />
+                  Pause
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => setStopOpen(true)} disabled={stopCampaign.isPending}>
+                  <StopCircle className="mr-1.5 h-4 w-4" />
+                  Stop
+                </Button>
+              </>
+            )}
+            {campaign.status === 'PAUSED' && (
+              <>
+                <Button size="sm" onClick={handleResume} disabled={resumeCampaign.isPending}>
+                  <Play className="mr-1.5 h-4 w-4" />
+                  Resume
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => setStopOpen(true)} disabled={stopCampaign.isPending}>
+                  <StopCircle className="mr-1.5 h-4 w-4" />
+                  Stop
+                </Button>
+              </>
+            )}
+          </>
+        }
+      />
 
-      {/* Stats Grid */}
-      <StatGrid className="mb-3">
-        <StatCard label="Impressions" icon={TrendingUp} value={formatNumber(campaign.impressions)} />
-        <StatCard
+      <KpiGrid>
+        <KpiCard label="Impressions" icon={TrendingUp} value={formatNumber(campaign.impressions)} />
+        <KpiCard
           label="Clicks"
           icon={MousePointerClick}
           value={formatNumber(campaign.clicks)}
           hint={stats ? `${(stats.ctr * 100).toFixed(2)}% CTR` : undefined}
         />
-        <StatCard
+        <KpiCard
           label="Conversions"
           icon={Target}
           value={formatNumber(campaign.conversions)}
           hint={stats ? `${(stats.conversionRate * 100).toFixed(2)}% conv. rate` : undefined}
         />
-        <StatCard
-          label="Credits Spent"
-          icon={DollarSign}
+        <KpiCard
+          label="Credits spent"
+          icon={Coins}
           value={formatNumber(campaign.creditsSpent)}
           hint={`of ${formatNumber(campaign.totalBudget)} budget`}
         />
-      </StatGrid>
+      </KpiGrid>
 
       <div className="grid gap-3 md:grid-cols-2">
-        {/* Campaign Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Campaign Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Type</span>
-              <span className="font-medium">{typeLabels[campaign.type] || campaign.type}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Daily Budget</span>
-              <span className="font-medium">{campaign.dailyBudget} credits</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Budget</span>
-              <span className="font-medium">{campaign.totalBudget} credits</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Start Date</span>
-              <span className="font-medium">{format(new Date(campaign.startDate), 'PPP')}</span>
-            </div>
-            {campaign.endDate && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">End Date</span>
-                <span className="font-medium">{format(new Date(campaign.endDate), 'PPP')}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Panel title="Campaign details">
+          <DetailRow label="Type" value={typeLabels[campaign.type] || campaign.type} />
+          <DetailRow label="Daily budget" value={`${campaign.dailyBudget} credits`} />
+          <DetailRow label="Total budget" value={`${campaign.totalBudget} credits`} />
+          <DetailRow label="Start date" value={format(new Date(campaign.startDate), 'PPP')} />
+          {campaign.endDate && <DetailRow label="End date" value={format(new Date(campaign.endDate), 'PPP')} />}
+        </Panel>
 
-        {/* Performance Metrics */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Metrics</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {stats && (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cost per Click</span>
-                  <span className="font-medium">
-                    {stats.costPerClick?.toFixed(2) || 'N/A'} credits
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cost per Conversion</span>
-                  <span className="font-medium">
-                    {stats.costPerConversion?.toFixed(2) || 'N/A'} credits
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Budget Utilization</span>
-                  <span className="font-medium">
-                    {Math.round((campaign.creditsSpent / campaign.totalBudget) * 100)}%
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Budget Progress */}
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Budget Progress</span>
-                <span>
-                  {campaign.creditsSpent} / {campaign.totalBudget}
-                </span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{
-                    width: `${Math.min((campaign.creditsSpent / campaign.totalBudget) * 100, 100)}%`,
-                  }}
-                />
-              </div>
+        <Panel title="Performance">
+          {stats && (
+            <>
+              <DetailRow label="Cost per click" value={`${stats.costPerClick?.toFixed(2) || 'N/A'} credits`} />
+              <DetailRow label="Cost per conversion" value={`${stats.costPerConversion?.toFixed(2) || 'N/A'} credits`} />
+              <DetailRow
+                label="Budget utilization"
+                value={`${Math.round((campaign.creditsSpent / campaign.totalBudget) * 100)}%`}
+              />
+            </>
+          )}
+          <div className="pt-3">
+            <div className="mb-1 flex justify-between text-sm">
+              <span className="text-muted-foreground">Budget progress</span>
+              <span className="tabular font-medium">
+                {campaign.creditsSpent} / {campaign.totalBudget}
+              </span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="bg-muted h-2 overflow-hidden rounded-full">
+              <div
+                className="bg-primary h-full rounded-full transition-all"
+                style={{ width: `${campaign.totalBudget ? Math.min((campaign.creditsSpent / campaign.totalBudget) * 100, 100) : 0}%` }}
+              />
+            </div>
+          </div>
+        </Panel>
       </div>
       <ConfirmDialog
         open={stopOpen}

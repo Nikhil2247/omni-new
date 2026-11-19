@@ -34,7 +34,14 @@
     "blogs:vendor:audit": "ts-node scripts/normalize-vendor-blogs.ts",
     "blogs:vendor:normalize": "ts-node scripts/normalize-vendor-blogs.ts apply",
     "blogs:events:preview": "ts-node scripts/generate-event-category-blogs.ts preview",
-    "blogs:events:generate": "ts-node scripts/generate-event-category-blogs.ts generate"
+    "blogs:events:generate": "ts-node scripts/generate-event-category-blogs.ts generate",
+    "blogs:events:all": "ts-node scripts/generate-event-category-blogs.ts generate-all",
+    "blogs:internal:list": "ts-node scripts/generate-internal-blogs.ts list",
+    "blogs:internal:all": "ts-node scripts/generate-internal-blogs.ts generate-all",
+    "blogs:authors": "ts-node scripts/blog-authors.ts",
+    "einvite:preview": "node scripts/run-preview.js",
+    "blogs:vendors:preview": "ts-node scripts/generate-vendor-spotlight-blogs.ts preview",
+    "blogs:vendors:generate": "ts-node scripts/generate-vendor-spotlight-blogs.ts generate"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

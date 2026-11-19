@@ -17,7 +17,7 @@ import {
 } from '@/hooks/queries/use-business'
 import { useCategories, useCities } from '@/hooks/queries/use-lookups'
 import { Button } from '@/components/ui/button'
-import { ConfirmDialog } from '@/components/dash'
+import { ConfirmDialog, KpiCard, KpiGrid, StatusBadge } from '@/components/dash'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -72,13 +72,13 @@ import type { VendorStatus } from '@/lib/api/types/business.types'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import { FeatureFlagGate, FeatureDisabledMessage } from '@/components/common'
 
-const statusConfig: Record<VendorStatus, { label: string; color: string; icon: ElementType }> = {
-  DRAFT: { label: 'Draft', color: 'bg-muted text-foreground border-border', icon: Edit },
-  UNCLAIMED: { label: 'Unclaimed', color: 'bg-primary/10 text-primary border-primary/40', icon: UserX },
-  PENDING_REVIEW: { label: 'Pending Review', color: 'bg-warning/10 text-warning border-warning/40', icon: Clock },
-  ACTIVE: { label: 'Active', color: 'bg-success/10 text-success border-success/40', icon: CheckCircle },
-  SUSPENDED: { label: 'Suspended', color: 'bg-destructive/10 text-destructive border-destructive/40', icon: XCircle },
-  ARCHIVED: { label: 'Archived', color: 'bg-muted text-foreground border-border', icon: Archive },
+const statusConfig: Record<VendorStatus, { label: string; icon: ElementType }> = {
+  DRAFT: { label: 'Draft', icon: Edit },
+  UNCLAIMED: { label: 'Unclaimed', icon: UserX },
+  PENDING_REVIEW: { label: 'Pending Review', icon: Clock },
+  ACTIVE: { label: 'Active', icon: CheckCircle },
+  SUSPENDED: { label: 'Suspended', icon: XCircle },
+  ARCHIVED: { label: 'Archived', icon: Archive },
 }
 
 const slugifyBusinessName = (value: string) =>
@@ -831,7 +831,7 @@ export default function BusinessProfilePage() {
           <div className="flex flex-col items-center gap-3 md:flex-row md:items-start">
             <div className="relative shrink-0">
               <div className="relative h-37.5 w-37.5 rounded-full p-0.75 md:h-42 md:w-42">
-                <div className="absolute inset-0 rounded-full bg-linear-to-tr from-primary via-primary/80 to-primary/60" />
+                <div className="absolute inset-0 rounded-full bg-primary/70" />
                 <div className="relative h-full w-full overflow-hidden rounded-full border-4 border-background">
                   {profilePhotoViewUrl ? (
                     <NextImage
@@ -865,10 +865,10 @@ export default function BusinessProfilePage() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
-                  <Badge variant="outline" className={status.color}>
-                    <StatusIcon className="mr-1 h-3 w-3" />
+                  <StatusBadge status={profile.status} className="gap-1">
+                    <StatusIcon className="h-3 w-3" />
                     {status.label}
-                  </Badge>
+                  </StatusBadge>
 
                   {profile.status === 'DRAFT' && (
                     <Button onClick={() => submitVerification.mutate()} disabled={submitVerification.isPending}>
@@ -891,24 +891,12 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Views</p>
-                  <p className="mt-1 text-lg font-semibold">{profile.viewCount || 0}</p>
-                </div>
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Followers</p>
-                  <p className="mt-1 text-lg font-semibold">{profile.followersCount || 0}</p>
-                </div>
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Reviews</p>
-                  <p className="mt-1 text-lg font-semibold">{profile.reviewsCount || 0}</p>
-                </div>
-                <div className="rounded-xl border bg-card p-3 text-center">
-                  <p className="text-xs text-muted-foreground">Portfolio</p>
-                  <p className="mt-1 text-lg font-semibold">{allMedia.length}</p>
-                </div>
-              </div>
+              <KpiGrid className="mt-3 text-left">
+                <KpiCard label="Views" value={profile.viewCount || 0} />
+                <KpiCard label="Followers" value={profile.followersCount || 0} />
+                <KpiCard label="Reviews" value={profile.reviewsCount || 0} />
+                <KpiCard label="Portfolio" value={allMedia.length} />
+              </KpiGrid>
 
               {showPlainDescription && (
                 <p className="mt-5 whitespace-pre-wrap text-sm text-foreground/90">{profile.description}</p>

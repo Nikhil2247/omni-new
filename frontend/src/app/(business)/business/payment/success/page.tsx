@@ -52,8 +52,8 @@ function BusinessPaymentSuccessContent() {
 
       <Card className="max-w-md w-full">
         <CardContent className="pt-6 pb-5 text-center space-y-3">
-          <div className="mx-auto w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
-            <CheckCircle className="h-7 w-7 text-success" />
+          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <CheckCircle className="h-7 w-7 text-primary" />
           </div>
 
           <div className="space-y-2">

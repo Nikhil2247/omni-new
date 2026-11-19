@@ -131,35 +131,38 @@ async function fetchVendorCategorySlugs(prisma: PrismaClient): Promise<Record<st
     categories.forEach(cat => {
       // Create multiple key mappings for flexibility
       const key = cat.name.toLowerCase().replace(/\s+/g, '');
-      vendorCategorySlugs[key] = `/vendors/${cat.slug}`;
-      vendorCategorySlugs[cat.slug] = `/vendors/${cat.slug}`;
+      // Category pages live at /vendors/category/<slug>. (/vendors/<slug> is a single vendor's page.)
+      vendorCategorySlugs[key] = `/vendors/category/${cat.slug}`;
+      vendorCategorySlugs[cat.slug] = `/vendors/category/${cat.slug}`;
     });
 
     console.log(`  Loaded ${categories.length} vendor category slugs`);
   } catch (error) {
     console.warn('Could not fetch vendor categories, using defaults');
     // Fallback defaults
+    // Fallback (only used when the database cannot be read): the real category slugs, on the real category route.
     vendorCategorySlugs = {
-      'mehndiartist': '/vendors/mehndi-artists',
-      'mehndi-artists': '/vendors/mehndi-artists',
-      'photographer': '/vendors/photography',
-      'photography': '/vendors/photography',
-      'videographer': '/vendors/videography',
-      'videography': '/vendors/videography',
-      'decorator': '/vendors/decoration',
-      'decoration': '/vendors/decoration',
-      'caterer': '/vendors/catering',
-      'catering': '/vendors/catering',
-      'dj': '/vendors/entertainment',
-      'entertainment': '/vendors/entertainment',
-      'makeup': '/vendors/makeup',
-      'makeup-artists': '/vendors/makeup',
-      'venue': '/vendors/venues',
-      'venues': '/vendors/venues',
-      'florist': '/vendors/florist',
-      'choreographer': '/vendors/entertainment',
-      'weddingplanner': '/vendors/wedding-planners',
-      'wedding-planners': '/vendors/wedding-planners',
+      'photographer': '/vendors/category/photography',
+      'photography': '/vendors/category/photography',
+      'videographer': '/vendors/category/videography',
+      'videography': '/vendors/category/videography',
+      'decorator': '/vendors/category/decor-design',
+      'decoration': '/vendors/category/decor-design',
+      'decor-design': '/vendors/category/decor-design',
+      'caterer': '/vendors/category/catering',
+      'catering': '/vendors/category/catering',
+      'dj': '/vendors/category/entertainment',
+      'entertainment': '/vendors/category/entertainment',
+      'choreographer': '/vendors/category/entertainment',
+      'makeup': '/vendors/category/makeup-hair',
+      'makeup-artists': '/vendors/category/makeup-hair',
+      'makeup-hair': '/vendors/category/makeup-hair',
+      'venue': '/vendors/category/venue',
+      'venues': '/vendors/category/venue',
+      'florist': '/vendors/category/florist',
+      'weddingplanner': '/vendors/category/planners',
+      'wedding-planners': '/vendors/category/planners',
+      'planners': '/vendors/category/planners',
     };
   }
 
@@ -268,22 +271,72 @@ function getRandomImage(category: keyof typeof STOCK_IMAGES, index = 0): string 
   return images[index % images.length];
 }
 
+// The site's real vendor categories, keyed by every spelling the templates use. Anything not listed (mehndi artists,
+// choreographers, invitations...) has no category page, so it links to the vendor directory instead of a dead URL.
+const VENDOR_URL_ALIASES: Record<string, string> = {
+  photographer: 'photography', photographers: 'photography', photography: 'photography',
+  videographer: 'videography', videographers: 'videography', videography: 'videography',
+  decorator: 'decor-design', decorators: 'decor-design', decoration: 'decor-design', 'decor-design': 'decor-design',
+  caterer: 'catering', caterers: 'catering', catering: 'catering',
+  dj: 'entertainment', djs: 'entertainment', choreographer: 'entertainment', choreographers: 'entertainment', entertainment: 'entertainment',
+  makeup: 'makeup-hair', 'makeup-artists': 'makeup-hair', 'makeup-hair': 'makeup-hair',
+  venue: 'venue', venues: 'venue',
+  florist: 'florist', florists: 'florist',
+  'wedding-planners': 'planners', planners: 'planners',
+};
+
+/**
+ * Category pages live at /vendors/category/<slug>; /vendors/<anything> is a single vendor's page, so a link like
+ * /vendors/photographers lands on "Vendor not found". Rewrites those links to a real page.
+ */
+function resolveVendorUrl(url: string): string {
+  const match = /^\/vendors\/([^/?#]+)\/?$/.exec(url);
+  if (!match || match[1] === 'category') return url;
+  const slug = VENDOR_URL_ALIASES[match[1].toLowerCase()];
+  return slug ? `/vendors/category/${slug}` : '/vendors';
+}
+
 // Helper to create internal link HTML
 function internalLink(text: string, url: string): string {
-  return `<a href="${url}" title="${text}">${text}</a>`;
+  return `<a href="${resolveVendorUrl(url)}" title="${text}">${text}</a>`;
 }
 
 // Helper to create vendor link (uses cached slugs or fallback)
 function vendorLink(category: string, displayText?: string): string {
   const key = category.toLowerCase().replace(/\s+/g, '');
-  const url = vendorCategorySlugs[key] || vendorCategorySlugs[category] || FALLBACK_VENDOR_LINKS[category] || `/vendors/${category}`;
+  const raw = vendorCategorySlugs[key] || vendorCategorySlugs[category] || FALLBACK_VENDOR_LINKS[category] || `/vendors/${category}`;
+  const url = resolveVendorUrl(raw);
   return `<a href="${url}" title="Find ${displayText || category} in Chandigarh">${displayText || category}</a>`;
 }
 
 // Helper to create blog link (uses cached slugs or fallback)
+// Slug stems of the articles this script itself generates (the full slug is `<stem>-<city>-<year>`).
+const EVENT_BLOG_STEMS: Record<string, string> = {
+  mehndi: 'mehndi-ceremony-planning-guide',
+  mehndiDesigns: 'mehndi-design-trends-brides',
+  sangeet: 'sangeet-night-planning-guide',
+  haldi: 'haldi-ceremony-planning-guide',
+  wedding: 'wedding-planning-guide',
+  engagement: 'engagement-ceremony-planning-guide',
+  birthday: 'birthday-party-planning-guide',
+  corporate: 'corporate-event-planning-guide',
+};
+
+/**
+ * Link to a sibling article using the real slug pattern (`<stem>-chandigarh-<year>`). This only resolves once the
+ * sibling exists, so run `generate-all` rather than one event type at a time. Articles written by other generators
+ * (venue / vendor / budget guides) are linked only if they already exist in the database; otherwise the text is left
+ * plain, so a freshly generated article never contains a dead link.
+ */
 function blogLink(blogKey: string, displayText: string): string {
-  const url = blogPostSlugs[blogKey] || FALLBACK_BLOG_LINKS[blogKey] || `/blog/${blogKey}`;
-  return `<a href="${url}" title="${displayText}">${displayText}</a>`;
+  const stem = EVENT_BLOG_STEMS[blogKey];
+  if (stem) {
+    const url = `/blog/${stem}-chandigarh-${new Date().getFullYear()}`;
+    return `<a href="${url}" title="${displayText}">${displayText}</a>`;
+  }
+  const known = new Set(Object.values(blogPostSlugs));
+  const url = blogPostSlugs[blogKey] || (known.has(FALLBACK_BLOG_LINKS[blogKey]) ? FALLBACK_BLOG_LINKS[blogKey] : undefined);
+  return url ? `<a href="${url}" title="${displayText}">${displayText}</a>` : displayText;
 }
 
 // Helper to create service type link

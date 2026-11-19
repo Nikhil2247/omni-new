@@ -102,6 +102,8 @@ const FONT_FAMILIES = [
   { value: 'Cormorant Garamond', label: 'Cormorant' },
   { value: 'Dancing Script', label: 'Dancing Script' },
   { value: 'Pacifico', label: 'Pacifico' },
+  { value: 'Cinzel', label: 'Cinzel' },
+  { value: 'Fredoka', label: 'Fredoka' },
 ];
 
 export function EInviteEditor({

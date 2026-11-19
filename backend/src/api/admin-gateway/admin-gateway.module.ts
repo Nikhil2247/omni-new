@@ -10,6 +10,9 @@ import { AdminSubscriptionController } from './controllers/admin-subscription.co
 import { AdminInvoiceController } from './controllers/admin-invoice.controller';
 import { AdminCampaignController } from './controllers/admin-campaign.controller';
 import { AdminClaimController } from './controllers/admin-claim.controller';
+import { AdminVendorsController } from './controllers/admin-vendors.controller';
+import { AdminCategoriesController } from './controllers/admin-categories.controller';
+import { AdminLocationsController } from './controllers/admin-locations.controller';
 import { InsightsModule } from 'src/domain';
 import { SubscriptionModule } from 'src/domain/subscription/subscription.module';
 import { CatalogModule } from 'src/domain/catalog/catalog.module';
@@ -40,6 +43,9 @@ import { AuditService } from 'src/core/audit';
     AdminInvoiceController,
     AdminCampaignController,
     AdminClaimController,
+    AdminVendorsController,
+    AdminCategoriesController,
+    AdminLocationsController,
   ],
   providers: [
     SystemConfigService,

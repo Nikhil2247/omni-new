@@ -243,7 +243,7 @@ export function DataTable<T>({
 
   return (
     <div
-      className={cn('bg-card flex flex-col overflow-hidden rounded-md border', className)}
+      className={cn('bg-card flex flex-col overflow-hidden rounded-xl border shadow-xs', className)}
       style={{ maxHeight }}
     >
       {hasToolbar && (

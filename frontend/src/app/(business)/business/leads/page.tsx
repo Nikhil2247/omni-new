@@ -6,10 +6,10 @@ import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessLeads, useAcceptLead, useUpdateLeadStatus } from '@/hooks/queries/use-business'
 import { VendorFeatureGate } from '@/components/common/vendor-feature-gate'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell } from '@/components/dash'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell, KpiCard, KpiGrid } from '@/components/dash'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Dialog,
   DialogContent,
@@ -50,16 +50,6 @@ const LEAD_STATUSES = [
   { value: 'WON', label: 'Won' },
   { value: 'LOST', label: 'Lost' },
 ]
-
-const statusConfig: Record<string, { bg: string; text: string; icon: typeof Clock }> = {
-  NEW: { bg: 'bg-primary/10', text: 'text-primary', icon: Inbox },
-  CONTACTED: { bg: 'bg-warning/10', text: 'text-warning', icon: MessageSquare },
-  QUALIFIED: { bg: 'bg-primary/10', text: 'text-primary', icon: TrendingUp },
-  PROPOSAL_SENT: { bg: 'bg-primary/10', text: 'text-primary', icon: Mail },
-  NEGOTIATING: { bg: 'bg-warning/10', text: 'text-warning', icon: Clock },
-  WON: { bg: 'bg-success/10', text: 'text-success', icon: CheckCircle2 },
-  LOST: { bg: 'bg-destructive/10', text: 'text-destructive', icon: AlertCircle },
-}
 
 const getPlannerName = (lead: BusinessLead) => {
   const first = lead.planner?.firstName || ''
@@ -203,8 +193,14 @@ function LeadsPageContent() {
 
   if (isLoading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-3">
+        <PageHeader title="Leads" />
+        <KpiGrid>
+          {[0, 1, 2, 3].map((i) => (
+            <KpiCard key={i} label="Loading" value="" loading />
+          ))}
+        </KpiGrid>
+        <Skeleton className="h-72 w-full rounded-xl" />
       </div>
     )
   }
@@ -225,19 +221,18 @@ function LeadsPageContent() {
 
   return (
     <div className="space-y-3">
-      <PageHeader
-        title="Leads"
-        actions={
-          <>
-            <Badge variant="secondary" className="text-xs">
-              {leads.length} Total Leads
-            </Badge>
-            {statusCounts['NEW'] > 0 && (
-              <Badge className="bg-primary text-xs text-white">{statusCounts['NEW']} New</Badge>
-            )}
-          </>
-        }
-      />
+      <PageHeader title="Leads" />
+
+      <KpiGrid>
+        <KpiCard label="Total leads" value={leads.length} icon={Users} />
+        <KpiCard label="New" value={statusCounts['NEW'] ?? 0} icon={Inbox} hint="Awaiting your response" />
+        <KpiCard
+          label="In progress"
+          value={(statusCounts['CONTACTED'] ?? 0) + (statusCounts['QUALIFIED'] ?? 0) + (statusCounts['PROPOSAL_SENT'] ?? 0) + (statusCounts['NEGOTIATING'] ?? 0)}
+          icon={TrendingUp}
+        />
+        <KpiCard label="Won" value={statusCounts['WON'] ?? 0} icon={CheckCircle2} />
+      </KpiGrid>
 
       <DataTable<BusinessLead>
         data={filteredLeads}

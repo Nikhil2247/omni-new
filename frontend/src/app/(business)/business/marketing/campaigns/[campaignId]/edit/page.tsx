@@ -40,7 +40,7 @@ export default function EditCampaignPage() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-2xl py-2">
+      <div className="mx-auto max-w-2xl space-y-3">
         <Skeleton className="h-8 w-48 mb-4" />
         <Card>
           <CardHeader>
@@ -62,7 +62,7 @@ export default function EditCampaignPage() {
 
   if (!campaign) {
     return (
-      <div className="container py-2">
+      <div className="space-y-3">
         <Card>
           <CardContent className="py-10 text-center">
             <h2 className="text-xl font-semibold mb-2">Campaign not found</h2>
@@ -78,7 +78,7 @@ export default function EditCampaignPage() {
   // Only allow editing of DRAFT or SCHEDULED campaigns
   if (campaign.status !== 'DRAFT' && campaign.status !== 'SCHEDULED') {
     return (
-      <div className="container py-2">
+      <div className="space-y-3">
         <Card>
           <CardContent className="py-10 text-center">
             <h2 className="text-xl font-semibold mb-2">Cannot edit this campaign</h2>
@@ -98,7 +98,7 @@ export default function EditCampaignPage() {
     <div className="container max-w-2xl py-2">
       <Link
         href={`/business/marketing/campaigns/${campaignId}`}
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-3"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Campaign

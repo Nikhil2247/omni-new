@@ -10,9 +10,8 @@ import {
   useDeclineAgreement,
 } from '@/hooks/queries/use-business'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, StatCard, StatGrid } from '@/components/dash'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, KpiCard, KpiGrid } from '@/components/dash'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,7 +35,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import {
   Handshake,
-  DollarSign,
+  IndianRupee,
   CheckCircle,
   Clock,
   XCircle,
@@ -50,14 +49,14 @@ import {
 } from 'lucide-react'
 import type { BusinessAgreement } from '@/lib/api/types/business.types'
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  DRAFT: { label: 'Draft', color: 'bg-muted text-foreground', icon: FileText },
-  SENT: { label: 'Sent', color: 'bg-primary/10 text-primary', icon: Send },
-  ACCEPTED: { label: 'Accepted', color: 'bg-success/10 text-success', icon: CheckCircle },
-  DECLINED: { label: 'Declined', color: 'bg-destructive/10 text-destructive', icon: XCircle },
-  CONTRACT_LOCKED: { label: 'Contract Locked', color: 'bg-success/10 text-success', icon: CheckCircle },
-  COMPLETED: { label: 'Completed', color: 'bg-primary/10 text-primary', icon: CheckCircle },
-  CANCELLED: { label: 'Cancelled', color: 'bg-muted text-foreground', icon: XCircle },
+const statusConfig: Record<string, { label: string; icon: React.ElementType }> = {
+  DRAFT: { label: 'Draft', icon: FileText },
+  SENT: { label: 'Sent', icon: Send },
+  ACCEPTED: { label: 'Accepted', icon: CheckCircle },
+  DECLINED: { label: 'Declined', icon: XCircle },
+  CONTRACT_LOCKED: { label: 'Contract Locked', icon: CheckCircle },
+  COMPLETED: { label: 'Completed', icon: CheckCircle },
+  CANCELLED: { label: 'Cancelled', icon: XCircle },
 }
 
 export default function BusinessAgreementsPage() {
@@ -146,7 +145,7 @@ export default function BusinessAgreementsPage() {
         <PageHeader title="Vendor Agreements" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto h-8 w-8 text-warning mb-2" />
+            <AlertTriangle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="text-muted-foreground mt-1 text-sm">
               Please create your business profile first.
@@ -164,12 +163,12 @@ export default function BusinessAgreementsPage() {
     <div className="space-y-3">
       <PageHeader title="Vendor Agreements" />
 
-      <StatGrid>
-        <StatCard label="Total Agreements" value={totalAgreements} icon={Handshake} />
-        <StatCard label="Active" value={activeAgreements} icon={CheckCircle} accent="text-success" />
-        <StatCard label="Awaiting Response" value={pendingAgreements} icon={Clock} accent="text-warning" />
-        <StatCard label="Total Value" value={formatCurrency(totalValue)} icon={DollarSign} />
-      </StatGrid>
+      <KpiGrid>
+        <KpiCard label="Total agreements" value={totalAgreements} icon={Handshake} loading={agreementsLoading} />
+        <KpiCard label="Active" value={activeAgreements} icon={CheckCircle} loading={agreementsLoading} />
+        <KpiCard label="Awaiting response" value={pendingAgreements} icon={Clock} loading={agreementsLoading} />
+        <KpiCard label="Total value" value={formatCurrency(totalValue)} icon={IndianRupee} loading={agreementsLoading} />
+      </KpiGrid>
 
       <DataTable<BusinessAgreement>
         data={filteredAgreements}
@@ -294,9 +293,9 @@ export default function BusinessAgreementsPage() {
           {selectedAgreement && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Badge className={statusConfig[selectedAgreement.status]?.color || ''}>
-                  {statusConfig[selectedAgreement.status]?.label || selectedAgreement.status}
-                </Badge>
+                <StatusBadge status={selectedAgreement.status}>
+                  {statusConfig[selectedAgreement.status]?.label}
+                </StatusBadge>
               </div>
 
               <div className="grid grid-cols-2 gap-3 border-t pt-3">
@@ -325,11 +324,11 @@ export default function BusinessAgreementsPage() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Advance Paid</p>
-                    <p className="font-semibold text-lg text-success">{formatCurrency(selectedAgreement.advancePaid)}</p>
+                    <p className="font-semibold text-lg">{formatCurrency(selectedAgreement.advancePaid)}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Balance Due</p>
-                    <p className="font-semibold text-lg text-warning">{formatCurrency(selectedAgreement.balanceDue)}</p>
+                    <p className="font-semibold text-lg">{formatCurrency(selectedAgreement.balanceDue)}</p>
                   </div>
                 </div>
               </div>
@@ -356,7 +355,7 @@ export default function BusinessAgreementsPage() {
                   )}
                   {selectedAgreement.acceptedAt && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-success" />
+                      <div className="w-2 h-2 rounded-full bg-primary" />
                       <span>Accepted: {format(new Date(selectedAgreement.acceptedAt), 'MMM d, yyyy')}</span>
                     </div>
                   )}
@@ -372,7 +371,7 @@ export default function BusinessAgreementsPage() {
               {canAcceptOrDecline(selectedAgreement.status) && (
                 <div className="border-t pt-4 flex gap-2">
                   <Button
-                    className="flex-1 bg-success hover:bg-success"
+                    className="flex-1"
                     onClick={() => setShowAcceptConfirm(true)}
                   >
                     <ThumbsUp className="mr-2 h-4 w-4" />
@@ -407,7 +406,6 @@ export default function BusinessAgreementsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-success hover:bg-success"
               onClick={handleAccept}
               disabled={acceptAgreement.isPending}
             >

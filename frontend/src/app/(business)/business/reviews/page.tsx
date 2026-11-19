@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { trackDashboard } from '@/lib/analytics/umami'
 import { useBusinessProfile, useBusinessReviews, useRespondToReview } from '@/hooks/queries/use-business'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell } from '@/components/dash'
+import { PageHeader, DataTable, FilterSelect, StatusBadge, UserCell, TwoLineCell, KpiCard, KpiGrid } from '@/components/dash'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -95,7 +95,7 @@ export default function BusinessReviewsPage() {
         <PageHeader title="Reviews" />
         <Card>
           <CardContent className="py-6 text-center">
-            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-warning" />
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Profile Required</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Please create your business profile to view reviews.
@@ -112,6 +112,23 @@ export default function BusinessReviewsPage() {
   return (
     <div className="space-y-3">
       <PageHeader title="Reviews" />
+
+      <KpiGrid cols={3}>
+        <KpiCard label="Total reviews" value={reviews.length} icon={MessageSquare} loading={reviewsLoading} />
+        <KpiCard
+          label="Average rating"
+          value={reviews.length ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '-'}
+          icon={Star}
+          hint="out of 5"
+          loading={reviewsLoading}
+        />
+        <KpiCard
+          label="Awaiting response"
+          value={reviews.filter((r) => !r.reviewNotes).length}
+          icon={Reply}
+          loading={reviewsLoading}
+        />
+      </KpiGrid>
 
       <DataTable<BusinessReview>
         data={filteredReviews}
@@ -147,7 +164,7 @@ export default function BusinessReviewsPage() {
             exportValue: (r) => r.rating,
             cell: (r) => (
               <span className="inline-flex items-center gap-1 text-sm">
-                <Star className="h-3.5 w-3.5 fill-warning text-warning" />
+                <Star className="h-3.5 w-3.5 fill-primary text-primary" />
                 {r.rating}/5
               </span>
             ),
@@ -209,7 +226,7 @@ export default function BusinessReviewsPage() {
                         key={i}
                         className={`h-4 w-4 ${
                           i < selectedReview.rating
-                            ? 'text-warning fill-warning'
+                            ? 'text-primary fill-primary'
                             : 'text-muted-foreground'
                         }`}
                       />

@@ -2,17 +2,30 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Pencil } from 'lucide-react'
+import { CheckCircle2, FilePen, Archive, Pencil, PenLine } from 'lucide-react'
 import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
+import { useAuth } from '@/hooks/use-auth'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { Button } from '@/components/ui/button'
-import { DataTable, PageHeader, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dash'
+import { DashboardHero, DataTable, HeroChip, KpiCard, KpiGrid, StatusBadge, TwoLineCell, type DataColumn } from '@/components/dash'
 
 export default function ContentWriterDashboardPage() {
+  const { user } = useAuth()
   const [currentPage, setCurrentPage] = useState(1)
   const { data, isLoading } = useBlogPosts({ status: 'DRAFT', page: currentPage, limit: 20 })
+  // Totals come from server-side counts.
+  const { data: archived, isLoading: archivedLoading } = useBlogPosts({ status: 'ARCHIVED', page: 1, limit: 1 })
+  const { data: published, isLoading: publishedLoading } = useBlogPosts({ status: 'PUBLISHED', page: 1, limit: 1 })
   type Post = NonNullable<typeof data>['data'][number]
+
+  const draftCount = data?.meta?.total ?? data?.data?.length ?? 0
+  const archivedCount = archived?.meta?.total ?? archived?.data?.length ?? 0
+  const publishedCount = published?.meta?.total ?? published?.data?.length ?? 0
+
+  const firstName = user?.name?.split(' ')[0]
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const columns: DataColumn<Post>[] = [
     {
@@ -26,15 +39,24 @@ export default function ContentWriterDashboardPage() {
 
   return (
     <RoleGuard allowedRoles={[ROLES.CONTENT_WRITER]} redirectOnFail={true} exactMatch>
-      <div className="space-y-3">
-        <PageHeader
-          title="Content Writer Dashboard"
+      <div className="space-y-4">
+        <DashboardHero
+          eyebrow="Content writer"
+          title={firstName ? `${greeting}, ${firstName}` : greeting}
+          subtitle="Pick up a draft or start something new."
           actions={
             <Button asChild size="sm">
-              <Link href="/marketing/content/new">Write New Draft</Link>
+              <Link href="/marketing/content/new"><PenLine className="size-3.5" /> Write new draft</Link>
             </Button>
           }
+          aside={<HeroChip icon={FilePen} label="Drafts" value={isLoading ? '…' : draftCount} />}
         />
+
+        <KpiGrid cols={3}>
+          <KpiCard label="Drafts" value={draftCount} icon={FilePen} loading={isLoading} href="/marketing/content/drafts" />
+          <KpiCard label="Archived" value={archivedCount} icon={Archive} loading={archivedLoading} />
+          <KpiCard label="Published" value={publishedCount} icon={CheckCircle2} loading={publishedLoading} href="/marketing/content" />
+        </KpiGrid>
 
         <DataTable
           data={data?.data}

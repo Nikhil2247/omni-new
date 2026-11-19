@@ -50,7 +50,7 @@ export default function SystemStaffUsersPage() {
         <div className="flex flex-wrap gap-1">
           {user.userRoles?.length ? (
             user.userRoles.map((role) => (
-              <StatusBadge key={role.id} tone="purple">
+              <StatusBadge key={role.id} tone="neutral">
                 {role.role.displayName}
               </StatusBadge>
             ))

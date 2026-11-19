@@ -5,8 +5,8 @@ import { RoleGuard } from '@/components/auth'
 import { ROLES } from '@/config/roles'
 import { useBlogPosts } from '@/hooks/queries/use-marketing'
 import { useUmami } from '@/hooks/use-umami'
+import { KpiCard, KpiGrid, PageHeader, Panel, SegmentedBar } from '@/components/dash'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PageHeader, StatCard, StatGrid } from '@/components/dash'
 import { FileText, CheckCircle2, FilePen } from 'lucide-react'
 
 export default function MarketingAnalyticsPage() {
@@ -23,19 +23,29 @@ export default function MarketingAnalyticsPage() {
 
   return (
     <RoleGuard allowedRoles={[ROLES.ADMIN_SYSTEM, ROLES.MARKETING_SERVICES_ADMIN, ROLES.MULTI_MEDIA_MANAGER]} redirectOnFail={true}>
-    <div className="space-y-3">
-      <PageHeader title="Marketing analytics" />
+      <div className="space-y-4">
+        <PageHeader title="Marketing analytics" />
 
-      {isLoading ? (
-        <Skeleton className="h-16" />
-      ) : (
-        <StatGrid className="lg:grid-cols-3">
-          <StatCard label="Total posts" value={totalPosts} icon={FileText} />
-          <StatCard label="Published" value={published} icon={CheckCircle2} accent="text-success" />
-          <StatCard label="Drafts" value={drafts} icon={FilePen} accent="text-warning" />
-        </StatGrid>
-      )}
-    </div>
+        <KpiGrid cols={3}>
+          <KpiCard label="Total posts" value={totalPosts} icon={FileText} loading={isLoading} hint="Latest 50 posts" />
+          <KpiCard label="Published" value={published} icon={CheckCircle2} loading={isLoading} />
+          <KpiCard label="Drafts" value={drafts} icon={FilePen} loading={isLoading} />
+        </KpiGrid>
+
+        <Panel title="Content by status" icon={FileText} description="Based on the latest 50 posts">
+          {isLoading ? (
+            <Skeleton className="h-16" />
+          ) : (
+            <SegmentedBar
+              emptyLabel="No posts yet."
+              segments={[
+                { label: 'Published', value: published, tone: 'primary' },
+                { label: 'Drafts', value: drafts, tone: 'primary' },
+              ]}
+            />
+          )}
+        </Panel>
+      </div>
     </RoleGuard>
   )
 }

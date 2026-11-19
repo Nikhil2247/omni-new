@@ -14,7 +14,6 @@ import {
 } from '@/hooks/queries/use-ops'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -49,8 +48,11 @@ import {
   FilterSelect,
   StatusBadge,
   TwoLineCell,
-  StatCard,
-  StatGrid,
+  KpiCard,
+  KpiGrid,
+  Panel,
+  PanelEmpty,
+  FormField,
   type DataColumn,
 } from '@/components/dash'
 
@@ -184,6 +186,7 @@ export default function OpsAgreementsPage() {
   const totalAgreed = agreements?.reduce((sum, a) => sum + (Number(a.agreedAmount) || 0), 0) || 0
   const totalPaid = agreements?.reduce((sum, a) => sum + (Number(a.advancePaid) || 0), 0) || 0
   const acceptedCount = agreements?.filter(a => a.status === 'ACCEPTED').length || 0
+  const balanceTotal = agreements?.reduce((sum, a) => sum + (Number(a.balanceDue) || 0), 0) || 0
   const pendingCount = agreements?.filter(a => a.status === 'SENT' || a.status === 'DRAFT').length || 0
 
   type EventRow = NonNullable<typeof events>[number]
@@ -249,7 +252,7 @@ export default function OpsAgreementsPage() {
       header: 'Agreed',
       label: 'Agreed',
       align: 'right',
-      cell: (a) => formatCurrency(a.agreedAmount),
+      cell: (a) => <span className="tabular font-medium">{formatCurrency(a.agreedAmount)}</span>,
       sortValue: (a) => Number(a.agreedAmount) || 0,
     },
     {
@@ -258,7 +261,7 @@ export default function OpsAgreementsPage() {
       label: 'Advance',
       align: 'right',
       hideBelow: 'md',
-      cell: (a) => <span className="text-success">{formatCurrency(a.advancePaid)}</span>,
+      cell: (a) => <span className="tabular">{formatCurrency(a.advancePaid)}</span>,
       sortValue: (a) => Number(a.advancePaid) || 0,
     },
     {
@@ -267,7 +270,7 @@ export default function OpsAgreementsPage() {
       label: 'Balance',
       align: 'right',
       hideBelow: 'md',
-      cell: (a) => <span className="text-warning">{formatCurrency(a.balanceDue)}</span>,
+      cell: (a) => <span className="tabular font-medium">{formatCurrency(a.balanceDue)}</span>,
       sortValue: (a) => Number(a.balanceDue) || 0,
     },
     {
@@ -275,7 +278,7 @@ export default function OpsAgreementsPage() {
       header: 'Created',
       label: 'Created',
       hideBelow: 'lg',
-      cell: (a) => new Date(a.createdAt || '').toLocaleDateString(),
+      cell: (a) => a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-',
       sortValue: (a) => (a.createdAt ? new Date(a.createdAt) : null),
     },
   ]
@@ -300,7 +303,7 @@ export default function OpsAgreementsPage() {
                 <Link href={`/ops/events/${selectedEventId}`}>View Event</Link>
               </Button>
               <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="mr-1 h-4 w-4" />
                 Add Agreement
               </Button>
             </>
@@ -326,18 +329,17 @@ export default function OpsAgreementsPage() {
         {/* Right: Agreements */}
         <div className="lg:col-span-2 space-y-3">
           {!selectedEventId ? (
-            <div className="rounded-lg border bg-card py-8 text-center">
-              <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-              <p className="font-medium">Select an event</p>
-            </div>
+            <Panel title="Vendor agreements" description="Choose an event on the left to see its agreements">
+              <PanelEmpty icon={FileText}>Select an event to view and manage its vendor agreements.</PanelEmpty>
+            </Panel>
           ) : (
             <>
-              <StatGrid>
-                <StatCard label="Total Agreed" value={formatCurrency(totalAgreed)} icon={DollarSign} />
-                <StatCard label="Total Paid" value={formatCurrency(totalPaid)} icon={CheckCircle} accent="text-success" />
-                <StatCard label="Accepted" value={acceptedCount} icon={FileText} accent="text-success" />
-                <StatCard label="Pending" value={pendingCount} icon={Clock} accent="text-warning" />
-              </StatGrid>
+              <KpiGrid>
+                <KpiCard label="Total agreed" value={formatCurrency(totalAgreed)} icon={DollarSign} hint={`${agreements?.length ?? 0} agreements`} />
+                <KpiCard label="Advance paid" value={formatCurrency(totalPaid)} icon={CheckCircle} hint={`Balance ${formatCurrency(balanceTotal)}`} />
+                <KpiCard label="Accepted" value={acceptedCount} icon={FileText} />
+                <KpiCard label="Awaiting action" value={pendingCount} icon={Clock} hint="Draft or sent" />
+              </KpiGrid>
 
               <DataTable
                 data={filteredAgreements}
@@ -413,8 +415,7 @@ export default function OpsAgreementsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="vendor">Vendor</Label>
+            <FormField label="Vendor" htmlFor="vendor">
               <Select
                 value={newAgreement.vendorProfileId}
                 onValueChange={(value) =>
@@ -432,11 +433,10 @@ export default function OpsAgreementsPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="agreedAmount">Agreed Amount</Label>
+              <FormField label="Agreed amount (₹)" htmlFor="agreedAmount">
                 <Input
                   id="agreedAmount"
                   type="number"
@@ -447,9 +447,8 @@ export default function OpsAgreementsPage() {
                     setNewAgreement((prev) => ({ ...prev, agreedAmount: e.target.value }))
                   }
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="advancePaid">Advance Paid</Label>
+              </FormField>
+              <FormField label="Advance paid (₹)" htmlFor="advancePaid" hint="Balance is calculated automatically.">
                 <Input
                   id="advancePaid"
                   type="number"
@@ -460,11 +459,10 @@ export default function OpsAgreementsPage() {
                     setNewAgreement((prev) => ({ ...prev, advancePaid: e.target.value }))
                   }
                 />
-              </div>
+              </FormField>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="contractUrl">Contract URL (Optional)</Label>
+            <FormField label="Contract URL (optional)" htmlFor="contractUrl">
               <Input
                 id="contractUrl"
                 type="url"
@@ -474,7 +472,7 @@ export default function OpsAgreementsPage() {
                   setNewAgreement((prev) => ({ ...prev, contractUrl: e.target.value }))
                 }
               />
-            </div>
+            </FormField>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
@@ -500,15 +498,14 @@ export default function OpsAgreementsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="declineReason">Reason</Label>
+            <FormField label="Reason" htmlFor="declineReason">
               <Input
                 id="declineReason"
                 placeholder="Enter reason for declining..."
                 value={declineReason}
                 onChange={(e) => setDeclineReason(e.target.value)}
               />
-            </div>
+            </FormField>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeclineDialogOpen(false)}>

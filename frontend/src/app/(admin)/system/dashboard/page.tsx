@@ -1,27 +1,25 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { trackDashboard } from '@/lib/analytics/umami'
-import {
-  Activity,
-  ArrowUpRight,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Settings,
-  Shield,
-  Store,
-  TrendingUp,
-  Users,
-} from 'lucide-react'
+import { Activity, Calendar, Clock, Gauge, Settings, Shield, Store, TrendingUp, Users } from 'lucide-react'
 import { useAdminAudit, useAdminDashboard } from '@/hooks/queries/use-admin'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DataTable, PageHeader, StatusBadge, type DataColumn } from '@/components/dash'
-import { cn } from '@/lib/utils'
+import {
+  DashboardHero,
+  KpiCard,
+  KpiGrid,
+  ListRow,
+  ListStack,
+  Panel,
+  PanelEmpty,
+  QuickActionTile,
+  StatusBadge,
+  WidgetBoard,
+  type BoardWidget,
+} from '@/components/dash'
 
 export default function SystemDashboardPage() {
   const { data, isLoading } = useAdminDashboard()
@@ -31,326 +29,197 @@ export default function SystemDashboardPage() {
     trackDashboard.view('system')
   }, [])
 
-  const auditColumns: DataColumn<NonNullable<typeof auditData>['data'][number]>[] = [
-    {
-      id: 'action',
-      header: 'Action',
-      label: 'Action',
-      cell: (log) => <span className="font-mono text-xs">{log.action}</span>,
-      exportValue: (log) => log.action,
-    },
-    {
-      id: 'entity',
-      header: 'Entity',
-      label: 'Entity',
-      cell: (log) => <StatusBadge tone="neutral">{log.entityType}</StatusBadge>,
-      exportValue: (log) => log.entityType,
-    },
-    {
-      id: 'user',
-      header: 'User',
-      label: 'User',
-      cell: (log) => <span className="text-muted-foreground">{log.userId || 'System'}</span>,
-      exportValue: (log) => log.userId || 'System',
-    },
-    {
-      id: 'time',
-      header: 'Time',
-      label: 'Time',
-      align: 'right',
-      cell: (log) => <span className="text-sm text-muted-foreground">{formatDateTime(log.createdAt)}</span>,
-      exportValue: (log) => formatDateTime(log.createdAt),
-    },
-  ]
+  const healthPercent = data ? normalizeHealthPercent(data.overview.platformHealth) : 0
+  const healthTone = healthPercent >= 90 ? 'success' : healthPercent >= 75 ? 'warning' : 'destructive'
+  const healthLabel = healthPercent >= 90 ? 'All systems operational' : healthPercent >= 75 ? 'Minor issues' : 'Degraded'
+
+  const widgets: BoardWidget[] = useMemo(() => {
+    if (!data) return []
+    return [
+      {
+        id: 'platform-health',
+        title: 'Platform health',
+        span: 4,
+        content: (
+          <Panel title="Platform health" icon={Gauge} headerRight={<StatusBadge tone={healthTone}>{healthPercent}%</StatusBadge>}>
+            <div className="flex flex-col items-center gap-3">
+              <HealthRing value={healthPercent} />
+              <div className="grid w-full grid-cols-3 gap-2 text-center">
+                {[
+                  ['DAU', data.userMetrics.dau],
+                  ['WAU', data.userMetrics.wau],
+                  ['MAU', data.userMetrics.mau],
+                ].map(([label, value]) => (
+                  <div key={label} className="bg-muted/40 rounded-lg p-2">
+                    <p className="tabular text-base font-semibold">{Number(value).toLocaleString()}</p>
+                    <p className="text-muted-foreground text-xs">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Panel>
+        ),
+      },
+      {
+        id: 'engagement',
+        title: 'Engagement metrics',
+        span: 4,
+        content: (
+          <Panel title="Engagement metrics" icon={Activity}>
+            <div className="space-y-4">
+              <MeterRow label="DAU/WAU ratio" value={data.userMetrics.dauWauRatio * 100} suffix="%" target={30} />
+              <MeterRow label="DAU/MAU ratio" value={data.userMetrics.dauMauRatio * 100} suffix="%" target={20} />
+              <MeterRow label="Avg vendor score" value={data.vendorMetrics.avgPerformanceScore} max={10} />
+            </div>
+          </Panel>
+        ),
+      },
+      {
+        id: 'quick-operations',
+        title: 'Quick operations',
+        span: 4,
+        content: (
+          <Panel title="Quick operations" icon={Settings}>
+            <div className="space-y-2">
+              <QuickActionTile href="/system/users" icon={Users} label="Manage users" hint="Accounts and access" />
+              <QuickActionTile href="/system/roles" icon={Shield} label="Roles & permissions" hint="Who can do what" />
+              <QuickActionTile href="/system/audit" icon={Clock} label="Audit activity" hint="Review recent changes" />
+              <QuickActionTile href="/system/config" icon={Settings} label="Configuration" hint="Platform settings" />
+            </div>
+          </Panel>
+        ),
+      },
+      {
+        id: 'recent-audit',
+        title: 'Recent audit activity',
+        span: 12,
+        content: (
+          <Panel title="Recent audit activity" icon={Clock} action={{ label: 'View all', href: '/system/audit' }}>
+            {auditLoading ? (
+              <div className="space-y-2">
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-10" />
+                ))}
+              </div>
+            ) : auditData?.data?.length ? (
+              <ListStack>
+                {auditData.data.map((log) => (
+                  <ListRow
+                    key={log.id}
+                    icon={Activity}
+                    title={<span className="font-mono text-xs">{log.action}</span>}
+                    meta={`${log.userId || 'System'} · ${formatDateTime(log.createdAt)}`}
+                    trailing={<StatusBadge tone="neutral">{log.entityType}</StatusBadge>}
+                  />
+                ))}
+              </ListStack>
+            ) : (
+              <PanelEmpty icon={Activity}>No audit events found.</PanelEmpty>
+            )}
+          </Panel>
+        ),
+      },
+    ]
+  }, [data, healthPercent, healthTone, auditData, auditLoading])
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-64" />
-        <div className="grid gap-3 md:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-40" />
+      <div className="space-y-4">
+        <Skeleton className="h-24" />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24" />
           ))}
         </div>
-        <Skeleton className="h-48" />
+        <Skeleton className="h-64" />
       </div>
     )
   }
 
   if (!data) {
-    return <div className="text-sm text-destructive">Unable to load system dashboard.</div>
+    return <div className="text-destructive text-sm">Unable to load system dashboard.</div>
   }
 
-  const healthPercent = normalizeHealthPercent(data.overview.platformHealth)
-
   return (
-    <div className="space-y-3">
-      <PageHeader
-        title="System Dashboard"
-        leading={
-          <Badge
-            variant={healthPercent >= 90 ? 'default' : healthPercent >= 75 ? 'secondary' : 'destructive'}
-            className="order-last gap-1"
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            {healthPercent >= 90 ? 'All Systems Operational' : healthPercent >= 75 ? 'Minor Issues' : 'Degraded'}
-          </Badge>
-        }
+    <div className="space-y-4">
+      <DashboardHero
+        eyebrow="System"
+        title="System dashboard"
+        subtitle="Platform health, usage and recent administrative activity."
         actions={
           <Button asChild size="sm">
             <Link href="/system/config">
-              <Settings className="mr-2 h-4 w-4" />
-              System Settings
+              <Settings className="size-3.5" /> System settings
             </Link>
           </Button>
         }
-      />
-
-      {/* Platform Stats & Health */}
-      <div className="grid gap-3 lg:grid-cols-3">
-        {/* Platform Health Ring */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Platform Health</CardTitle>
-              <Badge variant={healthPercent >= 90 ? 'default' : healthPercent >= 75 ? 'secondary' : 'destructive'}>
-                {healthPercent}%
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center">
-              <HealthRing value={healthPercent} />
-              <div className="mt-2 grid w-full grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg bg-muted/50 p-1.5">
-                  <p className="text-lg font-bold">{data.userMetrics.dau}</p>
-                  <p className="text-xs text-muted-foreground">DAU</p>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-1.5">
-                  <p className="text-lg font-bold">{data.userMetrics.wau}</p>
-                  <p className="text-xs text-muted-foreground">WAU</p>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-1.5">
-                  <p className="text-lg font-bold">{data.userMetrics.mau}</p>
-                  <p className="text-xs text-muted-foreground">MAU</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Platform Overview</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <QuickStat
-              label="Total Users"
-              value={data.overview.totalUsers.toLocaleString()}
-              icon={Users}
-              color="primary"
-            />
-            <QuickStat
-              label="Active Vendors"
-              value={data.overview.totalVendors.toLocaleString()}
-              icon={Store}
-              color="chart-2"
-            />
-            <QuickStat
-              label="Active Events"
-              value={data.overview.totalEvents.toLocaleString()}
-              icon={Calendar}
-              color="chart-3"
-            />
-            <QuickStat
-              label="Conversion Rate"
-              value={`${Math.round(data.overview.avgConversionRate * 100)}%`}
-              icon={TrendingUp}
-              color="chart-4"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Engagement Ratios */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Engagement Metrics</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <EngagementGauge
-              label="DAU/WAU Ratio"
-              value={data.userMetrics.dauWauRatio * 100}
-              target={30}
-            />
-            <EngagementGauge
-              label="DAU/MAU Ratio"
-              value={data.userMetrics.dauMauRatio * 100}
-              target={20}
-            />
-            <div className="rounded-lg border p-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Avg Vendor Score</span>
-                <span className="text-lg font-bold">{data.vendorMetrics.avgPerformanceScore.toFixed(1)}</span>
-              </div>
-              <div className="mt-1.5 h-2 w-full rounded-full bg-muted">
-                <div
-                  className="h-2 rounded-full bg-primary transition-all"
-                  style={{ width: `${Math.min(data.vendorMetrics.avgPerformanceScore * 10, 100)}%` }}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Operations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Operations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
-            <QuickLink href="/system/users" icon={Users} label="Manage Users" />
-            <QuickLink href="/system/roles" icon={Shield} label="Roles & Permissions" />
-            <QuickLink href="/system/audit" icon={Clock} label="Audit Activity" />
-            <QuickLink href="/system/config" icon={Settings} label="Configuration" />
+        aside={
+          <div className="bg-muted/40 flex items-center gap-2 rounded-lg border px-3 py-2">
+            <StatusBadge tone={healthTone}>{healthLabel}</StatusBadge>
+            <span className="tabular text-sm font-semibold">{healthPercent}%</span>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Audit Activity */}
-      <DataTable
-        data={auditData?.data}
-        columns={auditColumns}
-        rowKey={(log) => log.id}
-        isLoading={auditLoading}
-        toolbarRight={
-          <Button asChild variant="outline" size="sm">
-            <Link href="/system/audit">
-              View All
-              <ArrowUpRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
         }
-        emptyTitle="No audit events found"
-        emptyIcon={Activity}
       />
+
+      <KpiGrid>
+        <KpiCard label="Total users" value={data.overview.totalUsers.toLocaleString()} icon={Users} href="/system/users" />
+        <KpiCard label="Active vendors" value={data.overview.totalVendors.toLocaleString()} icon={Store} href="/system/vendors" />
+        <KpiCard label="Active events" value={data.overview.totalEvents.toLocaleString()} icon={Calendar} />
+        <KpiCard label="Conversion rate" value={`${Math.round(data.overview.avgConversionRate * 100)}%`} icon={TrendingUp} />
+      </KpiGrid>
+
+      <WidgetBoard storageKey="system-dashboard" widgets={widgets} />
     </div>
   )
 }
 
-function QuickStat({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string
-  value: string
-  icon: React.ElementType
-  color: string
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border p-2.5">
-      <div className="flex items-center gap-3">
-        <div
-          className={cn('flex h-8 w-8 items-center justify-center rounded-lg', `bg-${color}/10`)}
-          style={{ backgroundColor: `color-mix(in srgb, var(--${color}) 10%, transparent)` }}
-        >
-          <Icon className="h-4 w-4" style={{ color: `var(--${color})` }} />
-        </div>
-        <span className="text-sm text-muted-foreground">{label}</span>
-      </div>
-      <span className="text-lg font-bold">{value}</span>
-    </div>
-  )
-}
-
-function EngagementGauge({
+function MeterRow({
   label,
   value,
   target,
+  suffix = '',
+  max = 100,
 }: {
   label: string
   value: number
-  target: number
+  target?: number
+  suffix?: string
+  max?: number
 }) {
-  const isAboveTarget = value >= target
-
+  const pct = Math.max(0, Math.min((value / max) * 100, 100))
   return (
-    <div className="rounded-lg border p-2.5">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold">{value.toFixed(1)}%</span>
-          <Badge variant={isAboveTarget ? 'default' : 'secondary'} className="text-xs">
-            Target: {target}%
-          </Badge>
-        </div>
+    <div className="space-y-1.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-muted-foreground text-sm">{label}</span>
+        <span className="tabular text-sm font-semibold">
+          {value.toFixed(1)}
+          {suffix}
+          {target !== undefined ? <span className="text-muted-foreground ml-2 text-xs font-normal">target {target}%</span> : null}
+        </span>
       </div>
-      <div className="mt-1.5 h-2 w-full rounded-full bg-muted">
-        <div
-          className={cn(
-            'h-2 rounded-full transition-all',
-            isAboveTarget ? 'bg-success' : 'bg-warning'
-          )}
-          style={{ width: `${Math.min(value, 100)}%` }}
-        />
+      <div className="bg-muted relative h-2 w-full rounded-full">
+        <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
+        {target !== undefined ? (
+          <span className="bg-foreground/50 absolute -top-0.5 h-3 w-px" style={{ left: `${Math.min(target, 100)}%` }} aria-hidden />
+        ) : null}
       </div>
     </div>
-  )
-}
-
-function QuickLink({
-  href,
-  icon: Icon,
-  label,
-}: {
-  href: string
-  icon: React.ElementType
-  label: string
-}) {
-  return (
-    <Link
-      href={href}
-      className="group flex items-center gap-3 rounded-lg border p-2.5 transition-all hover:border-primary/50 hover:bg-primary/5"
-    >
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-all group-hover:bg-primary/20">
-        <Icon className="h-4 w-4 text-primary" />
-      </div>
-      <p className="flex-1 text-sm font-medium">{label}</p>
-      <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:opacity-100" />
-    </Link>
   )
 }
 
 function HealthRing({ value }: { value: number }) {
-  const radius = 48
+  const radius = 56
   const stroke = 10
   const normalizedRadius = radius - stroke / 2
   const circumference = normalizedRadius * 2 * Math.PI
-  const strokeDashoffset = circumference - (value / 100) * circumference
-
-  const getColor = (val: number) => {
-    if (val >= 90) return 'var(--success)'
-    if (val >= 75) return 'var(--warning)'
-    return 'var(--destructive)'
-  }
+  const strokeDashoffset = circumference - (Math.min(value, 100) / 100) * circumference
 
   return (
-    <div className="relative">
+    <div className="relative" role="img" aria-label={`Platform health ${value}%`}>
       <svg height={radius * 2} width={radius * 2}>
+        <circle stroke="var(--muted)" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius} />
         <circle
-          stroke="var(--muted)"
-          fill="transparent"
-          strokeWidth={stroke}
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-        />
-        <circle
-          stroke={getColor(value)}
+          stroke="var(--primary)"
           fill="transparent"
           strokeWidth={stroke}
           strokeDasharray={circumference + ' ' + circumference}
@@ -364,8 +233,8 @@ function HealthRing({ value }: { value: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold">{value}%</span>
-        <span className="text-xs text-muted-foreground">Health</span>
+        <span className="tabular text-2xl font-semibold">{value}%</span>
+        <span className="text-muted-foreground text-xs">Health</span>
       </div>
     </div>
   )

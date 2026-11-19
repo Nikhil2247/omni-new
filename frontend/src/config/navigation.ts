@@ -42,6 +42,8 @@ import {
   Wrench,
   BadgeCheck,
   FilePlus2,
+  Tags,
+  MapPin,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -170,6 +172,24 @@ export const systemAdminNav: NavGroup[] = [
         title: 'Users',
         href: '/system/users',
         icon: Users,
+        roles: [ROLES.ADMIN_SYSTEM],
+      },
+      {
+        title: 'Vendors',
+        href: '/system/vendors',
+        icon: Store,
+        roles: [ROLES.ADMIN_SYSTEM],
+      },
+      {
+        title: 'Categories',
+        href: '/system/categories',
+        icon: Tags,
+        roles: [ROLES.ADMIN_SYSTEM],
+      },
+      {
+        title: 'Locations',
+        href: '/system/locations',
+        icon: MapPin,
         roles: [ROLES.ADMIN_SYSTEM],
       },
       {

@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Eye, Users } from 'lucide-react'
+import { Eye, Trash2, Users } from 'lucide-react'
 import { useAdminUsers } from '@/hooks/queries/use-admin'
+import { useDeleteUser } from '@/hooks/queries/use-admin-catalog'
 import { useUmami } from '@/hooks/use-umami'
 import {
   DataTable,
@@ -15,6 +16,7 @@ import {
 
 export default function SystemUsersPage() {
   const { track } = useUmami()
+  const deleteUser = useDeleteUser()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
@@ -64,7 +66,7 @@ export default function SystemUsersPage() {
         <div className="flex flex-wrap gap-1">
           {user.userRoles?.length ? (
             user.userRoles.map((role) => (
-              <StatusBadge key={role.id} tone="purple">
+              <StatusBadge key={role.id} tone="neutral">
                 {role.role.displayName}
               </StatusBadge>
             ))
@@ -100,14 +102,29 @@ export default function SystemUsersPage() {
             value={status}
             onChange={setStatus}
             options={[
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' },
-              { value: 'suspended', label: 'Suspended' },
+              { value: 'ACTIVE', label: 'Active' },
+              { value: 'PENDING', label: 'Pending' },
+              { value: 'SUSPENDED', label: 'Suspended' },
+              { value: 'DELETED', label: 'Deleted' },
             ]}
           />
         }
         rowActions={(user) => [
           { label: 'View user', icon: Eye, href: `/system/users/${user.id}` },
+          {
+            label: 'Delete user',
+            icon: Trash2,
+            danger: true,
+            visible:
+              user.status !== 'DELETED' && !user.userRoles?.some((entry) => entry.role.name === 'ADMIN_SYSTEM'),
+            confirm: {
+              title: `Delete ${formatName(user)}?`,
+              description:
+                'The account is disabled and signed out everywhere. Their records are kept for compliance.',
+              confirmLabel: 'Delete user',
+            },
+            onClick: () => deleteUser.mutateAsync(user.id),
+          },
         ]}
         serverPagination={{
           page: data?.meta?.page ?? currentPage,

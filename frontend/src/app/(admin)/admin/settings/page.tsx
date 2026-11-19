@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
-import { User, Bell, Shield } from 'lucide-react'
-import { SettingsCard } from '@/components/settings/settings-card'
+import { SettingsShell } from '@/components/dash'
+import { ProfileForm } from '@/components/settings/profile-form'
 import { useUmami } from '@/hooks/use-umami'
-import { PageHeader } from '@/components/dash'
 
 export default function AdminSettingsPage() {
   const { track } = useUmami()
@@ -14,34 +13,8 @@ export default function AdminSettingsPage() {
   }, [track])
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="Settings" />
-
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <SettingsCard
-          title="Profile"
-          description="Update your personal details and account information."
-          href="/admin/settings/profile"
-          icon={User}
-          iconColor="text-primary"
-        />
-        
-        <SettingsCard
-          title="Notifications"
-          description="Manage notification preferences for admin alerts."
-          href="/admin/settings/notifications"
-          icon={Bell}
-          iconColor="text-warning"
-        />
-        
-        <SettingsCard
-          title="Security"
-          description="Manage sessions, password, and two-factor authentication."
-          href="/admin/settings/security"
-          icon={Shield}
-          iconColor="text-success"
-        />
-      </div>
-    </div>
+    <SettingsShell basePath="/admin/settings">
+      <ProfileForm />
+    </SettingsShell>
   )
 }

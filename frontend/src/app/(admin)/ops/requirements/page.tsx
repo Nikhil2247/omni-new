@@ -17,8 +17,10 @@ import {
   DataTable,
   StatusBadge,
   TwoLineCell,
-  StatCard,
-  StatGrid,
+  KpiCard,
+  KpiGrid,
+  Panel,
+  PanelEmpty,
   type DataColumn,
 } from "@/components/dash";
 import { Input } from "@/components/ui/input";
@@ -276,7 +278,7 @@ export default function OpsRequirementsPage() {
           />
           <TwoLineCell
             title={event.clientName || "Unnamed Client"}
-            subtitle={`${event.eventType || "Event"} · ${event.eventDate ? new Date(event.eventDate).toLocaleDateString() : "No date"}`}
+            subtitle={`${event.eventType || "Event"} · ${event.eventDate ? new Date(event.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "No date"}`}
           />
         </div>
       ),
@@ -337,7 +339,7 @@ export default function OpsRequirementsPage() {
       label: "Est. budget",
       align: "right",
       cell: (item) =>
-        item.estimatedBudget ? `$${Number(item.estimatedBudget).toLocaleString()}` : "-",
+        item.estimatedBudget ? `₹${Number(item.estimatedBudget).toLocaleString("en-IN")}` : "-",
       sortValue: (item) => (item.estimatedBudget ? Number(item.estimatedBudget) : null),
       exportValue: (item) => (item.estimatedBudget ? Number(item.estimatedBudget) : ""),
     },
@@ -399,131 +401,117 @@ export default function OpsRequirementsPage() {
         {/* Right: Requirements */}
         <div className="space-y-3 lg:col-span-2">
           {!selectedEventId ? (
-            <div className="rounded-lg border bg-card py-8 text-center">
-              <ClipboardList className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-              <p className="font-medium">Select an event</p>
-            </div>
+            <Panel title="Requirement sheet" description="Choose an event on the left">
+              <PanelEmpty icon={ClipboardList}>Select an event to view or create its requirement sheet.</PanelEmpty>
+            </Panel>
           ) : reqLoading ? (
             <DataTable data={[]} columns={itemColumns} rowKey={(i) => i.id} isLoading />
           ) : !requirements ? (
-            <div className="rounded-lg border bg-card py-8 text-center">
-              <ClipboardList className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-              <p className="font-medium">No requirement sheet for {selectedEvent?.clientName}</p>
-              <Button size="sm" className="mt-3" onClick={() => setCreateSheetDialogOpen(true)}>
-                <Plus className="mr-1 h-4 w-4" />
-                Create Requirement Sheet
-              </Button>
-            </div>
+            <Panel title="Requirement sheet" description={selectedEvent?.clientName}>
+              <PanelEmpty icon={ClipboardList}>No requirement sheet for {selectedEvent?.clientName} yet.</PanelEmpty>
+              <div className="flex justify-center pb-2">
+                <Button size="sm" onClick={() => setCreateSheetDialogOpen(true)}>
+                  <Plus className="mr-1 h-4 w-4" />
+                  Create Requirement Sheet
+                </Button>
+              </div>
+            </Panel>
           ) : (
             <>
               {/* Approval state */}
               {(requirements.approvalStatus || requirements.notes) && (
-                <div className="space-y-2">
-                  {requirements.approvalStatus && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="font-medium">{selectedEvent?.clientName}</span>
+                <Panel
+                  title="Client approval"
+                  description={selectedEvent?.clientName}
+                  headerRight={
+                    requirements.approvalStatus ? (
                       <StatusBadge status={requirements.approvalStatus}>
                         {approvalStatusConfig[requirements.approvalStatus]?.label}
                       </StatusBadge>
-                    </div>
-                  )}
-
-                  {requirements.approvalStatus === "PENDING" && requirements.approvalToken && (
-                    <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="mt-0.5 h-4 w-4 text-warning" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-warning">
-                            Awaiting Client Approval - sent on{" "}
-                            {requirements.sentToClientAt
-                              ? new Date(requirements.sentToClientAt).toLocaleDateString()
-                              : "N/A"}
-                          </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <Input
-                              readOnly
-                              value={getApprovalLink() || ""}
-                              className="h-8 bg-white text-xs"
-                            />
-                            <Button size="sm" variant="outline" className="h-8" onClick={copyApprovalLink}>
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8"
-                              onClick={() => window.open(getApprovalLink() || "", "_blank")}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    ) : undefined
+                  }
+                >
+                  <div className="space-y-3 text-sm">
+                    {requirements.approvalStatus === "PENDING" && requirements.approvalToken && (
+                      <div className="space-y-2">
+                        <p className="text-muted-foreground">
+                          Sent on{" "}
+                          {requirements.sentToClientAt
+                            ? new Date(requirements.sentToClientAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                            : "N/A"}
+                          . Share this link with the client to collect their approval.
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Input readOnly value={getApprovalLink() || ""} className="h-8 text-xs" />
+                          <Button size="sm" variant="outline" className="h-8" onClick={copyApprovalLink} aria-label="Copy link">
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8"
+                            aria-label="Open link"
+                            onClick={() => window.open(getApprovalLink() || "", "_blank")}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {requirements.approvalStatus === "APPROVED" && (
-                    <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-success" />
-                      <span className="font-medium text-success">
-                        Approved by Client on{" "}
+                    {requirements.approvalStatus === "APPROVED" && (
+                      <p className="flex items-center gap-2">
+                        <CheckCircle2 className="text-muted-foreground h-4 w-4" />
+                        Approved by client on{" "}
                         {requirements.clientApprovedAt
-                          ? new Date(requirements.clientApprovedAt).toLocaleDateString()
+                          ? new Date(requirements.clientApprovedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
                           : "N/A"}
-                      </span>
-                    </div>
-                  )}
+                      </p>
+                    )}
 
-                  {requirements.approvalStatus === "REJECTED" && (
-                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <XCircle className="h-4 w-4 text-destructive" />
-                        <span className="font-medium text-destructive">
-                          Rejected by Client on{" "}
+                    {requirements.approvalStatus === "REJECTED" && (
+                      <div className="space-y-1">
+                        <p className="text-destructive flex items-center gap-2 font-medium">
+                          <XCircle className="h-4 w-4" />
+                          Rejected by client on{" "}
                           {requirements.clientRejectedAt
-                            ? new Date(requirements.clientRejectedAt).toLocaleDateString()
+                            ? new Date(requirements.clientRejectedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
                             : "N/A"}
-                        </span>
-                      </div>
-                      {requirements.rejectionReason && (
-                        <p className="mt-1 text-destructive">
-                          Reason: {requirements.rejectionReason}
                         </p>
-                      )}
-                    </div>
-                  )}
+                        {requirements.rejectionReason && (
+                          <p className="text-muted-foreground">Reason: {requirements.rejectionReason}</p>
+                        )}
+                      </div>
+                    )}
 
-                  {requirements.notes && (
-                    <div className="bg-muted/50 rounded-lg px-3 py-2">
-                      <p className="text-muted-foreground text-sm">{requirements.notes}</p>
-                    </div>
-                  )}
-                </div>
+                    {requirements.notes && (
+                      <div className="bg-muted/50 rounded-lg px-3 py-2">
+                        <p className="text-muted-foreground">{requirements.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </Panel>
               )}
 
-              <StatGrid>
-                <StatCard label="Total Items" value={requirements.items?.length || 0} icon={Package} />
-                <StatCard
+              <KpiGrid>
+                <KpiCard label="Total items" value={requirements.items?.length || 0} icon={Package} />
+                <KpiCard
                   label="Pending"
                   value={requirements.items?.filter((i) => i.status === "PENDING").length || 0}
                   icon={Clock}
-                  accent="text-warning"
                 />
-                <StatCard
+                <KpiCard
                   label="Fulfilled"
                   value={requirements.items?.filter((i) => i.status === "FULFILLED").length || 0}
                   icon={CheckCircle}
-                  accent="text-success"
                 />
-                <StatCard
-                  label="Est. Total"
-                  value={`$${
-                    requirements.items
-                      ?.reduce((sum, i) => sum + (Number(i.estimatedBudget) || 0), 0)
-                      .toLocaleString() || 0
-                  }`}
+                <KpiCard
+                  label="Est. total"
+                  value={`₹${(
+                    requirements.items?.reduce((sum, i) => sum + (Number(i.estimatedBudget) || 0), 0) || 0
+                  ).toLocaleString("en-IN")}`}
                 />
-              </StatGrid>
+              </KpiGrid>
 
               <DataTable
                 data={requirements.items}

@@ -274,3 +274,127 @@ export interface AdminDashboard {
   }
   timestamp: string
 }
+
+// ─── Vendor, category and location management ────────────────────────────────
+
+export type AdminVendorStatus = 'ACTIVE' | 'UNCLAIMED' | 'SUSPENDED' | 'ARCHIVED' | 'DRAFT' | 'PENDING_REVIEW'
+
+export interface AdminVendor {
+  id: string
+  businessName: string
+  slug: string
+  status: AdminVendorStatus
+  planTier: string
+  verifiedAt: string | null
+  contactEmail: string | null
+  contactPhone: string | null
+  leadCount: number
+  viewCount: number
+  totalReviews: number
+  createdAt: string
+  updatedAt: string
+  category: { id: string; name: string; slug: string } | null
+  user: { id: string; email: string } | null
+  cityId: string | null
+  cityName: string | null
+  claimed: boolean
+}
+
+export interface AdminVendorListParams {
+  query?: string
+  status?: string
+  categoryId?: string
+  cityId?: string
+  page?: number
+  limit?: number
+}
+
+export interface AdminVendorStats {
+  total: number
+  byStatus: Record<string, number>
+}
+
+export interface AdminCategory {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  icon: string | null
+  sortOrder: number
+  isActive: boolean
+  parentId: string | null
+  parent?: { id: string; name: string } | null
+  createdAt: string
+  updatedAt: string
+  _count?: { vendors: number; children: number; serviceTypes: number }
+}
+
+export interface AdminCategoryInput {
+  name: string
+  slug?: string
+  description?: string | null
+  icon?: string | null
+  sortOrder?: number
+  isActive?: boolean
+  parentId?: string | null
+}
+
+export interface AdminCountry {
+  id: string
+  name: string
+  code: string
+  code2: string
+  dialCode: string | null
+  currency: string | null
+  isActive: boolean
+  _count?: { states: number }
+}
+
+export interface AdminCountryInput {
+  name: string
+  code: string
+  code2: string
+  dialCode?: string | null
+  currency?: string | null
+  isActive?: boolean
+}
+
+export interface AdminState {
+  id: string
+  name: string
+  code: string | null
+  countryId: string
+  isActive: boolean
+  country?: { id: string; name: string }
+  _count?: { cities: number }
+}
+
+export interface AdminStateInput {
+  name: string
+  code?: string | null
+  countryId: string
+  isActive?: boolean
+}
+
+export interface AdminCity {
+  id: string
+  name: string
+  stateId: string
+  isActive: boolean
+  state?: { id: string; name: string; country?: { id: string; name: string } }
+  _count?: { addresses: number }
+}
+
+export interface AdminCityInput {
+  name: string
+  stateId: string
+  isActive?: boolean
+}
+
+export interface AdminCityListParams {
+  query?: string
+  stateId?: string
+  countryId?: string
+  page?: number
+  limit?: number
+}
