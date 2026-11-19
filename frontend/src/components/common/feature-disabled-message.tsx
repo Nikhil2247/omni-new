@@ -1,9 +1,7 @@
 'use client'
 
-import { AlertCircle, Lock } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { Notice, NOTICE_ICONS, SketchButton } from '@/components/sketch'
 
 interface FeatureDisabledMessageProps {
   /**
@@ -66,38 +64,29 @@ export function FeatureDisabledMessage({
   const defaultDescription = `The ${feature} feature is currently unavailable. This may be due to scheduled maintenance or configuration changes.`
 
   return (
-    <div className="container py-16 max-w-lg mx-auto">
-      <Card className="border-dashed">
-        <CardContent className="pt-10 pb-10 text-center">
-          <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-6 flex items-center justify-center">
-            <Lock className="h-8 w-8 text-muted-foreground" />
-          </div>
-
-          <h2 className="text-2xl font-semibold mb-2">{title}</h2>
-
-          <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-            {description || defaultDescription}
-          </p>
-
-          <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <span>Please check back later or contact support for assistance.</span>
-          </div>
-
-          <div className="flex items-center justify-center gap-3">
+    <div className="container mx-auto max-w-lg px-4 py-16">
+      <Notice
+        icon={NOTICE_ICONS.lock}
+        alt
+        title={title}
+        actions={
+          <>
             {showBackButton && (
-              <Link href={backUrl}>
-                <Button variant="outline">{backText}</Button>
-              </Link>
+              <SketchButton asChild variant="line">
+                <Link href={backUrl}>{backText}</Link>
+              </SketchButton>
             )}
             {showContactSupport && (
-              <Link href="/support">
-                <Button variant="default">Contact Support</Button>
-              </Link>
+              <SketchButton asChild>
+                <Link href="/support">Contact Support</Link>
+              </SketchButton>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </>
+        }
+      >
+        <p>{description || defaultDescription}</p>
+        <p className="text-sm">Please check back later or contact support for help.</p>
+      </Notice>
     </div>
   )
 }

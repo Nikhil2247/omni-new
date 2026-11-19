@@ -258,16 +258,24 @@ function InspirePageContent() {
   )
 }
 
-export default function InspirePage() {
+/**
+ * `shell` is server-rendered HTML (heading, intro text and the first photos). It is what the server sends, and what
+ * search engines read, while this client component (which needs the URL's search params) takes over in the browser.
+ */
+export default function InspirePage({ shell }: { shell?: React.ReactNode }) {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Loading inspiration...</span>
-        </div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        shell ?? (
+          <div className="flex min-h-screen items-center justify-center bg-background">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-sm text-muted-foreground">Loading inspiration...</span>
+            </div>
+          </div>
+        )
+      }
+    >
       <InspirePageContent />
     </Suspense>
   )

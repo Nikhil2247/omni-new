@@ -1,11 +1,21 @@
 import { cache } from 'react'
 import type { Metadata } from 'next'
+import { notFound, permanentRedirect } from 'next/navigation'
 import VendorPageClient from './vendor-page-client'
 import { pageMetadata, generateJsonLd } from '@/lib/seo/metadata'
 import { publicService } from '@/lib/api/services/public.service'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
 import type { JsonLdSchema } from '@/lib/seo/types'
 import { getVendorKeywords, categoryKeywords } from '@/lib/seo/keywords'
+import { NotFoundError, withRetry } from '@/lib/seo/server-api'
+
+// Rendered once, then served from cache and refreshed hourly. Crawlers get fast, stable HTML and we stop
+// hitting the (rate-limited) API on every bot request.
+export const revalidate = 3600
+export const dynamicParams = true
+export async function generateStaticParams() {
+  return []
+}
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com'
 
@@ -45,47 +55,58 @@ type VendorWithSeoFields = VendorProfile & {
   services?: VendorService[]
 }
 
+/**
+ * Returns the vendor, or null ONLY when the API says it does not exist (404).
+ * Temporary API failures (429 / 5xx) are retried and then thrown, so a hiccup never turns a valid vendor page
+ * into a cached "not found / noindex" page.
+ */
 const getVendorBySlug = cache(async (slug: string | undefined): Promise<VendorProfile | null> => {
   if (!slug) return null
   try {
-    return await publicService.getVendorBySlug(slug)
-  } catch {
-    return null
+    return await withRetry(() => publicService.getVendorBySlug(slug))
+  } catch (error) {
+    if (error instanceof NotFoundError) return null
+    throw error
   }
 })
+
+/** Plain text from the vendor's HTML description (it is stored as rich text). */
+function stripHtml(value?: string | null): string {
+  return (value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function truncate(value: string, max: number): string {
+  if (value.length <= max) return value
+  const cut = value.slice(0, max - 1)
+  const lastSpace = cut.lastIndexOf(' ')
+  return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:–-]+$/, '')}…`
+}
 
 function buildDescription(vendor: VendorProfile) {
   const extendedVendor = vendor as VendorWithSeoFields
   const city = extendedVendor.address?.city
   const categoryName = vendor.category?.name
+  const rated = typeof vendor.averageRating === 'number' && (vendor.reviewsCount || 0) > 0
+  const ratingText = rated
+    ? ` Rated ${vendor.averageRating!.toFixed(1)}/5 by ${vendor.reviewsCount} customers.`
+    : ''
 
-  // Build rating text with review count for social proof
-  const ratingText =
-    typeof vendor.averageRating === 'number' && (vendor.reviewsCount || 0) > 0
-      ? ` Rated ${vendor.averageRating.toFixed(1)}/5 from ${vendor.reviewsCount} verified reviews.`
-      : ''
+  const lead = [vendor.businessName, categoryName && city ? `${categoryName} in ${city}` : categoryName || city]
+    .filter(Boolean)
+    .join(' – ')
+  const cta = ' See photos, services & get a free quote on Omnicassion.'
+  const snippetSource = stripHtml(vendor.tagline) || stripHtml(vendor.description)
+  const room = 158 - lead.length - ratingText.length - cta.length - 3
+  const snippet = snippetSource && room > 30 ? ` ${truncate(snippetSource, room)}` : ''
 
-  // Build location text
-  const locationText = city ? ` in ${city}` : ''
-
-  // If vendor has tagline, use it with enhancements
-  if (vendor.tagline) {
-    const base = vendor.tagline.length > 100 ? vendor.tagline.slice(0, 97) + '...' : vendor.tagline
-    return `${base}${ratingText} Book on Omnicassion.`
-  }
-
-  // If vendor has description, create optimized summary
-  if (vendor.description) {
-    const maxLen = 110 - ratingText.length
-    const summary = vendor.description.length > maxLen
-      ? vendor.description.slice(0, maxLen - 3) + '...'
-      : vendor.description
-    return `${summary}${ratingText}`
-  }
-
-  // Default SEO-optimized description
-  const serviceType = categoryName || 'event services'
-  return `Book ${vendor.businessName} for ${serviceType}${locationText}. View portfolio, pricing, and reviews.${ratingText} Request a quote on Omnicassion.`
+  return `${lead}.${snippet}${ratingText}${cta}`.replace(/\s+/g, ' ').trim()
 }
 
 function buildKeywords(vendor: VendorProfile) {
@@ -228,7 +249,7 @@ function buildJsonLd(vendor: VendorProfile, slug: string): JsonLdSchema[] {
     '@type': schemaType,
     '@id': `${canonicalUrl}#business`,
     name: vendor.businessName,
-    description: vendor.description || vendor.tagline || '',
+    description: truncate(stripHtml(vendor.description) || stripHtml(vendor.tagline), 500),
     url: canonicalUrl,
     ...(images.length > 0 && { image: images }),
     ...(vendor.contactPhone && { telephone: vendor.contactPhone }),
@@ -353,7 +374,7 @@ function buildJsonLd(vendor: VendorProfile, slug: string): JsonLdSchema[] {
     '@context': 'https://schema.org',
     '@type': 'ProfilePage',
     name: `${vendor.businessName} - ${vendor.category?.name || 'Event Vendor'}`,
-    description: vendor.description || vendor.tagline || `${vendor.businessName} on Omnicassion`,
+    description: truncate(stripHtml(vendor.description) || stripHtml(vendor.tagline), 300) || `${vendor.businessName} on Omnicassion`,
     url: canonicalUrl,
     mainEntity: {
       '@id': `${canonicalUrl}#business`,
@@ -388,9 +409,10 @@ export async function generateMetadata(
     )
   }
 
+  const vendorCity = (vendor as VendorWithSeoFields).address?.city
   const title = vendor.category?.name
-    ? `${vendor.businessName} | ${vendor.category.name} Services${((vendor as VendorWithSeoFields).address?.city ? ` in ${(vendor as VendorWithSeoFields).address?.city}` : '')}, Portfolio & Reviews`
-    : `${vendor.businessName} | Event Services, Portfolio & Reviews`
+    ? `${vendor.businessName}${vendorCity ? `, ${vendorCity}` : ''} – ${vendor.category.name} | Photos, Prices & Reviews`
+    : `${vendor.businessName}${vendorCity ? `, ${vendorCity}` : ''} | Event Services, Photos & Reviews`
 
   const description = buildDescription(vendor)
   const extendedVendor = vendor as VendorWithSeoFields
@@ -408,9 +430,17 @@ export async function generateMetadata(
 export default async function VendorPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = await params
   const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug
-  const vendor = await getVendorBySlug(slug)
 
-  const jsonLd = vendor ? generateJsonLd(buildJsonLd(vendor, slug)) : null
+  // /vendors/The-Oberoi-Spa-Resort and /vendors/the-oberoi-spa-resort must be one URL (duplicate-content fix).
+  if (slug && slug !== slug.toLowerCase()) {
+    permanentRedirect(`/vendors/${slug.toLowerCase()}`)
+  }
+
+  const vendor = await getVendorBySlug(slug)
+  // A vendor that genuinely does not exist is a real 404 (not a 200 page saying "not found").
+  if (!vendor) notFound()
+
+  const jsonLd = generateJsonLd(buildJsonLd(vendor, slug))
 
   return (
     <>

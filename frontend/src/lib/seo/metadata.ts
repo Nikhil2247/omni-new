@@ -152,7 +152,7 @@ export function generateMetadata(seo: Partial<SEOMetadata>): Metadata {
  * Generate page-specific metadata
  */
 export function pageMetadata(
-  title: string,
+  rawTitle: string,
   description: string,
   options?: {
     keywords?: string[];
@@ -162,6 +162,9 @@ export function pageMetadata(
     noIndex?: boolean;
   }
 ): Metadata {
+  // The root title template already appends " | Omnicassion"; many pages also wrote it themselves, which produced
+  // "... | Omnicassion | Omnicassion" and wasted title space. Strip a trailing brand so it appears exactly once.
+  const title = rawTitle.replace(/\s*[|–-]\s*Omnicassion\s*$/i, '').trim() || rawTitle;
   const canonical = options?.path ? `${SITE_URL}${options.path}` : SITE_URL;
   const ogImage = options?.image || `${SITE_URL}/images/og-image.png`;
 

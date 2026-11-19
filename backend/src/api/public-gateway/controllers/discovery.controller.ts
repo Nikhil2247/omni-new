@@ -20,6 +20,7 @@ import {
 } from '../../../core/auth/decorators/current-user.decorator';
 import { MediaUrlNormalizerService } from '../services/media-url-normalizer.service';
 import { CategoryLookupService } from '../../../core/lookup/category-lookup.service';
+import { CountryLookupService } from '../../../core/lookup/country-lookup.service';
 
 @Public()
 @Controller('discovery')
@@ -30,6 +31,7 @@ export class DiscoveryController {
     private readonly vendorIndexer: VendorIndexer,
     private readonly mediaUrlNormalizer: MediaUrlNormalizerService,
     private readonly categoryLookupService: CategoryLookupService,
+    private readonly countryLookupService: CountryLookupService,
   ) {}
 
   @Get('categories')
@@ -94,7 +96,23 @@ export class DiscoveryController {
   ): Promise<VendorProfileResponseDto> {
     return this.vendorProfileService
       .findBySlug(slug)
+      .then((result) => this.withLocation(result))
       .then((result) => this.mediaUrlNormalizer.normalizeDeep(result));
+  }
+
+  /**
+   * Adds the human-readable city/state/country to the vendor's address. The profile only stores a cityId, so
+   * without this the vendor page cannot say "in Zirakpur" in its title, headings or structured data.
+   */
+  private withLocation<T extends { address?: { cityId?: string | null } | null }>(vendor: T): T {
+    const cityId = vendor?.address?.cityId;
+    if (!cityId) return vendor;
+    const path = this.countryLookupService.getLocationPath(cityId);
+    if (!path) return vendor;
+    return {
+      ...vendor,
+      address: { ...vendor.address, city: path.city, state: path.state, country: path.country },
+    } as T;
   }
 
   @Get('featured')

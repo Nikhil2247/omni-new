@@ -49,3 +49,14 @@ export function imageDelivery(src?: string | null) {
   if (usesNextOptimizer(src)) return { unoptimized: false } as const
   return { unoptimized: true } as const
 }
+
+/**
+ * Same idea as `imageDelivery`, for SERVER components. A loader is a function and cannot be passed from a server
+ * component to <Image>, so for Cloudinary the size is baked straight into the URL instead (fixed width, no srcset).
+ * Spread the result onto <Image>: `<Image {...serverImageProps(url, 480)} />` (it includes `src`).
+ */
+export function serverImageProps(src: string, width = 480) {
+  if (isCloudinaryUrl(src)) return { src: cloudinaryLoader({ src, width }), unoptimized: true } as const
+  if (usesNextOptimizer(src)) return { src, unoptimized: false } as const
+  return { src, unoptimized: true } as const
+}

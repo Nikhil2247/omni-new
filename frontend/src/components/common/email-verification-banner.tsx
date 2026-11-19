@@ -58,10 +58,10 @@ export function EmailVerificationBanner() {
 
   if (resendSuccess) {
     return (
-      <Alert className="border-green-200 bg-green-50 dark:bg-green-900/10">
-        <CheckCircle className="h-4 w-4 text-green-600" />
+      <Alert className="border-leaf bg-leaf-light/40">
+        <CheckCircle className="h-4 w-4 text-leaf-deep" />
         <AlertDescription className="ml-2 flex items-center justify-between">
-          <span className="text-green-800 dark:text-green-200">
+          <span className="text-ink">
             Verification email sent! Please check your inbox.
           </span>
           <Button
@@ -78,19 +78,19 @@ export function EmailVerificationBanner() {
   }
 
   return (
-    <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-900/10">
-      <AlertCircle className="h-4 w-4 text-orange-600" />
+    <Alert className="border-gold bg-gold/15">
+      <AlertCircle className="h-4 w-4 text-gold" />
       <AlertDescription className="ml-2 flex items-center justify-between gap-4">
         <div className="flex-1">
-          <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+          <p className="text-sm font-bold text-ink">
             Please verify your email address
           </p>
-          <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+          <p className="text-xs text-ink-soft mt-1">
             We sent a verification email to <strong>{user.email}</strong>.
             Please check your inbox and click the verification link to access all features.
           </p>
           {resendError && (
-            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+            <p className="text-xs text-rose mt-1">
               {resendError}
             </p>
           )}
@@ -101,7 +101,7 @@ export function EmailVerificationBanner() {
             size="sm"
             onClick={handleResendVerification}
             disabled={isResending}
-            className="border-orange-300 hover:bg-orange-100"
+            className="border-ink hover:bg-blue-wash"
           >
             <Mail className="h-3 w-3 mr-1" />
             {isResending ? 'Sending...' : 'Resend Email'}

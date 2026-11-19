@@ -77,6 +77,11 @@ export class EmailService implements OnModuleInit {
     this.brandContext = {
       brandName: 'Omnicassion',
       frontendUrl,
+      // PNG, because many mail apps (Gmail, Outlook) cannot show AVIF. The file lives in the web app's public folder.
+      logoUrl: this.configService.get<string>(
+        'EMAIL_LOGO_URL',
+        `${frontendUrl.replace(/\/$/, '')}/images/omnilogo-email.png`,
+      ),
       supportEmail: this.configService.get<string>(
         'SUPPORT_EMAIL',
         'support@omnicassion.com',

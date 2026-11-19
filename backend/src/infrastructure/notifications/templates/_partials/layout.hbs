@@ -19,6 +19,7 @@
     .preheader { display: none !important; visibility: hidden; opacity: 0; color: transparent; height: 0; width: 0; max-height: 0; max-width: 0; overflow: hidden; mso-hide: all; }
 
     .wordmark { font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 700; color: #1c2757; text-decoration: none; letter-spacing: -0.01em; }
+    .logo-sticker { background-color: #ffffff !important; }
     .tagline { font-family: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive; font-size: 20px; font-weight: 700; color: #2748c4; line-height: 1; }
 
     .card { background-color: #fffdf8; border: 2px solid #1c2757; border-radius: 22px 6px 22px 6px; box-shadow: 5px 5px 0 #a9bbf0; }
@@ -104,6 +105,7 @@
       .font-body, .content, .content p, .content h1, .content h2, .content h3, .wordmark { color: #eaedfb !important; }
       .muted, .content ul, .content ol, .eyebrow, .footer, .dl, .detail-label, .currency { color: #a5aed6 !important; }
       a, .content a, .tagline, .footer a { color: #7f9cf5 !important; }
+      .logo-sticker { background-color: #ffffff !important; border-color: #eaedfb !important; box-shadow: 3px 3px 0 #33489a !important; }
       .card { background-color: #18214c !important; border-color: #eaedfb !important; box-shadow: 5px 5px 0 #33489a !important; }
       .btn, .button { background-color: #7f9cf5 !important; color: #0b1230 !important; border-color: #eaedfb !important; box-shadow: 3px 3px 0 #eaedfb !important; }
       .btn-secondary, .button-secondary { background-color: #18214c !important; color: #7f9cf5 !important; }
@@ -131,8 +133,11 @@
           <!-- Brand header -->
           <tr>
             <td align="center" style="padding:0 0 22px 0;">
-              <a href="{{frontendUrl}}" class="wordmark" style="font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;color:#1c2757;text-decoration:none;">{{brandName}}</a>
-              <div class="tagline font-hand" style="padding-top:4px;">{{#if tagline}}{{tagline}}{{else}}plan it. share it. celebrate it.{{/if}}</div>
+              <!-- Logo sticker: same look as the website header (white sticker, ink outline, hand-drawn corners) -->
+              <a href="{{frontendUrl}}" class="logo-sticker" style="display:inline-block;background-color:#ffffff;padding:6px 14px;border:2px solid #1c2757;border-radius:16px 4px 16px 4px;box-shadow:3px 3px 0 #a9bbf0;line-height:0;text-decoration:none;">
+                <img src="{{logoUrl}}" alt="{{brandName}}" width="125" height="30" style="display:block;width:125px;height:30px;border:0;">
+              </a>
+              <div class="tagline font-hand" style="padding-top:12px;">{{#if tagline}}{{tagline}}{{else}}plan it. share it. celebrate it.{{/if}}</div>
             </td>
           </tr>
           <!-- Paper card -->

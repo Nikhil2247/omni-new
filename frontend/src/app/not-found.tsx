@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { Button } from '@/components/ui/button'
-import { Home, Search, ArrowLeft } from 'lucide-react'
+import { PublicLayout } from '@/components/layouts/public'
+import { Brush, Eyebrow, PaintedScene, Paper, SketchButton, SkContainer } from '@/components/sketch'
 
 export const metadata: Metadata = {
   title: '404 - Page Not Found | Omnicassion',
@@ -12,73 +12,57 @@ export const metadata: Metadata = {
   },
 }
 
+const POPULAR = [
+  { href: '/vendors', label: 'Find Vendors' },
+  { href: '/discover', label: 'Discover' },
+  { href: '/planning-tools', label: 'Planning Tools' },
+  { href: '/blog', label: 'Blog' },
+  { href: '/pricing', label: 'Pricing' },
+  { href: '/contact', label: 'Contact' },
+]
+
 export default function NotFound() {
   return (
-    <main className="flex min-h-[80vh] flex-col items-center justify-center px-6 py-16 text-center">
-      <div className="mx-auto max-w-md space-y-6">
-        {/* 404 Visual */}
-        <div className="relative">
-          <h1 className="text-[120px] font-bold leading-none text-muted-foreground/20 sm:text-[150px]">
-            404
+    <PublicLayout>
+      <SkContainer className="py-10 sm:py-16">
+        <Paper tape className="mx-auto max-w-2xl px-5 py-9 text-center sm:px-10">
+          {/* a small painted scene, with the 404 hung over it */}
+          <div className="border-ink bg-sky1 relative mx-auto mb-7 aspect-[16/7] max-w-md overflow-hidden rounded-[18px_240px_20px_220px/230px_18px_250px_16px] border-2">
+            <PaintedScene seed={404} className="h-full w-full" />
+            <span className="font-display text-on-blue absolute inset-0 grid place-items-center text-[clamp(3.6rem,16vw,6rem)] leading-none font-bold [text-shadow:0_2px_0_rgb(28_39_87/.55)]">
+              404
+            </span>
+          </div>
+
+          <Eyebrow>Lost the way</Eyebrow>
+          <h1 className="font-display mt-2 text-[clamp(1.9rem,6vw,3rem)] leading-[1.05] font-semibold tracking-tight text-balance">
+            This page wandered <Brush>off</Brush>
           </h1>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="rounded-full bg-primary/10 p-6">
-              <Search className="h-12 w-12 text-primary" />
+          <p className="text-ink-soft mx-auto mt-4 max-w-md">
+            Sorry, the page you&apos;re looking for doesn&apos;t exist or has moved. Let&apos;s get you back on track.
+          </p>
+
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <SketchButton asChild>
+              <Link href="/">Back to Home</Link>
+            </SketchButton>
+            <SketchButton asChild variant="line">
+              <Link href="/vendors">Browse Vendors</Link>
+            </SketchButton>
+          </div>
+
+          <div className="border-line mt-9 border-t-2 border-dashed pt-6">
+            <p className="sk-hand text-ink-soft mb-3 text-xl">Popular places</p>
+            <div className="flex flex-wrap justify-center gap-2.5">
+              {POPULAR.map((l) => (
+                <Link key={l.href} href={l.href} className="sk-chip hover:bg-blue-wash">
+                  {l.label}
+                </Link>
+              ))}
             </div>
           </div>
-        </div>
-
-        {/* Content */}
-        <div className="space-y-3">
-          <h2 className="text-2xl font-semibold">Page Not Found</h2>
-          <p className="text-muted-foreground">
-            Sorry, the page you&apos;re looking for doesn&apos;t exist or has been moved.
-            Let&apos;s get you back on track.
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Button asChild>
-            <Link href="/">
-              <Home className="mr-2 h-4 w-4" />
-              Back to Home
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/vendors">
-              <Search className="mr-2 h-4 w-4" />
-              Browse Vendors
-            </Link>
-          </Button>
-        </div>
-
-        {/* Helpful Links */}
-        <div className="pt-8 border-t">
-          <p className="text-sm text-muted-foreground mb-4">Popular pages you might be looking for:</p>
-          <div className="flex flex-wrap justify-center gap-3 text-sm">
-            <Link href="/vendors" className="text-primary hover:underline">
-              Find Vendors
-            </Link>
-            <span className="text-muted-foreground">|</span>
-            <Link href="/discover" className="text-primary hover:underline">
-              Discover
-            </Link>
-            <span className="text-muted-foreground">|</span>
-            <Link href="/blog" className="text-primary hover:underline">
-              Blog
-            </Link>
-            <span className="text-muted-foreground">|</span>
-            <Link href="/pricing" className="text-primary hover:underline">
-              Pricing
-            </Link>
-            <span className="text-muted-foreground">|</span>
-            <Link href="/contact" className="text-primary hover:underline">
-              Contact
-            </Link>
-          </div>
-        </div>
-      </div>
-    </main>
+        </Paper>
+      </SkContainer>
+    </PublicLayout>
   )
 }

@@ -1,9 +1,7 @@
 'use client'
 
 import { Component, ErrorInfo, ReactNode } from 'react'
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { BgFx, Notice, NOTICE_ICONS, SketchButton } from '@/components/sketch'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -73,57 +71,37 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       // Default error UI
       return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-900">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
-                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
-              </div>
-              <CardTitle className="text-2xl">Oops! Something went wrong</CardTitle>
-              <CardDescription>
-                We encountered an unexpected error. Don't worry, our team has been notified.
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent>
+        <div className="sk-root relative grid min-h-screen place-items-center overflow-hidden px-4 py-12">
+          <BgFx />
+          <div className="relative z-[2] w-full">
+            <Notice
+              icon={NOTICE_ICONS.alert}
+              eyebrow="Something went wrong"
+              title="Oops! That didn't work"
+              actions={
+                <>
+                  <SketchButton onClick={this.handleReset}>Try Again</SketchButton>
+                  <SketchButton variant="line" onClick={this.handleGoHome}>
+                    Go Home
+                  </SketchButton>
+                </>
+              }
+            >
+              <p>We hit an unexpected error. Try refreshing the page or go back to the home page. If it keeps happening, please contact support.</p>
               {process.env.NODE_ENV === 'development' && this.state.error && (
-                <div className="mb-4 rounded-lg bg-gray-100 p-4 dark:bg-gray-800">
-                  <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Error Details (Development Only):
-                  </p>
-                  <pre className="overflow-auto text-xs text-red-600 dark:text-red-400">
-                    {this.state.error.toString()}
-                  </pre>
+                <div className="border-line bg-card rounded-lg border-2 border-dashed p-3 text-left">
+                  <p className="text-ink mb-1 text-sm font-bold">Error details (development only)</p>
+                  <pre className="text-rose overflow-auto text-xs whitespace-pre-wrap">{this.state.error.toString()}</pre>
                   {this.state.errorInfo && (
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-gray-600 dark:text-gray-400">
-                        Component Stack
-                      </summary>
-                      <pre className="mt-2 overflow-auto text-xs text-gray-600 dark:text-gray-400">
-                        {this.state.errorInfo.componentStack}
-                      </pre>
+                      <summary className="cursor-pointer text-xs">Component stack</summary>
+                      <pre className="mt-2 overflow-auto text-xs whitespace-pre-wrap">{this.state.errorInfo.componentStack}</pre>
                     </details>
                   )}
                 </div>
               )}
-              
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                You can try refreshing the page or return to the home page. If the problem persists,
-                please contact support.
-              </p>
-            </CardContent>
-            
-            <CardFooter className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={this.handleReset} className="w-full sm:w-auto" variant="default">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Try Again
-              </Button>
-              <Button onClick={this.handleGoHome} className="w-full sm:w-auto" variant="outline">
-                <Home className="mr-2 h-4 w-4" />
-                Go Home
-              </Button>
-            </CardFooter>
-          </Card>
+            </Notice>
+          </div>
         </div>
       )
     }

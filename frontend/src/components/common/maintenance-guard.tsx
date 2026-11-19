@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import { BgFx, Notice, NOTICE_ICONS, SketchButton } from '@/components/sketch'
 import { useAuthStore } from '@/store/auth-store'
 import { useSystemStatus } from '@/hooks/queries/use-public'
 import { ROLES } from '@/config/roles'
@@ -41,7 +41,7 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
     return (
       <div className="flex min-h-screen flex-col">
         <div className="px-4 py-3">
-          <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+          <Alert className="border-gold bg-gold/15 text-ink">
             <Wrench />
             <AlertTitle>Maintenance mode is active</AlertTitle>
             <AlertDescription>
@@ -59,44 +59,26 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
 
 function MaintenanceScreen({ supportEmail }: { supportEmail?: string }) {
   return (
-    <div className="relative min-h-screen">
-      <div className="absolute inset-0 bg-background" />
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div className="relative flex min-h-screen items-center justify-center px-6">
-        <div className="mx-auto w-full max-w-lg rounded-2xl border bg-card p-8 shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-              <Wrench className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">System in maintenance</h1>
-              <p className="text-sm text-muted-foreground">
-                We’ll be back shortly. Thanks for your patience.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-4 text-sm text-muted-foreground">
-            <p>
-              The platform is currently undergoing maintenance and is temporarily unavailable.
-              System administrators can still access the control panel.
-            </p>
-            {supportEmail ? (
-              <Alert className="bg-muted/40">
-                <AlertTitle>Need help?</AlertTitle>
-                <AlertDescription>
-                  Contact support at <span className="font-medium text-foreground">{supportEmail}</span>.
-                </AlertDescription>
-              </Alert>
-            ) : null}
-          </div>
-
-          <div className="mt-6">
-            <Button variant="outline" onClick={() => window.location.reload()}>
+    <div className="sk-root relative grid min-h-screen place-items-center overflow-hidden px-4 py-12">
+      <BgFx />
+      <div className="relative z-[2] w-full">
+        <Notice
+          icon={NOTICE_ICONS.wrench}
+          eyebrow="Back shortly"
+          title="We're tidying up"
+          actions={
+            <SketchButton variant="line" onClick={() => window.location.reload()}>
               Check again
-            </Button>
-          </div>
-        </div>
+            </SketchButton>
+          }
+        >
+          <p>Omnicassion is undergoing maintenance and is temporarily unavailable. Thanks for your patience. We&apos;ll be back soon.</p>
+          {supportEmail ? (
+            <p className="sk-hand text-ink text-xl">
+              Need help? Write to <span className="font-bold">{supportEmail}</span>
+            </p>
+          ) : null}
+        </Notice>
       </div>
     </div>
   )

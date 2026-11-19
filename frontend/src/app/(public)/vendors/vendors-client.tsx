@@ -594,16 +594,22 @@ function VendorsPageContent() {
   );
 }
 
-export default function VendorsPage() {
+/**
+ * `shell` is server-rendered HTML (heading, intro and the first vendors). It is what the server sends and what search
+ * engines read, while this client component (which needs the URL's search params) takes over in the browser.
+ */
+export default function VendorsPage({ shell }: { shell?: React.ReactNode }) {
   return (
     <Suspense
       fallback={
-        <div className="bg-background flex min-h-screen items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-            <span className="text-muted-foreground text-sm">Loading vendors...</span>
+        shell ?? (
+          <div className="bg-background flex min-h-screen items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+              <span className="text-muted-foreground text-sm">Loading vendors...</span>
+            </div>
           </div>
-        </div>
+        )
       }
     >
       <VendorsPageContent />

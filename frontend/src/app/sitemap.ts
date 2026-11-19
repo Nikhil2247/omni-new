@@ -1,4 +1,6 @@
 import { MetadataRoute } from 'next';
+import { withRetry } from '@/lib/seo/server-api';
+import { getLandingPages } from '@/lib/seo/landing';
 
 const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com').replace(/\/$/, '');
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
@@ -35,22 +37,32 @@ type BlogPageResponse = {
   success?: boolean
 }
 
+/**
+ * GET from the public API with retries. A rate-limited response (429) used to end a loop early with `break`,
+ * silently dropping every vendor after that page from the sitemap. Now it retries, and throws if it still fails
+ * (so the previously generated sitemap keeps being served instead of a truncated one).
+ */
+async function fetchApi<T>(path: string): Promise<T> {
+  return withRetry(async () => {
+    const response = await fetch(`${API_URL}${path}`, { next: { revalidate: 3600 } })
+    if (!response.ok) {
+      const error = new Error(`API ${response.status} for ${path}`) as Error & { status?: number }
+      error.status = response.status
+      throw error
+    }
+    return (await response.json()) as T
+  })
+}
+
 async function fetchVendorSlugRoutes(currentDate: Date): Promise<MetadataRoute.Sitemap> {
   const slugMap = new Map<string, Date>()
   const limit = 200
   const maxPages = 50
 
   for (let page = 1; page <= maxPages; page++) {
-    const response = await fetch(
-      `${API_URL}/public/discovery/vendors?page=${page}&limit=${limit}`,
-      {
-        next: { revalidate: 3600 },
-      },
+    const payload = await fetchApi<VendorsPageResponse | { data?: VendorsPageResponse }>(
+      `/public/discovery/vendors?page=${page}&limit=${limit}`,
     )
-
-    if (!response.ok) break
-
-    const payload = (await response.json()) as VendorsPageResponse | { data?: VendorsPageResponse }
     const paginated = (payload as { data?: VendorsPageResponse })?.data?.data
       ? (payload as { data?: VendorsPageResponse }).data
       : (payload as VendorsPageResponse)
@@ -85,16 +97,9 @@ async function fetchBlogSlugRoutes(currentDate: Date): Promise<MetadataRoute.Sit
   const maxPages = 30
 
   for (let page = 1; page <= maxPages; page++) {
-    const response = await fetch(
-      `${API_URL}/public/blog/posts?page=${page}&limit=${limit}&status=PUBLISHED`,
-      {
-        next: { revalidate: 3600 },
-      },
+    const payload = await fetchApi<BlogPageResponse | { data?: BlogPageResponse }>(
+      `/public/blog/posts?page=${page}&limit=${limit}&status=PUBLISHED`,
     )
-
-    if (!response.ok) break
-
-    const payload = (await response.json()) as BlogPageResponse | { data?: BlogPageResponse }
     const paginated = (payload as { data?: BlogPageResponse })?.data?.data
       ? (payload as { data?: BlogPageResponse }).data
       : (payload as BlogPageResponse)
@@ -235,113 +240,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.7,
     },
-    // Quote page
-    {
-      url: `${SITE_URL}/quote`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
   ];
 
-  // Auth pages
-  const authRoutes: MetadataRoute.Sitemap = [
-    {
-      url: `${SITE_URL}/signin`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${SITE_URL}/signup`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-  ];
+  // Category and city landing pages come from real data: only combinations that have live vendors are listed.
+  // (Login, sign-up and onboarding pages are intentionally NOT in the sitemap.)
+  let landingPages: Awaited<ReturnType<typeof getLandingPages>> = []
+  try {
+    landingPages = await getLandingPages()
+  } catch {
+    landingPages = []
+  }
 
-  // Vendor category pages - Comprehensive list for all service types
-  const vendorCategories = [
-    'photography',
-    'videography',
-    'catering',
-    'venues',
-    'entertainment',
-    'decor-design',
-    'florist',
-    'makeup-hair',
-    'mehndi-artists',
-    'wedding-planning',
-    'invitation',
-    'jewellery',
-    'bridal-wear',
-    'groom-wear',
-    'pandits',
-    'choreographers',
-    'travel-honeymoon',
-    'wedding-cakes',
-    'bar-services',
-    'transportation',
-  ]
-
-  const categoryRoutes: MetadataRoute.Sitemap = vendorCategories.map((category) => ({
+  const categorySlugs = Array.from(new Set(landingPages.map((p) => p.categorySlug)))
+  const categoryRoutes: MetadataRoute.Sitemap = categorySlugs.map((category) => ({
     url: `${SITE_URL}/vendors/category/${category}`,
     lastModified: currentDate,
     changeFrequency: 'daily' as const,
     priority: 0.9,
-  }));
+  }))
 
-  // City-specific category pages - Critical for local SEO rankings
-  const topCities = [
-    'mumbai', 'delhi', 'bangalore', 'hyderabad', 'chennai',
-    'kolkata', 'pune', 'ahmedabad', 'jaipur', 'lucknow',
-    'chandigarh', 'goa', 'udaipur', 'kochi', 'gurgaon',
-  ]
-
-  const citySpecificRoutes: MetadataRoute.Sitemap = []
-  // Only create city pages for main categories to avoid sitemap bloat
-  const mainCategories = vendorCategories.slice(0, 12)
-  for (const category of mainCategories) {
-    for (const city of topCities) {
-      citySpecificRoutes.push({
-        url: `${SITE_URL}/vendors/${category}/${city}`,
-        lastModified: currentDate,
-        changeFrequency: 'weekly' as const,
-        priority: 0.85,
-      })
-    }
-  }
-
-  // Onboarding pages
-  const onboardingRoutes: MetadataRoute.Sitemap = [
-    {
-      url: `${SITE_URL}/onboarding`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-  ];
+  const citySpecificRoutes: MetadataRoute.Sitemap = landingPages.map((p) => ({
+    url: `${SITE_URL}/vendors/${p.categorySlug}/${p.citySlug}`,
+    lastModified: currentDate,
+    changeFrequency: 'weekly' as const,
+    priority: p.vendorCount >= 3 ? 0.85 : 0.7,
+  }))
 
   let dynamicVendorRoutes: MetadataRoute.Sitemap = []
   let dynamicBlogRoutes: MetadataRoute.Sitemap = []
-  try {
-    dynamicVendorRoutes = await fetchVendorSlugRoutes(currentDate)
-  } catch {
-    dynamicVendorRoutes = []
-  }
-
-  try {
-    dynamicBlogRoutes = await fetchBlogSlugRoutes(currentDate)
-  } catch {
-    dynamicBlogRoutes = []
-  }
+  // Errors propagate on purpose: serving the previous full sitemap is better than a truncated one.
+  dynamicVendorRoutes = await fetchVendorSlugRoutes(currentDate)
+  dynamicBlogRoutes = await fetchBlogSlugRoutes(currentDate)
 
   return [
     ...staticRoutes,
-    ...authRoutes,
     ...categoryRoutes,
     ...citySpecificRoutes,
-    ...onboardingRoutes,
     ...dynamicVendorRoutes,
     ...dynamicBlogRoutes,
   ];
