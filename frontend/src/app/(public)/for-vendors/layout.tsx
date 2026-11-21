@@ -7,7 +7,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com'
 
 export const metadata: Metadata = pageMetadata(
   'Join as a Vendor - Grow Your Event Business | Omnicassion',
-  'List your wedding or event business on India\'s fastest-growing event marketplace. Get qualified leads, showcase your portfolio, and connect with 50,000+ couples and planners. Free to join.',
+  'List your wedding or event business on India\'s fastest-growing event marketplace. Get qualified leads, showcase your portfolio, and connect with couples and planners. Free to join.',
   {
     path: '/for-vendors',
     keywords: [

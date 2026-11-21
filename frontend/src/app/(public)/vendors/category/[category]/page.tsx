@@ -8,11 +8,11 @@ import { JsonLd } from '@/components/common/JsonLd'
 import { Button } from '@/components/ui/button'
 import { pageMetadata } from '@/lib/seo/metadata'
 import {
-  CATEGORY_SLUG_ALIASES,
   findCategory,
   getLandingPages,
   getVendorPage,
   pluralizeCategory,
+  resolveCategorySlug,
 } from '@/lib/seo/landing'
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com'
@@ -28,15 +28,11 @@ type Params = { category: string }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { category: raw } = await params
-  const slug = (CATEGORY_SLUG_ALIASES[raw.toLowerCase()] ?? raw).toLowerCase()
+  const slug = (await resolveCategorySlug(raw)) ?? raw.toLowerCase()
   const category = await findCategory(slug)
 
-  if (!category) {
-    return pageMetadata('Category not found', 'This category could not be found.', {
-      path: `/vendors/category/${slug}`,
-      noIndex: true,
-    })
-  }
+  // Real 404 status (not a 200 "soft 404").
+  if (!category) notFound()
 
   const { total } = await getVendorPage(category.slug, 1)
   const landing = (await getLandingPages()).filter((p) => p.categorySlug === category.slug)
@@ -67,9 +63,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function VendorsByCategoryPage({ params }: { params: Promise<Params> }) {
   const { category: raw } = await params
   const requested = raw.toLowerCase()
-  const alias = CATEGORY_SLUG_ALIASES[requested]
-  if (alias) permanentRedirect(`/vendors/category/${alias}`)
-  if (raw !== requested) permanentRedirect(`/vendors/category/${requested}`)
+  const resolved = await resolveCategorySlug(requested)
+  if (resolved && resolved !== raw) permanentRedirect(`/vendors/category/${resolved}`)
 
   // Only real categories exist. Anything else is a real 404 (it used to render an unrelated vendor list).
   const category = await findCategory(requested)

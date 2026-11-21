@@ -8,7 +8,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://omnicassion.com";
 
 export const metadata: Metadata = pageMetadata(
   "Free Wedding Budget Calculator India - Track Expenses Online | Omnicassion",
-  "Plan your Indian wedding budget with our free online calculator. Track expenses by category (venue, catering, photography, decor), manage vendor payments, set spending limits. Trusted by 50,000+ couples.",
+  "Plan your Indian wedding budget with our free online calculator. Track expenses by category (venue, catering, photography, decor), manage vendor payments, set spending limits.",
   {
     path: "/event-budget-calculator",
     keywords: toolKeywords['event-budget-calculator'],

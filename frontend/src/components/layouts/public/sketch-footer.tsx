@@ -50,7 +50,7 @@ export function SketchFooter() {
               <NextImage src="/images/omnilogo.avif" width={150} height={36} unoptimized alt="Omnicassion" className="h-[34px] w-auto" />
             </Link>
             <p className="text-ink-soft mt-3 max-w-[22rem] text-sm">
-              India&apos;s #1 Wedding &amp; Event Planning Platform. Book verified vendors and plan every detail.
+              Wedding & Event Planning Platform in India. Book verified vendors and plan every detail.
             </p>
             <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm">
               {social.map((s) => (

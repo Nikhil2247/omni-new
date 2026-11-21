@@ -8,7 +8,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://omnicassion.com";
 
 export const metadata: Metadata = pageMetadata(
   "Free Wedding Timeline Generator - Day Schedule Maker | Omnicassion",
-  "Create your perfect Indian wedding day timeline. Schedule sangeet, mehndi, haldi, wedding & reception. Share with vendors, family, and coordinators. Used by 50,000+ couples.",
+  "Create your perfect Indian wedding day timeline. Schedule sangeet, mehndi, haldi, wedding & reception. Share with vendors, family, and coordinators.",
   {
     path: "/event-timeline-generator",
     keywords: toolKeywords['event-timeline-generator'],

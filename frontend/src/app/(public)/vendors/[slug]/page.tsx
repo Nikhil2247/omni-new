@@ -398,16 +398,8 @@ export async function generateMetadata(
   const vendor = await getVendorBySlug(slug)
   const canonicalPath = `/vendors/${slug}`
 
-  if (!vendor) {
-    return pageMetadata(
-      'Vendor not found',
-      'The vendor you are looking for could not be found.',
-      {
-        path: canonicalPath,
-        noIndex: true,
-      },
-    )
-  }
+  // Real 404 status instead of a 200 page marked noindex (Google reports those as "soft 404").
+  if (!vendor) notFound()
 
   const vendorCity = (vendor as VendorWithSeoFields).address?.city
   const title = vendor.category?.name

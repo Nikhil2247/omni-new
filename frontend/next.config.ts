@@ -5,6 +5,18 @@ const BACKEND_URL = process.env.BACKEND_URL || "https://api.omnicassion.com";
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
+  // One canonical host: www.omnicassion.com -> omnicassion.com (301). Google lists both as separate pages today.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.omnicassion.com" }],
+        destination: "https://omnicassion.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
+
   // Proxy all /api/proxy/* requests to the backend (bypasses browser CORS)
   async rewrites() {
     return [

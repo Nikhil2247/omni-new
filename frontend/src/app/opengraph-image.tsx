@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'Omnicassion - India\'s Premier All-in-One Planning and Social Platform';
+export const alt = 'Omnicassion - Wedding & Event Planning Platform in India';
 export const size = {
   width: 1200,
   height: 630,

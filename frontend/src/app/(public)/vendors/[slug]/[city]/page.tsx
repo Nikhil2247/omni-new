@@ -9,7 +9,7 @@ import { Breadcrumb } from '@/components/common/Breadcrumb'
 import { JsonLd } from '@/components/common/JsonLd'
 import { Button } from '@/components/ui/button'
 import { pageMetadata } from '@/lib/seo/metadata'
-import { findLandingPage, getLandingPages, pluralizeCategory } from '@/lib/seo/landing'
+import { findLandingPage, getLandingPages, pluralizeCategory, resolveCategorySlug } from '@/lib/seo/landing'
 import { NotFoundError, withRetry } from '@/lib/seo/server-api'
 import type { VendorProfile } from '@/lib/api/types/vendor.types'
 
@@ -50,14 +50,11 @@ function ratingSummary(vendors: VendorProfile[]) {
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug: category, city } = await params
-  const page = await findLandingPage(category, city)
+  const resolved = await resolveCategorySlug(category)
+  const page = resolved ? await findLandingPage(resolved, city) : null
 
-  if (!page) {
-    return pageMetadata('Page not found', 'This page could not be found.', {
-      path: `/vendors/${category}/${city}`,
-      noIndex: true,
-    })
-  }
+  // Throwing here (not only in the page body) makes Next send a real 404 status instead of a 200 "soft 404".
+  if (!page) notFound()
 
   const plural = pluralizeCategory(page.categoryName)
   const count = page.vendorCount
@@ -80,6 +77,11 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function VendorCityCategoryPage({ params }: { params: Promise<Params> }) {
   const { slug: category, city } = await params
 
+  // Legacy or natural-language category slugs ("wedding-planning") redirect to the real backend category slug.
+  const resolvedCategory = await resolveCategorySlug(category)
+  if (resolvedCategory && resolvedCategory !== category) {
+    permanentRedirect(`/vendors/${resolvedCategory}/${city.toLowerCase()}`)
+  }
   if (category !== category.toLowerCase() || city !== city.toLowerCase()) {
     permanentRedirect(`/vendors/${category.toLowerCase()}/${city.toLowerCase()}`)
   }

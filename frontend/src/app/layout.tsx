@@ -42,9 +42,9 @@ const hand = Caveat({
 });
 
 export const metadata: Metadata = generateMetadata({
-  title: "Omnicassion - India's #1 Wedding & Event Planning Platform | Book Verified Vendors",
+  title: "Omnicassion - Wedding & Event Planning Platform in India | Book Vendors",
   description:
-    "Plan your dream Indian wedding with Omnicassion. Book verified photographers, venues, caterers, decorators & makeup artists. Free planning tools, budget calculator, guest list manager. Trusted by 50,000+ couples. Compare prices & read reviews.",
+    "Plan your Indian wedding or event with Omnicassion. Compare venues, photographers, caterers, decorators, planners & makeup artists, get free quotes, and use free tools: budget calculator, guest list, e-invites.",
   keywords: [
     // Primary Brand Keywords
     "omnicassion",

@@ -6,8 +6,8 @@ import type { JsonLdSchema } from '@/lib/seo/types';
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com';
 
 export const metadata: Metadata = pageMetadata(
-  'About Omnicassion - India\'s #1 Wedding & Event Planning Platform',
-  'Learn about Omnicassion, India\'s premier all-in-one wedding and event planning platform. Since 2024, we\'ve helped 50,000+ couples plan their dream celebrations. Connect with 10,000+ verified vendors across 15+ cities. Trusted by families across India.',
+  'About Omnicassion - Wedding & Event Planning Platform in India',
+  'Learn about Omnicassion, the wedding and event planning platform for India. Discover vendors, compare services and plan every detail of your celebration in one place.',
   {
     path: '/about',
     keywords: [
@@ -155,7 +155,7 @@ const webPageSchema: Record<string, unknown> = {
   '@type': 'AboutPage',
   '@id': `${SITE_URL}/about#webpage`,
   url: `${SITE_URL}/about`,
-  name: 'About Omnicassion - India\'s #1 Wedding & Event Planning Platform',
+  name: 'About Omnicassion - Wedding & Event Planning Platform in India',
   description: 'Learn about Omnicassion, India\'s premier all-in-one wedding and event planning platform.',
   isPartOf: {
     '@id': `${SITE_URL}/#website`,

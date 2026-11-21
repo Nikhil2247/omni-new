@@ -1,6 +1,6 @@
 export const siteConfig = {
   name: "Omnicassion",
-  description: "India's Premier Event Planning Platform - Plan your perfect wedding, corporate event, party, or celebration with 10,000+ verified vendors. Get instant quotes, compare prices, and book with confidence.",
+  description: "Event Planning Platform for India - Plan your perfect wedding, corporate event, party, or celebration with vendors you can compare. Get quotes, compare prices, and book with confidence.",
   tagline: "Visual-First Event Planning Ecosystem",
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   ogImage: "/images/og-image.png",

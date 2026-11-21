@@ -8,7 +8,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://omnicassion.com";
 
 export const metadata: Metadata = pageMetadata(
   "Free Indian Wedding Checklist - Complete Planning Guide | Omnicassion",
-  "Never miss a detail with our comprehensive Indian wedding checklist. Customizable tasks for sangeet, mehndi, haldi, wedding & reception. Download free printable checklist. Used by 50,000+ couples.",
+  "Never miss a detail with our comprehensive Indian wedding checklist. Customizable tasks for sangeet, mehndi, haldi, wedding & reception. Download free printable checklist.",
   {
     path: "/event-checklist-tool",
     keywords: toolKeywords['event-checklist-tool'],

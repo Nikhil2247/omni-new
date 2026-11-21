@@ -13,8 +13,8 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com';
  * Default SEO configuration
  */
 export const defaultSEO: SEOMetadata = {
-  title: 'Omnicassion - India\'s Premier All-in-One Planning and Social Platform',
-  description: 'Plan weddings, celebrations, and events with Omnicassion, India\'s premier all-in-one planning and social platform. Discover verified professionals, compare services, manage timelines, and connect in one place.',
+  title: 'Omnicassion - Wedding & Event Planning Platform in India',
+  description: 'Plan weddings, celebrations, and events with Omnicassion. Discover vendors, compare services, get free quotes, and manage budgets, guest lists and timelines in one place.',
   keywords: [
     'all-in-one planning platform India',
     'social planning platform India',
@@ -38,7 +38,7 @@ export const defaultSEO: SEOMetadata = {
     maxVideoPreview: -1,
   },
   openGraph: {
-    title: 'Omnicassion - India\'s Premier All-in-One Planning and Social Platform',
+    title: 'Omnicassion - Wedding & Event Planning Platform in India',
     description: 'Discover verified professionals, manage event planning, and connect socially in one powerful platform built for India.',
     type: 'website',
     url: SITE_URL,
@@ -58,7 +58,7 @@ export const defaultSEO: SEOMetadata = {
     card: 'summary_large_image',
     site: '@omnicassion',
     creator: '@omnicassion',
-    title: 'Omnicassion - India\'s Premier All-in-One Planning and Social Platform',
+    title: 'Omnicassion - Wedding & Event Planning Platform in India',
     description: 'Plan smarter with verified professionals, social collaboration, and all event tools in one platform.',
     images: [`${SITE_URL}/images/twitter-image.png`],
   },

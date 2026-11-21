@@ -89,7 +89,53 @@ export function pluralizeCategory(name: string): string {
   return `${trimmed}s`
 }
 
-/** Old hardcoded category slugs that were in the sitemap/links, mapped to the real slug where one exists. */
-export const CATEGORY_SLUG_ALIASES: Record<string, string> = {
-  venues: 'venue',
+const FILLER_WORDS = new Set(['wedding', 'weddings', 'event', 'events', 'and', 'best', 'top', 'in', 'india'])
+const MIN_SHARED_PREFIX = 5
+
+function significantTokens(value: string): string[] {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 1 && !FILLER_WORDS.has(t))
+}
+
+function sharedPrefixLength(a: string, b: string): number {
+  let n = 0
+  while (n < a.length && n < b.length && a[n] === b[n]) n++
+  return n
+}
+
+/**
+ * Maps whatever category slug is in a URL to a real backend category slug, so categories are never hardcoded here.
+ * Exact slug first; otherwise the closest category by shared word stems against its slug and name
+ * ("wedding-planning" -> "planners", "photographers" -> "photography", "venues" -> "venue").
+ * Returns null when nothing matches clearly (or two categories tie), so the page is a real 404.
+ */
+export async function resolveCategorySlug(raw: string): Promise<string | null> {
+  const requested = raw.toLowerCase()
+  const categories = await getCategories()
+  if (categories.some((c) => c.slug === requested)) return requested
+
+  const wanted = significantTokens(requested)
+  if (!wanted.length) return null
+
+  const scored = categories
+    .map((category) => {
+      const candidates = [...significantTokens(category.slug), ...significantTokens(category.name)]
+      let score = 0
+      for (const w of wanted) {
+        for (const c of candidates) {
+          const shared = sharedPrefixLength(w, c)
+          const shorter = Math.min(w.length, c.length)
+          if (shared >= MIN_SHARED_PREFIX || (shared === shorter && shorter >= 4)) score = Math.max(score, shared)
+        }
+      }
+      return { slug: category.slug, score }
+    })
+    .filter((c) => c.score > 0)
+    .sort((a, b) => b.score - a.score)
+
+  if (!scored.length) return null
+  if (scored.length > 1 && scored[0].score === scored[1].score) return null
+  return scored[0].slug
 }

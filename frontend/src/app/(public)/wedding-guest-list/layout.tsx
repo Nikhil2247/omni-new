@@ -8,7 +8,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://omnicassion.com";
 
 export const metadata: Metadata = pageMetadata(
   "Free Wedding Guest List Manager - RSVP Tracking & Seating | Omnicassion",
-  "Organize your Indian wedding guest list effortlessly. Track RSVPs, manage dietary preferences (veg/non-veg), create seating arrangements, and send digital invites. Used by 50,000+ couples.",
+  "Organize your Indian wedding guest list effortlessly. Track RSVPs, manage dietary preferences (veg/non-veg), create seating arrangements, and send digital invites.",
   {
     path: "/wedding-guest-list",
     keywords: toolKeywords['wedding-guest-list'],

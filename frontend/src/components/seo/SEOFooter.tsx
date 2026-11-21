@@ -150,7 +150,7 @@ export function SEOFooter({
         {/* SEO Text Block */}
         <div className="mt-12 pt-8 border-t">
           <h2 className="text-lg font-serif font-semibold mb-4">
-            Omnicassion - India&apos;s #1 Wedding Planning Platform
+            Omnicassion - Wedding Planning Platform in India
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed mb-4">
             Omnicassion is India&apos;s premier all-in-one wedding and event planning platform.
@@ -161,7 +161,7 @@ export function SEOFooter({
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Use our free wedding planning tools - budget calculator, checklist, guest list manager,
-            timeline generator, RSVP tracker, and digital invitation maker. Trusted by 50,000+ couples
+            timeline generator, RSVP tracker, and digital invitation maker.
             across India for planning their dream weddings and celebrations.
           </p>
         </div>

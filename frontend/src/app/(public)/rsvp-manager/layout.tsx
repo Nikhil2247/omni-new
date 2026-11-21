@@ -8,7 +8,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://omnicassion.com";
 
 export const metadata: Metadata = pageMetadata(
   "Free Wedding RSVP Manager - Track Responses Online | Omnicassion",
-  "Track wedding RSVPs online for free. Collect meal preferences (veg/non-veg), plus-ones, and guest messages. Real-time tracking for Indian weddings. Used by 50,000+ couples.",
+  "Track wedding RSVPs online for free. Collect meal preferences (veg/non-veg), plus-ones, and guest messages. Real-time tracking for Indian weddings.",
   {
     path: "/rsvp-manager",
     keywords: toolKeywords['rsvp-manager'],
