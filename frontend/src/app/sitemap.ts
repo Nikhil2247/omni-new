@@ -131,112 +131,97 @@ async function fetchBlogSlugRoutes(currentDate: Date): Promise<MetadataRoute.Sit
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // lastModified is only emitted where we know a real date (vendors, blog posts). A sitemap where every URL says
+  // "modified now" teaches Google to ignore lastmod entirely.
   const currentDate = new Date();
-  
+
   // Static pages with high priority
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
-      lastModified: currentDate,
       changeFrequency: 'daily',
       priority: 1.0,
     },
     {
       url: `${SITE_URL}/about`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${SITE_URL}/pricing`,
-      lastModified: currentDate,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/contact`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
     {
       url: `${SITE_URL}/vendors`,
-      lastModified: currentDate,
       changeFrequency: 'daily',
       priority: 1.0,
     },
     {
       url: `${SITE_URL}/discover`,
-      lastModified: currentDate,
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/blog`,
-      lastModified: currentDate,
       changeFrequency: 'daily',
       priority: 0.8,
     },
     // For Vendors - High value conversion page
     {
       url: `${SITE_URL}/for-vendors`,
-      lastModified: currentDate,
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     // Legal & Trust pages
     {
       url: `${SITE_URL}/privacy`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${SITE_URL}/terms`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${SITE_URL}/support`,
-      lastModified: currentDate,
       changeFrequency: 'weekly',
       priority: 0.6,
     },
     // Tool pages - High SEO value for long-tail keywords
     {
       url: `${SITE_URL}/event-budget-calculator`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${SITE_URL}/event-checklist-tool`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${SITE_URL}/event-timeline-generator`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${SITE_URL}/wedding-guest-list`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${SITE_URL}/rsvp-manager`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
     {
       url: `${SITE_URL}/digital-invite-generator`,
-      lastModified: currentDate,
       changeFrequency: 'monthly',
       priority: 0.7,
     },
@@ -254,14 +239,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categorySlugs = Array.from(new Set(landingPages.map((p) => p.categorySlug)))
   const categoryRoutes: MetadataRoute.Sitemap = categorySlugs.map((category) => ({
     url: `${SITE_URL}/vendors/category/${category}`,
-    lastModified: currentDate,
     changeFrequency: 'daily' as const,
     priority: 0.9,
   }))
 
   const citySpecificRoutes: MetadataRoute.Sitemap = landingPages.map((p) => ({
     url: `${SITE_URL}/vendors/${p.categorySlug}/${p.citySlug}`,
-    lastModified: currentDate,
     changeFrequency: 'weekly' as const,
     priority: p.vendorCount >= 3 ? 0.85 : 0.7,
   }))

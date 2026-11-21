@@ -78,9 +78,13 @@ export default async function VendorCityCategoryPage({ params }: { params: Promi
   const { slug: category, city } = await params
 
   // Legacy or natural-language category slugs ("wedding-planning") redirect to the real backend category slug.
+  // Only redirect when the real page exists; otherwise fall through to a direct 404 (no redirect-to-404 chain).
   const resolvedCategory = await resolveCategorySlug(category)
-  if (resolvedCategory && resolvedCategory !== category) {
-    permanentRedirect(`/vendors/${resolvedCategory}/${city.toLowerCase()}`)
+  if (resolvedCategory && resolvedCategory !== category.toLowerCase()) {
+    if (await findLandingPage(resolvedCategory, city)) {
+      permanentRedirect(`/vendors/${resolvedCategory}/${city.toLowerCase()}`)
+    }
+    notFound()
   }
   if (category !== category.toLowerCase() || city !== city.toLowerCase()) {
     permanentRedirect(`/vendors/${category.toLowerCase()}/${city.toLowerCase()}`)
@@ -115,6 +119,11 @@ export default async function VendorCityCategoryPage({ params }: { params: Promi
       a: `Look at the quality and variety of the portfolio, the services and pricing listed, customer reviews, and whether they are available on your date. Request quotes from two or three vendors to compare.`,
     },
   ]
+
+  faqs.push({
+    q: `Can I plan my budget and guest list before booking a ${singularLower} in ${page.cityName}?`,
+    a: 'Yes. Omnicassion has free planning tools for your budget, checklist, timeline, guest list and digital invitations, so you can plan everything alongside your vendor shortlist.',
+  })
 
   const schemas = [
     {
@@ -228,6 +237,20 @@ export default async function VendorCityCategoryPage({ params }: { params: Promi
             </details>
           ))}
         </div>
+      </section>
+
+      <section className="space-y-3 border-t pt-8">
+        <h2 className="text-2xl font-semibold">Plan your event in {page.cityName}</h2>
+        <p className="text-muted-foreground">
+          Shortlisted a {singularLower}? Use the free tools to stay organised:
+        </p>
+        <ul className="flex flex-wrap gap-2 text-sm">
+          <li><Link href="/event-budget-calculator" className="rounded-full border px-3 py-1 hover:bg-muted">Event budget calculator</Link></li>
+          <li><Link href="/event-checklist-tool" className="rounded-full border px-3 py-1 hover:bg-muted">Wedding checklist</Link></li>
+          <li><Link href="/event-timeline-generator" className="rounded-full border px-3 py-1 hover:bg-muted">Timeline generator</Link></li>
+          <li><Link href="/wedding-guest-list" className="rounded-full border px-3 py-1 hover:bg-muted">Guest list planner</Link></li>
+          <li><Link href="/digital-invite-generator" className="rounded-full border px-3 py-1 hover:bg-muted">Digital invitation maker</Link></li>
+        </ul>
       </section>
 
       {(otherCities.length > 0 || otherCategories.length > 0) && (

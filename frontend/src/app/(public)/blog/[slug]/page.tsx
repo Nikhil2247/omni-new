@@ -1,21 +1,39 @@
 import { cache } from 'react'
 import type { Metadata } from 'next'
+import { notFound, permanentRedirect } from 'next/navigation'
 import BlogPostClient from './blog-post-client'
 import { pageMetadata, generateJsonLd } from '@/lib/seo/metadata'
 import { publicService } from '@/lib/api/services/public.service'
+import { NotFoundError, withRetry } from '@/lib/seo/server-api'
 import { getMinioViewUrl } from '@/lib/utils/minio'
 import type { BlogPost } from '@/lib/api/types/marketing.types'
 import type { JsonLdSchema } from '@/lib/seo/types'
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://omnicassion.com'
 
+/**
+ * A 404 means the post does not exist (null -> real 404). Any other failure (429, 5xx, network) is retried and then
+ * thrown: it must never be treated as "not found", or valid posts render as noindex pages and drop out of Google.
+ */
 const getBlogPostBySlug = cache(async (slug: string): Promise<BlogPost | null> => {
   try {
-    return await publicService.getBlogPostBySlug(slug)
-  } catch {
-    return null
+    return (await withRetry(() => publicService.getBlogPostBySlug(slug))) ?? null
+  } catch (error) {
+    if (error instanceof NotFoundError) return null
+    throw error
   }
 })
+
+/** Links in post content sometimes end with a stray "}" (e.g. /blog/some-post}); strip it so they resolve. */
+function cleanSlug(slug: string): string {
+  let decoded = slug
+  try {
+    decoded = decodeURIComponent(slug)
+  } catch {
+    // keep the raw value
+  }
+  return decoded.replace(/[}\])>.,;:!?]+$/, '').trim()
+}
 
 function toAbsoluteHttpUrl(value?: string | null): string | null {
   if (!value) return null
@@ -140,20 +158,14 @@ function buildArticleJsonLd(post: BlogPost, slug: string): JsonLdSchema[] {
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
-  const { slug } = await params
+  const { slug: rawSlug } = await params
+  const slug = cleanSlug(rawSlug)
+  if (slug !== rawSlug) permanentRedirect(`/blog/${slug}`)
   const post = await getBlogPostBySlug(slug)
   const canonicalPath = `/blog/${slug}`
 
-  if (!post) {
-    return pageMetadata(
-      'Post not found',
-      'The article you are looking for could not be found.',
-      {
-        path: canonicalPath,
-        noIndex: true,
-      },
-    )
-  }
+  // Real 404 status instead of a 200 page marked noindex ("soft 404").
+  if (!post) notFound()
 
   const title = post.metaTitle || post.title
   const description = buildDescription(post) || 'Read the latest insights from Omnicassion.'
@@ -170,10 +182,13 @@ export async function generateMetadata(
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
+  const { slug: rawSlug } = await params
+  const slug = cleanSlug(rawSlug)
+  if (slug !== rawSlug) permanentRedirect(`/blog/${slug}`)
   const post = await getBlogPostBySlug(slug)
+  if (!post) notFound()
 
-  const jsonLd = post ? generateJsonLd(buildArticleJsonLd(post, slug)) : null
+  const jsonLd = generateJsonLd(buildArticleJsonLd(post, slug))
 
   return (
     <>
